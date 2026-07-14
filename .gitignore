@@ -1,0 +1,23 @@
+.gradle/
+build/
+run/
+run-*/
+repo/
+*.log
+*.stacktrace
+*.hprof
+
+# IDE files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+bin/
+
+# Local workspace/tooling
+work/
+outputs/
+
+# Generated datagen cache
+src/generated/resources/.cache/
