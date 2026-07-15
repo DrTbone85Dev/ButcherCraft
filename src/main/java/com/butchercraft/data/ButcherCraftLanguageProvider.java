@@ -17,6 +17,11 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.BEEF_TRIM_TEST.get(), "Beef Trim Test Product");
         add(ModItems.GROUND_BEEF_TEST.get(), "Ground Beef Test Product");
         add("commands.butchercraft.diagnostic", "ButcherCraft Diagnostic");
+        add("definition.butchercraft.species.beef", "Beef");
+        add("definition.butchercraft.processing_profile.red_meat", "Red Meat");
+        add("definition.butchercraft.product.beef_trim", "Beef Trim");
+        add("definition.butchercraft.product.ground_beef", "Ground Beef");
+        add("definition.butchercraft.processing_operation.grind_beef", "Grind Beef");
         add("tooltip.butchercraft.product_data.product", "Product: %s");
         add("tooltip.butchercraft.product_data.source", "Source: %s");
         add("tooltip.butchercraft.product_data.state", "State: %s");

@@ -16,6 +16,9 @@ public final class ButcherCraftDataGenerators {
         var output = generator.getPackOutput();
         var existingFileHelper = event.getExistingFileHelper();
 
+        if (event.includeServer()) {
+            event.addProvider(new ButcherCraftDefinitionData(output));
+        }
         generator.addProvider(event.includeClient(), new ButcherCraftLanguageProvider(output));
         generator.addProvider(event.includeClient(), new ButcherCraftItemModelProvider(output, existingFileHelper));
     }

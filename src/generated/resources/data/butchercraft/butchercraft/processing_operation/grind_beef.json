@@ -1,0 +1,24 @@
+{
+  "base_duration_milliseconds": 3000,
+  "base_quality_delta": -5,
+  "base_yield": {
+    "denominator": 10,
+    "numerator": 9
+  },
+  "display_name_key": "definition.butchercraft.processing_operation.grind_beef",
+  "input_product": "butchercraft:beef_trim",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 100,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/grinding",
+  "output_processing_state": "butchercraft:ground",
+  "output_product": "butchercraft:ground_beef",
+  "required_input_processing_state": "butchercraft:trim",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "zero_output_policy": "forbid"
+}

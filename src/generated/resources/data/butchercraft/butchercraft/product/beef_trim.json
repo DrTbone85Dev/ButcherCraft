@@ -1,0 +1,15 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.beef_trim",
+  "edible": true,
+  "graph_input": true,
+  "graph_output": false,
+  "processing_state": "butchercraft:trim",
+  "product_category": "butchercraft:beef",
+  "quantity_unit": "gram",
+  "species": "butchercraft:beef",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/trim"
+  ]
+}

@@ -1,5 +1,10 @@
 {
   "commands.butchercraft.diagnostic": "ButcherCraft Diagnostic",
+  "definition.butchercraft.processing_operation.grind_beef": "Grind Beef",
+  "definition.butchercraft.processing_profile.red_meat": "Red Meat",
+  "definition.butchercraft.product.beef_trim": "Beef Trim",
+  "definition.butchercraft.product.ground_beef": "Ground Beef",
+  "definition.butchercraft.species.beef": "Beef",
   "item.butchercraft.beef_trim_test": "Beef Trim Test Product",
   "item.butchercraft.development_test_item": "Development Test Item",
   "item.butchercraft.ground_beef_test": "Ground Beef Test Product",
