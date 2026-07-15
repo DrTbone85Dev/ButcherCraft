@@ -35,7 +35,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 - The Beef Trim Test Product and Ground Beef Test Product items are development-only integration fixtures. They carry product data but provide no food, processing, recipe, station, commerce, or world behavior.
 - The built-in beef trim to ground beef definition dataset is prototype data used to prove registry loading and graph validation. Its duration, yield, quality adjustment, and thresholds are not final balance.
 - The Development Processing Workstation is a temporary fixture block. Its explicit product-definition-to-item mapping supports only Beef Trim Test Product and Ground Beef Test Product.
-- The temporary workstation menu is a plain development view over server-owned state and is not final UI.
+- The temporary workstation menu and client screen are plain development views over server-owned state and are not final UI.
 - Poultry is a deferred design case. Milestone 2A tests profile compatibility with hypothetical test definitions but does not add live poultry species, products, operations, regulations, or equipment.
 - The diagnostic command is safe by design and must not grant items, alter the world, expose local paths, expose environment variables, or report sensitive system details.
 - The project foundation should not be treated as proof that meat processing, employees, refrigeration, cleanliness, MCDA, orders, or business gameplay have been implemented.

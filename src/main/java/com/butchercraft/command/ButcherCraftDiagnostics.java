@@ -22,6 +22,7 @@ import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.registration.ModBlocks;
+import com.butchercraft.registration.ModClientRegistrationStatus;
 import com.butchercraft.registration.ModMenuTypes;
 import com.butchercraft.workstation.DevelopmentProductItemMapping;
 import com.butchercraft.workstation.DevelopmentWorkstationFixtures;
@@ -116,6 +117,7 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Development workstation block registered: " + workstationDiagnostic.blockRegistered()), false);
         source.sendSuccess(() -> Component.literal("Development workstation block entity registered: " + workstationDiagnostic.blockEntityRegistered()), false);
         source.sendSuccess(() -> Component.literal("Development workstation menu registered: " + workstationDiagnostic.menuRegistered()), false);
+        source.sendSuccess(() -> Component.literal("Development workstation screen binding observed: " + ModClientRegistrationStatus.developmentWorkstationScreenRegistered()), false);
         source.sendSuccess(() -> Component.literal("Development workstation capability available: " + workstationDiagnostic.capabilityAvailable()), false);
         source.sendSuccess(() -> Component.literal("Beef Trim resolves to grind_beef for development station: " + workstationDiagnostic.beefTrimResolvesToGrindBeef()), false);
         source.sendSuccess(() -> Component.literal("grind_beef duration resolves to 60 ticks: " + workstationDiagnostic.grindBeefDurationIs60Ticks()), false);

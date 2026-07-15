@@ -420,7 +420,7 @@ Included work:
 - One-input, one-output `WorkstationInventory`.
 - `WorkstationOperationResolver` that consumes loaded definitions, `ProcessingGraph`, and `ProductStackData`.
 - `WorkstationProcessingController` that reserves input, tracks ticks, commits exactly once, and creates output through the existing engine transaction.
-- Development Processing Workstation block, block entity, block item, temporary menu, item-handler capability, placeholder resources, loot table, and language entries.
+- Development Processing Workstation block, block entity, block item, temporary menu and client screen, item-handler capability, placeholder resources, loot table, and language entries.
 - Diagnostic checks for workstation registration, resolver behavior, duration conversion, prototype context validation, and temporary output mapping.
 - Tests for state transitions, duration conversion, resolver behavior, controller lifecycle, inventory rules, registration/assets, and dependency boundaries.
 - Documentation in `docs/WORKSTATION_FRAMEWORK.md`.

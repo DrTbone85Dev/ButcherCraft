@@ -69,7 +69,7 @@ The diagnostic also reports whether the Development Processing Workstation block
 
 `butchercraft:beef_trim_test` and `butchercraft:ground_beef_test` are development-only product data fixtures. They appear in the ButcherCraft creative tab with default `butchercraft:product_data`, max stack size `1`, English display text, product tooltips, and reused placeholder models/textures. They are not food, recipes, or processing gameplay.
 
-`butchercraft:development_processing_workstation` is a development-only workstation fixture. It opens a plain temporary menu, accepts Beef Trim Test Product, resolves `butchercraft:grind_beef`, processes for 60 ticks, and outputs Ground Beef Test Product through an explicit temporary mapping.
+`butchercraft:development_processing_workstation` is a development-only workstation fixture. It opens a plain temporary menu and client screen, accepts Beef Trim Test Product, resolves `butchercraft:grind_beef`, processes for 60 ticks, and outputs Ground Beef Test Product through an explicit temporary mapping.
 
 ## Documentation
 

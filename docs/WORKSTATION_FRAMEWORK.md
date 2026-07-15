@@ -15,7 +15,7 @@ This is not the final grinder, not final artwork, and not a player recipe-select
 - `com.butchercraft.product.integration.ProductStackAdapter` owns ItemStack/product conversion.
 - `com.butchercraft.workstation` owns workstation capability, state, failure, inventory, operation resolution, duration conversion, and transaction orchestration.
 - `ProcessingWorkstationBlockEntity` owns local persistence, server ticking, menu creation, and block-break recovery.
-- `ProcessingWorkstationMenu` is a temporary view. It does not own inventory or processing state.
+- `ProcessingWorkstationMenu` and its client screen are temporary views. They do not own inventory or processing state.
 
 ## State Machine
 
@@ -121,7 +121,7 @@ Temporary block:
 butchercraft:development_processing_workstation
 ```
 
-The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu, accepts Beef Trim Test Product, resolves `butchercraft:grind_beef`, processes for 60 ticks, and outputs Ground Beef Test Product.
+The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts Beef Trim Test Product, resolves `butchercraft:grind_beef`, processes for 60 ticks, and outputs Ground Beef Test Product.
 
 ## Future Extension Points
 

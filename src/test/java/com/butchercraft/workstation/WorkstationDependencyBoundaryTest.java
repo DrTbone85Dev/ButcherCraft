@@ -23,6 +23,7 @@ class WorkstationDependencyBoundaryTest {
     @Test
     void commonSourcesDoNotImportClientClasses() throws IOException {
         List<Path> offenders = javaFiles(TestProjectPaths.projectPath("src/main/java")).stream()
+                .filter(path -> !isClientSource(path))
                 .filter(path -> sourceContains(path, "import net.minecraft.client"))
                 .toList();
 
@@ -68,5 +69,9 @@ class WorkstationDependencyBoundaryTest {
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to scan " + path, exception);
         }
+    }
+
+    private static boolean isClientSource(Path path) {
+        return path.normalize().toString().replace('\\', '/').contains("/src/main/java/com/butchercraft/client/");
     }
 }
