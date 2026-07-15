@@ -267,7 +267,7 @@ Consequences:
 - Each subsystem gets an independent acceptance gate before the complete loop is assembled.
 - Persistence and duplication safeguards can be verified earlier.
 - The full vertical slice remains the product goal, but implementation proceeds in smaller increments.
-- Milestones 1B and 1C were later redefined by DEC-0023 and DEC-0024 as pure engine/framework milestones; visible station and refrigeration slices are deferred for owner scheduling.
+- Milestones 1B and 1C were later redefined by DEC-0023 and DEC-0024 as pure engine/framework milestones; Milestone 1D was later redefined by DEC-0025 as product data integration; visible station, refrigeration, and commerce slices are deferred for owner scheduling.
 
 ## DEC-0020: Domain Boundaries Before Gameplay Implementation
 
@@ -344,6 +344,22 @@ Consequences:
 - Yield rounds half up to the nearest smallest quantity unit and rejects negative effective yield or overflow.
 - The Beef Trim to Ground Beef operation exists only as test fixture data until Minecraft content is explicitly scheduled.
 - The simple refrigerated storage scope formerly listed as Milestone 1C is deferred until the owner schedules a visible storage milestone.
+
+## DEC-0025: Product ItemStacks Use One Product Data Component and Do Not Stack Yet
+
+Status: Accepted
+
+Decision: implement Milestone 1D with one registered data component, `butchercraft:product_data`, storing immutable `ProductStackData` on product-bearing ItemStacks. Product-bearing development fixture items have maximum stack size `1`.
+
+Rationale: the engine already stores exact product quantity. Allowing ItemStack count to also represent quantity before merge rules exist would create two independent quantity systems and could duplicate, average, or discard quantity or quality.
+
+Consequences:
+
+- Product stack data is stored through a persistent codec and network stream codec, not arbitrary legacy NBT.
+- ItemStack copies preserve product data through the component system.
+- Distinct product data participates in stack equality through data components.
+- Future stackability requires an explicit design for ItemStack count, engine quantity, quality, freshness, temperature, packaging, and lot identity before product items can safely merge.
+- Beef Trim Test Product and Ground Beef Test Product are development-only fixtures and not final gameplay content.
 
 ## Decisions Needing Owner Approval
 

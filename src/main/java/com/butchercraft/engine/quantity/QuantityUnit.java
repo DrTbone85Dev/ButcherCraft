@@ -1,5 +1,7 @@
 package com.butchercraft.engine.quantity;
 
+import java.util.Arrays;
+
 /**
  * Exact quantity unit used by the engine.
  *
@@ -19,5 +21,12 @@ public enum QuantityUnit {
 
     public String id() {
         return id;
+    }
+
+    public static QuantityUnit fromId(String id) {
+        return Arrays.stream(values())
+                .filter(unit -> unit.id.equals(id))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported quantity unit id: " + id));
     }
 }

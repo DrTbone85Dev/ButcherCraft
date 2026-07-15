@@ -188,6 +188,8 @@ These values prove the framework. They are not final gameplay balance.
 
 ## Future Minecraft Integration Boundary
 
+Milestone 1D adds ItemStack product data integration for product snapshots only. It does not load processing operations from recipes or datapacks and does not add a grinder or station.
+
 Future integration should:
 
 - Convert item data components to `Product`.

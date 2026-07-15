@@ -40,6 +40,8 @@ neoForge {
         minecraftVersion = project.parchment_minecraft_version
     }
 
+    addModdingDependenciesTo(sourceSets.test)
+
     runs {
         client {
             client()
@@ -77,6 +79,11 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods.getByName(project.mod_id)
     }
 }
 
@@ -129,6 +136,7 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+    systemProperty 'butchercraft.projectDir', project.layout.projectDirectory.asFile.absolutePath
 }
 
 idea {

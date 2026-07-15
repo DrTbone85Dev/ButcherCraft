@@ -169,7 +169,7 @@ Transactions delegate validation and proposal preparation to the evaluator while
 
 ## Future Minecraft Integration Boundary
 
-Future Minecraft code should treat the engine as a pure domain service:
+Minecraft code should treat the engine as a pure domain service. Milestone 1D introduces the first boundary adapter through `ProductStackData` and `ProductStackAdapter`, outside the engine package.
 
 - Convert item stack data components into engine products.
 - Run transaction validation and preparation server-side.

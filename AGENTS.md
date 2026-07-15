@@ -60,6 +60,7 @@ Do not claim a command passed unless you actually ran it.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
+- Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
 - Compile and test after each milestone.
 - For this repository foundation, the harmless development item and diagnostic command are allowed. They must not become gameplay systems.
 - If a Codex sandbox blocks Java `Path.toRealPath()`, NeoForge artifact extraction may fail before compilation. Report that exact limitation instead of claiming compile, datagen, test, build, client, or server success.
@@ -100,6 +101,7 @@ Do not claim a command passed unless you actually ran it.
 ## Persistence Requirements
 
 - Product item state belongs in item data components.
+- Product-bearing stacks are max stack size one until the project deliberately defines how engine quantity and ItemStack count interact.
 - World/facility/business/order/inspection state belongs in `SavedData` unless a narrower holder is clearly better.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.

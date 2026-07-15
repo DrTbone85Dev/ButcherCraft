@@ -3,6 +3,7 @@ package com.butchercraft;
 import com.butchercraft.command.ButcherCraftDiagnostics;
 import com.butchercraft.config.CommonConfig;
 import com.butchercraft.registration.ModCreativeModeTabs;
+import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -22,6 +23,7 @@ public final class ButcherCraft {
     private static boolean commonInitializationCompleted;
 
     public ButcherCraft(IEventBus modEventBus, ModContainer modContainer) {
+        ModDataComponents.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
 

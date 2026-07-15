@@ -1,5 +1,6 @@
 package com.butchercraft.engine;
 
+import com.butchercraft.test.TestProjectPaths;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -12,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EngineDependencyBoundaryTest {
     @Test
     void engineSourcesDoNotImportMinecraftOrNeoForge() throws IOException {
-        Path engineRoot = Path.of("src/main/java/com/butchercraft/engine");
+        Path engineRoot = TestProjectPaths.projectPath("src/main/java/com/butchercraft/engine");
         assertTrue(Files.isDirectory(engineRoot), "Engine source directory must exist");
 
         List<Path> offenders;

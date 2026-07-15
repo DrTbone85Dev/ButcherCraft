@@ -1,5 +1,9 @@
 package com.butchercraft.engine.product;
 
+import com.butchercraft.engine.EngineId;
+
+import java.util.Arrays;
+
 /**
  * Coarse processing state for an immutable product snapshot.
  *
@@ -8,6 +12,23 @@ package com.butchercraft.engine.product;
  * boundary.</p>
  */
 public enum ProcessingState {
-    RAW,
-    PREPARED
+    RAW("butchercraft:trim"),
+    PREPARED("butchercraft:ground");
+
+    private final EngineId id;
+
+    ProcessingState(String id) {
+        this.id = EngineId.of(id);
+    }
+
+    public EngineId id() {
+        return id;
+    }
+
+    public static ProcessingState fromId(EngineId id) {
+        return Arrays.stream(values())
+                .filter(state -> state.id.equals(id))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported processing state id: " + id));
+    }
 }

@@ -42,7 +42,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.api.processing` | Public process definitions and station interaction contracts. |
 | `com.butchercraft.api.refrigeration` | Cooling capability contracts and room summary types. |
 | `com.butchercraft.api.business` | Order, customer, and facility identity contracts exposed to expansions. |
-| `com.butchercraft.product` | Product data records, quality summaries, freshness and temperature services. |
+| `com.butchercraft.product` | Minecraft-facing product data components, ItemStack adapters, product item fixtures, quality summaries, freshness and temperature services. |
 | `com.butchercraft.processing` | Manual stations, processing recipes, process state, yield results. |
 | `com.butchercraft.machine` | Grinder, packaging station, base machine block entities, tick helpers. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
@@ -146,10 +146,16 @@ Persistence rules:
 
 Product item stacks should use data components instead of ad hoc NBT.
 
+Milestone 1D implements the first concrete component:
+
+- `ProductStackData` registered as `butchercraft:product_data`: product type id, source category id, processing state id, exact quantity value, quantity unit id, and quality score.
+
+This component is persistent, network synchronized, immutable, and validated. Invalid decoded data is rejected rather than replaced with defaults. Product-bearing stacks are max stack size `1` until quantity and stack-count merge rules are deliberately designed.
+
 Proposed components:
 
-- `ProductComponent`: product id, product form, lot id, source metadata if approved.
-- `QualityComponent`: current quality summary and optional trace of major quality contributors.
+- `ProductComponent` or future extension of `ProductStackData`: product id, product form, lot id, source metadata if approved.
+- `QualityComponent` or future extension of `ProductStackData`: current quality summary and optional trace of major quality contributors.
 - `FreshnessComponent`: freshness state, last evaluated game time, spoilage state.
 - `TemperatureComponent`: product temperature band or compact temperature value, last evaluated game time.
 - `PackagingComponent`: packaged/unpackaged state, package type, label/order metadata.
@@ -412,6 +418,7 @@ Automated verification should scale with milestone risk:
 - `gradlew runData` to verify data generation once providers exist.
 - Dedicated server launch checks for client/server separation.
 - Game tests for processing, product data, saved data, cleanliness, work-order, and inspection behavior when feasible.
+- ItemStack product data tests for component codecs, conversion, copying, and merge safety.
 
 Pure Java services should be easy to test without launching the full game:
 

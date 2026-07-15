@@ -204,50 +204,73 @@ Rollback considerations:
 - Framework code is isolated under `com.butchercraft.engine`.
 - The previous simple refrigerated storage work formerly listed as Milestone 1C is deferred until the owner schedules the next visible storage milestone.
 
-## Milestone 1D: One Customer Order and Business Summary
+## Milestone 1D: Minecraft Product Data Integration
 
-Goal: prove one order can consume valid packaged product and update a minimal business summary.
+Goal: prove that Minecraft ItemStacks can safely store, retrieve, copy, serialize, display, and round-trip a ButcherCraft engine product snapshot through a NeoForge data component.
 
 Included work:
 
-- One customer order.
-- Minimal business ledger and reputation update.
-- Idempotent order fulfillment transaction.
+- Immutable `ProductStackData` component value.
+- Registered `butchercraft:product_data` item data component.
+- Engine `Product` to `ProductStackData` conversion.
+- `ProductStackData` to engine `Product` conversion.
+- Focused ItemStack adapter with explicit success and failure results.
+- Development-only Beef Trim Test Product and Ground Beef Test Product fixtures.
+- Creative tab fixture stacks with default product data.
+- Product tooltip display for fixture stacks.
+- Diagnostic checks for component registration, fixture registration, and product round-trip preservation.
+- Codec, StreamCodec, adapter, ItemStack copy, merge-safety, dependency-boundary, and asset tests.
+- Documentation in `docs/PRODUCT_DATA_INTEGRATION.md`.
 
 Excluded work:
 
-- Wholesale contracts.
-- Recurring orders.
-- Customer simulation.
-- Employees.
-- MCDA escalation.
+- Grinder block or behavior.
+- Processing station.
+- Blocks, block entities, menus, screens, recipes, or datapack processing operations.
+- Employees, villagers, refrigeration, temperature, freshness, packaging, cleanliness, MCDA, customers, business systems, sounds, final artwork, or public expansion APIs.
 
 Dependencies:
 
-- Milestone 1A.
 - Milestone 1B.
 - Milestone 1C.
-- Future station-chain milestone for packaged product output.
+- Existing NeoForge foundation registration and data-generation setup.
 
 Acceptance criteria:
 
-- Player can complete one order with the packaged product.
-- Repeated client requests cannot pay or complete the same order twice.
-- Business/order state persists across save/load.
+- `ProductStackData` is immutable, validated, and rejects malformed decoded data.
+- `butchercraft:product_data` is registered with persistent and network codecs.
+- Engine product round-trips through the ItemStack component representation.
+- Quantity and quality are preserved exactly.
+- Product-bearing fixture stacks have maximum stack size `1`.
+- Creative-tab fixture stacks receive valid independent product data.
+- Tooltips display product identifier, source, state, quantity, grade, and advanced quality score.
+- The diagnostic reports successful registration and round-trip checks without mutating world or inventory.
+- Engine packages still have no Minecraft or NeoForge imports.
+- No excluded gameplay system is introduced.
 
 Automated verification:
 
+- `gradlew compileJava`
+- `gradlew test`
+- `gradlew runData`
 - `gradlew build`
-- Order completion tests if test infrastructure is available
+- External owner verification is required if the Codex sandbox blocks NeoForge artifact extraction before compilation.
 
 Manual in-game verification:
 
-- Complete the customer order.
-- Save, quit, reload, and confirm business/order state remains.
+- Launch development client.
+- Confirm both product test items appear in the ButcherCraft creative tab.
+- Confirm both fixture items show product tooltip data.
+- Copy fixture stacks and confirm product data remains visible.
+- Run `/butchercraft diagnostic` and confirm product data registration and round-trip checks are true.
+- Confirm no missing texture appears beyond the documented reused placeholder texture.
+- Launch a dedicated server and confirm no client-only class-loading error is introduced.
 
 Rollback considerations:
 
-- Order API should remain experimental until at least one later content path uses it.
+- Component field names should be treated as save-relevant once public saves exist.
+- Product stackability remains locked to one until merge rules are explicitly designed.
+- Customer order and business-summary work formerly listed here is deferred until packaged product output and order persistence are scheduled.
 
 ## Milestone 1E: Basic Cleanliness and MCDA Write-Up
 

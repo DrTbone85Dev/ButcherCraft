@@ -18,7 +18,11 @@ public final class ModCreativeModeTabs {
                     .title(Component.translatable("itemGroup.butchercraft"))
                     .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
                     .icon(() -> ModItems.DEVELOPMENT_TEST_ITEM.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
+                        output.accept(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+                    })
                     .build());
 
     private ModCreativeModeTabs() {
