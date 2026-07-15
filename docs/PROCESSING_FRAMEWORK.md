@@ -41,7 +41,7 @@ It owns:
 
 It does not own transaction state, progress, inventory behavior, machine behavior, employee behavior, recipe loading, or Minecraft data.
 
-Future Minecraft integration can convert game ticks to `ProcessingDuration` at the boundary. Vanilla timing is commonly 50 milliseconds per tick, but the engine does not assume ticks.
+Minecraft integration converts game ticks to `ProcessingDuration` at the boundary. Vanilla timing is commonly 50 milliseconds per tick, but the engine does not assume ticks. Milestone 2B performs this conversion in the workstation layer, where `3000` milliseconds resolves to `60` ticks.
 
 ## ProcessingContext
 
@@ -197,3 +197,7 @@ Future integration should:
 - Run validation and preparation server-side.
 - Commit inventory changes only after the transaction is explicitly committed.
 - Keep item stacks, worlds, block entities, menus, recipes, packets, and registries outside engine packages.
+
+Milestone 2A introduces the datapack definition layer documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`. The resolver validates species, profile, product, and operation references before converting a valid operation definition into this framework's `ProcessingOperation`.
+
+Milestone 2B introduces a server-side workstation controller that supplies prototype cleanliness, operator-skill, and equipment-condition values to `ProcessingContext`. Those values prove the integration path only; final cleanliness, worker skill, and maintenance systems remain deferred.

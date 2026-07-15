@@ -359,6 +359,121 @@ Rollback considerations:
 
 - Employee job behavior should be gated so the manual path remains playable if AI is unstable.
 
+## Milestone 2A: Data-Driven Product and Processing Definitions
+
+Goal: create server-authoritative datapack definitions and a read-only processing graph before adding visible processing stations.
+
+Included work:
+
+- Custom datapack registries for species, processing profiles, products, and processing operations.
+- Immutable codec-backed definitions and generated built-in data for beef, red meat, beef trim, ground beef, and grind beef.
+- Resolver validation for missing references, species mismatch, profile incompatibility, state mismatch, self-loops, and forbidden zero-output operations.
+- Conversion of resolved operation definitions into the existing Minecraft-independent `ProcessingOperation`.
+- Read-only processing graph lookup and validation report.
+- ProductStackData-to-definition validation bridge.
+- Diagnostic command checks for registries, built-in definitions, graph validation, and the Beef Trim to Ground Beef edge.
+- Documentation in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`.
+
+Excluded work:
+
+- Machines, blocks, block entities, menus, screens, player-triggered processing, employees, refrigeration, cleanliness, MCDA, customers, business systems, poultry content, final assets, sounds, animations, and public stable expansion API guarantees.
+
+Acceptance criteria:
+
+- Species, processing profiles, products, and operations are loaded through custom datapack registries.
+- Built-in beef definitions are generated deterministically.
+- The processing graph contains `butchercraft:beef_trim -> butchercraft:ground_beef` through `butchercraft:grind_beef`.
+- Invalid references and incompatible profiles are reported explicitly.
+- Engine packages remain Minecraft-independent.
+- Tests prove a future poultry processing profile is possible without hardcoded species workflow checks.
+
+Automated verification:
+
+- `gradlew clean`
+- `gradlew compileJava`
+- `gradlew compileTestJava`
+- `gradlew test`
+- `gradlew runData`
+- `gradlew build`
+
+Manual in-game verification:
+
+- Launch development client or server.
+- Run `/butchercraft diagnostic`.
+- Confirm all four definition registries are available.
+- Confirm beef, red meat, beef trim, ground beef, and grind beef resolve.
+- Confirm the initial graph validates and the Beef Trim to Ground Beef edge is reported.
+- Confirm existing product test item tooltips still display valid product data.
+
+Rollback considerations:
+
+- Registry ids and JSON field names become save/datapack-relevant once worlds or external packs depend on them.
+- The beef prototype values are test balance only and can be revised before public content stabilization.
+
+## Milestone 2B: Processing Workstation Framework
+
+Goal: create a reusable server-authoritative workstation framework and one development-only workstation block that proves Beef Trim Test Product can be processed into Ground Beef Test Product through the existing definition graph and engine transaction.
+
+Included work:
+
+- Workstation capability, state, and failure models.
+- One-input, one-output `WorkstationInventory`.
+- `WorkstationOperationResolver` that consumes loaded definitions, `ProcessingGraph`, and `ProductStackData`.
+- `WorkstationProcessingController` that reserves input, tracks ticks, commits exactly once, and creates output through the existing engine transaction.
+- Development Processing Workstation block, block entity, block item, temporary menu, item-handler capability, placeholder resources, loot table, and language entries.
+- Diagnostic checks for workstation registration, resolver behavior, duration conversion, prototype context validation, and temporary output mapping.
+- Tests for state transitions, duration conversion, resolver behavior, controller lifecycle, inventory rules, registration/assets, and dependency boundaries.
+- Documentation in `docs/WORKSTATION_FRAMEWORK.md`.
+
+Excluded work:
+
+- Final grinder block or model.
+- Multiple machine types.
+- Player recipe-selection GUI.
+- Power, fuel, employees, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, sounds, animations, complex rendering, poultry content, or public expansion API guarantees.
+
+Acceptance criteria:
+
+- Generic workstation code does not hardcode beef, grind beef, or poultry species switches.
+- Automatic operation selection occurs only when exactly one compatible operation exists.
+- `3000` milliseconds converts to `60` ticks.
+- Active input cannot be extracted while processing.
+- Output insertion is blocked.
+- Completion consumes input and creates output once.
+- Output obstruction blocks completion without deleting input.
+- Block removal drops recoverable input and completed output.
+- Save/load state stores inventory, selected operation, progress, failure code, reserved input snapshot, and completion flag.
+- Engine packages remain Minecraft-independent.
+
+Automated verification:
+
+- `gradlew clean`
+- `gradlew compileJava`
+- `gradlew compileTestJava`
+- `gradlew test`
+- `gradlew runData`
+- `gradlew build`
+- External owner verification is required if the Codex sandbox blocks NeoForge artifact creation before source compilation.
+
+Manual in-game verification:
+
+- Launch development client.
+- Confirm Development Processing Workstation appears in the ButcherCraft creative tab.
+- Place the workstation and open the temporary menu.
+- Insert Beef Trim Test Product.
+- Confirm processing starts and completes after about three seconds.
+- Confirm Ground Beef Test Product appears in output with `900 gram` and adjusted quality.
+- Confirm Ground Beef Test Product and vanilla items are rejected as processing inputs.
+- Confirm output obstruction, block break, and save/reload preserve product safely.
+- Run `/butchercraft diagnostic` and confirm workstation checks report true.
+- Launch a dedicated server and confirm no client-only class-loading error.
+
+Rollback considerations:
+
+- The development block and explicit product-item mapping are temporary fixture content.
+- The state and persistence fields are save-relevant once public worlds use the block.
+- Future final machine content should consume the framework rather than duplicating transaction logic.
+
 ## Milestone 2: Persistence and Data Hardening
 
 Goal: make the vertical slice reliable across saves, reloads, and basic content changes.

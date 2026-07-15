@@ -2,6 +2,7 @@
   "allowed_operation_categories": [
     "butchercraft:operation_category/grinding"
   ],
+  "compatibility_markers": [],
   "cross_profile_operations_permitted_by_default": false,
   "display_name_key": "definition.butchercraft.processing_profile.red_meat",
   "profile_category": "butchercraft:profile_category/red_meat",

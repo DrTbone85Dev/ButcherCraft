@@ -1,4 +1,5 @@
 {
+  "capability_markers": [],
   "display_name_key": "definition.butchercraft.species.beef",
   "enabled": true,
   "processing_profile": "butchercraft:red_meat",

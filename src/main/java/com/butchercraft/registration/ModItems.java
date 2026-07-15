@@ -7,6 +7,7 @@ import com.butchercraft.engine.product.ProductCategory;
 import com.butchercraft.engine.quantity.QuantityUnit;
 import com.butchercraft.product.component.ProductStackData;
 import com.butchercraft.product.item.ProductTestItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -52,6 +53,12 @@ public final class ModItems {
                     700
             ))
     );
+
+    /**
+     * Development-only workstation block item used to prove the reusable processing workstation framework.
+     */
+    public static final DeferredItem<BlockItem> DEVELOPMENT_PROCESSING_WORKSTATION =
+            ITEMS.registerSimpleBlockItem(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION, new Item.Properties());
 
     private ModItems() {
     }

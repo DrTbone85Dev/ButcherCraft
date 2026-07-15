@@ -1,0 +1,122 @@
+# ButcherCraft Product and Processing Definitions
+
+Status: Milestone 2A foundation
+
+## Purpose
+
+Milestone 2A moves product catalog and processing workflow facts into server-authoritative datapack definitions. The definitions describe species, broad processing profiles, product types, and processing operations that later stations can consume.
+
+This milestone does not add machines, workstations, player-triggered processing, employees, refrigeration, cleanliness, MCDA inspections, commerce, menus, screens, final artwork, or live poultry content.
+
+## Why Data-Driven
+
+Definitions are loaded from custom datapack registries so ButcherCraft Core, future expansions, and datapacks can add or override content through stable resource identifiers. Java code validates and resolves references, but workflow selection is not hardcoded by species.
+
+The pure engine remains Minecraft-independent. Datapack registry keys, `ResourceLocation`, `RegistryAccess`, and holder lookup code live outside `com.butchercraft.engine`.
+
+## Registry IDs and Paths
+
+Custom datapack registries:
+
+| Concept | Registry id | Generated resource path pattern |
+| --- | --- | --- |
+| Species | `butchercraft:species` | `data/<namespace>/butchercraft/species/<id>.json` |
+| Processing profile | `butchercraft:processing_profile` | `data/<namespace>/butchercraft/processing_profile/<id>.json` |
+| Product | `butchercraft:product` | `data/<namespace>/butchercraft/product/<id>.json` |
+| Processing operation | `butchercraft:processing_operation` | `data/<namespace>/butchercraft/processing_operation/<id>.json` |
+
+Built-in ButcherCraft definitions therefore generate under paths such as:
+
+```text
+src/generated/resources/data/butchercraft/butchercraft/species/beef.json
+src/generated/resources/data/butchercraft/butchercraft/processing_profile/red_meat.json
+src/generated/resources/data/butchercraft/butchercraft/product/beef_trim.json
+src/generated/resources/data/butchercraft/butchercraft/product/ground_beef.json
+src/generated/resources/data/butchercraft/butchercraft/processing_operation/grind_beef.json
+```
+
+## Definition Models
+
+`SpeciesDefinition` stores display translation key, processing-profile reference, product-family id, edible/enabled flags, and bounded capability markers.
+
+`ProcessingProfileDefinition` stores display translation key, profile category, allowed operation categories, required broad workflow stages, bounded compatibility markers, and whether cross-profile operations are permitted by default.
+
+`ProductDefinition` stores display translation key, species reference, product category, processing state, allowed quantity unit, edible flag, bone state, spoilage eligibility, bounded traits, and graph input/output flags.
+
+`ProcessingOperationDefinition` stores display translation key, operation category, required processing profiles, input/output product references, input/output states, base duration, exact yield, quality delta, minimum quantity, minimum cleanliness, minimum equipment condition, zero-output policy, static modifiers, optional workstation capability, self-loop permission, and cross-species permission.
+
+## Resolver Behavior
+
+`ProcessingDefinitionResolver` works from a reload-scoped `DefinitionRegistryView`. It can be built from `RegistryAccess` at the Minecraft boundary or from immutable maps in tests.
+
+The resolver validates:
+
+- Species to processing-profile references.
+- Product to species references.
+- Operation input and output product references.
+- Operation required profile references.
+- Input/output species compatibility.
+- Required input state and output state.
+- Operation category compatibility with the species processing profile.
+- Minimum quantity unit compatibility.
+- Forbidden zero-output operations.
+- Self-loops unless explicitly permitted.
+
+Failures return `DefinitionResolution` and `DefinitionValidationReport`; they do not return `null` or silently substitute fallback definitions.
+
+## Graph Behavior
+
+`ProcessingGraph` is a read-only view built explicitly from operation definitions. It supports deterministic lookup of operations by input product, one-step reachable outputs, direct transformation checks, validation report access, duplicate operation-id detection for test or import contexts, and cycle reporting.
+
+Cycles are warnings, not universal errors, because future rework operations may be legitimate. Self-loops remain errors unless the operation explicitly permits them.
+
+## Validation Policy
+
+Structural errors that can corrupt processing results are treated as errors and should fail datapack loading or world use once these definitions become gameplay-critical. Current validation reports are deterministic and developer-readable so malformed content does not degrade into unexplained null-pointer failures.
+
+Warnings are reserved for non-corrupting design concerns such as graph cycles.
+
+## ProductStackData Relationship
+
+`ProductDefinition` describes a loaded product type. `ProductStackData` describes one actual ItemStack snapshot.
+
+`ProductStackDefinitionValidator` compares stack data against loaded definitions without mutating the stack. It checks product existence, source/species compatibility, processing state, quantity unit, and quality bounds. Temperature, freshness, packaging, batch history, and order metadata remain deferred.
+
+## Built-In Beef Example
+
+The prototype dataset contains only:
+
+```text
+butchercraft:beef_trim --butchercraft:grind_beef--> butchercraft:ground_beef
+```
+
+Prototype balance values:
+
+- Duration: `3000` milliseconds.
+- Yield: `9/10`.
+- Base quality delta: `-5`.
+- Minimum input quantity: `100 gram`.
+- Minimum cleanliness factor: `600`.
+- Minimum equipment condition factor: `500`.
+- Workstation capability: `butchercraft:workstation_capability/development_processing`.
+- Zero output: forbidden.
+
+These values prove the data and graph model. They are not final balance.
+
+Milestone 2B consumes this definition through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin.
+
+## Poultry Extension Boundary
+
+Poultry remains deferred content. The architecture supports a future poultry profile by associating workflow differences with data-driven species, processing profiles, operation categories, workstation capabilities, and later inspection profiles.
+
+Java code must not switch on literal poultry species ids for workflow selection. Tests prove a hypothetical poultry profile can reject red-meat operations and accept poultry-profile operations without adding live poultry definitions.
+
+## Reload and Dedicated Server Behavior
+
+The custom registries are loaded from server datapacks and queried through current `RegistryAccess`. ButcherCraft does not cache `RegistryAccess` globally. Graph construction is explicit and bounded; it is not rebuilt every tick.
+
+The diagnostic command reads the current server registry access and remains read-only. It does not expose filesystem paths or dump full registry contents.
+
+## Explicit Exclusions
+
+This milestone excludes live animal entities, slaughter interactions, carcass blocks or entities, poultry content or regulations, MCDA inspections, workstations, grinder blocks, menus, screens, player-triggered processing, employees, refrigeration, freshness, packaging, business accounts, customers, final textures, sounds, animations, and public stable expansion API guarantees. Milestone 2B adds the first temporary workstation after these definitions are in place.

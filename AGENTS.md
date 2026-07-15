@@ -61,13 +61,17 @@ Do not claim a command passed unless you actually ran it.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
+- Keep datapack definition registries, `ResourceLocation`, `ResourceKey`, `Holder`, and `RegistryAccess` usage outside `com.butchercraft.engine`.
+- Processing-family differences such as red meat versus future poultry workflows must be represented through data-driven processing profiles and operation compatibility data, not species-specific Java switches.
 - Compile and test after each milestone.
 - For this repository foundation, the harmless development item and diagnostic command are allowed. They must not become gameplay systems.
+- For Milestone 2B, the Development Processing Workstation is allowed as a temporary fixture. It must remain server-authoritative, development-scoped, and separate from final grinder or machine content.
 - If a Codex sandbox blocks Java `Path.toRealPath()`, NeoForge artifact extraction may fail before compilation. Report that exact limitation instead of claiming compile, datagen, test, build, client, or server success.
 
 ## Data-Generation Commands
 
 - Run `runData` after adding generated models, blockstates, loot tables, recipes, tags, language entries, or datapack registry defaults.
+- Built-in species, processing-profile, product, and processing-operation definitions are datapack registry defaults and must be generated deterministically.
 - Review generated files before committing.
 - Keep generated data deterministic.
 

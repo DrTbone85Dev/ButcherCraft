@@ -44,6 +44,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.api.business` | Order, customer, and facility identity contracts exposed to expansions. |
 | `com.butchercraft.product` | Minecraft-facing product data components, ItemStack adapters, product item fixtures, quality summaries, freshness and temperature services. |
 | `com.butchercraft.processing` | Manual stations, processing recipes, process state, yield results. |
+| `com.butchercraft.workstation` | Reusable server-side workstation state, operation resolution, inventory reservation, progress, failure reporting, and temporary development workstation fixtures. |
 | `com.butchercraft.machine` | Grinder, packaging station, base machine block entities, tick helpers. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
@@ -78,6 +79,7 @@ Required boundaries:
 - Employee roles expose task filters, skill modifiers, execution timing, and skill gain contracts.
 - Facility state owns identity and membership summaries only; business, inspections, work orders, refrigeration, and cleanliness keep their own domain state.
 - Client menus and screens consume synchronized summaries only. They do not mutate product quality, business state, employee skill, inspection outcomes, or saved data directly.
+- Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
@@ -108,13 +110,22 @@ Guidelines:
 
 Proposed data-driven registries, introduced only when needed:
 
+- Species definitions.
+- Processing-profile definitions.
 - Product definitions.
-- Processing process definitions.
+- Processing-operation definitions.
 - Order templates.
 - Inspection rule definitions.
 - Employee job role definitions.
 
-These can start as code-defined records in the vertical slice, then move to datapack registries once the shape is proven.
+Milestone 2A introduces the first four as custom datapack registries:
+
+- `butchercraft:species`
+- `butchercraft:processing_profile`
+- `butchercraft:product`
+- `butchercraft:processing_operation`
+
+These registries are server-authoritative and resolved through reload-scoped registry access. Processing-family differences, including future poultry behavior, belong in processing profiles and operation compatibility data rather than Java species switches.
 
 ## Saved-Data Strategy
 
@@ -219,6 +230,7 @@ Guidelines:
 
 Initial menus:
 
+- Development processing workstation menu from Milestone 2B, as a temporary server-owned view only.
 - Manual processing station menu or simple interaction UI.
 - Grinder menu.
 - Packaging station menu.
@@ -385,6 +397,7 @@ Every block, menu, employee action, and order flow that moves items must be impl
 
 Required safeguards:
 
+- Workstations must reserve active input, block extraction while processing, commit engine transactions exactly once, and preserve recoverable input/output on block removal or blocked completion.
 - Block break and replacement must preserve or intentionally drop inventories exactly once.
 - Menus, hoppers, employees, and players must not be able to extract or complete the same output twice.
 - Work-order reservations require unique tokens and must release or restore cleanly after station unload, failure, cancellation, or save/load.
@@ -405,9 +418,13 @@ Use data generation for:
 - Loot tables.
 - Recipes.
 - Tags.
-- Datapack registry defaults once custom datapack registries are introduced.
+- Datapack registry defaults.
 
 Generated data should be deterministic and reviewed. Hand-written JSON is acceptable for small prototypes, but generated data should become the default once patterns are stable.
+
+Milestone 2A generates the built-in beef prototype definitions under the custom datapack registry paths documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`.
+
+Milestone 2B adds placeholder blockstate, model, item model, loot table, and language coverage for the temporary Development Processing Workstation. Final machine artwork remains deferred.
 
 ## Testing Strategy
 
@@ -419,6 +436,7 @@ Automated verification should scale with milestone risk:
 - Dedicated server launch checks for client/server separation.
 - Game tests for processing, product data, saved data, cleanliness, work-order, and inspection behavior when feasible.
 - ItemStack product data tests for component codecs, conversion, copying, and merge safety.
+- Workstation tests for resolver behavior, state transitions, active-input locking, completion idempotence, save/load fields, registration, assets, and dependency boundaries.
 
 Pure Java services should be easy to test without launching the full game:
 

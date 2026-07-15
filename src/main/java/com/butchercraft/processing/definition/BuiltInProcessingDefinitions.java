@@ -115,7 +115,7 @@ public final class BuiltInProcessingDefinitions {
                 500,
                 ZeroOutputPolicy.FORBID,
                 List.of(),
-                java.util.Optional.empty(),
+                java.util.Optional.of(BuiltInDefinitionIds.WORKSTATION_CAPABILITY_DEVELOPMENT_PROCESSING),
                 false,
                 false
         );

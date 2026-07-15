@@ -111,6 +111,8 @@ Default values are test fixtures, not final balance:
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
+Milestone 2B uses these two product fixtures in the temporary Development Processing Workstation. The workstation has an explicit development-only mapping from product definition ids to these fixture items; it is not a general product item factory.
+
 ## Tooltip Behavior
 
 Product-bearing items add a concise tooltip that reads component data without mutating the stack.
@@ -172,3 +174,7 @@ This milestone does not implement:
 Temperature, freshness, packaging, batch identity, traceability, and order-bound metadata should be added as separate component records or carefully versioned extensions after their gameplay rules exist.
 
 Do not expand `ProductStackData` into a catch-all metadata blob. Each future component needs clear ownership, validation, migration behavior, tooltip rules, and synchronization cost.
+
+Milestone 2A adds `ProductStackDefinitionValidator`, which compares immutable `ProductStackData` against loaded `ProductDefinition` data without mutating the stack. It checks product existence, species/source compatibility, processing state, quantity unit, and quality bounds. This is a validation bridge only; it does not add freshness, temperature, packaging, station processing, or inventory transactions.
+
+Milestone 2B adds station processing around existing product stacks but does not expand `ProductStackData`. Workstation progress, selected operation, failure state, and reserved input snapshots belong to the block entity/controller boundary, not to item components.

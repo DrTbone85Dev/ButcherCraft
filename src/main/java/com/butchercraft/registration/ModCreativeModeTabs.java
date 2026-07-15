@@ -22,6 +22,7 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
                         output.accept(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.DEVELOPMENT_PROCESSING_WORKSTATION.get());
                     })
                     .build());
 

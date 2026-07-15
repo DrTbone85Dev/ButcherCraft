@@ -11,6 +11,8 @@ public final class BuiltInDefinitionIds {
     public static final ResourceLocation GRIND_BEEF = id("grind_beef");
 
     public static final ResourceLocation OPERATION_CATEGORY_GRINDING = id("operation_category/grinding");
+    public static final ResourceLocation WORKSTATION_CAPABILITY_DEVELOPMENT_PROCESSING =
+            id("workstation_capability/development_processing");
     public static final ResourceLocation WORKFLOW_STAGE_PRIMARY_PROCESSING = id("workflow_stage/primary_processing");
     public static final ResourceLocation WORKFLOW_STAGE_SIZE_REDUCTION = id("workflow_stage/size_reduction");
     public static final ResourceLocation PROFILE_CATEGORY_RED_MEAT = id("profile_category/red_meat");

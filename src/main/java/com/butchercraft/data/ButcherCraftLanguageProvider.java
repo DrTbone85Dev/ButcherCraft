@@ -1,6 +1,7 @@
 package com.butchercraft.data;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.registration.ModBlocks;
 import com.butchercraft.registration.ModItems;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -16,6 +17,8 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.DEVELOPMENT_TEST_ITEM.get(), "Development Test Item");
         add(ModItems.BEEF_TRIM_TEST.get(), "Beef Trim Test Product");
         add(ModItems.GROUND_BEEF_TEST.get(), "Ground Beef Test Product");
+        add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
+        add("container.butchercraft.development_processing_workstation", "Development Processing Workstation");
         add("commands.butchercraft.diagnostic", "ButcherCraft Diagnostic");
         add("definition.butchercraft.species.beef", "Beef");
         add("definition.butchercraft.processing_profile.red_meat", "Red Meat");
@@ -30,5 +33,23 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("tooltip.butchercraft.product_data.quality_score", "Quality score: %s");
         add("tooltip.butchercraft.product_data.missing", "Missing ButcherCraft product data");
         add("tooltip.butchercraft.product_data.invalid", "Invalid ButcherCraft product data");
+        add("workstation.butchercraft.failure.no_input", "No input product");
+        add("workstation.butchercraft.failure.input_not_product", "Input is not a ButcherCraft product");
+        add("workstation.butchercraft.failure.missing_product_data", "Input is missing product data");
+        add("workstation.butchercraft.failure.unknown_product_definition", "Product definition is not loaded");
+        add("workstation.butchercraft.failure.product_data_mismatch", "Product data does not match definitions");
+        add("workstation.butchercraft.failure.no_compatible_operation", "No compatible operation");
+        add("workstation.butchercraft.failure.multiple_compatible_operations", "Select an operation");
+        add("workstation.butchercraft.failure.operation_profile_mismatch", "Operation profile mismatch");
+        add("workstation.butchercraft.failure.operation_capability_mismatch", "Workstation cannot perform this operation");
+        add("workstation.butchercraft.failure.input_quantity_too_low", "Input quantity is too low");
+        add("workstation.butchercraft.failure.input_quantity_too_high", "Input quantity is too high");
+        add("workstation.butchercraft.failure.output_occupied", "Output slot is occupied");
+        add("workstation.butchercraft.failure.output_incompatible", "Output slot is incompatible");
+        add("workstation.butchercraft.failure.transaction_already_active", "Transaction is already active");
+        add("workstation.butchercraft.failure.invalid_workstation_state", "Workstation state is invalid");
+        add("workstation.butchercraft.failure.registry_not_available", "Processing definitions are unavailable");
+        add("workstation.butchercraft.failure.processing_validation_rejected", "Processing validation rejected the input");
+        add("workstation.butchercraft.failure.result_creation_failed", "Could not create processing result");
     }
 }

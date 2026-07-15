@@ -361,6 +361,106 @@ Consequences:
 - Future stackability requires an explicit design for ItemStack count, engine quantity, quality, freshness, temperature, packaging, and lot identity before product items can safely merge.
 - Beef Trim Test Product and Ground Beef Test Product are development-only fixtures and not final gameplay content.
 
+## DEC-0026: Processing Families Are Data-Driven Profiles
+
+Status: Accepted
+
+Decision: represent processing-family differences, such as red meat versus future poultry workflows, through datapack-backed processing profiles and operation compatibility data rather than hardcoded species checks.
+
+Rationale: poultry may require scalding, picking, poultry-specific evisceration, chilling, sanitation, equipment, inspection, and cross-contamination rules that differ fundamentally from red meat. Encoding these differences as data keeps future expansions and datapacks from depending on Java species switches.
+
+Consequences:
+
+- Species definitions reference processing profiles by stable registry id.
+- Operation definitions declare required processing profiles and categories.
+- The processing graph rejects incompatible profile/category combinations through validation.
+- Future workstation capabilities and inspection profiles should attach to data definitions, not literal species ids.
+- ButcherCraft Core currently includes only the beef trim to ground beef prototype dataset; poultry remains deferred content.
+
+## DEC-0027: Server-Authoritative Workstation Ticking
+
+Status: Accepted
+
+Decision: processing workstations tick and mutate inventory only on the logical server.
+
+Rationale: workstation processing moves product stacks and commits engine transactions, so client authority would create duplication and desync risks.
+
+Consequences:
+
+- Clients receive display state only.
+- Block entities own local ticking and persistence.
+- Menus and future screens must not decide processing outcomes.
+
+## DEC-0028: Workstation Menus Are Views
+
+Status: Accepted
+
+Decision: workstation menus are temporary views over block entity inventory and synced display data; they do not own workstation state.
+
+Rationale: inventory and processing state must survive menu close, chunk unload, save, and reload.
+
+Consequences:
+
+- The block entity and controller remain the source of truth.
+- Menu shift-click behavior must respect input/output slot rules.
+- Future screens should remain client-only display code.
+
+## DEC-0029: Automatic Operation Selection Requires Exactly One Match
+
+Status: Accepted
+
+Decision: a workstation may automatically select an operation only when exactly one compatible operation resolves.
+
+Rationale: arbitrary selection would become incorrect once multiple valid operations exist.
+
+Consequences:
+
+- Multiple compatible operations return a selection-required failure.
+- Recipe-selection GUI is deferred until a milestone explicitly adds it.
+- Resolver ordering remains deterministic for diagnostics and future UI.
+
+## DEC-0030: Workstation Completion Is Idempotent Across Save/Reload
+
+Status: Accepted
+
+Decision: workstation completion commits the engine transaction once, persists enough runtime state for recovery, and never recreates output after completion.
+
+Rationale: processing blocks are a high-risk source of item duplication or silent item loss.
+
+Consequences:
+
+- Input remains visibly reserved in the input slot while processing.
+- Malformed active state stops processing and preserves recoverable inventory.
+- Block removal drops recoverable input and completed output.
+
+## DEC-0031: Development-Only Product Definition To Item Mapping
+
+Status: Accepted
+
+Decision: Milestone 2B uses a small explicit development-only mapping from the beef prototype product definitions to the two registered test product items.
+
+Rationale: a universal product item factory would be premature before final product item design, packaging, freshness, and lot identity exist.
+
+Consequences:
+
+- `butchercraft:beef_trim` maps to Beef Trim Test Product.
+- `butchercraft:ground_beef` maps to Ground Beef Test Product.
+- Future product item creation remains a separate design task.
+
+## DEC-0032: No Machine-Specific Species Switches
+
+Status: Accepted
+
+Decision: workstation compatibility is expressed through operation categories, workstation capability ids, and processing profiles rather than Java species switches.
+
+Rationale: future poultry or other product families need different workflows without hardcoded species branches.
+
+Consequences:
+
+- Generic workstation code must stay product-agnostic.
+- Development fixtures may reference beef prototype ids only in clearly named fixture classes.
+- Future poultry-specific machines can be modeled through separate capabilities and datapack operation data.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

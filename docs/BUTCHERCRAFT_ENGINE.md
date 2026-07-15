@@ -176,3 +176,7 @@ Minecraft code should treat the engine as a pure domain service. Milestone 1D in
 - Commit Minecraft inventory changes only after an engine transaction has a valid committed output plan.
 - Store or synchronize only the compact summaries needed by clients.
 - Keep registry ids, item stacks, worlds, block entities, menus, and packets outside the engine packages.
+
+Milestone 2A adds datapack-backed definitions and a resolver outside the engine package. Resolved operation definitions may be converted into `ProcessingOperation`, but the engine still does not know about `ResourceLocation`, custom registries, datapacks, or NeoForge.
+
+Milestone 2B adds a Minecraft-facing workstation controller outside the engine package. It uses the engine transaction to validate, prepare, and commit output, while inventory reservation, block entity persistence, menus, capabilities, and ItemStack creation remain outside `com.butchercraft.engine`.
