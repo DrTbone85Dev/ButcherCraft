@@ -34,7 +34,7 @@ Every major system has a proposed technical owner in package form:
 | Package | Owner responsibility |
 | --- | --- |
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
-| `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, result, and transaction domain rules. |
+| `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, operation, context, validation, evaluation, result, and transaction domain rules. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
 | `com.butchercraft.api` | Documented public API intended for expansion mods. |
@@ -69,7 +69,7 @@ The architecture review identified facility, quality, cleanliness, refrigeration
 
 Required boundaries:
 
-- Product processing starts with pure engine records and transactions under `com.butchercraft.engine`; item stacks and registries convert to engine products at the Minecraft boundary.
+- Product processing starts with pure engine records, processing contexts, validation rules, evaluators, and transactions under `com.butchercraft.engine`; item stacks and registries convert to engine products at the Minecraft boundary.
 - Product and quality systems exchange `QualityContext` and `QualityResult` style records.
 - Cleanliness exposes dirty events, cleaning events, local snapshots, and facility summaries.
 - Refrigeration exposes storage and room summaries rather than equipment internals.
@@ -416,6 +416,7 @@ Automated verification should scale with milestone risk:
 Pure Java services should be easy to test without launching the full game:
 
 - Engine product, quality, quantity, modifier, result, and transaction rules.
+- Processing operation, context, validation, yield, and evaluator rules.
 - Quality calculations.
 - Cleanliness aggregation.
 - Refrigeration capacity summaries.

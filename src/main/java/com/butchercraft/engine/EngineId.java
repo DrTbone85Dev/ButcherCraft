@@ -6,24 +6,26 @@ import java.util.regex.Pattern;
 /**
  * Immutable Minecraft-independent identifier used by engine value objects.
  *
- * <p>Identifiers are lowercase slash-separated tokens. They intentionally do not use Minecraft
- * registry classes so domain logic can be unit tested without loading Minecraft or NeoForge.
- * Future integration code may map these values to registry names at the boundary.</p>
+ * <p>Identifiers are lowercase slash-separated tokens with an optional lowercase namespace. They
+ * intentionally do not use Minecraft registry classes so domain logic can be unit tested without
+ * loading Minecraft or NeoForge. Future integration code may map these values to registry names at
+ * the boundary.</p>
  */
 public record EngineId(String value) {
-    private static final Pattern VALID_VALUE = Pattern.compile("[a-z][a-z0-9_]*(?:/[a-z][a-z0-9_]*)*");
+    private static final String TOKEN = "[a-z][a-z0-9_]*";
+    private static final Pattern VALID_VALUE = Pattern.compile(TOKEN + "(?::" + TOKEN + "(?:/" + TOKEN + ")*)?(?:/" + TOKEN + ")*");
 
     public EngineId {
         value = Objects.requireNonNull(value, "value").strip();
         if (!VALID_VALUE.matcher(value).matches()) {
-            throw new IllegalArgumentException("Engine id must be lowercase words separated by '/': " + value);
+            throw new IllegalArgumentException("Engine id must be lowercase words with optional namespace: " + value);
         }
     }
 
     /**
      * Creates a validated engine id.
      *
-     * @param value lowercase slash-separated id value
+     * @param value lowercase id value, optionally namespaced
      * @return immutable id
      * @throws IllegalArgumentException when the id is blank or not normalized
      */

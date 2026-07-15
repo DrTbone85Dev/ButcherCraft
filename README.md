@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge mod planned as a meat-processing and business-management simulation. This repository currently contains the project foundation only.
 
-No substantive gameplay systems are implemented yet. The only registered content is a harmless development test item used to verify registration, assets, data generation, and diagnostics. Milestone 1B adds a pure Java engine foundation only; it does not add visible in-game processing.
+No substantive gameplay systems are implemented yet. The only registered content is a harmless development test item used to verify registration, assets, data generation, and diagnostics. Milestones 1B and 1C add pure Java engine and processing-framework foundations only; they do not add visible in-game processing.
 
 ## Project Identity
 
@@ -65,4 +65,4 @@ The diagnostic reports project name, mod id, mod version, Minecraft version, Neo
 
 ## Documentation
 
-Planning and architecture documents live at the repository root. Treat `PROJECT_IDENTITY.md`, `PROJECT_RULES.md`, and accepted decisions in `DECISIONS.md` as authoritative. The pure domain engine is documented in `docs/BUTCHERCRAFT_ENGINE.md`.
+Planning and architecture documents live at the repository root. Treat `PROJECT_IDENTITY.md`, `PROJECT_RULES.md`, and accepted decisions in `DECISIONS.md` as authoritative. The pure domain engine is documented in `docs/BUTCHERCRAFT_ENGINE.md`, and the processing framework is documented in `docs/PROCESSING_FRAMEWORK.md`.

@@ -13,6 +13,7 @@ import java.util.Objects;
 public record ModifierApplication(
         List<ProcessingModifier> appliedModifiers,
         int qualityDelta,
+        int yieldBasisPointsDelta,
         List<String> warningReasons
 ) {
     public ModifierApplication {

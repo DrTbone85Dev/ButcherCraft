@@ -8,7 +8,9 @@ This file records expected risks, limitations, and prototype areas. It should be
 
 - The current workspace is being prepared with a NeoForge foundation, but substantive gameplay systems remain intentionally unimplemented.
 - Milestone 1B adds only a Minecraft-independent engine foundation; it is not visible gameplay.
+- Milestone 1C adds only a Minecraft-independent processing framework; it is not visible gameplay.
 - The grinder and packaging station scope formerly listed as Milestone 1B has been deferred and needs owner scheduling before order or employee milestones depend on packaged output.
+- The simple refrigerated storage scope formerly listed as Milestone 1C has been deferred and needs owner scheduling before cold-storage gameplay depends on it.
 - Client and dedicated-server launches may depend on local graphics and runtime support.
 - In this Codex Windows sandbox, Java `Path.toRealPath()` is denied even for readable workspace files. This currently blocks NeoForge's `createMinecraftArtifacts` task during the external `installertools` server-jar extraction step before source compilation.
 - License status, repository status, and artifact coordinates are not yet owner-approved.
@@ -25,6 +27,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 
 - The development test item is only a harmless registration and diagnostics check.
 - The engine foundation is pure Java domain code and does not prove item components, station inventories, menus, world persistence, or in-game processing behavior.
+- The processing framework uses test fixture definitions such as Beef Trim to Ground Beef only to prove domain behavior. Those fixtures are not registered Minecraft content and are not final gameplay balance.
 - The diagnostic command is safe by design and must not grant items, alter the world, expose local paths, expose environment variables, or report sensitive system details.
 - The project foundation should not be treated as proof that meat processing, employees, refrigeration, cleanliness, MCDA, orders, or business gameplay have been implemented.
 - GameTest coverage may begin as a foundation check and should expand only when gameplay behavior exists.

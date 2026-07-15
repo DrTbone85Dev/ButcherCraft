@@ -153,46 +153,56 @@ Rollback considerations:
 - Engine code is isolated under `com.butchercraft.engine`.
 - The previous grinder and packaging station work formerly listed as Milestone 1B is deferred until the owner schedules the next visible station milestone.
 
-## Milestone 1C: Simple Refrigerated Storage
+## Milestone 1C: ButcherCraft Processing Framework
 
-Goal: prove cold storage and freshness behavior with a simple storage block, not a walk-in room.
+Goal: extend the Minecraft-independent engine with operation definitions, processing contexts, validation rules, and deterministic proposal evaluation before adding visible gameplay systems.
 
 Included work:
 
-- One simple refrigerated storage system.
-- Basic temperature/freshness behavior.
-- Storage status UI.
+- Immutable `ProcessingOperation` transformation definitions.
+- Immutable `ProcessingContext` inputs for cleanliness, operator skill, equipment condition, and explicit modifiers.
+- `ValidationRule` contract and reusable validation rules.
+- Deterministic `ProcessingEvaluator`.
+- Exact yield modifiers using additive basis points and documented half-up rounding.
+- Beef Trim to Ground Beef test fixture only.
+- Transaction integration tests proving prepare, commit, cancel, rejection, and failure behavior.
+- Framework documentation in `docs/PROCESSING_FRAMEWORK.md`.
 
 Excluded work:
 
-- Walk-in coolers/freezers.
-- Compressors, condensers, evaporators, overload, wear, and failures.
-- Refrigerated logistics.
+- Minecraft items, item data components, blocks, block entities, menus, screens, networking, recipe JSON, datapack loading, grinder block, grinder GUI, machine power, employees, villager AI, player skill, refrigeration, product temperature, freshness, facility cleanliness simulation, cleaning tools, MCDA, customers, business finances, sounds, artwork, animation, and public expansion API commitments.
 
 Dependencies:
 
-- Milestone 1A.
+- Milestone 1B.
 
 Acceptance criteria:
 
-- Product freshness behavior differs between refrigerated and unrefrigerated storage.
-- Storage state persists across save/load.
-- Stored inventories cannot duplicate on extraction, insertion, break, or reload.
+- `ProcessingOperation`, `ProcessingContext`, and `ValidationRule` exist and are immutable or side-effect free as appropriate.
+- Validation returns inspectable accept, reject, and warning results.
+- Validation ordering is deterministic and stops at the first rejection.
+- Yield uses exact arithmetic, additive basis-point modifiers, overflow protection, and documented rounding.
+- Evaluation prepares proposed output without committing.
+- Existing transaction guarantees remain intact.
+- Beef Trim to Ground Beef is proven through tests as a fixture only.
+- Engine packages have no `net.minecraft` or `net.neoforged` imports.
+- No excluded gameplay feature is introduced.
 
 Automated verification:
 
+- `gradlew compileJava`
+- `gradlew test`
 - `gradlew build`
-- Freshness/temperature tests if test infrastructure is available
+- External owner verification is required if the Codex sandbox blocks NeoForge artifact extraction before compilation.
 
 Manual in-game verification:
 
-- Store product in refrigerated storage.
-- Compare with unrefrigerated product.
-- Save, quit, reload, and confirm state remains.
+- None. This milestone is domain-only and should not create visible gameplay.
 
 Rollback considerations:
 
-- Simple refrigerated storage remains the fallback if later room refrigeration is deferred.
+- Framework code is isolated under `com.butchercraft.engine`.
+- The previous simple refrigerated storage work formerly listed as Milestone 1C is deferred until the owner schedules the next visible storage milestone.
 
 ## Milestone 1D: One Customer Order and Business Summary
 
@@ -216,6 +226,7 @@ Dependencies:
 
 - Milestone 1A.
 - Milestone 1B.
+- Milestone 1C.
 - Future station-chain milestone for packaged product output.
 
 Acceptance criteria:
@@ -301,6 +312,7 @@ Excluded work:
 Dependencies:
 
 - Milestone 1B.
+- Milestone 1C.
 - Future station-chain milestone for a useful employee task.
 - Work-order reservation boundary from the technical architecture.
 

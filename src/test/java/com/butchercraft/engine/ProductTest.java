@@ -28,7 +28,7 @@ class ProductTest {
     void invalidIdentifiersAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> EngineId.of(""));
         assertThrows(IllegalArgumentException.class, () -> EngineId.of("ButcherCraft"));
-        assertThrows(IllegalArgumentException.class, () -> EngineId.of("butchercraft:raw_beef"));
+        assertThrows(IllegalArgumentException.class, () -> EngineId.of("butchercraft:RawBeef"));
         assertThrows(IllegalArgumentException.class, () -> EngineId.of("raw-beef"));
     }
 

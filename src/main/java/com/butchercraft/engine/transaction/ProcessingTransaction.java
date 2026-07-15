@@ -1,16 +1,14 @@
 package com.butchercraft.engine.transaction;
 
-import com.butchercraft.engine.modifier.ModifierApplication;
-import com.butchercraft.engine.modifier.ModifierCategory;
-import com.butchercraft.engine.modifier.ModifierSystem;
+import com.butchercraft.engine.context.ProcessingContext;
+import com.butchercraft.engine.evaluation.ProcessingEvaluator;
 import com.butchercraft.engine.modifier.ProcessingModifier;
 import com.butchercraft.engine.operation.ProcessingOperation;
 import com.butchercraft.engine.product.Product;
-import com.butchercraft.engine.quality.ProductQuality;
-import com.butchercraft.engine.quantity.ProductQuantity;
 import com.butchercraft.engine.result.FailureReason;
 import com.butchercraft.engine.result.OperationResult;
 import com.butchercraft.engine.result.OperationWarning;
+import com.butchercraft.engine.validation.ValidationSummary;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +25,7 @@ import java.util.Optional;
 public final class ProcessingTransaction {
     private final Product input;
     private final ProcessingOperation operation;
+    private final ProcessingContext context;
     private TransactionState state = TransactionState.CREATED;
     private Product proposedOutput;
     private Product committedOutput;
@@ -34,13 +33,19 @@ public final class ProcessingTransaction {
     private List<ProcessingModifier> appliedModifiers = List.of();
     private List<OperationWarning> warnings = List.of();
 
-    private ProcessingTransaction(Product input, ProcessingOperation operation) {
+    private ProcessingTransaction(Product input, ProcessingOperation operation, ProcessingContext context) {
         this.input = Objects.requireNonNull(input, "input");
         this.operation = Objects.requireNonNull(operation, "operation");
+        this.context = Objects.requireNonNull(context, "context");
     }
 
     public static ProcessingTransaction create(Product input, ProcessingOperation operation) {
-        return new ProcessingTransaction(input, operation);
+        return new ProcessingTransaction(input, operation, ProcessingContext.neutral(input, operation));
+    }
+
+    public static ProcessingTransaction create(ProcessingContext context) {
+        Objects.requireNonNull(context, "context");
+        return new ProcessingTransaction(context.inputProduct(), context.operation(), context);
     }
 
     public Product input() {
@@ -49,6 +54,10 @@ public final class ProcessingTransaction {
 
     public ProcessingOperation operation() {
         return operation;
+    }
+
+    public ProcessingContext context() {
+        return context;
     }
 
     public TransactionState state() {
@@ -79,11 +88,10 @@ public final class ProcessingTransaction {
         if (state != TransactionState.CREATED) {
             return failWithoutStateChange("invalid_validate_state", "Validation is only allowed before preparation");
         }
-        if (!input.typeId().equals(operation.requiredProductType())) {
-            return reject("wrong_product_type", "Input product type does not match operation requirement");
-        }
-        if (input.processingState() != operation.requiredProcessingState()) {
-            return reject("wrong_processing_state", "Input processing state does not match operation requirement");
+        ValidationSummary validation = ProcessingEvaluator.validate(operation, context);
+        warnings = validation.warnings();
+        if (!validation.accepted()) {
+            return reject(validation.rejectionReason().orElseThrow());
         }
         state = TransactionState.VALIDATED;
         return success(Optional.empty(), Optional.empty());
@@ -106,23 +114,15 @@ public final class ProcessingTransaction {
         }
 
         try {
-            ModifierApplication application = ModifierSystem.apply(operation.modifiers());
-            appliedModifiers = application.appliedModifiers();
-            warnings = appliedModifiers.stream()
-                    .filter(modifier -> modifier.category() == ModifierCategory.WARNING)
-                    .map(modifier -> new OperationWarning(modifier.id(), modifier.reason()))
-                    .toList();
-
-            ProductQuantity resultingQuantity = operation.baseYield().apply(input.quantity());
-            int qualityDelta = Math.addExact(operation.baseQualityDelta(), application.qualityDelta());
-            ProductQuality resultingQuality = input.quality().adjustedByClamped(qualityDelta);
-            proposedOutput = new Product(
-                    operation.outputProductType(),
-                    input.sourceCategory(),
-                    operation.outputProcessingState(),
-                    resultingQuantity,
-                    resultingQuality
-            );
+            OperationResult prepared = ProcessingEvaluator.prepare(operation, context);
+            appliedModifiers = prepared.appliedModifiers();
+            warnings = prepared.warnings();
+            if (!prepared.succeeded()) {
+                state = prepared.transactionState();
+                lastFailure = prepared.failureReason().orElseThrow();
+                return failure(prepared.proposedOutput());
+            }
+            proposedOutput = prepared.proposedOutput().orElseThrow();
             state = TransactionState.PREPARED;
             return success(Optional.of(proposedOutput), Optional.empty());
         } catch (ArithmeticException | IllegalArgumentException exception) {
@@ -169,9 +169,9 @@ public final class ProcessingTransaction {
         return failure(Optional.ofNullable(proposedOutput));
     }
 
-    private OperationResult reject(String code, String message) {
+    private OperationResult reject(FailureReason reason) {
         state = TransactionState.REJECTED;
-        lastFailure = new FailureReason(code, message);
+        lastFailure = reason;
         return failure(Optional.empty());
     }
 

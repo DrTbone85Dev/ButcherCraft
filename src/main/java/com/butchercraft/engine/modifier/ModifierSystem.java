@@ -19,23 +19,26 @@ public final class ModifierSystem {
      * Applies modifiers in deterministic order.
      *
      * @param modifiers immutable or mutable input collection; it is copied before use
-     * @return ordered applied modifiers, total quality delta, and warnings
+     * @return ordered applied modifiers, total quality delta, total yield basis-point delta, and warnings
      * @throws ArithmeticException when accumulated effects overflow
      */
     public static ModifierApplication apply(List<ProcessingModifier> modifiers) {
         Objects.requireNonNull(modifiers, "modifiers");
         List<ProcessingModifier> ordered = modifiers.stream().sorted().toList();
         int qualityDelta = 0;
+        int yieldBasisPointsDelta = 0;
         List<String> warnings = new ArrayList<>();
 
         for (ProcessingModifier modifier : ordered) {
             if (modifier.category() == ModifierCategory.QUALITY) {
                 qualityDelta = Math.addExact(qualityDelta, modifier.effect());
+            } else if (modifier.category() == ModifierCategory.YIELD) {
+                yieldBasisPointsDelta = Math.addExact(yieldBasisPointsDelta, modifier.effect());
             } else if (modifier.category() == ModifierCategory.WARNING) {
                 warnings.add(modifier.reason());
             }
         }
 
-        return new ModifierApplication(ordered, qualityDelta, warnings);
+        return new ModifierApplication(ordered, qualityDelta, yieldBasisPointsDelta, warnings);
     }
 }

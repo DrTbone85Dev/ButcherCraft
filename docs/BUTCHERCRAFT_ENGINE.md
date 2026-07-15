@@ -6,7 +6,7 @@ Status: Milestone 1B foundation
 
 The ButcherCraft engine is a small Minecraft-independent domain layer for deterministic product processing. It exists so product, quality, quantity, modifier, result, and transaction rules can be tested without launching Minecraft.
 
-This milestone creates no visible gameplay, items, blocks, block entities, menus, networking, machines, employees, refrigeration, cleanliness, customers, business accounts, MCDA systems, datapack recipes, or expansion APIs.
+The engine creates no visible gameplay, items, blocks, block entities, menus, networking, machines, employees, refrigeration, cleanliness, customers, business accounts, MCDA systems, datapack recipes, or expansion APIs.
 
 ## Dependency Direction
 
@@ -64,7 +64,7 @@ Rules:
 - Subtraction rejects underflow.
 - No silent conversion occurs between units.
 
-`YieldRatio` applies exact integer ratios and rejects ratios that would require rounding.
+`YieldRatio` applies exact integer ratios. Milestone 1C adds additive basis-point yield modifiers and half-up rounding to the nearest smallest quantity unit. Negative effective yield and overflow are rejected.
 
 ## Modifier Ordering
 
@@ -76,7 +76,7 @@ Rules:
 - Numeric effect.
 - Priority.
 
-Milestone 1B implements quality and warning categories. Yield modifiers are deferred until a concrete gameplay consumer needs them.
+The modifier categories are quality, yield, and warning. Yield effects are additive basis-point adjustments to the operation yield.
 
 `ModifierSystem` sorts modifiers by:
 
@@ -153,6 +153,19 @@ The engine transaction:
 - Prevents cancellation after commit.
 - Exposes explicit failure reasons.
 - Keeps proposed and committed output inspectable for future server-side inventory integration.
+
+## Processing Framework
+
+Milestone 1C adds the processing framework documented in `docs/PROCESSING_FRAMEWORK.md`.
+
+Core additions:
+
+- `ProcessingOperation` describes immutable transformation rules.
+- `ProcessingContext` supplies explicit bounded processing facts.
+- `ValidationRule` returns inspectable accepted, rejected, or warning results.
+- `ProcessingEvaluator` prepares output proposals without committing.
+
+Transactions delegate validation and proposal preparation to the evaluator while keeping commit and cancellation ownership.
 
 ## Future Minecraft Integration Boundary
 

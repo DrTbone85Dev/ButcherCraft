@@ -59,6 +59,7 @@ Do not claim a command passed unless you actually ran it.
 - Use GameTests when gameplay behavior needs in-game validation.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
+- Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Compile and test after each milestone.
 - For this repository foundation, the harmless development item and diagnostic command are allowed. They must not become gameplay systems.
 - If a Codex sandbox blocks Java `Path.toRealPath()`, NeoForge artifact extraction may fail before compilation. Report that exact limitation instead of claiming compile, datagen, test, build, client, or server success.

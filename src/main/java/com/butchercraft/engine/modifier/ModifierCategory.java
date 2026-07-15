@@ -3,10 +3,12 @@ package com.butchercraft.engine.modifier;
 /**
  * Category for deterministic modifier effects.
  *
- * <p>Milestone 1B implements quality and warning modifiers only. Yield modifiers are intentionally
- * deferred until a concrete gameplay consumer needs them.</p>
+ * <p>Quality modifiers adjust the quality score directly. Yield modifiers are additive basis-point
+ * adjustments to the operation yield. Warning modifiers create inspectable non-fatal warnings.
+ * The enum has no Minecraft dependency.</p>
  */
 public enum ModifierCategory {
     QUALITY,
+    YIELD,
     WARNING
 }

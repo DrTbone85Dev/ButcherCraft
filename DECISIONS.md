@@ -267,6 +267,7 @@ Consequences:
 - Each subsystem gets an independent acceptance gate before the complete loop is assembled.
 - Persistence and duplication safeguards can be verified earlier.
 - The full vertical slice remains the product goal, but implementation proceeds in smaller increments.
+- Milestones 1B and 1C were later redefined by DEC-0023 and DEC-0024 as pure engine/framework milestones; visible station and refrigeration slices are deferred for owner scheduling.
 
 ## DEC-0020: Domain Boundaries Before Gameplay Implementation
 
@@ -325,6 +326,24 @@ Consequences:
 - Quality score boundaries are fixed for the engine as Poor 0-199, Fair 200-399, Good 400-699, Excellent 700-899, and Premium 900-1000.
 - Quantity uses exact `long` amounts with explicit units; no silent conversion or rounded yield is allowed in the engine.
 - Processing transactions must prepare output before commit and prevent double output.
+
+## DEC-0024: Processing Framework Before Visible Stations
+
+Status: Accepted
+
+Decision: implement Milestone 1C as a Minecraft-independent processing framework under `com.butchercraft.engine` before adding grinder, station, refrigeration, or other visible gameplay systems.
+
+Rationale: operation validation, context handling, yield math, modifier ordering, warnings, and transaction preparation are high-risk foundations for later item-moving gameplay. Proving them in pure Java reduces duplication and coupling risk.
+
+Consequences:
+
+- `ProcessingOperation` defines transformation rules but owns no transaction state or mutable work progress.
+- `ProcessingContext` carries explicit facts supplied by future integrations and does not know how those facts were obtained.
+- `ValidationRule` returns inspectable validation results instead of boolean-only outcomes.
+- Yield modifiers use additive basis points, with `10,000` basis points equal to 100%.
+- Yield rounds half up to the nearest smallest quantity unit and rejects negative effective yield or overflow.
+- The Beef Trim to Ground Beef operation exists only as test fixture data until Minecraft content is explicitly scheduled.
+- The simple refrigerated storage scope formerly listed as Milestone 1C is deferred until the owner schedules a visible storage milestone.
 
 ## Decisions Needing Owner Approval
 
