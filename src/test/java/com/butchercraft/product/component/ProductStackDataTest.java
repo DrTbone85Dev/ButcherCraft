@@ -57,7 +57,7 @@ class ProductStackDataTest {
         assertThrows(IllegalArgumentException.class, () -> new ProductStackData(
                 "butchercraft:beef_trim",
                 "butchercraft:beef",
-                "butchercraft:sliced",
+                "ButcherCraft:sliced",
                 1_000,
                 "gram",
                 700
@@ -76,6 +76,20 @@ class ProductStackDataTest {
         );
 
         assertEquals("butchercraft:bison", bisonTrim.sourceCategoryId());
+    }
+
+    @Test
+    void dataDrivenProcessingStatesAreAccepted() {
+        ProductStackData forequarter = ProductStackData.fromEngineValues(
+                EngineId.of("butchercraft:beef_forequarter"),
+                ProductCategory.BEEF,
+                ProcessingState.fromId(EngineId.of("butchercraft:forequarter")),
+                100_000,
+                QuantityUnit.GRAM,
+                700
+        );
+
+        assertEquals("butchercraft:forequarter", forequarter.processingStateId());
     }
 
     @Test

@@ -3,7 +3,7 @@
   "display_name_key": "definition.butchercraft.product.beef_trim",
   "edible": true,
   "graph_input": true,
-  "graph_output": false,
+  "graph_output": true,
   "processing_state": "butchercraft:trim",
   "product_category": "butchercraft:beef",
   "quantity_unit": "gram",

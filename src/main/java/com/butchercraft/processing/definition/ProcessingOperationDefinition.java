@@ -15,21 +15,20 @@ public record ProcessingOperationDefinition(
         ResourceLocation operationCategory,
         List<ResourceLocation> requiredProcessingProfiles,
         ResourceLocation inputProduct,
-        ResourceLocation outputProduct,
         ResourceLocation requiredInputProcessingState,
-        ResourceLocation outputProcessingState,
         long baseDurationMilliseconds,
-        YieldDefinition baseYield,
-        int baseQualityDelta,
         QuantityDefinition minimumInputQuantity,
         int minimumCleanlinessFactor,
         int minimumEquipmentConditionFactor,
         ZeroOutputPolicy zeroOutputPolicy,
+        List<ProcessingOutputDefinition> outputs,
         List<StaticModifierDefinition> staticModifiers,
         Optional<ResourceLocation> workstationCapability,
         boolean selfLoopPermitted,
         boolean crossSpeciesPermitted
 ) {
+    private static final int MAX_OUTPUTS = 16;
+
     private static final MapCodec<OperationIdentity> IDENTITY_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             DefinitionCodecs.nonBlankString("display_name_key").fieldOf("display_name_key").forGetter(OperationIdentity::displayNameKey),
             ResourceLocation.CODEC.fieldOf("operation_category").forGetter(OperationIdentity::operationCategory)
@@ -37,15 +36,16 @@ public record ProcessingOperationDefinition(
 
     private static final MapCodec<OperationTransformation> TRANSFORMATION_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("input_product").forGetter(OperationTransformation::inputProduct),
-            ResourceLocation.CODEC.fieldOf("output_product").forGetter(OperationTransformation::outputProduct),
+            ResourceLocation.CODEC.optionalFieldOf("output_product").forGetter(OperationTransformation::outputProduct),
             ResourceLocation.CODEC.fieldOf("required_input_processing_state").forGetter(OperationTransformation::requiredInputProcessingState),
-            ResourceLocation.CODEC.fieldOf("output_processing_state").forGetter(OperationTransformation::outputProcessingState)
+            ResourceLocation.CODEC.optionalFieldOf("output_processing_state").forGetter(OperationTransformation::outputProcessingState),
+            ProcessingOutputDefinition.CODEC.listOf().optionalFieldOf("outputs").forGetter(OperationTransformation::outputs)
     ).apply(instance, OperationTransformation::new));
 
     private static final MapCodec<OperationExecution> EXECUTION_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             DefinitionCodecs.positiveLong("base_duration_milliseconds").fieldOf("base_duration_milliseconds").forGetter(OperationExecution::baseDurationMilliseconds),
-            YieldDefinition.CODEC.fieldOf("base_yield").forGetter(OperationExecution::baseYield),
-            DefinitionCodecs.intRange("base_quality_delta", -1000, 1000).fieldOf("base_quality_delta").forGetter(OperationExecution::baseQualityDelta),
+            YieldDefinition.CODEC.optionalFieldOf("base_yield").forGetter(OperationExecution::baseYield),
+            DefinitionCodecs.intRange("base_quality_delta", -1000, 1000).optionalFieldOf("base_quality_delta").forGetter(OperationExecution::baseQualityDelta),
             StaticModifierDefinition.CODEC.listOf().optionalFieldOf("static_modifiers", List.of()).forGetter(OperationExecution::staticModifiers)
     ).apply(instance, OperationExecution::new));
 
@@ -88,15 +88,9 @@ public record ProcessingOperationDefinition(
             throw new IllegalArgumentException("Operation profile requirements are bounded to " + DefinitionCodecs.MAX_MARKERS);
         }
         Objects.requireNonNull(inputProduct, "inputProduct");
-        Objects.requireNonNull(outputProduct, "outputProduct");
         Objects.requireNonNull(requiredInputProcessingState, "requiredInputProcessingState");
-        Objects.requireNonNull(outputProcessingState, "outputProcessingState");
         if (baseDurationMilliseconds <= 0) {
             throw new IllegalArgumentException("Operation duration must be positive");
-        }
-        Objects.requireNonNull(baseYield, "baseYield");
-        if (baseQualityDelta < -1000 || baseQualityDelta > 1000) {
-            throw new IllegalArgumentException("Base quality delta must be between -1000 and 1000");
         }
         Objects.requireNonNull(minimumInputQuantity, "minimumInputQuantity");
         if (minimumCleanlinessFactor < 0 || minimumCleanlinessFactor > 1000) {
@@ -106,27 +100,95 @@ public record ProcessingOperationDefinition(
             throw new IllegalArgumentException("Minimum equipment condition factor must be between 0 and 1000");
         }
         Objects.requireNonNull(zeroOutputPolicy, "zeroOutputPolicy");
+        outputs = List.copyOf(Objects.requireNonNull(outputs, "outputs"));
+        if (outputs.isEmpty()) {
+            throw new IllegalArgumentException("Operation must define at least one output");
+        }
+        if (outputs.size() > MAX_OUTPUTS) {
+            throw new IllegalArgumentException("Operation outputs are bounded to " + MAX_OUTPUTS);
+        }
         staticModifiers = List.copyOf(Objects.requireNonNull(staticModifiers, "staticModifiers"));
         workstationCapability = Objects.requireNonNull(workstationCapability, "workstationCapability");
     }
 
+    public ProcessingOperationDefinition(
+            String displayNameKey,
+            ResourceLocation operationCategory,
+            List<ResourceLocation> requiredProcessingProfiles,
+            ResourceLocation inputProduct,
+            ResourceLocation outputProduct,
+            ResourceLocation requiredInputProcessingState,
+            ResourceLocation outputProcessingState,
+            long baseDurationMilliseconds,
+            YieldDefinition baseYield,
+            int baseQualityDelta,
+            QuantityDefinition minimumInputQuantity,
+            int minimumCleanlinessFactor,
+            int minimumEquipmentConditionFactor,
+            ZeroOutputPolicy zeroOutputPolicy,
+            List<StaticModifierDefinition> staticModifiers,
+            Optional<ResourceLocation> workstationCapability,
+            boolean selfLoopPermitted,
+            boolean crossSpeciesPermitted
+    ) {
+        this(
+                displayNameKey,
+                operationCategory,
+                requiredProcessingProfiles,
+                inputProduct,
+                requiredInputProcessingState,
+                baseDurationMilliseconds,
+                minimumInputQuantity,
+                minimumCleanlinessFactor,
+                minimumEquipmentConditionFactor,
+                zeroOutputPolicy,
+                List.of(new ProcessingOutputDefinition(
+                        outputProduct,
+                        outputProcessingState,
+                        baseYield,
+                        baseQualityDelta,
+                        minimumInputQuantity.unit(),
+                        zeroOutputPolicy.permitsZeroOutput()
+                )),
+                staticModifiers,
+                workstationCapability,
+                selfLoopPermitted,
+                crossSpeciesPermitted
+        );
+    }
+
+    public ResourceLocation outputProduct() {
+        return outputs.getFirst().product();
+    }
+
+    public ResourceLocation outputProcessingState() {
+        return outputs.getFirst().state();
+    }
+
+    public YieldDefinition baseYield() {
+        return outputs.getFirst().yield();
+    }
+
+    public int baseQualityDelta() {
+        return outputs.getFirst().qualityAdjustment();
+    }
+
     private static DataResult<ProcessingOperationDefinition> fromRaw(Raw raw) {
         try {
+            List<ProcessingOutputDefinition> decodedOutputs = raw.transformation.outputs()
+                    .orElseGet(() -> legacyOutput(raw));
             return DataResult.success(new ProcessingOperationDefinition(
                     raw.identity.displayNameKey,
                     raw.identity.operationCategory,
                     raw.requirements.requiredProcessingProfiles,
                     raw.transformation.inputProduct,
-                    raw.transformation.outputProduct,
                     raw.transformation.requiredInputProcessingState,
-                    raw.transformation.outputProcessingState,
                     raw.execution.baseDurationMilliseconds,
-                    raw.execution.baseYield,
-                    raw.execution.baseQualityDelta,
                     raw.requirements.minimumInputQuantity,
                     raw.requirements.minimumCleanlinessFactor,
                     raw.requirements.minimumEquipmentConditionFactor,
                     raw.policies.zeroOutputPolicy,
+                    decodedOutputs,
                     raw.execution.staticModifiers,
                     raw.requirements.workstationCapability,
                     raw.policies.selfLoopPermitted,
@@ -140,8 +202,14 @@ public record ProcessingOperationDefinition(
     private Raw toRaw() {
         return new Raw(
                 new OperationIdentity(displayNameKey, operationCategory),
-                new OperationTransformation(inputProduct, outputProduct, requiredInputProcessingState, outputProcessingState),
-                new OperationExecution(baseDurationMilliseconds, baseYield, baseQualityDelta, staticModifiers),
+                new OperationTransformation(
+                        inputProduct,
+                        Optional.empty(),
+                        requiredInputProcessingState,
+                        Optional.empty(),
+                        Optional.of(outputs)
+                ),
+                new OperationExecution(baseDurationMilliseconds, Optional.empty(), Optional.empty(), staticModifiers),
                 new OperationRequirements(
                         requiredProcessingProfiles,
                         minimumInputQuantity,
@@ -153,6 +221,25 @@ public record ProcessingOperationDefinition(
         );
     }
 
+    private static List<ProcessingOutputDefinition> legacyOutput(Raw raw) {
+        ResourceLocation outputProduct = raw.transformation.outputProduct()
+                .orElseThrow(() -> new IllegalArgumentException("Operation must define outputs or output_product"));
+        ResourceLocation outputProcessingState = raw.transformation.outputProcessingState()
+                .orElseThrow(() -> new IllegalArgumentException("Operation must define outputs or output_processing_state"));
+        YieldDefinition baseYield = raw.execution.baseYield()
+                .orElseThrow(() -> new IllegalArgumentException("Operation must define outputs or base_yield"));
+        int baseQualityDelta = raw.execution.baseQualityDelta()
+                .orElseThrow(() -> new IllegalArgumentException("Operation must define outputs or base_quality_delta"));
+        return List.of(new ProcessingOutputDefinition(
+                outputProduct,
+                outputProcessingState,
+                baseYield,
+                baseQualityDelta,
+                raw.requirements.minimumInputQuantity().unit(),
+                raw.policies.zeroOutputPolicy().permitsZeroOutput()
+        ));
+    }
+
     private record OperationIdentity(
             String displayNameKey,
             ResourceLocation operationCategory
@@ -161,16 +248,17 @@ public record ProcessingOperationDefinition(
 
     private record OperationTransformation(
             ResourceLocation inputProduct,
-            ResourceLocation outputProduct,
+            Optional<ResourceLocation> outputProduct,
             ResourceLocation requiredInputProcessingState,
-            ResourceLocation outputProcessingState
+            Optional<ResourceLocation> outputProcessingState,
+            Optional<List<ProcessingOutputDefinition>> outputs
     ) {
     }
 
     private record OperationExecution(
             long baseDurationMilliseconds,
-            YieldDefinition baseYield,
-            int baseQualityDelta,
+            Optional<YieldDefinition> baseYield,
+            Optional<Integer> baseQualityDelta,
             List<StaticModifierDefinition> staticModifiers
     ) {
     }

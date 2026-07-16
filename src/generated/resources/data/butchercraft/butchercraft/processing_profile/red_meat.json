@@ -1,13 +1,14 @@
 {
   "allowed_operation_categories": [
-    "butchercraft:operation_category/grinding"
+    "butchercraft:operation_category/grinding",
+    "butchercraft:operation_category/fabrication"
   ],
-  "compatibility_markers": [],
   "cross_profile_operations_permitted_by_default": false,
   "display_name_key": "definition.butchercraft.processing_profile.red_meat",
   "profile_category": "butchercraft:profile_category/red_meat",
   "required_workflow_stages": [
     "butchercraft:workflow_stage/primary_processing",
-    "butchercraft:workflow_stage/size_reduction"
+    "butchercraft:workflow_stage/size_reduction",
+    "butchercraft:workflow_stage/fabrication"
   ]
 }

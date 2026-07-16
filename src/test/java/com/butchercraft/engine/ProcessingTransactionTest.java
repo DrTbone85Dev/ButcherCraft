@@ -172,4 +172,29 @@ class ProcessingTransactionTest {
                 .map(modifier -> modifier.id().value())
                 .toList());
     }
+
+    @Test
+    void multiOutputCommitPreservesOrderedCommittedOutputs() {
+        ProcessingTransaction transaction = ProcessingTransaction.create(
+                EngineTestFixtures.forequarterContext(EngineTestFixtures.beefForequarter(100_000), false)
+        );
+
+        OperationResult prepared = transaction.prepare();
+        OperationResult committed = transaction.commit();
+
+        assertTrue(prepared.succeeded());
+        assertTrue(committed.succeeded());
+        assertEquals(8, committed.committedOutputs().size());
+        assertEquals(prepared.proposedOutputs(), committed.committedOutputs());
+        assertEquals(List.of(
+                "butchercraft:beef_chuck",
+                "butchercraft:beef_rib",
+                "butchercraft:beef_brisket",
+                "butchercraft:beef_plate",
+                "butchercraft:beef_shank",
+                "butchercraft:beef_trim",
+                "butchercraft:beef_fat",
+                "butchercraft:beef_bone"
+        ), transaction.committedOutputs().stream().map(output -> output.typeId().value()).toList());
+    }
 }

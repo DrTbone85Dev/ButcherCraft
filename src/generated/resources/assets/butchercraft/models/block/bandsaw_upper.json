@@ -1,0 +1,121 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "cullface": "down",
+          "texture": "#all"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#all"
+        },
+        "north": {
+          "cullface": "north",
+          "texture": "#all"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#all"
+        },
+        "up": {
+          "cullface": "up",
+          "texture": "#all"
+        },
+        "west": {
+          "cullface": "west",
+          "texture": "#all"
+        }
+      },
+      "from": [
+        2,
+        0,
+        2
+      ],
+      "to": [
+        14,
+        13,
+        14
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "cullface": "down",
+          "texture": "#all"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#all"
+        },
+        "north": {
+          "cullface": "north",
+          "texture": "#all"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#all"
+        },
+        "up": {
+          "cullface": "up",
+          "texture": "#all"
+        },
+        "west": {
+          "cullface": "west",
+          "texture": "#all"
+        }
+      },
+      "from": [
+        5,
+        1,
+        0
+      ],
+      "to": [
+        11,
+        12,
+        2
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "cullface": "down",
+          "texture": "#all"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#all"
+        },
+        "north": {
+          "cullface": "north",
+          "texture": "#all"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#all"
+        },
+        "up": {
+          "cullface": "up",
+          "texture": "#all"
+        },
+        "west": {
+          "cullface": "west",
+          "texture": "#all"
+        }
+      },
+      "from": [
+        3,
+        13,
+        3
+      ],
+      "to": [
+        13,
+        16,
+        13
+      ]
+    }
+  ],
+  "textures": {
+    "all": "butchercraft:item/development_test_item"
+  }
+}

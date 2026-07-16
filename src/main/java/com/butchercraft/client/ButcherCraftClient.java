@@ -1,6 +1,7 @@
 package com.butchercraft.client;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.client.screen.BandsawScreen;
 import com.butchercraft.client.screen.GrinderScreen;
 import com.butchercraft.client.screen.ProcessingWorkstationScreen;
 import com.butchercraft.registration.ModClientRegistrationStatus;
@@ -19,7 +20,9 @@ public final class ButcherCraftClient {
     public static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.DEVELOPMENT_PROCESSING_WORKSTATION.get(), ProcessingWorkstationScreen::new);
         event.register(ModMenuTypes.GRINDER.get(), GrinderScreen::new);
+        event.register(ModMenuTypes.BANDSAW.get(), BandsawScreen::new);
         ModClientRegistrationStatus.markDevelopmentWorkstationScreenRegistered();
         ModClientRegistrationStatus.markGrinderScreenRegistered();
+        ModClientRegistrationStatus.markBandsawScreenRegistered();
     }
 }

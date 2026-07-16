@@ -29,9 +29,18 @@ class DefinitionDatagenResourceTest {
             new ExpectedTranslation("definition.butchercraft.product.ground_pork", "Ground Pork"),
             new ExpectedTranslation("definition.butchercraft.product.bison_trim", "Bison Trim"),
             new ExpectedTranslation("definition.butchercraft.product.ground_bison", "Ground Bison"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_forequarter", "Beef Forequarter"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_chuck", "Beef Chuck"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_rib", "Beef Rib"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_brisket", "Beef Brisket"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_plate", "Beef Plate"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_shank", "Beef Shank"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_fat", "Beef Fat"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_bone", "Beef Bone"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_beef", "Grind Beef"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_pork", "Grind Pork"),
-            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_bison", "Grind Bison")
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_bison", "Grind Bison"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_forequarter", "Break Beef Forequarter")
     );
 
     @Test
@@ -46,9 +55,18 @@ class DefinitionDatagenResourceTest {
         assertTrue(Files.isRegularFile(path("product/ground_pork.json")));
         assertTrue(Files.isRegularFile(path("product/bison_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_bison.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_forequarter.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_chuck.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_rib.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_brisket.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_plate.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_shank.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_fat.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_bone.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_beef.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_pork.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_bison.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/break_beef_forequarter.json")));
     }
 
     @Test
@@ -63,9 +81,18 @@ class DefinitionDatagenResourceTest {
         assertDecodes(ProductDefinition.CODEC, path("product/ground_pork.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/bison_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_bison.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_forequarter.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_chuck.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_rib.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_brisket.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_plate.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_shank.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_fat.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_bone.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_beef.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_pork.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_bison.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/break_beef_forequarter.json"));
     }
 
     @Test

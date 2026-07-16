@@ -52,12 +52,14 @@ class GrinderInteractionTest {
         assertTrue(source.contains("addDataSlots(data)"));
         assertTrue(source.contains("progressPercent()"));
         assertTrue(source.contains("statusComponent()"));
-        assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, WorkstationInventory.INPUT_SLOT"));
+        assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, inventory.firstInputSlot()"));
         assertTrue(source.contains("addSlot(new OutputSlot(inventory"));
+        assertTrue(source.contains("for (int outputIndex = 0; outputIndex < inventory.outputSlotCount(); outputIndex++)"));
         assertTrue(source.contains("public boolean mayPlace(ItemStack stack)"));
         assertTrue(source.contains("inventory.isInputLocked()"));
         assertTrue(source.contains("inventory.isOutputExtractionAllowed()"));
-        assertTrue(source.contains("moveItemStackTo(original, WorkstationInventory.INPUT_SLOT, WorkstationInventory.INPUT_SLOT + 1, false)"));
+        assertTrue(source.contains("playerInventoryStart = workstationSlotCount"));
+        assertTrue(source.contains("moveItemStackTo(original, inventory.firstInputSlot(), inventory.firstOutputSlot(), false)"));
     }
 
     @Test

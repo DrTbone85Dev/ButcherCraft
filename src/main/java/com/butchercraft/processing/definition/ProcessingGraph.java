@@ -68,7 +68,9 @@ public final class ProcessingGraph {
                 ProcessingGraphEdge edge = new ProcessingGraphEdge(
                         entry.id(),
                         entry.definition().inputProduct(),
-                        entry.definition().outputProduct()
+                        entry.definition().outputs().stream()
+                                .map(ProcessingOutputDefinition::product)
+                                .toList()
                 );
                 edges.computeIfAbsent(edge.inputProduct(), ignored -> new ArrayList<>()).add(edge);
             }
@@ -85,7 +87,7 @@ public final class ProcessingGraph {
 
     public List<ResourceLocation> outputsReachableThroughOneOperation(ResourceLocation inputProduct) {
         return operationsAvailableFor(inputProduct).stream()
-                .map(ProcessingGraphEdge::outputProduct)
+                .flatMap(edge -> edge.outputProducts().stream())
                 .distinct()
                 .sorted(Comparator.comparing(ResourceLocation::toString))
                 .toList();
@@ -94,7 +96,7 @@ public final class ProcessingGraph {
     public boolean hasDirectTransformation(ResourceLocation inputProduct, ResourceLocation outputProduct) {
         Objects.requireNonNull(outputProduct, "outputProduct");
         return operationsAvailableFor(inputProduct).stream()
-                .anyMatch(edge -> edge.outputProduct().equals(outputProduct));
+                .anyMatch(edge -> edge.outputProducts().contains(outputProduct));
     }
 
     public Map<ResourceLocation, List<ProcessingGraphEdge>> edgesByInput() {
@@ -141,7 +143,9 @@ public final class ProcessingGraph {
         path.addLast(product);
         DefinitionValidationReport report = DefinitionValidationReport.EMPTY;
         for (ProcessingGraphEdge edge : edgesByInput.getOrDefault(product, List.of())) {
-            report = report.plus(detectCycles(edge.outputProduct(), visited, visiting, path));
+            for (ResourceLocation outputProduct : edge.outputProducts()) {
+                report = report.plus(detectCycles(outputProduct, visited, visiting, path));
+            }
         }
         path.removeLast();
         visiting.remove(product);

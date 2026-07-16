@@ -60,10 +60,12 @@ Rejected examples include:
 
 - Invalid identifiers.
 - Unknown source category ids.
-- Unknown processing state ids.
+- Invalid processing state identifiers.
 - Negative quantity.
 - Unsupported quantity units.
 - Quality scores below `0` or above `1000`.
+
+Processing state ids are open engine identifiers so datapack definitions can introduce states such as `butchercraft:forequarter`, `butchercraft:primal`, `butchercraft:fat`, and `butchercraft:bone` without changing an engine enum.
 
 ## StreamCodec Strategy
 
@@ -95,7 +97,7 @@ Future stackability may be revisited only after the project defines precise rule
 
 ## Creative-Tab Fixtures
 
-Six development-only product fixtures are registered:
+Fourteen development-only product fixtures are registered:
 
 - `butchercraft:beef_trim_test`
 - `butchercraft:ground_beef_test`
@@ -103,6 +105,14 @@ Six development-only product fixtures are registered:
 - `butchercraft:ground_pork_test`
 - `butchercraft:bison_trim_test`
 - `butchercraft:ground_bison_test`
+- `butchercraft:beef_forequarter_test`
+- `butchercraft:beef_chuck_test`
+- `butchercraft:beef_rib_test`
+- `butchercraft:beef_brisket_test`
+- `butchercraft:beef_plate_test`
+- `butchercraft:beef_shank_test`
+- `butchercraft:beef_fat_test`
+- `butchercraft:beef_bone_test`
 
 They appear in the ButcherCraft creative tab and receive default product data from `ProductTestItem.getDefaultInstance()`.
 
@@ -116,10 +126,18 @@ Default values are test fixtures, not final balance:
 | Ground Pork Test Product | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
 | Bison Trim Test Product | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Bison Test Product | `butchercraft:ground_bison` | `butchercraft:bison` | `butchercraft:ground` | `900 gram` | `700` |
+| Beef Forequarter Test Product | `butchercraft:beef_forequarter` | `butchercraft:beef` | `butchercraft:forequarter` | `100000 gram` | `700` |
+| Beef Chuck Test Product | `butchercraft:beef_chuck` | `butchercraft:beef` | `butchercraft:primal` | `30000 gram` | `700` |
+| Beef Rib Test Product | `butchercraft:beef_rib` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
+| Beef Brisket Test Product | `butchercraft:beef_brisket` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
+| Beef Plate Test Product | `butchercraft:beef_plate` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
+| Beef Shank Test Product | `butchercraft:beef_shank` | `butchercraft:beef` | `butchercraft:primal` | `5000 gram` | `700` |
+| Beef Fat Test Product | `butchercraft:beef_fat` | `butchercraft:beef` | `butchercraft:fat` | `5000 gram` | `700` |
+| Beef Bone Test Product | `butchercraft:beef_bone` | `butchercraft:beef` | `butchercraft:bone` | `10000 gram` | `700` |
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
-Milestones 2B through 2D use these product fixtures in temporary processing workstations and the Grinder. The development-only mapping derives product definition ids from fixture item default product data; it is still not a general product item factory.
+Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. The development-only mapping derives product definition ids from fixture item default product data; it is still not a general product item factory.
 
 ## Tooltip Behavior
 
@@ -186,3 +204,5 @@ Do not expand `ProductStackData` into a catch-all metadata blob. Each future com
 Milestone 2A adds `ProductStackDefinitionValidator`, which compares immutable `ProductStackData` against loaded `ProductDefinition` data without mutating the stack. It checks product existence, species/source compatibility, processing state, quantity unit, and quality bounds. This is a validation bridge only; it does not add freshness, temperature, packaging, station processing, or inventory transactions.
 
 Milestone 2B adds station processing around existing product stacks but does not expand `ProductStackData`. Workstation progress, selected operation, failure state, and reserved input snapshots belong to the block entity/controller boundary, not to item components.
+
+Milestone 2E keeps the same component shape while allowing data-driven processing state ids beyond the original trim and ground states. Multi-output workstation results create separate product-bearing stacks; output order and quantity come from processing definitions and the engine transaction, not from `ProductStackData`.

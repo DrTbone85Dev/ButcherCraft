@@ -4,6 +4,7 @@ import com.butchercraft.processing.definition.BuiltInProcessingDefinitions;
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
+import com.butchercraft.workstation.WorkstationCapability;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
@@ -163,12 +164,13 @@ class GrinderProcessingControllerTest {
     ) {
         static Harness create() {
             AtomicInteger changes = new AtomicInteger();
-            WorkstationInventory inventory = new WorkstationInventory(changes::incrementAndGet);
+            WorkstationCapability workstationCapability = GrinderWorkstation.capability();
+            WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
             WorkstationOperationLookup lookup = (registryAccess, capability, stack) ->
                     new WorkstationOperationResolver().resolve(BuiltInProcessingDefinitions.builtInView(), capability, stack);
             WorkstationProcessingController controller = new WorkstationProcessingController(
                     inventory,
-                    GrinderWorkstation.capability(),
+                    workstationCapability,
                     lookup,
                     DevelopmentProductItemMappings.fixtureMapping(),
                     changes::incrementAndGet

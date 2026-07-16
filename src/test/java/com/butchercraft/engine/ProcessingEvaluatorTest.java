@@ -89,4 +89,44 @@ class ProcessingEvaluatorTest {
         assertEquals(ProductQuantity.grams(1_000), input.quantity());
         assertFalse(first.committedOutput().isPresent());
     }
+
+    @Test
+    void multiOutputForequarterUsesOrderedExactRatios() {
+        ProcessingContext context = EngineTestFixtures.forequarterContext(
+                EngineTestFixtures.beefForequarter(100_000),
+                false
+        );
+
+        OperationResult result = ProcessingEvaluator.prepare(context.operation(), context);
+
+        assertTrue(result.succeeded(), result.failureReason().map(reason -> reason.message()).orElse(""));
+        assertEquals(List.of(
+                "butchercraft:beef_chuck",
+                "butchercraft:beef_rib",
+                "butchercraft:beef_brisket",
+                "butchercraft:beef_plate",
+                "butchercraft:beef_shank",
+                "butchercraft:beef_trim",
+                "butchercraft:beef_fat",
+                "butchercraft:beef_bone"
+        ), result.proposedOutputs().stream().map(output -> output.typeId().value()).toList());
+        assertEquals(List.of(30_000L, 10_000L, 10_000L, 10_000L, 5_000L, 15_000L, 5_000L, 10_000L),
+                result.proposedOutputs().stream().map(output -> output.quantity().amount()).toList());
+        assertEquals(95_000L, result.proposedOutputs().stream().mapToLong(output -> output.quantity().amount()).sum());
+    }
+
+    @Test
+    void multiOutputRoundingUsesLargestRemainderAndOutputOrderTieBreaks() {
+        ProcessingContext context = EngineTestFixtures.forequarterContext(
+                EngineTestFixtures.beefForequarter(11),
+                true
+        );
+
+        OperationResult result = ProcessingEvaluator.prepare(context.operation(), context);
+
+        assertTrue(result.succeeded(), result.failureReason().map(reason -> reason.message()).orElse(""));
+        assertEquals(List.of(3L, 1L, 1L, 1L, 1L, 2L, 0L, 1L),
+                result.proposedOutputs().stream().map(output -> output.quantity().amount()).toList());
+        assertEquals(10L, result.proposedOutputs().stream().mapToLong(output -> output.quantity().amount()).sum());
+    }
 }

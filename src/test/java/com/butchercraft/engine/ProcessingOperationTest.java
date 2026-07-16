@@ -33,6 +33,7 @@ class ProcessingOperationTest {
         assertEquals(ProcessingState.PREPARED, operation.outputProcessingState());
         assertEquals(3_000, operation.baseDuration().milliseconds());
         assertEquals(new YieldRatio(9, 10), operation.baseYield());
+        assertEquals(1, operation.outputs().size());
     }
 
     @Test
@@ -94,6 +95,7 @@ class ProcessingOperationTest {
                 .toList());
         assertThrows(UnsupportedOperationException.class, () -> operation.validationRules().add(ValidationRules.zeroOutputNotPermitted()));
         assertThrows(UnsupportedOperationException.class, () -> operation.modifiers().add(EngineTestFixtures.qualityModifier("late", 1, 1)));
+        assertThrows(UnsupportedOperationException.class, () -> operation.outputs().clear());
     }
 
     @Test

@@ -20,6 +20,14 @@ class ProductDataAssetsTest {
         assertTrue(language.contains("\"item.butchercraft.ground_pork_test\""));
         assertTrue(language.contains("\"item.butchercraft.bison_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_bison_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_forequarter_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_chuck_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_rib_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_brisket_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_plate_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_shank_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_fat_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_bone_test\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.product\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.quality_score\""));
     }
@@ -32,6 +40,14 @@ class ProductDataAssetsTest {
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_pork_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/bison_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_bison_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_forequarter_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_chuck_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_rib_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_brisket_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_plate_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_shank_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_fat_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_bone_test.json"));
     }
 
     private static void assertPlaceholderModel(Path path) throws IOException {

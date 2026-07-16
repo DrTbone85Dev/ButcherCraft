@@ -20,7 +20,15 @@ public final class DevelopmentProductItemMappings {
                 ModItems.PORK_TRIM_TEST,
                 ModItems.GROUND_PORK_TEST,
                 ModItems.BISON_TRIM_TEST,
-                ModItems.GROUND_BISON_TEST
+                ModItems.GROUND_BISON_TEST,
+                ModItems.BEEF_FOREQUARTER_TEST,
+                ModItems.BEEF_CHUCK_TEST,
+                ModItems.BEEF_RIB_TEST,
+                ModItems.BEEF_BRISKET_TEST,
+                ModItems.BEEF_PLATE_TEST,
+                ModItems.BEEF_SHANK_TEST,
+                ModItems.BEEF_FAT_TEST,
+                ModItems.BEEF_BONE_TEST
         );
     }
 }

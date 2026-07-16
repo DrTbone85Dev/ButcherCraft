@@ -6,6 +6,7 @@ import com.butchercraft.engine.modifier.ProcessingModifier;
 import com.butchercraft.engine.operation.ProcessingOperation;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.result.FailureReason;
+import com.butchercraft.engine.result.OperationOutputResult;
 import com.butchercraft.engine.result.OperationResult;
 import com.butchercraft.engine.result.OperationWarning;
 import com.butchercraft.engine.validation.ValidationSummary;
@@ -27,8 +28,8 @@ public final class ProcessingTransaction {
     private final ProcessingOperation operation;
     private final ProcessingContext context;
     private TransactionState state = TransactionState.CREATED;
-    private Product proposedOutput;
-    private Product committedOutput;
+    private List<OperationOutputResult> proposedOutputResults = List.of();
+    private List<OperationOutputResult> committedOutputResults = List.of();
     private FailureReason lastFailure;
     private List<ProcessingModifier> appliedModifiers = List.of();
     private List<OperationWarning> warnings = List.of();
@@ -65,11 +66,27 @@ public final class ProcessingTransaction {
     }
 
     public Optional<Product> proposedOutput() {
-        return Optional.ofNullable(proposedOutput);
+        return proposedOutputResults.stream().findFirst().map(OperationOutputResult::product);
     }
 
     public Optional<Product> committedOutput() {
-        return Optional.ofNullable(committedOutput);
+        return committedOutputResults.stream().findFirst().map(OperationOutputResult::product);
+    }
+
+    public List<Product> proposedOutputs() {
+        return proposedOutputResults.stream().map(OperationOutputResult::product).toList();
+    }
+
+    public List<Product> committedOutputs() {
+        return committedOutputResults.stream().map(OperationOutputResult::product).toList();
+    }
+
+    public List<OperationOutputResult> proposedOutputResults() {
+        return proposedOutputResults;
+    }
+
+    public List<OperationOutputResult> committedOutputResults() {
+        return committedOutputResults;
     }
 
     public Optional<FailureReason> lastFailure() {
@@ -83,7 +100,7 @@ public final class ProcessingTransaction {
      */
     public OperationResult validate() {
         if (state == TransactionState.VALIDATED) {
-            return success(Optional.empty(), Optional.empty());
+            return success(List.of(), List.of());
         }
         if (state != TransactionState.CREATED) {
             return failWithoutStateChange("invalid_validate_state", "Validation is only allowed before preparation");
@@ -94,7 +111,7 @@ public final class ProcessingTransaction {
             return reject(validation.rejectionReason().orElseThrow());
         }
         state = TransactionState.VALIDATED;
-        return success(Optional.empty(), Optional.empty());
+        return success(List.of(), List.of());
     }
 
     /**
@@ -120,15 +137,15 @@ public final class ProcessingTransaction {
             if (!prepared.succeeded()) {
                 state = prepared.transactionState();
                 lastFailure = prepared.failureReason().orElseThrow();
-                return failure(prepared.proposedOutput());
+                return failure(prepared.proposedOutputResults());
             }
-            proposedOutput = prepared.proposedOutput().orElseThrow();
+            proposedOutputResults = prepared.proposedOutputResults();
             state = TransactionState.PREPARED;
-            return success(Optional.of(proposedOutput), Optional.empty());
+            return success(proposedOutputResults, List.of());
         } catch (ArithmeticException | IllegalArgumentException exception) {
             state = TransactionState.FAILED;
             lastFailure = new FailureReason("preparation_failed", exception.getMessage());
-            return failure(Optional.ofNullable(proposedOutput));
+            return failure(proposedOutputResults);
         }
     }
 
@@ -139,9 +156,9 @@ public final class ProcessingTransaction {
      */
     public OperationResult commit() {
         if (state == TransactionState.PREPARED) {
-            committedOutput = proposedOutput;
+            committedOutputResults = proposedOutputResults;
             state = TransactionState.COMMITTED;
-            return success(Optional.of(proposedOutput), Optional.of(committedOutput));
+            return success(proposedOutputResults, committedOutputResults);
         }
         if (state == TransactionState.COMMITTED) {
             return failWithoutStateChange("already_committed", "Transaction output was already committed");
@@ -166,25 +183,25 @@ public final class ProcessingTransaction {
         }
         state = TransactionState.CANCELLED;
         lastFailure = new FailureReason("cancelled", "Transaction was cancelled before commit");
-        return failure(Optional.ofNullable(proposedOutput));
+        return failure(proposedOutputResults);
     }
 
     private OperationResult reject(FailureReason reason) {
         state = TransactionState.REJECTED;
         lastFailure = reason;
-        return failure(Optional.empty());
+        return failure(List.of());
     }
 
     private OperationResult failWithoutStateChange(String code, String message) {
         lastFailure = new FailureReason(code, message);
-        return failure(Optional.ofNullable(proposedOutput));
+        return failure(proposedOutputResults);
     }
 
-    private OperationResult success(Optional<Product> proposed, Optional<Product> committed) {
-        return OperationResult.success(input, state, proposed, committed, appliedModifiers, warnings);
+    private OperationResult success(List<OperationOutputResult> proposed, List<OperationOutputResult> committed) {
+        return OperationResult.successOutputs(input, state, proposed, committed, appliedModifiers, warnings);
     }
 
-    private OperationResult failure(Optional<Product> proposed) {
-        return OperationResult.failure(input, state, lastFailure, proposed, appliedModifiers, warnings);
+    private OperationResult failure(List<OperationOutputResult> proposed) {
+        return OperationResult.failureOutputs(input, state, lastFailure, proposed, appliedModifiers, warnings);
     }
 }

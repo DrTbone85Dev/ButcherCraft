@@ -11,10 +11,13 @@ import com.butchercraft.engine.validation.ValidationRule;
 import com.butchercraft.engine.validation.ValidationRules;
 import net.minecraft.resources.ResourceLocation;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public final class ProcessingDefinitionResolver {
     private final DefinitionRegistryView definitions;
@@ -97,15 +100,19 @@ public final class ProcessingDefinitionResolver {
         }
 
         ProductDefinition inputProduct = definitions.products().get(operation.inputProduct());
-        ProductDefinition outputProduct = definitions.products().get(operation.outputProduct());
+        List<ProductDefinition> outputProducts = operation.outputs().stream()
+                .map(output -> definitions.products().get(output.product()))
+                .toList();
         SpeciesDefinition inputSpecies = definitions.species().get(inputProduct.species());
-        SpeciesDefinition outputSpecies = definitions.species().get(outputProduct.species());
+        List<SpeciesDefinition> outputSpecies = outputProducts.stream()
+                .map(output -> definitions.species().get(output.species()))
+                .toList();
         ProcessingProfileDefinition inputProfile = definitions.processingProfiles().get(inputSpecies.processingProfile());
         return DefinitionResolution.success(new ResolvedProcessingOperationDefinition(
                 operationId,
                 operation,
                 inputProduct,
-                outputProduct,
+                outputProducts,
                 inputSpecies,
                 outputSpecies,
                 inputProfile
@@ -123,7 +130,6 @@ public final class ProcessingDefinitionResolver {
             ProcessingOperationDefinition operation = definition.operation();
             ProductCategory category = ProductCategory.fromId(EngineId.of(definition.inputProduct().productCategory().toString()));
             ProcessingState requiredState = ProcessingState.fromId(EngineId.of(operation.requiredInputProcessingState().toString()));
-            ProcessingState outputState = ProcessingState.fromId(EngineId.of(operation.outputProcessingState().toString()));
             List<ValidationRule> rules = new ArrayList<>();
             rules.add(ValidationRules.requiredProductType());
             rules.add(ValidationRules.requiredSourceCategory());
@@ -138,6 +144,9 @@ public final class ProcessingDefinitionResolver {
             List<ProcessingModifier> modifiers = operation.staticModifiers().stream()
                     .map(StaticModifierDefinition::toEngineModifier)
                     .toList();
+            List<com.butchercraft.engine.operation.ProcessingOutputDefinition> outputs = operation.outputs().stream()
+                    .map(ProcessingOutputDefinition::toEngineOutput)
+                    .toList();
 
             return DefinitionResolution.success(new ProcessingOperation(
                     EngineId.of(operationId.toString()),
@@ -145,11 +154,8 @@ public final class ProcessingDefinitionResolver {
                     EngineId.of(operation.inputProduct().toString()),
                     Optional.of(category),
                     requiredState,
-                    EngineId.of(operation.outputProduct().toString()),
-                    outputState,
                     ProcessingDuration.milliseconds(operation.baseDurationMilliseconds()),
-                    operation.baseYield().toEngineRatio(),
-                    operation.baseQualityDelta(),
+                    outputs,
                     rules,
                     modifiers,
                     operation.zeroOutputPolicy().permitsZeroOutput()
@@ -203,7 +209,6 @@ public final class ProcessingDefinitionResolver {
         DefinitionValidationReport report = DefinitionValidationReport.EMPTY;
 
         ProductDefinition input = definitions.products().get(operation.inputProduct());
-        ProductDefinition output = definitions.products().get(operation.outputProduct());
         if (input == null) {
             report = report.plus(DefinitionValidationIssue.error(
                     "missing_input_product",
@@ -211,12 +216,26 @@ public final class ProcessingDefinitionResolver {
                     "Operation references missing input product " + operation.inputProduct()
             ));
         }
-        if (output == null) {
-            report = report.plus(DefinitionValidationIssue.error(
-                    "missing_output_product",
-                    operationId,
-                    "Operation references missing output product " + operation.outputProduct()
-            ));
+        List<ProductDefinition> outputs = new ArrayList<>();
+        Set<ResourceLocation> seenOutputProducts = new HashSet<>();
+        for (ProcessingOutputDefinition output : operation.outputs()) {
+            if (!seenOutputProducts.add(output.product())) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "duplicate_output_product",
+                        operationId,
+                        "Operation defines duplicate output product " + output.product()
+                ));
+            }
+            ProductDefinition outputProduct = definitions.products().get(output.product());
+            if (outputProduct == null) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "missing_output_product",
+                        operationId,
+                        "Operation references missing output product " + output.product()
+                ));
+            } else {
+                outputs.add(outputProduct);
+            }
         }
         for (ResourceLocation requiredProfile : operation.requiredProcessingProfiles()) {
             if (!definitions.processingProfiles().containsKey(requiredProfile)) {
@@ -227,36 +246,15 @@ public final class ProcessingDefinitionResolver {
                 ));
             }
         }
-        if (input == null || output == null) {
+        if (input == null || outputs.size() != operation.outputs().size()) {
             return report;
         }
 
-        if (operation.inputProduct().equals(operation.outputProduct()) && !operation.selfLoopPermitted()) {
-            report = report.plus(DefinitionValidationIssue.error(
-                    "self_loop_not_permitted",
-                    operationId,
-                    "Operation transforms a product into itself but self loops are not permitted"
-            ));
-        }
-        if (!operation.crossSpeciesPermitted() && !input.species().equals(output.species())) {
-            report = report.plus(DefinitionValidationIssue.error(
-                    "species_mismatch",
-                    operationId,
-                    "Operation input species " + input.species() + " does not match output species " + output.species()
-            ));
-        }
         if (!operation.requiredInputProcessingState().equals(input.processingState())) {
             report = report.plus(DefinitionValidationIssue.error(
                     "input_state_mismatch",
                     operationId,
                     "Operation required input state does not match the input product definition state"
-            ));
-        }
-        if (!operation.outputProcessingState().equals(output.processingState())) {
-            report = report.plus(DefinitionValidationIssue.error(
-                    "output_state_mismatch",
-                    operationId,
-                    "Operation output state does not match the output product definition state"
             ));
         }
         if (!operation.minimumInputQuantity().unit().equals(input.quantityUnit())) {
@@ -266,12 +264,66 @@ public final class ProcessingDefinitionResolver {
                     "Operation minimum quantity unit does not match the input product quantity unit"
             ));
         }
-        if (!operation.zeroOutputPolicy().permitsZeroOutput() && operation.baseYield().numerator() == 0) {
+        if (totalYieldExceedsIdentity(operation.outputs())) {
+            report = report.plus(DefinitionValidationIssue.error(
+                    "total_yield_too_high",
+                    operationId,
+                    "Operation output yield ratios must sum to 100% or less"
+            ));
+        }
+        if (!operation.zeroOutputPolicy().permitsZeroOutput() && totalYieldIsZero(operation.outputs())) {
             report = report.plus(DefinitionValidationIssue.error(
                     "zero_output_not_permitted",
                     operationId,
-                    "Operation forbids zero output but has a zero base yield"
+                    "Operation forbids zero output but all output yields are zero"
             ));
+        }
+
+        for (int index = 0; index < operation.outputs().size(); index++) {
+            ProcessingOutputDefinition output = operation.outputs().get(index);
+            ProductDefinition outputProduct = outputs.get(index);
+            if (operation.inputProduct().equals(output.product()) && !operation.selfLoopPermitted()) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "self_loop_not_permitted",
+                        operationId,
+                        "Operation transforms a product into itself but self loops are not permitted"
+                ));
+            }
+            if (!operation.crossSpeciesPermitted() && !input.species().equals(outputProduct.species())) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "species_mismatch",
+                        operationId,
+                        "Operation input species " + input.species() + " does not match output species " + outputProduct.species()
+                ));
+            }
+            if (!definitions.species().containsKey(outputProduct.species())) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "missing_output_species",
+                        operationId,
+                        "Operation output product references missing species " + outputProduct.species()
+                ));
+            }
+            if (!output.state().equals(outputProduct.processingState())) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "output_state_mismatch",
+                        operationId,
+                        "Operation output state does not match output product definition state for " + output.product()
+                ));
+            }
+            if (!output.quantityUnit().equals(outputProduct.quantityUnit())) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "output_quantity_unit_mismatch",
+                        operationId,
+                        "Operation output quantity unit does not match output product quantity unit for " + output.product()
+                ));
+            }
+            if (!output.allowZero() && output.yield().numerator() == 0) {
+                report = report.plus(DefinitionValidationIssue.error(
+                        "zero_output_not_permitted",
+                        operationId,
+                        "Operation output forbids zero output but has a zero yield for " + output.product()
+                ));
+            }
         }
 
         SpeciesDefinition inputSpecies = definitions.species().get(input.species());
@@ -309,5 +361,35 @@ public final class ProcessingDefinitionResolver {
             ));
         }
         return report;
+    }
+
+    private static boolean totalYieldExceedsIdentity(List<ProcessingOutputDefinition> outputs) {
+        Fraction total = totalYield(outputs);
+        return total.numerator().compareTo(total.denominator()) > 0;
+    }
+
+    private static boolean totalYieldIsZero(List<ProcessingOutputDefinition> outputs) {
+        return totalYield(outputs).numerator().signum() == 0;
+    }
+
+    private static Fraction totalYield(List<ProcessingOutputDefinition> outputs) {
+        BigInteger denominator = BigInteger.ONE;
+        for (ProcessingOutputDefinition output : outputs) {
+            denominator = lcm(denominator, BigInteger.valueOf(output.yield().denominator()));
+        }
+        BigInteger numerator = BigInteger.ZERO;
+        for (ProcessingOutputDefinition output : outputs) {
+            BigInteger outputDenominator = BigInteger.valueOf(output.yield().denominator());
+            numerator = numerator.add(BigInteger.valueOf(output.yield().numerator())
+                    .multiply(denominator.divide(outputDenominator)));
+        }
+        return new Fraction(numerator, denominator);
+    }
+
+    private static BigInteger lcm(BigInteger first, BigInteger second) {
+        return first.divide(first.gcd(second)).multiply(second);
+    }
+
+    private record Fraction(BigInteger numerator, BigInteger denominator) {
     }
 }

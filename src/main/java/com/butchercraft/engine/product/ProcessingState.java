@@ -2,33 +2,24 @@ package com.butchercraft.engine.product;
 
 import com.butchercraft.engine.EngineId;
 
-import java.util.Arrays;
+import java.util.Objects;
 
 /**
- * Coarse processing state for an immutable product snapshot.
+ * Immutable processing-state id for a product snapshot.
  *
- * <p>The engine only needs enough state to validate narrow operations. Minecraft items, blocks,
- * stations, and recipes can translate their richer state into these values at the integration
- * boundary.</p>
+ * <p>The engine keeps states open so datapack definitions can introduce states such as
+ * forequarter, primal, fat, or bone without adding engine switches. The RAW and PREPARED
+ * constants are convenience ids used by existing trim-to-ground tests and fixtures.</p>
  */
-public enum ProcessingState {
-    RAW("butchercraft:trim"),
-    PREPARED("butchercraft:ground");
+public record ProcessingState(EngineId id) {
+    public static final ProcessingState RAW = fromId(EngineId.of("butchercraft:trim"));
+    public static final ProcessingState PREPARED = fromId(EngineId.of("butchercraft:ground"));
 
-    private final EngineId id;
-
-    ProcessingState(String id) {
-        this.id = EngineId.of(id);
-    }
-
-    public EngineId id() {
-        return id;
+    public ProcessingState {
+        Objects.requireNonNull(id, "id");
     }
 
     public static ProcessingState fromId(EngineId id) {
-        return Arrays.stream(values())
-                .filter(state -> state.id.equals(id))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unsupported processing state id: " + id));
+        return new ProcessingState(id);
     }
 }

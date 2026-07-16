@@ -114,6 +114,53 @@ public final class ModItems {
             ))
     );
 
+    public static final DeferredItem<ProductTestItem> BEEF_FOREQUARTER_TEST = ITEMS.register(
+            "beef_forequarter_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:beef_forequarter"),
+                    ProductCategory.BEEF,
+                    ProcessingState.fromId(EngineId.of("butchercraft:forequarter")),
+                    100_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_CHUCK_TEST = ITEMS.register(
+            "beef_chuck_test",
+            () -> beefOutputFixture("butchercraft:beef_chuck", "butchercraft:primal", 30_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_RIB_TEST = ITEMS.register(
+            "beef_rib_test",
+            () -> beefOutputFixture("butchercraft:beef_rib", "butchercraft:primal", 10_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_BRISKET_TEST = ITEMS.register(
+            "beef_brisket_test",
+            () -> beefOutputFixture("butchercraft:beef_brisket", "butchercraft:primal", 10_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_PLATE_TEST = ITEMS.register(
+            "beef_plate_test",
+            () -> beefOutputFixture("butchercraft:beef_plate", "butchercraft:primal", 10_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_SHANK_TEST = ITEMS.register(
+            "beef_shank_test",
+            () -> beefOutputFixture("butchercraft:beef_shank", "butchercraft:primal", 5_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_FAT_TEST = ITEMS.register(
+            "beef_fat_test",
+            () -> beefOutputFixture("butchercraft:beef_fat", "butchercraft:fat", 5_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_BONE_TEST = ITEMS.register(
+            "beef_bone_test",
+            () -> beefOutputFixture("butchercraft:beef_bone", "butchercraft:bone", 10_000)
+    );
+
     /**
      * Development-only workstation block item used to prove the reusable processing workstation framework.
      */
@@ -123,10 +170,24 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> GRINDER =
             ITEMS.registerSimpleBlockItem(ModBlocks.GRINDER, new Item.Properties());
 
+    public static final DeferredItem<BlockItem> BANDSAW =
+            ITEMS.registerSimpleBlockItem(ModBlocks.BANDSAW, new Item.Properties());
+
     private ModItems() {
     }
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);
+    }
+
+    private static ProductTestItem beefOutputFixture(String productId, String stateId, long grams) {
+        return new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                EngineId.of(productId),
+                ProductCategory.BEEF,
+                ProcessingState.fromId(EngineId.of(stateId)),
+                grams,
+                QuantityUnit.GRAM,
+                695
+        ));
     }
 }

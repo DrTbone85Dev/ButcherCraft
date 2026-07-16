@@ -3,6 +3,7 @@ package com.butchercraft.registration;
 public final class ModClientRegistrationStatus {
     private static volatile boolean developmentWorkstationScreenRegistered;
     private static volatile boolean grinderScreenRegistered;
+    private static volatile boolean bandsawScreenRegistered;
 
     private ModClientRegistrationStatus() {
     }
@@ -21,5 +22,13 @@ public final class ModClientRegistrationStatus {
 
     public static boolean grinderScreenRegistered() {
         return grinderScreenRegistered;
+    }
+
+    public static void markBandsawScreenRegistered() {
+        bandsawScreenRegistered = true;
+    }
+
+    public static boolean bandsawScreenRegistered() {
+        return bandsawScreenRegistered;
     }
 }

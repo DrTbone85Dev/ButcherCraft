@@ -521,6 +521,60 @@ Rollback considerations:
 - Pork and bison definitions are prototype red-meat proof data and can be removed before public content stabilization if needed.
 - Product fixture item ids and generated definition ids become datapack/save relevant once public worlds depend on them.
 
+## Milestone 2E: Industrial Bandsaw and Multi-Output Fabrication
+
+Goal: prove processing operations can create an ordered collection of outputs by adding a permanent Bandsaw machine and a data-driven Beef Forequarter fabrication flow.
+
+Included work:
+
+- Engine, result, transaction, definition, resolver, and processing graph support for immutable ordered output collections.
+- Backward-compatible single-output operations represented as one-element output lists so Grinder behavior remains unchanged.
+- Built-in product definition for `butchercraft:beef_forequarter` plus beef chuck, rib, brisket, plate, shank, fat, and bone output definitions.
+- Built-in processing-operation definition for `butchercraft:break_beef_forequarter`, declaring `butchercraft:bandsaw`.
+- Deterministic integer largest-remainder allocation for multi-output yields, with ties resolved by output order.
+- Permanent two-block-tall Bandsaw block, upper forwarding block, block entity, menu, screen, registration, placeholder assets, loot, language, diagnostics, and tests.
+- Development-only fixture items and output mapping for the new beef fabrication products.
+
+Excluded work:
+
+- Animal entities, carcass entities, full cut catalogs, final fabrication balance, recipe-selection UI, power, sounds, animations, cleanliness gameplay, employees, refrigeration, commerce, regulatory rules, final artwork, or public expansion API guarantees.
+
+Acceptance criteria:
+
+- Existing Beef, Pork, and Bison Trim to matching ground-product Grinder flows still work through the same definitions and resolver path.
+- `butchercraft:beef_forequarter` resolves to `butchercraft:break_beef_forequarter` only on the `butchercraft:bandsaw` capability.
+- A `100000 gram` Beef Forequarter produces ordered outputs: Chuck, Rib, Brisket, Plate, Shank, Trim, Fat, and Bone with 95% total yield.
+- Bandsaw lower block owns the block entity, inventory, processing state, menu provider, persistence, ticking, and drops.
+- Bandsaw upper block has no block entity, forwards interaction to the lower block, and paired break/removal drops recoverable inventory exactly once.
+- Generic workstation and Grinder code contain no product, species, or operation-id branches for the Bandsaw fabrication flow.
+- Generated definition JSON and placeholder assets are deterministic.
+
+Automated verification:
+
+- `gradlew clean`
+- `gradlew compileJava`
+- `gradlew compileTestJava`
+- `gradlew test`
+- `gradlew runData`
+- `gradlew build`
+
+Manual in-game verification:
+
+- Launch development client.
+- Confirm the Bandsaw and new beef fabrication test products appear in the ButcherCraft creative tab.
+- Place the Bandsaw facing each horizontal direction and confirm the upper half is placed, synchronized, and removed with the lower half.
+- Confirm placement fails when the upper space is obstructed.
+- Insert Beef Forequarter Test Product and confirm the eight ordered outputs appear after processing.
+- Break the upper and lower halves in separate checks and confirm recoverable input or completed outputs drop once.
+- Run `/butchercraft diagnostic` and confirm the Bandsaw, graph, resolver, and output-mapping checks report true.
+- Launch a dedicated server and confirm no client-only class-loading error.
+
+Rollback considerations:
+
+- The Bandsaw ids are permanent machine ids, while placeholder art and prototype beef fabrication balance can still change before public content stabilization.
+- Product fixture item ids and generated definition ids become datapack/save relevant once public worlds depend on them.
+- Multi-output operation schema should remain backward compatible with one-element output lists for existing Grinder definitions.
+
 ## Milestone 2: Persistence and Data Hardening
 
 Goal: make the vertical slice reliable across saves, reloads, and basic content changes.

@@ -1,6 +1,6 @@
 # ButcherCraft Product and Processing Definitions
 
-Status: Milestone 2A foundation
+Status: Milestones 2A through 2E definitions foundation
 
 ## Purpose
 
@@ -33,6 +33,7 @@ src/generated/resources/data/butchercraft/butchercraft/processing_profile/red_me
 src/generated/resources/data/butchercraft/butchercraft/product/beef_trim.json
 src/generated/resources/data/butchercraft/butchercraft/product/ground_beef.json
 src/generated/resources/data/butchercraft/butchercraft/processing_operation/grind_beef.json
+src/generated/resources/data/butchercraft/butchercraft/processing_operation/break_beef_forequarter.json
 ```
 
 ## Definition Models
@@ -43,7 +44,9 @@ src/generated/resources/data/butchercraft/butchercraft/processing_operation/grin
 
 `ProductDefinition` stores display translation key, species reference, product category, processing state, allowed quantity unit, edible flag, bone state, spoilage eligibility, bounded traits, and graph input/output flags.
 
-`ProcessingOperationDefinition` stores display translation key, operation category, required processing profiles, input/output product references, input/output states, base duration, exact yield, quality delta, minimum quantity, minimum cleanliness, minimum equipment condition, zero-output policy, static modifiers, optional workstation capability, self-loop permission, and cross-species permission.
+`ProcessingOperationDefinition` stores display translation key, operation category, required processing profiles, input product reference, input state, ordered output definitions, base duration, minimum quantity, minimum cleanliness, minimum equipment condition, static modifiers, optional workstation capability, self-loop permission, and cross-species permission.
+
+Each output definition stores product, state, exact yield numerator and denominator, quality adjustment, quantity unit, and zero-output policy. Single-output operations use the same `outputs` array with one entry.
 
 ## Resolver Behavior
 
@@ -57,6 +60,7 @@ The resolver validates:
 - Operation required profile references.
 - Input/output species compatibility.
 - Required input state and output state.
+- Output product state, quantity unit, duplicate output ids, and total yield limits.
 - Operation category compatibility with the species processing profile.
 - Minimum quantity unit compatibility.
 - Forbidden zero-output operations.
@@ -66,7 +70,7 @@ Failures return `DefinitionResolution` and `DefinitionValidationReport`; they do
 
 ## Graph Behavior
 
-`ProcessingGraph` is a read-only view built explicitly from operation definitions. It supports deterministic lookup of operations by input product, one-step reachable outputs, direct transformation checks, validation report access, duplicate operation-id detection for test or import contexts, and cycle reporting.
+`ProcessingGraph` is a read-only view built explicitly from operation definitions. It supports deterministic lookup of operations by input product, one-step reachable outputs across every operation output, direct transformation checks, validation report access, duplicate operation-id detection for test or import contexts, and cycle reporting.
 
 Cycles are warnings, not universal errors, because future rework operations may be legitimate. Self-loops remain errors unless the operation explicitly permits them.
 
@@ -105,7 +109,34 @@ Prototype balance values:
 
 These values prove the data and graph model. They are not final balance.
 
-Milestones 2B through 2D consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder adds no species-specific branches; it supplies only the `butchercraft:grinding` workstation capability.
+The prototype dataset also contains one red-meat fabrication flow for the Bandsaw:
+
+```text
+butchercraft:beef_forequarter --butchercraft:break_beef_forequarter--> [
+  butchercraft:beef_chuck,
+  butchercraft:beef_rib,
+  butchercraft:beef_brisket,
+  butchercraft:beef_plate,
+  butchercraft:beef_shank,
+  butchercraft:beef_trim,
+  butchercraft:beef_fat,
+  butchercraft:beef_bone
+]
+```
+
+Prototype balance values:
+
+- Duration: `6000` milliseconds.
+- Minimum input quantity: `100000 gram`.
+- Workstation capability: `butchercraft:bandsaw`.
+- Ordered output yields: `30%`, `10%`, `10%`, `10%`, `5%`, `15%`, `5%`, and `10%`.
+- Total output yield: `95%`, with the remaining `5%` representing process loss.
+- Base quality delta: `-5` per output.
+- Zero output: forbidden per output.
+
+Multi-output allocation uses integer arithmetic and deterministic largest-remainder rounding. Ties are resolved by output order.
+
+Milestones 2B through 2E consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific branches; they supply only their workstation capabilities.
 
 ## Poultry Extension Boundary
 

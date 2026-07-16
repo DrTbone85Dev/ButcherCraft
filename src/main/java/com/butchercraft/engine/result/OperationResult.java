@@ -25,9 +25,25 @@ public sealed interface OperationResult permits OperationResult.Success, Operati
 
     Optional<FailureReason> failureReason();
 
-    Optional<Product> proposedOutput();
+    List<OperationOutputResult> proposedOutputResults();
 
-    Optional<Product> committedOutput();
+    List<OperationOutputResult> committedOutputResults();
+
+    default Optional<Product> proposedOutput() {
+        return proposedOutputResults().stream().findFirst().map(OperationOutputResult::product);
+    }
+
+    default Optional<Product> committedOutput() {
+        return committedOutputResults().stream().findFirst().map(OperationOutputResult::product);
+    }
+
+    default List<Product> proposedOutputs() {
+        return proposedOutputResults().stream().map(OperationOutputResult::product).toList();
+    }
+
+    default List<Product> committedOutputs() {
+        return committedOutputResults().stream().map(OperationOutputResult::product).toList();
+    }
 
     List<ProcessingModifier> appliedModifiers();
 
@@ -47,7 +63,25 @@ public sealed interface OperationResult permits OperationResult.Success, Operati
             List<ProcessingModifier> appliedModifiers,
             List<OperationWarning> warnings
     ) {
-        return new Success(input, proposedOutput, committedOutput, appliedModifiers, warnings, transactionState);
+        return successOutputs(
+                input,
+                transactionState,
+                proposedOutput.map(product -> List.of(new OperationOutputResult(0, product))).orElse(List.of()),
+                committedOutput.map(product -> List.of(new OperationOutputResult(0, product))).orElse(List.of()),
+                appliedModifiers,
+                warnings
+        );
+    }
+
+    static Success successOutputs(
+            Product input,
+            TransactionState transactionState,
+            List<OperationOutputResult> proposedOutputResults,
+            List<OperationOutputResult> committedOutputResults,
+            List<ProcessingModifier> appliedModifiers,
+            List<OperationWarning> warnings
+    ) {
+        return new Success(input, proposedOutputResults, committedOutputResults, appliedModifiers, warnings, transactionState);
     }
 
     static Failure failure(
@@ -58,34 +92,52 @@ public sealed interface OperationResult permits OperationResult.Success, Operati
             List<ProcessingModifier> appliedModifiers,
             List<OperationWarning> warnings
     ) {
-        return new Failure(input, failureReason, proposedOutput, appliedModifiers, warnings, transactionState);
+        return failureOutputs(
+                input,
+                transactionState,
+                failureReason,
+                proposedOutput.map(product -> List.of(new OperationOutputResult(0, product))).orElse(List.of()),
+                appliedModifiers,
+                warnings
+        );
+    }
+
+    static Failure failureOutputs(
+            Product input,
+            TransactionState transactionState,
+            FailureReason failureReason,
+            List<OperationOutputResult> proposedOutputResults,
+            List<ProcessingModifier> appliedModifiers,
+            List<OperationWarning> warnings
+    ) {
+        return new Failure(input, failureReason, proposedOutputResults, appliedModifiers, warnings, transactionState);
     }
 
     record Success(
             Product input,
-            Optional<Product> proposedOutput,
-            Optional<Product> committedOutput,
+            List<OperationOutputResult> proposedOutputResults,
+            List<OperationOutputResult> committedOutputResults,
             List<ProcessingModifier> appliedModifiers,
             List<OperationWarning> warnings,
             TransactionState transactionState
     ) implements OperationResult {
         public Success {
             Objects.requireNonNull(input, "input");
-            proposedOutput = Objects.requireNonNull(proposedOutput, "proposedOutput");
-            committedOutput = Objects.requireNonNull(committedOutput, "committedOutput");
+            proposedOutputResults = List.copyOf(Objects.requireNonNull(proposedOutputResults, "proposedOutputResults"));
+            committedOutputResults = List.copyOf(Objects.requireNonNull(committedOutputResults, "committedOutputResults"));
             appliedModifiers = List.copyOf(Objects.requireNonNull(appliedModifiers, "appliedModifiers"));
             warnings = List.copyOf(Objects.requireNonNull(warnings, "warnings"));
             Objects.requireNonNull(transactionState, "transactionState");
             if (transactionState.isFailureTerminal()) {
                 throw new IllegalArgumentException("Success cannot use a failure terminal transaction state");
             }
-            if (transactionState == TransactionState.PREPARED && proposedOutput.isEmpty()) {
+            if (transactionState == TransactionState.PREPARED && proposedOutputResults.isEmpty()) {
                 throw new IllegalArgumentException("Prepared success requires proposed output");
             }
-            if (transactionState == TransactionState.COMMITTED && committedOutput.isEmpty()) {
+            if (transactionState == TransactionState.COMMITTED && committedOutputResults.isEmpty()) {
                 throw new IllegalArgumentException("Committed success requires committed output");
             }
-            if (committedOutput.isPresent() && transactionState != TransactionState.COMMITTED) {
+            if (!committedOutputResults.isEmpty() && transactionState != TransactionState.COMMITTED) {
                 throw new IllegalArgumentException("Committed output is only valid for committed success");
             }
         }
@@ -102,19 +154,19 @@ public sealed interface OperationResult permits OperationResult.Success, Operati
 
         @Override
         public Optional<ProductQuality> resultingQuality() {
-            return committedOutput.or(() -> proposedOutput).map(Product::quality);
+            return committedOutput().or(this::proposedOutput).map(Product::quality);
         }
 
         @Override
         public Optional<ProductQuantity> resultingQuantity() {
-            return committedOutput.or(() -> proposedOutput).map(Product::quantity);
+            return committedOutput().or(this::proposedOutput).map(Product::quantity);
         }
     }
 
     record Failure(
             Product input,
             FailureReason reason,
-            Optional<Product> proposedOutput,
+            List<OperationOutputResult> proposedOutputResults,
             List<ProcessingModifier> appliedModifiers,
             List<OperationWarning> warnings,
             TransactionState transactionState
@@ -122,7 +174,7 @@ public sealed interface OperationResult permits OperationResult.Success, Operati
         public Failure {
             Objects.requireNonNull(input, "input");
             Objects.requireNonNull(reason, "reason");
-            proposedOutput = Objects.requireNonNull(proposedOutput, "proposedOutput");
+            proposedOutputResults = List.copyOf(Objects.requireNonNull(proposedOutputResults, "proposedOutputResults"));
             appliedModifiers = List.copyOf(Objects.requireNonNull(appliedModifiers, "appliedModifiers"));
             warnings = List.copyOf(Objects.requireNonNull(warnings, "warnings"));
             Objects.requireNonNull(transactionState, "transactionState");
@@ -139,18 +191,18 @@ public sealed interface OperationResult permits OperationResult.Success, Operati
         }
 
         @Override
-        public Optional<Product> committedOutput() {
-            return Optional.empty();
+        public List<OperationOutputResult> committedOutputResults() {
+            return List.of();
         }
 
         @Override
         public Optional<ProductQuality> resultingQuality() {
-            return proposedOutput.map(Product::quality);
+            return proposedOutput().map(Product::quality);
         }
 
         @Override
         public Optional<ProductQuantity> resultingQuantity() {
-            return proposedOutput.map(Product::quantity);
+            return proposedOutput().map(Product::quantity);
         }
     }
 }

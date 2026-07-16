@@ -155,7 +155,8 @@ class WorkstationProcessingControllerTest {
     ) {
         static Harness create() {
             AtomicInteger changes = new AtomicInteger();
-            WorkstationInventory inventory = new WorkstationInventory(changes::incrementAndGet);
+            WorkstationCapability workstationCapability = DevelopmentWorkstationFixtures.capability();
+            WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
             WorkstationOperationLookup lookup = (registryAccess, capability, stack) ->
                     new WorkstationOperationResolver().resolve(
                             com.butchercraft.processing.definition.BuiltInProcessingDefinitions.builtInView(),
@@ -164,7 +165,7 @@ class WorkstationProcessingControllerTest {
                     );
             WorkstationProcessingController controller = new WorkstationProcessingController(
                     inventory,
-                    DevelopmentWorkstationFixtures.capability(),
+                    workstationCapability,
                     lookup,
                     DevelopmentProductItemMappings.fixtureMapping(),
                     changes::incrementAndGet

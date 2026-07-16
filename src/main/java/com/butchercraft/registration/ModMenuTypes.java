@@ -1,6 +1,7 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.bandsaw.BandsawMenu;
 import com.butchercraft.machine.grinder.GrinderMenu;
 import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
 import net.minecraft.core.registries.Registries;
@@ -24,6 +25,12 @@ public final class ModMenuTypes {
             GRINDER = MENU_TYPES.register(
                     "grinder",
                     () -> IMenuTypeExtension.create(GrinderMenu::new)
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<BandsawMenu>>
+            BANDSAW = MENU_TYPES.register(
+                    "bandsaw",
+                    () -> IMenuTypeExtension.create(BandsawMenu::new)
             );
 
     private ModMenuTypes() {

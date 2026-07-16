@@ -449,6 +449,8 @@ Consequences:
 - `butchercraft:ground_pork` maps to Ground Pork Test Product.
 - `butchercraft:bison_trim` maps to Bison Trim Test Product.
 - `butchercraft:ground_bison` maps to Ground Bison Test Product.
+- `butchercraft:beef_forequarter` maps to Beef Forequarter Test Product.
+- Milestone 2E beef fabrication outputs map to their matching development fixture items.
 - Future product item creation remains a separate design task.
 
 ## DEC-0032: No Machine-Specific Species Switches
@@ -494,6 +496,36 @@ Consequences:
 - Generic workstation code must remain free of Grinder and species-specific branches.
 - The temporary product-item fixture mapping may list registered development fixture items, but operation selection and compatibility must come from definitions and the processing graph.
 - Pork and bison are prototype red-meat proof data only, not full species catalogs or regulatory systems.
+
+## DEC-0035: Processing Operations Own Ordered Output Collections
+
+Status: Accepted
+
+Decision: processing operations represent outputs as immutable ordered collections. Existing single-output operations are represented as a one-element output list for compatibility.
+
+Rationale: fabrication operations such as breaking a forequarter produce several related products at once. Modeling this in the engine and definition schema avoids machine-specific output logic and keeps Grinder behavior on the same generic path.
+
+Consequences:
+
+- `ProcessingOperation`, `OperationResult`, and `ProcessingTransaction` expose ordered output-result lists while retaining first-output helpers for older single-output callers.
+- Definition JSON supports an `outputs` array with product, state, exact yield, quality adjustment, quantity unit, and zero-output policy per output.
+- Multi-output yield allocation uses integer arithmetic and deterministic largest-remainder rounding with output-order tie breaks.
+- Yield modifiers remain supported for legacy single-output operations; multi-output yield modifiers need a deliberate allocation design before they are enabled.
+
+## DEC-0036: Bandsaw Is A Two-Block Machine Wrapper Over The Workstation Framework
+
+Status: Accepted
+
+Decision: the industrial Bandsaw is a lower functional block plus an upper forwarding block. The lower block owns all state, inventory, ticking, persistence, menu behavior, and item recovery; the upper block has no block entity.
+
+Rationale: the machine should behave like one tall workstation in the world without duplicating inventories or creating multiple state owners.
+
+Consequences:
+
+- `butchercraft:bandsaw` is the only half that owns a block entity and drops recoverable inventory.
+- `butchercraft:bandsaw_upper` forwards interaction to the lower block and removes the paired machine when broken.
+- Placement requires replaceable space above the lower block, and both halves share horizontal facing.
+- Beef forequarter fabrication is selected through the `butchercraft:bandsaw` capability and processing definitions, not Bandsaw Java branches.
 
 ## Decisions Needing Owner Approval
 

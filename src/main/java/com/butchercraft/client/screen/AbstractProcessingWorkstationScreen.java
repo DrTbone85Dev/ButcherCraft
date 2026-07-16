@@ -35,9 +35,13 @@ abstract class AbstractProcessingWorkstationScreen<T extends ProcessingWorkstati
         int top = topPos;
         guiGraphics.fill(left, top, left + imageWidth, top + imageHeight, BACKGROUND_COLOR);
         guiGraphics.fill(left + 6, top + 16, left + imageWidth - 6, top + 76, PANEL_COLOR);
-        renderSlotFrame(guiGraphics, left + 55, top + 34);
-        renderSlotFrame(guiGraphics, left + 115, top + 34);
-        renderProgress(guiGraphics, left + 78, top + 41);
+        renderSlotFrame(guiGraphics, left + 25, top + 34);
+        for (int outputIndex = 0; outputIndex < menu.outputSlotCount(); outputIndex++) {
+            int column = outputIndex % 4;
+            int row = outputIndex / 4;
+            renderSlotFrame(guiGraphics, left + 85 + column * 18, top + 25 + row * 18);
+        }
+        renderProgress(guiGraphics, left + 52, top + 41);
     }
 
     @Override

@@ -21,6 +21,11 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
         ModelFile grinderModel = grinderModel();
         horizontalBlock(ModBlocks.GRINDER.get(), grinderModel);
         simpleBlockItem(ModBlocks.GRINDER.get(), grinderModel);
+
+        ModelFile bandsawModel = bandsawModel();
+        horizontalBlock(ModBlocks.BANDSAW.get(), bandsawModel);
+        simpleBlockItem(ModBlocks.BANDSAW.get(), bandsawModel);
+        horizontalBlock(ModBlocks.BANDSAW_UPPER.get(), bandsawUpperModel());
     }
 
     @Override
@@ -34,5 +39,21 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
                 .element().from(0, 0, 0).to(16, 9, 16).cube("#all").end()
                 .element().from(3, 9, 3).to(13, 13, 13).cube("#all").end()
                 .element().from(4, 3, 0).to(12, 8, 2).cube("#all").end();
+    }
+
+    private ModelFile bandsawModel() {
+        return models().getBuilder("bandsaw")
+                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE)
+                .element().from(0, 0, 0).to(16, 10, 16).cube("#all").end()
+                .element().from(2, 10, 2).to(14, 16, 14).cube("#all").end()
+                .element().from(6, 3, 0).to(10, 14, 2).cube("#all").end();
+    }
+
+    private ModelFile bandsawUpperModel() {
+        return models().getBuilder("bandsaw_upper")
+                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE)
+                .element().from(2, 0, 2).to(14, 13, 14).cube("#all").end()
+                .element().from(5, 1, 0).to(11, 12, 2).cube("#all").end()
+                .element().from(3, 13, 3).to(13, 16, 13).cube("#all").end();
     }
 }

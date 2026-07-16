@@ -51,7 +51,7 @@ class GrinderDatagenTest {
         assertTrue(lootTables.contains("extends BlockLootSubProvider"));
         assertTrue(lootTables.contains("dropSelf(ModBlocks.GRINDER.get())"));
         assertTrue(lootTables.contains("protected Iterable<Block> getKnownBlocks()"));
-        assertTrue(lootTables.contains("return List.of(ModBlocks.GRINDER.get())"));
+        assertTrue(lootTables.contains("ModBlocks.GRINDER.get()"));
     }
 
     private static String source(String relativePath) throws IOException {

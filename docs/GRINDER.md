@@ -12,6 +12,7 @@ The Grinder is the first named machine built on the generic processing workstati
 - The Grinder declares `butchercraft:grinding` through `GrinderWorkstation.capability()`.
 - Operation selection still belongs to `WorkstationOperationResolver`, `ProcessingGraph`, and loaded definitions.
 - Transaction preparation and completion still belong to `WorkstationProcessingController`.
+- Grinder operations are represented as one-element output lists in the shared multi-output operation model.
 - Product output items still use the temporary development fixture mapping until a real product item factory is designed.
 
 The Grinder must not switch on beef, pork, bison, poultry, or other species ids.
