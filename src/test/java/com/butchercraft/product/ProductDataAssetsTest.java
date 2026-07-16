@@ -16,6 +16,10 @@ class ProductDataAssetsTest {
 
         assertTrue(language.contains("\"item.butchercraft.beef_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_beef_test\""));
+        assertTrue(language.contains("\"item.butchercraft.pork_trim_test\""));
+        assertTrue(language.contains("\"item.butchercraft.ground_pork_test\""));
+        assertTrue(language.contains("\"item.butchercraft.bison_trim_test\""));
+        assertTrue(language.contains("\"item.butchercraft.ground_bison_test\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.product\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.quality_score\""));
     }
@@ -24,6 +28,10 @@ class ProductDataAssetsTest {
     void productItemModelsExistAndUsePlaceholderTexture() throws IOException {
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/beef_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_beef_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/pork_trim_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_pork_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/bison_trim_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_bison_test.json"));
     }
 
     private static void assertPlaceholderModel(Path path) throws IOException {

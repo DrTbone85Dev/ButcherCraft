@@ -1,0 +1,25 @@
+{
+  "base_duration_milliseconds": 3000,
+  "base_quality_delta": -5,
+  "base_yield": {
+    "denominator": 10,
+    "numerator": 9
+  },
+  "display_name_key": "definition.butchercraft.processing_operation.grind_bison",
+  "input_product": "butchercraft:bison_trim",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 100,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/grinding",
+  "output_processing_state": "butchercraft:ground",
+  "output_product": "butchercraft:ground_bison",
+  "required_input_processing_state": "butchercraft:trim",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "workstation_capability": "butchercraft:grinding",
+  "zero_output_policy": "forbid"
+}

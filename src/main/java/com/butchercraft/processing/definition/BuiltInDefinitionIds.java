@@ -5,10 +5,18 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class BuiltInDefinitionIds {
     public static final ResourceLocation BEEF = id("beef");
+    public static final ResourceLocation PORK = id("pork");
+    public static final ResourceLocation BISON = id("bison");
     public static final ResourceLocation RED_MEAT = id("red_meat");
     public static final ResourceLocation BEEF_TRIM = id("beef_trim");
     public static final ResourceLocation GROUND_BEEF = id("ground_beef");
+    public static final ResourceLocation PORK_TRIM = id("pork_trim");
+    public static final ResourceLocation GROUND_PORK = id("ground_pork");
+    public static final ResourceLocation BISON_TRIM = id("bison_trim");
+    public static final ResourceLocation GROUND_BISON = id("ground_bison");
     public static final ResourceLocation GRIND_BEEF = id("grind_beef");
+    public static final ResourceLocation GRIND_PORK = id("grind_pork");
+    public static final ResourceLocation GRIND_BISON = id("grind_bison");
 
     public static final ResourceLocation OPERATION_CATEGORY_GRINDING = id("operation_category/grinding");
     public static final ResourceLocation WORKSTATION_CAPABILITY_GRINDING = id("grinding");

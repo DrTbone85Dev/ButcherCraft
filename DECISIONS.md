@@ -375,7 +375,7 @@ Consequences:
 - Operation definitions declare required processing profiles and categories.
 - The processing graph rejects incompatible profile/category combinations through validation.
 - Future workstation capabilities and inspection profiles should attach to data definitions, not literal species ids.
-- ButcherCraft Core currently includes only the beef trim to ground beef prototype dataset; poultry remains deferred content.
+- ButcherCraft Core currently includes red-meat prototype grinding definitions for beef, pork, and bison; poultry remains deferred content.
 
 ## DEC-0027: Server-Authoritative Workstation Ticking
 
@@ -437,7 +437,7 @@ Consequences:
 
 Status: Accepted
 
-Decision: Milestone 2B uses a small explicit development-only mapping from the beef prototype product definitions to the two registered test product items.
+Decision: early workstation and Grinder milestones use a small development-only mapping from prototype product definitions to registered test product items.
 
 Rationale: a universal product item factory would be premature before final product item design, packaging, freshness, and lot identity exist.
 
@@ -445,6 +445,10 @@ Consequences:
 
 - `butchercraft:beef_trim` maps to Beef Trim Test Product.
 - `butchercraft:ground_beef` maps to Ground Beef Test Product.
+- `butchercraft:pork_trim` maps to Pork Trim Test Product.
+- `butchercraft:ground_pork` maps to Ground Pork Test Product.
+- `butchercraft:bison_trim` maps to Bison Trim Test Product.
+- `butchercraft:ground_bison` maps to Ground Bison Test Product.
 - Future product item creation remains a separate design task.
 
 ## DEC-0032: No Machine-Specific Species Switches
@@ -458,8 +462,38 @@ Rationale: future poultry or other product families need different workflows wit
 Consequences:
 
 - Generic workstation code must stay product-agnostic.
-- Development fixtures may reference beef prototype ids only in clearly named fixture classes.
+- Development fixtures may reference prototype product ids only in clearly named fixture or product-integration classes.
 - Future poultry-specific machines can be modeled through separate capabilities and datapack operation data.
+
+## DEC-0033: Product Source Categories Are Open Engine IDs
+
+Status: Accepted
+
+Decision: represent an engine product source category as an immutable `EngineId` value with a few convenience constants, rather than as a closed enum of every supported species.
+
+Rationale: Milestone 2D adds bison and proves future species can pass through product components, definition validation, and engine transactions without adding species constants or branches to the pure engine.
+
+Consequences:
+
+- Product component construction still validates identifier syntax, quantity units, processing states, and quality bounds.
+- Loaded product definitions remain responsible for rejecting unknown or mismatched species/source ids.
+- Engine validation compares source-category values by id equality.
+- New species should be introduced through definitions and fixture/content registration, not engine enum edits.
+
+## DEC-0034: Grinder Multi-Species Behavior Is Definition-Driven
+
+Status: Accepted
+
+Decision: Milestone 2D proves Grinder genericity by adding pork and bison red-meat grinding definitions that use the existing `butchercraft:grinding` capability and red-meat processing profile.
+
+Rationale: the Grinder should be a machine wrapper over the workstation framework, not a place for species-specific behavior.
+
+Consequences:
+
+- `GrinderBlock`, `GrinderBlockEntity`, `GrinderMenu`, and `GrinderScreen` must remain free of beef, pork, bison, or operation-id branches.
+- Generic workstation code must remain free of Grinder and species-specific branches.
+- The temporary product-item fixture mapping may list registered development fixture items, but operation selection and compatibility must come from definitions and the processing graph.
+- Pork and bison are prototype red-meat proof data only, not full species catalogs or regulatory systems.
 
 ## Decisions Needing Owner Approval
 

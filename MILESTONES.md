@@ -474,6 +474,53 @@ Rollback considerations:
 - The state and persistence fields are save-relevant once public worlds use the block.
 - Future final machine content should consume the framework rather than duplicating transaction logic.
 
+## Milestone 2D: Data-Driven Multi-Species Grinding
+
+Goal: prove the Grinder is generic by adding pork and bison red-meat grinding flows through definitions and fixture data without changing Grinder behavior.
+
+Included work:
+
+- Built-in species definitions for `butchercraft:pork` and `butchercraft:bison`, both using `butchercraft:red_meat`.
+- Product definitions for pork trim, ground pork, bison trim, and ground bison.
+- Processing-operation definitions for `butchercraft:grind_pork` and `butchercraft:grind_bison`, both declaring `butchercraft:grinding`.
+- Development-only pork and bison product fixture items with placeholder models and tooltip-ready product data.
+- Diagnostic checks, tests, and docs proving beef, pork, and bison use the same graph/resolver/controller path.
+
+Excluded work:
+
+- Full species catalogs, animal entities, regulatory rules, final product items, final artwork, recipe-selection UI, employees, refrigeration, commerce, or new Grinder logic.
+
+Acceptance criteria:
+
+- Existing Beef Trim to Ground Beef grinding still works.
+- Pork Trim resolves to Grind Pork and produces Ground Pork.
+- Bison Trim resolves to Grind Bison and produces Ground Bison.
+- Grinder classes and generic workstation framework contain no species-specific branches for beef, pork, bison, or operation ids.
+- Product source ids can pass through the engine without adding a bison engine enum value.
+- Generated definition JSON and language/model resources are deterministic.
+
+Automated verification:
+
+- `gradlew clean`
+- `gradlew compileJava`
+- `gradlew compileTestJava`
+- `gradlew test`
+- `gradlew runData`
+- `gradlew build`
+
+Manual in-game verification:
+
+- Launch development client.
+- Confirm Beef Trim, Pork Trim, Bison Trim, Ground Beef, Ground Pork, and Ground Bison test products appear in the ButcherCraft creative tab.
+- Insert Beef Trim, Pork Trim, and Bison Trim test products into the Grinder and confirm each produces the matching ground test product after about three seconds.
+- Run `/butchercraft diagnostic` and confirm the multi-species definition, graph, Grinder resolution, and output-mapping checks report true.
+- Launch a dedicated server and confirm no client-only class-loading error.
+
+Rollback considerations:
+
+- Pork and bison definitions are prototype red-meat proof data and can be removed before public content stabilization if needed.
+- Product fixture item ids and generated definition ids become datapack/save relevant once public worlds depend on them.
+
 ## Milestone 2: Persistence and Data Hardening
 
 Goal: make the vertical slice reliable across saves, reloads, and basic content changes.

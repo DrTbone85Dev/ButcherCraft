@@ -36,7 +36,13 @@ class ProcessingEvaluatorTest {
 
     @Test
     void invalidProductStateAndCleanlinessReject() {
-        Product wrongProduct = new Product(EngineId.of("butchercraft:pork_trim"), ProductCategory.PORK, ProcessingState.RAW, ProductQuantity.grams(1_000), ProductQuality.ofScore(650));
+        Product wrongProduct = new Product(
+                EngineId.of("butchercraft:pork_trim"),
+                ProductCategory.fromId(EngineId.of("butchercraft:pork")),
+                ProcessingState.RAW,
+                ProductQuantity.grams(1_000),
+                ProductQuality.ofScore(650)
+        );
         Product wrongState = new Product(EngineTestFixtures.BEEF_TRIM, ProductCategory.BEEF, ProcessingState.PREPARED, ProductQuantity.grams(1_000), ProductQuality.ofScore(650));
         ProcessingContext dirty = new ProcessingContext(
                 EngineTestFixtures.beefTrim(1_000),

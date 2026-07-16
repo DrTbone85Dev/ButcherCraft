@@ -2,36 +2,23 @@ package com.butchercraft.engine.product;
 
 import com.butchercraft.engine.EngineId;
 
-import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Coarse immutable source category for a product.
  *
- * <p>The categories are intentionally broad and Minecraft-independent. Future integration may
- * map product definitions, tags, or datapack data onto these categories without changing the
- * engine model.</p>
+ * <p>The category is an id value instead of a closed enum so datapack-defined species can pass
+ * through the Minecraft-independent engine without adding species-specific engine constants.</p>
  */
-public enum ProductCategory {
-    BEEF("butchercraft:beef"),
-    PORK("butchercraft:pork"),
-    POULTRY("butchercraft:poultry"),
-    LAMB("butchercraft:lamb"),
-    GENERIC("butchercraft:generic");
+public record ProductCategory(EngineId id) {
+    public static final ProductCategory BEEF = fromId(EngineId.of("butchercraft:beef"));
+    public static final ProductCategory GENERIC = fromId(EngineId.of("butchercraft:generic"));
 
-    private final EngineId id;
-
-    ProductCategory(String id) {
-        this.id = EngineId.of(id);
-    }
-
-    public EngineId id() {
-        return id;
+    public ProductCategory {
+        Objects.requireNonNull(id, "id");
     }
 
     public static ProductCategory fromId(EngineId id) {
-        return Arrays.stream(values())
-                .filter(category -> category.id.equals(id))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unsupported product category id: " + id));
+        return new ProductCategory(id);
     }
 }

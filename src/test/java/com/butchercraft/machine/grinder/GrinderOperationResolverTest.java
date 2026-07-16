@@ -53,6 +53,22 @@ class GrinderOperationResolverTest {
     }
 
     @Test
+    void porkAndBisonTrimFindSpeciesSpecificGrindingOperationsForGrinder() {
+        WorkstationOperationResolution pork = resolve(ModItems.PORK_TRIM_TEST.get().getDefaultInstance(), GrinderWorkstation.capability());
+        WorkstationOperationResolution bison = resolve(ModItems.BISON_TRIM_TEST.get().getDefaultInstance(), GrinderWorkstation.capability());
+
+        assertTrue(pork.succeeded(), pork.toString());
+        assertEquals(BuiltInDefinitionIds.GRIND_PORK, pork.operation().orElseThrow().operationId());
+        assertEquals(BuiltInDefinitionIds.GROUND_PORK, pork.operation().orElseThrow().definition().operation().outputProduct());
+        assertEquals(60, pork.operation().orElseThrow().totalTicks());
+
+        assertTrue(bison.succeeded(), bison.toString());
+        assertEquals(BuiltInDefinitionIds.GRIND_BISON, bison.operation().orElseThrow().operationId());
+        assertEquals(BuiltInDefinitionIds.GROUND_BISON, bison.operation().orElseThrow().definition().operation().outputProduct());
+        assertEquals(60, bison.operation().orElseThrow().totalTicks());
+    }
+
+    @Test
     void groundBeefFindsNoGrindOperation() {
         assertFailure(resolve(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance(), GrinderWorkstation.capability()),
                 WorkstationFailureCode.NO_COMPATIBLE_OPERATION);

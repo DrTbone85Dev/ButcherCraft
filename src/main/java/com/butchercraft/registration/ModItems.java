@@ -55,6 +55,66 @@ public final class ModItems {
     );
 
     /**
+     * Development-only product fixture used to prove data-driven grinding beyond beef.
+     */
+    public static final DeferredItem<ProductTestItem> PORK_TRIM_TEST = ITEMS.register(
+            "pork_trim_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:pork_trim"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:pork")),
+                    ProcessingState.RAW,
+                    1_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Development-only product fixture used to prove data-driven grinding beyond beef.
+     */
+    public static final DeferredItem<ProductTestItem> GROUND_PORK_TEST = ITEMS.register(
+            "ground_pork_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:ground_pork"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:pork")),
+                    ProcessingState.PREPARED,
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Development-only product fixture used to prove data-driven grinding beyond fixed engine source categories.
+     */
+    public static final DeferredItem<ProductTestItem> BISON_TRIM_TEST = ITEMS.register(
+            "bison_trim_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:bison_trim"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:bison")),
+                    ProcessingState.RAW,
+                    1_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Development-only product fixture used to prove data-driven grinding beyond fixed engine source categories.
+     */
+    public static final DeferredItem<ProductTestItem> GROUND_BISON_TEST = ITEMS.register(
+            "ground_bison_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:ground_bison"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:bison")),
+                    ProcessingState.PREPARED,
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
      * Development-only workstation block item used to prove the reusable processing workstation framework.
      */
     public static final DeferredItem<BlockItem> DEVELOPMENT_PROCESSING_WORKSTATION =

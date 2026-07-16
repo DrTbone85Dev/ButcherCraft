@@ -1,0 +1,15 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.bison_trim",
+  "edible": true,
+  "graph_input": true,
+  "graph_output": false,
+  "processing_state": "butchercraft:trim",
+  "product_category": "butchercraft:bison",
+  "quantity_unit": "gram",
+  "species": "butchercraft:bison",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/trim"
+  ]
+}

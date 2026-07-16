@@ -36,7 +36,7 @@ public final class ValidationRules {
         return new SimpleRule(EngineId.of("validation/required_source_category"), context -> {
             ProductCategory actual = context.inputProduct().sourceCategory();
             if (context.operation().requiredSourceCategory().isPresent()
-                    && actual != context.operation().requiredSourceCategory().orElseThrow()) {
+                    && !actual.equals(context.operation().requiredSourceCategory().orElseThrow())) {
                 return ValidationResult.rejected("wrong_source_category", "Input source category does not match operation requirement");
             }
             return ValidationResult.accepted();

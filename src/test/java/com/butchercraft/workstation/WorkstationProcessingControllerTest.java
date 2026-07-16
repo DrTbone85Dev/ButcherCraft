@@ -1,5 +1,6 @@
 package com.butchercraft.workstation;
 
+import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
 import net.minecraft.core.RegistryAccess;
@@ -165,7 +166,7 @@ class WorkstationProcessingControllerTest {
                     inventory,
                     DevelopmentWorkstationFixtures.capability(),
                     lookup,
-                    DevelopmentProductItemMapping.fixtureMapping(),
+                    DevelopmentProductItemMappings.fixtureMapping(),
                     changes::incrementAndGet
             );
             inventory.setInputLocked(controller::inputLocked);

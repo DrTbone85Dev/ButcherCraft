@@ -106,12 +106,16 @@ Inventory contents synchronize through the menu slot path. Registry contents and
 
 ## Temporary Product-Item Mapping
 
-Milestone 2B uses an explicit development-only mapping:
+Early workstation and Grinder milestones use an explicit development-only mapping:
 
 - `butchercraft:beef_trim` -> `butchercraft:beef_trim_test`
 - `butchercraft:ground_beef` -> `butchercraft:ground_beef_test`
+- `butchercraft:pork_trim` -> `butchercraft:pork_trim_test`
+- `butchercraft:ground_pork` -> `butchercraft:ground_pork_test`
+- `butchercraft:bison_trim` -> `butchercraft:bison_trim_test`
+- `butchercraft:ground_bison` -> `butchercraft:ground_bison_test`
 
-This is not a universal item factory. Future product item creation needs a deliberate data-driven design.
+This mapping is built from registered development fixture items and their default product data. It is not a universal item factory. Future product item creation needs a deliberate data-driven design.
 
 ## Development Workstation
 
@@ -121,7 +125,7 @@ Temporary block:
 butchercraft:development_processing_workstation
 ```
 
-The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts Beef Trim Test Product, resolves `butchercraft:grind_beef`, processes for 60 ticks, and outputs Ground Beef Test Product.
+The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim test products, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground test product.
 
 ## Future Extension Points
 

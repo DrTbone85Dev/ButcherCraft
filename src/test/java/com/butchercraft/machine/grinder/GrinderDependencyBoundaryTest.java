@@ -20,18 +20,27 @@ class GrinderDependencyBoundaryTest {
                         || sourceContains(path, "case \"butchercraft:chicken\"")
                         || sourceContains(path, "beef_trim")
                         || sourceContains(path, "ground_beef")
-                        || sourceContains(path, "grind_beef"))
+                        || sourceContains(path, "grind_beef")
+                        || sourceContains(path, "pork_trim")
+                        || sourceContains(path, "ground_pork")
+                        || sourceContains(path, "grind_pork")
+                        || sourceContains(path, "bison_trim")
+                        || sourceContains(path, "ground_bison")
+                        || sourceContains(path, "grind_bison"))
                 .toList();
 
         assertTrue(offenders.isEmpty(), "Grinder code must use capability-based definition resolution: " + offenders);
     }
 
     @Test
-    void genericWorkstationCodeDoesNotHardcodeGrinderIds() throws IOException {
+    void genericWorkstationCodeDoesNotHardcodeGrinderOrSpeciesIds() throws IOException {
         List<Path> offenders = javaFiles(TestProjectPaths.projectPath("src/main/java/com/butchercraft/workstation")).stream()
                 .filter(path -> sourceContains(path, "Grinder")
                         || sourceContains(path, "GRINDER")
-                        || sourceContains(path, "butchercraft:grinding"))
+                        || sourceContains(path, "butchercraft:grinding")
+                        || sourceContains(path, "pork")
+                        || sourceContains(path, "bison")
+                        || sourceContains(path, "grind_beef"))
                 .toList();
 
         assertTrue(offenders.isEmpty(), "Generic workstation code must not hardcode grinder content: " + offenders);

@@ -14,18 +14,32 @@ public final class BuiltInProcessingDefinitions {
 
     public static DefinitionRegistryView builtInView() {
         return new DefinitionRegistryView(
-                Map.of(BuiltInDefinitionIds.BEEF, beefSpecies()),
+                Map.of(
+                        BuiltInDefinitionIds.BEEF, beefSpecies(),
+                        BuiltInDefinitionIds.PORK, porkSpecies(),
+                        BuiltInDefinitionIds.BISON, bisonSpecies()
+                ),
                 Map.of(BuiltInDefinitionIds.RED_MEAT, redMeatProfile()),
                 Map.of(
                         BuiltInDefinitionIds.BEEF_TRIM, beefTrimProduct(),
-                        BuiltInDefinitionIds.GROUND_BEEF, groundBeefProduct()
+                        BuiltInDefinitionIds.GROUND_BEEF, groundBeefProduct(),
+                        BuiltInDefinitionIds.PORK_TRIM, porkTrimProduct(),
+                        BuiltInDefinitionIds.GROUND_PORK, groundPorkProduct(),
+                        BuiltInDefinitionIds.BISON_TRIM, bisonTrimProduct(),
+                        BuiltInDefinitionIds.GROUND_BISON, groundBisonProduct()
                 ),
-                Map.of(BuiltInDefinitionIds.GRIND_BEEF, grindBeefOperation())
+                Map.of(
+                        BuiltInDefinitionIds.GRIND_BEEF, grindBeefOperation(),
+                        BuiltInDefinitionIds.GRIND_PORK, grindPorkOperation(),
+                        BuiltInDefinitionIds.GRIND_BISON, grindBisonOperation()
+                )
         );
     }
 
     public static void bootstrapSpecies(BootstrapContext<SpeciesDefinition> context) {
         context.register(key(ModDataPackRegistries.SPECIES, BuiltInDefinitionIds.BEEF), beefSpecies());
+        context.register(key(ModDataPackRegistries.SPECIES, BuiltInDefinitionIds.PORK), porkSpecies());
+        context.register(key(ModDataPackRegistries.SPECIES, BuiltInDefinitionIds.BISON), bisonSpecies());
     }
 
     public static void bootstrapProcessingProfiles(BootstrapContext<ProcessingProfileDefinition> context) {
@@ -35,17 +49,35 @@ public final class BuiltInProcessingDefinitions {
     public static void bootstrapProducts(BootstrapContext<ProductDefinition> context) {
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_TRIM), beefTrimProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_BEEF), groundBeefProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.PORK_TRIM), porkTrimProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_PORK), groundPorkProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BISON_TRIM), bisonTrimProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_BISON), groundBisonProduct());
     }
 
     public static void bootstrapOperations(BootstrapContext<ProcessingOperationDefinition> context) {
         context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.GRIND_BEEF), grindBeefOperation());
+        context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.GRIND_PORK), grindPorkOperation());
+        context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.GRIND_BISON), grindBisonOperation());
     }
 
     public static SpeciesDefinition beefSpecies() {
+        return redMeatSpecies("definition.butchercraft.species.beef", BuiltInDefinitionIds.BEEF);
+    }
+
+    public static SpeciesDefinition porkSpecies() {
+        return redMeatSpecies("definition.butchercraft.species.pork", BuiltInDefinitionIds.PORK);
+    }
+
+    public static SpeciesDefinition bisonSpecies() {
+        return redMeatSpecies("definition.butchercraft.species.bison", BuiltInDefinitionIds.BISON);
+    }
+
+    private static SpeciesDefinition redMeatSpecies(String displayNameKey, ResourceLocation productFamily) {
         return new SpeciesDefinition(
-                "definition.butchercraft.species.beef",
+                displayNameKey,
                 BuiltInDefinitionIds.RED_MEAT,
-                BuiltInDefinitionIds.BEEF,
+                productFamily,
                 true,
                 true,
                 List.of()
@@ -67,10 +99,34 @@ public final class BuiltInProcessingDefinitions {
     }
 
     public static ProductDefinition beefTrimProduct() {
+        return trimProduct("definition.butchercraft.product.beef_trim", BuiltInDefinitionIds.BEEF);
+    }
+
+    public static ProductDefinition groundBeefProduct() {
+        return groundProduct("definition.butchercraft.product.ground_beef", BuiltInDefinitionIds.BEEF);
+    }
+
+    public static ProductDefinition porkTrimProduct() {
+        return trimProduct("definition.butchercraft.product.pork_trim", BuiltInDefinitionIds.PORK);
+    }
+
+    public static ProductDefinition groundPorkProduct() {
+        return groundProduct("definition.butchercraft.product.ground_pork", BuiltInDefinitionIds.PORK);
+    }
+
+    public static ProductDefinition bisonTrimProduct() {
+        return trimProduct("definition.butchercraft.product.bison_trim", BuiltInDefinitionIds.BISON);
+    }
+
+    public static ProductDefinition groundBisonProduct() {
+        return groundProduct("definition.butchercraft.product.ground_bison", BuiltInDefinitionIds.BISON);
+    }
+
+    private static ProductDefinition trimProduct(String displayNameKey, ResourceLocation species) {
         return new ProductDefinition(
-                "definition.butchercraft.product.beef_trim",
-                BuiltInDefinitionIds.BEEF,
-                BuiltInDefinitionIds.BEEF,
+                displayNameKey,
+                species,
+                species,
                 BuiltInDefinitionIds.id("trim"),
                 "gram",
                 true,
@@ -82,11 +138,11 @@ public final class BuiltInProcessingDefinitions {
         );
     }
 
-    public static ProductDefinition groundBeefProduct() {
+    private static ProductDefinition groundProduct(String displayNameKey, ResourceLocation species) {
         return new ProductDefinition(
-                "definition.butchercraft.product.ground_beef",
-                BuiltInDefinitionIds.BEEF,
-                BuiltInDefinitionIds.BEEF,
+                displayNameKey,
+                species,
+                species,
                 BuiltInDefinitionIds.id("ground"),
                 "gram",
                 true,
@@ -99,12 +155,40 @@ public final class BuiltInProcessingDefinitions {
     }
 
     public static ProcessingOperationDefinition grindBeefOperation() {
-        return new ProcessingOperationDefinition(
+        return grindOperation(
                 "definition.butchercraft.processing_operation.grind_beef",
+                BuiltInDefinitionIds.BEEF_TRIM,
+                BuiltInDefinitionIds.GROUND_BEEF
+        );
+    }
+
+    public static ProcessingOperationDefinition grindPorkOperation() {
+        return grindOperation(
+                "definition.butchercraft.processing_operation.grind_pork",
+                BuiltInDefinitionIds.PORK_TRIM,
+                BuiltInDefinitionIds.GROUND_PORK
+        );
+    }
+
+    public static ProcessingOperationDefinition grindBisonOperation() {
+        return grindOperation(
+                "definition.butchercraft.processing_operation.grind_bison",
+                BuiltInDefinitionIds.BISON_TRIM,
+                BuiltInDefinitionIds.GROUND_BISON
+        );
+    }
+
+    private static ProcessingOperationDefinition grindOperation(
+            String displayNameKey,
+            ResourceLocation inputProduct,
+            ResourceLocation outputProduct
+    ) {
+        return new ProcessingOperationDefinition(
+                displayNameKey,
                 BuiltInDefinitionIds.OPERATION_CATEGORY_GRINDING,
                 List.of(BuiltInDefinitionIds.RED_MEAT),
-                BuiltInDefinitionIds.BEEF_TRIM,
-                BuiltInDefinitionIds.GROUND_BEEF,
+                inputProduct,
+                outputProduct,
                 BuiltInDefinitionIds.id("trim"),
                 BuiltInDefinitionIds.id("ground"),
                 3_000,

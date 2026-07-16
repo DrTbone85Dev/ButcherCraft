@@ -27,7 +27,7 @@ class ValidationRuleTest {
     @Test
     void productTypeRuleAcceptsAndRejects() {
         ProcessingContext accepted = EngineTestFixtures.grindContext(EngineTestFixtures.beefTrim(1_000), List.of());
-        Product wrong = new Product(EngineId.of("butchercraft:pork_trim"), ProductCategory.PORK, ProcessingState.RAW, ProductQuantity.grams(1_000), ProductQuality.ofScore(650));
+        Product wrong = new Product(EngineId.of("butchercraft:pork_trim"), porkCategory(), ProcessingState.RAW, ProductQuantity.grams(1_000), ProductQuality.ofScore(650));
 
         assertTrue(ValidationRules.requiredProductType().evaluate(accepted).isAccepted());
         assertEquals("wrong_product_type", ValidationRules.requiredProductType()
@@ -40,7 +40,7 @@ class ValidationRuleTest {
     @Test
     void sourceCategoryRuleAcceptsOptionalMatchAndRejectsMismatch() {
         ProcessingContext accepted = EngineTestFixtures.grindContext(EngineTestFixtures.beefTrim(1_000), List.of());
-        Product wrongCategory = new Product(EngineTestFixtures.BEEF_TRIM, ProductCategory.PORK, ProcessingState.RAW, ProductQuantity.grams(1_000), ProductQuality.ofScore(650));
+        Product wrongCategory = new Product(EngineTestFixtures.BEEF_TRIM, porkCategory(), ProcessingState.RAW, ProductQuantity.grams(1_000), ProductQuality.ofScore(650));
 
         assertTrue(ValidationRules.requiredSourceCategory().evaluate(accepted).isAccepted());
         assertEquals("wrong_source_category", ValidationRules.requiredSourceCategory()
@@ -98,7 +98,7 @@ class ValidationRuleTest {
 
     @Test
     void rejectionOrderIsDeterministicAndStopsAtFirstFailure() {
-        Product wrongAndDirty = new Product(EngineId.of("butchercraft:pork_trim"), ProductCategory.PORK, ProcessingState.PREPARED, ProductQuantity.grams(50), ProductQuality.ofScore(650));
+        Product wrongAndDirty = new Product(EngineId.of("butchercraft:pork_trim"), porkCategory(), ProcessingState.PREPARED, ProductQuantity.grams(50), ProductQuality.ofScore(650));
         ProcessingOperation operation = new ProcessingOperation(
                 EngineId.of("fixture:ordered_validation"),
                 "Ordered Validation",
@@ -127,5 +127,9 @@ class ValidationRuleTest {
         assertEquals(first, second);
         assertEquals("wrong_product_type", first.rejectionReason().orElseThrow().code());
         assertEquals(1, first.results().size());
+    }
+
+    private static ProductCategory porkCategory() {
+        return ProductCategory.fromId(EngineId.of("butchercraft:pork"));
     }
 }

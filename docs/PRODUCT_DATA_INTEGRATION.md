@@ -95,10 +95,14 @@ Future stackability may be revisited only after the project defines precise rule
 
 ## Creative-Tab Fixtures
 
-Two development-only product fixtures are registered:
+Six development-only product fixtures are registered:
 
 - `butchercraft:beef_trim_test`
 - `butchercraft:ground_beef_test`
+- `butchercraft:pork_trim_test`
+- `butchercraft:ground_pork_test`
+- `butchercraft:bison_trim_test`
+- `butchercraft:ground_bison_test`
 
 They appear in the ButcherCraft creative tab and receive default product data from `ProductTestItem.getDefaultInstance()`.
 
@@ -108,10 +112,14 @@ Default values are test fixtures, not final balance:
 | --- | --- | --- | --- | --- | --- |
 | Beef Trim Test Product | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Beef Test Product | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
+| Pork Trim Test Product | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Pork Test Product | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
+| Bison Trim Test Product | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Bison Test Product | `butchercraft:ground_bison` | `butchercraft:bison` | `butchercraft:ground` | `900 gram` | `700` |
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
-Milestone 2B uses these two product fixtures in the temporary Development Processing Workstation. The workstation has an explicit development-only mapping from product definition ids to these fixture items; it is not a general product item factory.
+Milestones 2B through 2D use these product fixtures in temporary processing workstations and the Grinder. The development-only mapping derives product definition ids from fixture item default product data; it is still not a general product item factory.
 
 ## Tooltip Behavior
 

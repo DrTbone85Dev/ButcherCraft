@@ -1,0 +1,7 @@
+{
+  "display_name_key": "definition.butchercraft.species.bison",
+  "enabled": true,
+  "processing_profile": "butchercraft:red_meat",
+  "product_family": "butchercraft:bison",
+  "products_edible": true
+}

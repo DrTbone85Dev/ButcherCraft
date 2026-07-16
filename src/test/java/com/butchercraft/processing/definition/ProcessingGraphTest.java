@@ -20,6 +20,10 @@ class ProcessingGraphTest {
         assertFalse(graph.validationReport().hasErrors());
         assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.GROUND_BEEF));
         assertEquals(List.of(BuiltInDefinitionIds.GROUND_BEEF), graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_TRIM));
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.PORK_TRIM, BuiltInDefinitionIds.GROUND_PORK));
+        assertEquals(List.of(BuiltInDefinitionIds.GROUND_PORK), graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.PORK_TRIM));
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BISON_TRIM, BuiltInDefinitionIds.GROUND_BISON));
+        assertEquals(List.of(BuiltInDefinitionIds.GROUND_BISON), graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BISON_TRIM));
     }
 
     @Test

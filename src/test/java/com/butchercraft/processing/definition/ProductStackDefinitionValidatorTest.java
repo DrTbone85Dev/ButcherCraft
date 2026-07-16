@@ -25,6 +25,22 @@ class ProductStackDefinitionValidatorTest {
     }
 
     @Test
+    void validBisonStackDataMatchesLoadedDefinition() {
+        ProductStackData data = new ProductStackData(
+                "butchercraft:bison_trim",
+                "butchercraft:bison",
+                "butchercraft:trim",
+                1_000,
+                "gram",
+                700
+        );
+
+        DefinitionValidationReport report = ProductStackDefinitionValidator.validate(data, DefinitionTestFixtures.builtIns());
+
+        assertTrue(report.issues().isEmpty());
+    }
+
+    @Test
     void unknownProductIsReported() {
         ProductStackData data = new ProductStackData(
                 "butchercraft:unknown_product",

@@ -18,6 +18,8 @@ class ProcessingDefinitionResolverTest {
         ProcessingDefinitionResolver resolver = new ProcessingDefinitionResolver(DefinitionTestFixtures.builtIns());
 
         assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.BEEF).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.PORK).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.BISON).succeeded());
         assertTrue(resolver.resolveProcessingProfile(BuiltInDefinitionIds.RED_MEAT).succeeded());
     }
 
@@ -76,10 +78,16 @@ class ProcessingDefinitionResolverTest {
 
         DefinitionResolution<ResolvedProcessingOperationDefinition> resolved = resolver.resolveOperation(BuiltInDefinitionIds.GRIND_BEEF);
         DefinitionResolution<ProcessingOperation> engineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BEEF);
+        DefinitionResolution<ProcessingOperation> porkEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_PORK);
+        DefinitionResolution<ProcessingOperation> bisonEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BISON);
 
         assertTrue(resolved.succeeded());
         assertTrue(engineOperation.succeeded());
         assertEquals("butchercraft:grind_beef", engineOperation.orThrow().id().value());
+        assertTrue(porkEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_pork", porkEngineOperation.orThrow().id().value());
+        assertTrue(bisonEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_bison", bisonEngineOperation.orThrow().id().value());
     }
 
     @Test

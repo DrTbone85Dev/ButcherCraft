@@ -82,12 +82,14 @@ Warnings are reserved for non-corrupting design concerns such as graph cycles.
 
 `ProductStackDefinitionValidator` compares stack data against loaded definitions without mutating the stack. It checks product existence, source/species compatibility, processing state, quantity unit, and quality bounds. Temperature, freshness, packaging, batch history, and order metadata remain deferred.
 
-## Built-In Beef Example
+## Built-In Red-Meat Examples
 
-The prototype dataset contains only:
+The prototype dataset contains three red-meat grinding flows:
 
 ```text
 butchercraft:beef_trim --butchercraft:grind_beef--> butchercraft:ground_beef
+butchercraft:pork_trim --butchercraft:grind_pork--> butchercraft:ground_pork
+butchercraft:bison_trim --butchercraft:grind_bison--> butchercraft:ground_bison
 ```
 
 Prototype balance values:
@@ -98,16 +100,16 @@ Prototype balance values:
 - Minimum input quantity: `100 gram`.
 - Minimum cleanliness factor: `600`.
 - Minimum equipment condition factor: `500`.
-- Workstation capability: `butchercraft:workstation_capability/development_processing`.
+- Workstation capability: `butchercraft:grinding`.
 - Zero output: forbidden.
 
 These values prove the data and graph model. They are not final balance.
 
-Milestone 2B consumes this definition through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin.
+Milestones 2B through 2D consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder adds no species-specific branches; it supplies only the `butchercraft:grinding` workstation capability.
 
 ## Poultry Extension Boundary
 
-Poultry remains deferred content. The architecture supports a future poultry profile by associating workflow differences with data-driven species, processing profiles, operation categories, workstation capabilities, and later inspection profiles.
+Poultry remains deferred content. Pork and bison are red-meat prototype species for proving data breadth, not full species catalogs or regulatory systems. The architecture supports a future poultry profile by associating workflow differences with data-driven species, processing profiles, operation categories, workstation capabilities, and later inspection profiles.
 
 Java code must not switch on literal poultry species ids for workflow selection. Tests prove a hypothetical poultry profile can reject red-meat operations and accept poultry-profile operations without adding live poultry definitions.
 

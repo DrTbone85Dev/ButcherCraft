@@ -48,7 +48,7 @@ class ProductStackDataTest {
         ));
         assertThrows(IllegalArgumentException.class, () -> new ProductStackData(
                 "butchercraft:beef_trim",
-                "butchercraft:fish",
+                "ButcherCraft:fish",
                 "butchercraft:trim",
                 1_000,
                 "gram",
@@ -62,6 +62,20 @@ class ProductStackDataTest {
                 "gram",
                 700
         ));
+    }
+
+    @Test
+    void dataDrivenSourceCategoriesAreAccepted() {
+        ProductStackData bisonTrim = ProductStackData.fromEngineValues(
+                EngineId.of("butchercraft:bison_trim"),
+                ProductCategory.fromId(EngineId.of("butchercraft:bison")),
+                ProcessingState.RAW,
+                1_000,
+                QuantityUnit.GRAM,
+                700
+        );
+
+        assertEquals("butchercraft:bison", bisonTrim.sourceCategoryId());
     }
 
     @Test

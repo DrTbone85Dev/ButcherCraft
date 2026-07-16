@@ -20,28 +20,52 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DefinitionDatagenResourceTest {
     private static final List<ExpectedTranslation> BUILT_IN_DEFINITION_TRANSLATIONS = List.of(
             new ExpectedTranslation("definition.butchercraft.species.beef", "Beef"),
+            new ExpectedTranslation("definition.butchercraft.species.pork", "Pork"),
+            new ExpectedTranslation("definition.butchercraft.species.bison", "Bison"),
             new ExpectedTranslation("definition.butchercraft.processing_profile.red_meat", "Red Meat"),
             new ExpectedTranslation("definition.butchercraft.product.beef_trim", "Beef Trim"),
             new ExpectedTranslation("definition.butchercraft.product.ground_beef", "Ground Beef"),
-            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_beef", "Grind Beef")
+            new ExpectedTranslation("definition.butchercraft.product.pork_trim", "Pork Trim"),
+            new ExpectedTranslation("definition.butchercraft.product.ground_pork", "Ground Pork"),
+            new ExpectedTranslation("definition.butchercraft.product.bison_trim", "Bison Trim"),
+            new ExpectedTranslation("definition.butchercraft.product.ground_bison", "Ground Bison"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_beef", "Grind Beef"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_pork", "Grind Pork"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_bison", "Grind Bison")
     );
 
     @Test
     void allBuiltInGeneratedDefinitionJsonFilesExist() {
         assertTrue(Files.isRegularFile(path("species/beef.json")));
+        assertTrue(Files.isRegularFile(path("species/pork.json")));
+        assertTrue(Files.isRegularFile(path("species/bison.json")));
         assertTrue(Files.isRegularFile(path("processing_profile/red_meat.json")));
         assertTrue(Files.isRegularFile(path("product/beef_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_beef.json")));
+        assertTrue(Files.isRegularFile(path("product/pork_trim.json")));
+        assertTrue(Files.isRegularFile(path("product/ground_pork.json")));
+        assertTrue(Files.isRegularFile(path("product/bison_trim.json")));
+        assertTrue(Files.isRegularFile(path("product/ground_bison.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_beef.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/grind_pork.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/grind_bison.json")));
     }
 
     @Test
     void generatedDefinitionJsonUsesExpectedRegistryPathsAndDecodes() throws IOException {
         assertDecodes(SpeciesDefinition.CODEC, path("species/beef.json"));
+        assertDecodes(SpeciesDefinition.CODEC, path("species/pork.json"));
+        assertDecodes(SpeciesDefinition.CODEC, path("species/bison.json"));
         assertDecodes(ProcessingProfileDefinition.CODEC, path("processing_profile/red_meat.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_beef.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/pork_trim.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/ground_pork.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/bison_trim.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/ground_bison.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_beef.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_pork.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_bison.json"));
     }
 
     @Test
