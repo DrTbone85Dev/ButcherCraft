@@ -115,7 +115,7 @@ The prototype dataset also contains one red-meat fabrication flow for the Bandsa
 butchercraft:beef_forequarter --butchercraft:break_beef_forequarter--> [
   butchercraft:beef_chuck,
   butchercraft:beef_rib,
-  butchercraft:beef_brisket,
+  butchercraft:beef_packer_brisket,
   butchercraft:beef_plate,
   butchercraft:beef_shank,
   butchercraft:beef_trim,
@@ -137,6 +137,12 @@ Prototype balance values:
 Multi-output allocation uses integer arithmetic and deterministic largest-remainder rounding. Ties are resolved by output order.
 
 Milestones 2B through 2E consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific branches; they supply only their workstation capabilities.
+
+## Canonical Butcher-Cut Terminology
+
+ButcherCraft uses Midwestern butcher-counter terminology for player-facing cut names and stable product ids. The active Bandsaw prototype represents the whole brisket output as `butchercraft:beef_packer_brisket` with the display name "Packer Brisket".
+
+Future cut definitions should use "Kansas City Strip Steak" instead of "New York Strip" when that strip-steak product exists, "Picanha" only for an anatomically correct sirloin-cap/top-sirloin-cap product, "Prime Rib" only for an intact rib roast, and "Denver Steak" only for the correct chuck underblade cut. Do not blanket-rename broader anatomical products into retail steak names.
 
 ## Poultry Extension Boundary
 

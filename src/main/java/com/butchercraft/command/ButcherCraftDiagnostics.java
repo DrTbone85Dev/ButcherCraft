@@ -419,7 +419,7 @@ public final class ButcherCraftDiagnostics {
         boolean durationIs120Ticks = false;
         boolean outputMappingsResolve = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_CHUCK)
                 && DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_RIB)
-                && DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_BRISKET)
+                && DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_PACKER_BRISKET)
                 && DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_PLATE)
                 && DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_SHANK)
                 && DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.BEEF_TRIM)

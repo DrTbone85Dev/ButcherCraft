@@ -34,7 +34,7 @@
     },
     {
       "allow_zero": false,
-      "product": "butchercraft:beef_brisket",
+      "product": "butchercraft:beef_packer_brisket",
       "quality_adjustment": -5,
       "quantity_unit": "gram",
       "state": "butchercraft:primal",

@@ -432,6 +432,8 @@ Milestone 2D extends built-in generated definitions with pork and bison red-meat
 
 Milestone 2E extends operation definitions and the pure engine from one output to ordered output collections. It adds generated definitions and placeholder assets for the two-block Bandsaw and the Beef Forequarter fabrication proof.
 
+Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
+
 ## Testing Strategy
 
 Automated verification should scale with milestone risk:

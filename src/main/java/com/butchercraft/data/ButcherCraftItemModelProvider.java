@@ -32,7 +32,7 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         placeholderProductItem(ModItems.BEEF_FOREQUARTER_TEST.get());
         placeholderProductItem(ModItems.BEEF_CHUCK_TEST.get());
         placeholderProductItem(ModItems.BEEF_RIB_TEST.get());
-        placeholderProductItem(ModItems.BEEF_BRISKET_TEST.get());
+        placeholderProductItem(ModItems.BEEF_PACKER_BRISKET_TEST.get());
         placeholderProductItem(ModItems.BEEF_PLATE_TEST.get());
         placeholderProductItem(ModItems.BEEF_SHANK_TEST.get());
         placeholderProductItem(ModItems.BEEF_FAT_TEST.get());

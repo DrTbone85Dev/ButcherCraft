@@ -17,6 +17,8 @@ The Grinder is the first named machine built on the generic processing workstati
 
 The Grinder must not switch on beef, pork, bison, poultry, or other species ids.
 
+Canonical butcher-cut terminology currently affects Bandsaw fabrication definitions, not Grinder trim-to-ground flows. The Grinder continues reading product identity from definitions and product data only.
+
 ## Current Flows
 
 The built-in red-meat prototype definitions currently support:

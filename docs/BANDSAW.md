@@ -41,7 +41,7 @@ For a `100000 gram` beef forequarter, ordered outputs are:
 | --- | --- | --- |
 | 1 | `butchercraft:beef_chuck` | 30% |
 | 2 | `butchercraft:beef_rib` | 10% |
-| 3 | `butchercraft:beef_brisket` | 10% |
+| 3 | `butchercraft:beef_packer_brisket` | 10% |
 | 4 | `butchercraft:beef_plate` | 10% |
 | 5 | `butchercraft:beef_shank` | 5% |
 | 6 | `butchercraft:beef_trim` | 15% |
@@ -62,6 +62,6 @@ The ratios intentionally sum to 95%, leaving 5% process loss. Rounding is determ
 
 Automated tests cover registration, paired-block placement and removal behavior, upper-half forwarding, resolver compatibility, ordered output quantities, output-slot filling, generated assets, and definition JSON.
 
-Manual verification should place the Bandsaw, confirm the upper half is placed and removed with it, insert Beef Forequarter Test Product, and confirm the eight ordered outputs appear after processing.
+Manual verification should place the Bandsaw, confirm the upper half is placed and removed with it, insert Beef Forequarter Test Product, and confirm the eight ordered outputs, including Packer Brisket, appear after processing.
 
 If a pre-fix manual test world contains a stale workstation block entity attached to air, first try loading the world with the fixed code so invalid saved slot data can be skipped safely. For development-only worlds, creating a fresh manual-test world is acceptable if the affected chunk remains corrupted.

@@ -136,9 +136,9 @@ public final class ModItems {
             () -> beefOutputFixture("butchercraft:beef_rib", "butchercraft:primal", 10_000)
     );
 
-    public static final DeferredItem<ProductTestItem> BEEF_BRISKET_TEST = ITEMS.register(
-            "beef_brisket_test",
-            () -> beefOutputFixture("butchercraft:beef_brisket", "butchercraft:primal", 10_000)
+    public static final DeferredItem<ProductTestItem> BEEF_PACKER_BRISKET_TEST = ITEMS.register(
+            "beef_packer_brisket_test",
+            () -> beefOutputFixture("butchercraft:beef_packer_brisket", "butchercraft:primal", 10_000)
     );
 
     public static final DeferredItem<ProductTestItem> BEEF_PLATE_TEST = ITEMS.register(

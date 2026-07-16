@@ -17,7 +17,7 @@ public final class BuiltInDefinitionIds {
     public static final ResourceLocation BEEF_FOREQUARTER = id("beef_forequarter");
     public static final ResourceLocation BEEF_CHUCK = id("beef_chuck");
     public static final ResourceLocation BEEF_RIB = id("beef_rib");
-    public static final ResourceLocation BEEF_BRISKET = id("beef_brisket");
+    public static final ResourceLocation BEEF_PACKER_BRISKET = id("beef_packer_brisket");
     public static final ResourceLocation BEEF_PLATE = id("beef_plate");
     public static final ResourceLocation BEEF_SHANK = id("beef_shank");
     public static final ResourceLocation BEEF_FAT = id("beef_fat");

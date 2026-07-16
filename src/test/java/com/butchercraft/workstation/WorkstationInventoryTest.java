@@ -150,7 +150,7 @@ class WorkstationInventoryTest {
         bandsaw.setOutputsInternal(List.of(
                 ModItems.BEEF_CHUCK_TEST.get().getDefaultInstance(),
                 ModItems.BEEF_RIB_TEST.get().getDefaultInstance(),
-                ModItems.BEEF_BRISKET_TEST.get().getDefaultInstance(),
+                ModItems.BEEF_PACKER_BRISKET_TEST.get().getDefaultInstance(),
                 ModItems.BEEF_PLATE_TEST.get().getDefaultInstance(),
                 ModItems.BEEF_SHANK_TEST.get().getDefaultInstance(),
                 ModItems.BEEF_TRIM_TEST.get().getDefaultInstance(),

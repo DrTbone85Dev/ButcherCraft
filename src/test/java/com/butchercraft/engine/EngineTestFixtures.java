@@ -29,7 +29,7 @@ final class EngineTestFixtures {
     static final EngineId BEEF_FOREQUARTER = EngineId.of("butchercraft:beef_forequarter");
     static final EngineId BEEF_CHUCK = EngineId.of("butchercraft:beef_chuck");
     static final EngineId BEEF_RIB = EngineId.of("butchercraft:beef_rib");
-    static final EngineId BEEF_BRISKET = EngineId.of("butchercraft:beef_brisket");
+    static final EngineId BEEF_PACKER_BRISKET = EngineId.of("butchercraft:beef_packer_brisket");
     static final EngineId BEEF_PLATE = EngineId.of("butchercraft:beef_plate");
     static final EngineId BEEF_SHANK = EngineId.of("butchercraft:beef_shank");
     static final EngineId BEEF_FAT = EngineId.of("butchercraft:beef_fat");
@@ -146,7 +146,7 @@ final class EngineTestFixtures {
                 List.of(
                         output(BEEF_CHUCK, "butchercraft:primal", 30, allowSmallRoundingOutputs),
                         output(BEEF_RIB, "butchercraft:primal", 10, allowSmallRoundingOutputs),
-                        output(BEEF_BRISKET, "butchercraft:primal", 10, allowSmallRoundingOutputs),
+                        output(BEEF_PACKER_BRISKET, "butchercraft:primal", 10, allowSmallRoundingOutputs),
                         output(BEEF_PLATE, "butchercraft:primal", 10, allowSmallRoundingOutputs),
                         output(BEEF_SHANK, "butchercraft:primal", 5, allowSmallRoundingOutputs),
                         output(BEEF_TRIM, "butchercraft:trim", 15, allowSmallRoundingOutputs),

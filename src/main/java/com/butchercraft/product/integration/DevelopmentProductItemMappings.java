@@ -24,7 +24,7 @@ public final class DevelopmentProductItemMappings {
                 ModItems.BEEF_FOREQUARTER_TEST,
                 ModItems.BEEF_CHUCK_TEST,
                 ModItems.BEEF_RIB_TEST,
-                ModItems.BEEF_BRISKET_TEST,
+                ModItems.BEEF_PACKER_BRISKET_TEST,
                 ModItems.BEEF_PLATE_TEST,
                 ModItems.BEEF_SHANK_TEST,
                 ModItems.BEEF_FAT_TEST,
