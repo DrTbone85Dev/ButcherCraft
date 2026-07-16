@@ -24,7 +24,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.BEEF_FOREQUARTER_TEST.get(), "Beef Forequarter Test Product");
         add(ModItems.BEEF_CHUCK_TEST.get(), "Beef Chuck Test Product");
         add(ModItems.BEEF_RIB_TEST.get(), "Beef Rib Test Product");
-        add(ModItems.BEEF_BRISKET_TEST.get(), "Beef Brisket Test Product");
+        add(ModItems.BEEF_PACKER_BRISKET_TEST.get(), "Packer Brisket Test Product");
         add(ModItems.BEEF_PLATE_TEST.get(), "Beef Plate Test Product");
         add(ModItems.BEEF_SHANK_TEST.get(), "Beef Shank Test Product");
         add(ModItems.BEEF_FAT_TEST.get(), "Beef Fat Test Product");
@@ -50,7 +50,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("definition.butchercraft.product.beef_forequarter", "Beef Forequarter");
         add("definition.butchercraft.product.beef_chuck", "Beef Chuck");
         add("definition.butchercraft.product.beef_rib", "Beef Rib");
-        add("definition.butchercraft.product.beef_brisket", "Beef Brisket");
+        add("definition.butchercraft.product.beef_packer_brisket", "Packer Brisket");
         add("definition.butchercraft.product.beef_plate", "Beef Plate");
         add("definition.butchercraft.product.beef_shank", "Beef Shank");
         add("definition.butchercraft.product.beef_fat", "Beef Fat");

@@ -73,10 +73,10 @@ The trim, ground, forequarter, and beef fabrication test products are developmen
 
 `butchercraft:grinder` is the current Grinder proof block. It uses `butchercraft:grinding` and the same processing graph/resolver/controller path to process Beef Trim, Pork Trim, and Bison Trim test products without species-specific Grinder behavior.
 
-`butchercraft:bandsaw` is the current Bandsaw proof block. It uses `butchercraft:bandsaw` and the same processing graph/resolver/controller path to process Beef Forequarter Test Product into eight ordered beef fabrication outputs without product-specific Bandsaw behavior.
+`butchercraft:bandsaw` is the current Bandsaw proof block. It uses `butchercraft:bandsaw` and the same processing graph/resolver/controller path to process Beef Forequarter Test Product into eight ordered beef fabrication outputs, including Packer Brisket, without product-specific Bandsaw behavior.
 
 ## Documentation
 
-Planning and architecture documents live at the repository root. Treat `PROJECT_IDENTITY.md`, `PROJECT_RULES.md`, and accepted decisions in `DECISIONS.md` as authoritative. The pure domain engine is documented in `docs/BUTCHERCRAFT_ENGINE.md`, the processing framework is documented in `docs/PROCESSING_FRAMEWORK.md`, the ItemStack product data bridge is documented in `docs/PRODUCT_DATA_INTEGRATION.md`, datapack-backed definitions are documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`, the workstation framework is documented in `docs/WORKSTATION_FRAMEWORK.md`, the Grinder proof is documented in `docs/GRINDER.md`, and the Bandsaw proof is documented in `docs/BANDSAW.md`.
+Planning and architecture documents live at the repository root. Treat `PROJECT_IDENTITY.md`, `PROJECT_RULES.md`, and accepted decisions in `DECISIONS.md` as authoritative. The pure domain engine is documented in `docs/BUTCHERCRAFT_ENGINE.md`, the processing framework is documented in `docs/PROCESSING_FRAMEWORK.md`, the ItemStack product data bridge is documented in `docs/PRODUCT_DATA_INTEGRATION.md`, datapack-backed definitions are documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`, multi-output processing is documented in `docs/MULTI_OUTPUT_PROCESSING.md`, the workstation framework is documented in `docs/WORKSTATION_FRAMEWORK.md`, the Grinder proof is documented in `docs/GRINDER.md`, and the Bandsaw proof is documented in `docs/BANDSAW.md`.
 
 Development environment verified on VS Code.

@@ -124,7 +124,7 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:beef_forequarter` -> `butchercraft:beef_forequarter_test`
 - `butchercraft:beef_chuck` -> `butchercraft:beef_chuck_test`
 - `butchercraft:beef_rib` -> `butchercraft:beef_rib_test`
-- `butchercraft:beef_brisket` -> `butchercraft:beef_brisket_test`
+- `butchercraft:beef_packer_brisket` -> `butchercraft:beef_packer_brisket_test`
 - `butchercraft:beef_plate` -> `butchercraft:beef_plate_test`
 - `butchercraft:beef_shank` -> `butchercraft:beef_shank_test`
 - `butchercraft:beef_fat` -> `butchercraft:beef_fat_test`

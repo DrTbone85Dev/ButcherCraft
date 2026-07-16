@@ -32,7 +32,7 @@ class DefinitionDatagenResourceTest {
             new ExpectedTranslation("definition.butchercraft.product.beef_forequarter", "Beef Forequarter"),
             new ExpectedTranslation("definition.butchercraft.product.beef_chuck", "Beef Chuck"),
             new ExpectedTranslation("definition.butchercraft.product.beef_rib", "Beef Rib"),
-            new ExpectedTranslation("definition.butchercraft.product.beef_brisket", "Beef Brisket"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_packer_brisket", "Packer Brisket"),
             new ExpectedTranslation("definition.butchercraft.product.beef_plate", "Beef Plate"),
             new ExpectedTranslation("definition.butchercraft.product.beef_shank", "Beef Shank"),
             new ExpectedTranslation("definition.butchercraft.product.beef_fat", "Beef Fat"),
@@ -58,7 +58,8 @@ class DefinitionDatagenResourceTest {
         assertTrue(Files.isRegularFile(path("product/beef_forequarter.json")));
         assertTrue(Files.isRegularFile(path("product/beef_chuck.json")));
         assertTrue(Files.isRegularFile(path("product/beef_rib.json")));
-        assertTrue(Files.isRegularFile(path("product/beef_brisket.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_packer_brisket.json")));
+        assertFalse(Files.exists(path(retiredGenericBrisketProductPath())));
         assertTrue(Files.isRegularFile(path("product/beef_plate.json")));
         assertTrue(Files.isRegularFile(path("product/beef_shank.json")));
         assertTrue(Files.isRegularFile(path("product/beef_fat.json")));
@@ -84,7 +85,7 @@ class DefinitionDatagenResourceTest {
         assertDecodes(ProductDefinition.CODEC, path("product/beef_forequarter.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_chuck.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_rib.json"));
-        assertDecodes(ProductDefinition.CODEC, path("product/beef_brisket.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_packer_brisket.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_plate.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_shank.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_fat.json"));
@@ -120,6 +121,10 @@ class DefinitionDatagenResourceTest {
 
     private static Path path(String suffix) {
         return TestProjectPaths.projectPath("src/generated/resources/data/butchercraft/butchercraft/" + suffix);
+    }
+
+    private static String retiredGenericBrisketProductPath() {
+        return "product/beef_" + "brisket.json";
     }
 
     private static <T> void assertDecodes(Codec<T> codec, Path path) throws IOException {

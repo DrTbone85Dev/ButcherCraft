@@ -527,6 +527,21 @@ Consequences:
 - Placement requires replaceable space above the lower block, and both halves share horizontal facing.
 - Beef forequarter fabrication is selected through the `butchercraft:bandsaw` capability and processing definitions, not Bandsaw Java branches.
 
+## DEC-0037: Midwestern Butcher-Cut Terminology Is Canonical
+
+Status: Accepted
+
+Decision: ButcherCraft uses Midwestern butcher-counter terminology for player-facing butcher cuts and product ids, while preserving anatomical distinctions. The whole brisket prototype is `butchercraft:beef_packer_brisket` with display name "Packer Brisket". Future applicable products should use "Kansas City Strip Steak" instead of "New York Strip", "Picanha" only for an anatomically correct sirloin-cap/top-sirloin-cap product, "Prime Rib" only for an intact rib roast, and "Denver Steak" only for the correct chuck underblade cut.
+
+Rationale: player-facing cut names should match the project's intended butcher-shop language without flattening broader anatomical products into retail steak names.
+
+Consequences:
+
+- Product definitions, generated resources, fixture items, docs, diagnostics, and tests use canonical names when a modeled product matches the canonical cut.
+- Broad cuts such as rib, chuck, or plate must not be blanket-renamed to narrower retail cuts.
+- No unsafe alias or migration system is introduced for the retired pre-release `butchercraft:beef_brisket` fixture id.
+- Grinder, Bandsaw, workstation framework, resolver, and pure engine code remain product-agnostic and must not translate cut names.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

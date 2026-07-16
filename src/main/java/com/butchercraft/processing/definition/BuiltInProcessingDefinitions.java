@@ -30,7 +30,7 @@ public final class BuiltInProcessingDefinitions {
                         Map.entry(BuiltInDefinitionIds.BEEF_FOREQUARTER, beefForequarterProduct()),
                         Map.entry(BuiltInDefinitionIds.BEEF_CHUCK, beefPrimalProduct("definition.butchercraft.product.beef_chuck", BuiltInDefinitionIds.BEEF_CHUCK)),
                         Map.entry(BuiltInDefinitionIds.BEEF_RIB, beefPrimalProduct("definition.butchercraft.product.beef_rib", BuiltInDefinitionIds.BEEF_RIB)),
-                        Map.entry(BuiltInDefinitionIds.BEEF_BRISKET, beefPrimalProduct("definition.butchercraft.product.beef_brisket", BuiltInDefinitionIds.BEEF_BRISKET)),
+                        Map.entry(BuiltInDefinitionIds.BEEF_PACKER_BRISKET, beefPrimalProduct("definition.butchercraft.product.beef_packer_brisket", BuiltInDefinitionIds.BEEF_PACKER_BRISKET)),
                         Map.entry(BuiltInDefinitionIds.BEEF_PLATE, beefPrimalProduct("definition.butchercraft.product.beef_plate", BuiltInDefinitionIds.BEEF_PLATE)),
                         Map.entry(BuiltInDefinitionIds.BEEF_SHANK, beefPrimalProduct("definition.butchercraft.product.beef_shank", BuiltInDefinitionIds.BEEF_SHANK)),
                         Map.entry(BuiltInDefinitionIds.BEEF_FAT, beefFatProduct()),
@@ -71,9 +71,9 @@ public final class BuiltInProcessingDefinitions {
                 "definition.butchercraft.product.beef_rib",
                 BuiltInDefinitionIds.BEEF_RIB
         ));
-        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_BRISKET), beefPrimalProduct(
-                "definition.butchercraft.product.beef_brisket",
-                BuiltInDefinitionIds.BEEF_BRISKET
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_PACKER_BRISKET), beefPrimalProduct(
+                "definition.butchercraft.product.beef_packer_brisket",
+                BuiltInDefinitionIds.BEEF_PACKER_BRISKET
         ));
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_PLATE), beefPrimalProduct(
                 "definition.butchercraft.product.beef_plate",
@@ -324,7 +324,7 @@ public final class BuiltInProcessingDefinitions {
                 List.of(
                         output(BuiltInDefinitionIds.BEEF_CHUCK, BuiltInDefinitionIds.id("primal"), 30),
                         output(BuiltInDefinitionIds.BEEF_RIB, BuiltInDefinitionIds.id("primal"), 10),
-                        output(BuiltInDefinitionIds.BEEF_BRISKET, BuiltInDefinitionIds.id("primal"), 10),
+                        output(BuiltInDefinitionIds.BEEF_PACKER_BRISKET, BuiltInDefinitionIds.id("primal"), 10),
                         output(BuiltInDefinitionIds.BEEF_PLATE, BuiltInDefinitionIds.id("primal"), 10),
                         output(BuiltInDefinitionIds.BEEF_SHANK, BuiltInDefinitionIds.id("primal"), 5),
                         output(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.id("trim"), 15),

@@ -1,6 +1,6 @@
 {
   "bone_state": "bone_in",
-  "display_name_key": "definition.butchercraft.product.beef_brisket",
+  "display_name_key": "definition.butchercraft.product.beef_packer_brisket",
   "edible": true,
   "graph_input": false,
   "graph_output": true,
@@ -11,6 +11,6 @@
   "spoilage_eligible": true,
   "traits": [
     "butchercraft:trait/primal",
-    "butchercraft:beef_brisket"
+    "butchercraft:beef_packer_brisket"
   ]
 }

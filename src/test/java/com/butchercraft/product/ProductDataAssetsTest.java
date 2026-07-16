@@ -23,7 +23,7 @@ class ProductDataAssetsTest {
         assertTrue(language.contains("\"item.butchercraft.beef_forequarter_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_chuck_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_rib_test\""));
-        assertTrue(language.contains("\"item.butchercraft.beef_brisket_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_packer_brisket_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_plate_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_shank_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_fat_test\""));
@@ -43,7 +43,8 @@ class ProductDataAssetsTest {
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_forequarter_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_chuck_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_rib_test.json"));
-        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_brisket_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_packer_brisket_test.json"));
+        assertTrue(Files.notExists(TestProjectPaths.projectPath(retiredGenericBrisketItemModelPath())));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_plate_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_shank_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_fat_test.json"));
@@ -55,5 +56,9 @@ class ProductDataAssetsTest {
         String model = Files.readString(path);
         assertTrue(model.contains("\"minecraft:item/generated\""));
         assertTrue(model.contains("\"butchercraft:item/development_test_item\""));
+    }
+
+    private static String retiredGenericBrisketItemModelPath() {
+        return "src/generated/resources/assets/butchercraft/models/item/beef_" + "brisket_test.json";
     }
 }

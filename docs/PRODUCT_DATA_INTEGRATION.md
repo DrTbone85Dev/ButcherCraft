@@ -108,7 +108,7 @@ Fourteen development-only product fixtures are registered:
 - `butchercraft:beef_forequarter_test`
 - `butchercraft:beef_chuck_test`
 - `butchercraft:beef_rib_test`
-- `butchercraft:beef_brisket_test`
+- `butchercraft:beef_packer_brisket_test`
 - `butchercraft:beef_plate_test`
 - `butchercraft:beef_shank_test`
 - `butchercraft:beef_fat_test`
@@ -129,7 +129,7 @@ Default values are test fixtures, not final balance:
 | Beef Forequarter Test Product | `butchercraft:beef_forequarter` | `butchercraft:beef` | `butchercraft:forequarter` | `100000 gram` | `700` |
 | Beef Chuck Test Product | `butchercraft:beef_chuck` | `butchercraft:beef` | `butchercraft:primal` | `30000 gram` | `700` |
 | Beef Rib Test Product | `butchercraft:beef_rib` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
-| Beef Brisket Test Product | `butchercraft:beef_brisket` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
+| Packer Brisket Test Product | `butchercraft:beef_packer_brisket` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
 | Beef Plate Test Product | `butchercraft:beef_plate` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
 | Beef Shank Test Product | `butchercraft:beef_shank` | `butchercraft:beef` | `butchercraft:primal` | `5000 gram` | `700` |
 | Beef Fat Test Product | `butchercraft:beef_fat` | `butchercraft:beef` | `butchercraft:fat` | `5000 gram` | `700` |

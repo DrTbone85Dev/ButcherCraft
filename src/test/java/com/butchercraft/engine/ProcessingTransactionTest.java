@@ -189,7 +189,7 @@ class ProcessingTransactionTest {
         assertEquals(List.of(
                 "butchercraft:beef_chuck",
                 "butchercraft:beef_rib",
-                "butchercraft:beef_brisket",
+                "butchercraft:beef_packer_brisket",
                 "butchercraft:beef_plate",
                 "butchercraft:beef_shank",
                 "butchercraft:beef_trim",

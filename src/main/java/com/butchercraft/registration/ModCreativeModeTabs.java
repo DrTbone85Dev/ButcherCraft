@@ -29,7 +29,7 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_CHUCK_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_RIB_TEST.get().getDefaultInstance());
-                        output.accept(ModItems.BEEF_BRISKET_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_PACKER_BRISKET_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_PLATE_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_SHANK_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_FAT_TEST.get().getDefaultInstance());

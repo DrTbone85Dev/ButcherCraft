@@ -529,7 +529,7 @@ Included work:
 
 - Engine, result, transaction, definition, resolver, and processing graph support for immutable ordered output collections.
 - Backward-compatible single-output operations represented as one-element output lists so Grinder behavior remains unchanged.
-- Built-in product definition for `butchercraft:beef_forequarter` plus beef chuck, rib, brisket, plate, shank, fat, and bone output definitions.
+- Built-in product definition for `butchercraft:beef_forequarter` plus beef chuck, rib, packer brisket, plate, shank, fat, and bone output definitions.
 - Built-in processing-operation definition for `butchercraft:break_beef_forequarter`, declaring `butchercraft:bandsaw`.
 - Deterministic integer largest-remainder allocation for multi-output yields, with ties resolved by output order.
 - Permanent two-block-tall Bandsaw block, upper forwarding block, block entity, menu, screen, registration, placeholder assets, loot, language, diagnostics, and tests.
@@ -543,7 +543,7 @@ Acceptance criteria:
 
 - Existing Beef, Pork, and Bison Trim to matching ground-product Grinder flows still work through the same definitions and resolver path.
 - `butchercraft:beef_forequarter` resolves to `butchercraft:break_beef_forequarter` only on the `butchercraft:bandsaw` capability.
-- A `100000 gram` Beef Forequarter produces ordered outputs: Chuck, Rib, Brisket, Plate, Shank, Trim, Fat, and Bone with 95% total yield.
+- A `100000 gram` Beef Forequarter produces ordered outputs: Chuck, Rib, Packer Brisket, Plate, Shank, Trim, Fat, and Bone with 95% total yield.
 - Bandsaw lower block owns the block entity, inventory, processing state, menu provider, persistence, ticking, and drops.
 - Bandsaw upper block has no block entity, forwards interaction to the lower block, and paired break/removal drops recoverable inventory exactly once.
 - Generic workstation and Grinder code contain no product, species, or operation-id branches for the Bandsaw fabrication flow.

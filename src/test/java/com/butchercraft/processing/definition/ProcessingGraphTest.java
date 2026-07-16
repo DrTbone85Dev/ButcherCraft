@@ -31,9 +31,9 @@ class ProcessingGraphTest {
         assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_FOREQUARTER, BuiltInDefinitionIds.BEEF_BONE));
         assertEquals(List.of(
                         BuiltInDefinitionIds.BEEF_BONE,
-                        BuiltInDefinitionIds.BEEF_BRISKET,
                         BuiltInDefinitionIds.BEEF_CHUCK,
                         BuiltInDefinitionIds.BEEF_FAT,
+                        BuiltInDefinitionIds.BEEF_PACKER_BRISKET,
                         BuiltInDefinitionIds.BEEF_PLATE,
                         BuiltInDefinitionIds.BEEF_RIB,
                         BuiltInDefinitionIds.BEEF_SHANK,
