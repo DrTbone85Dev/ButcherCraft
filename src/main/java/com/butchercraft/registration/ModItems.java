@@ -60,6 +60,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> DEVELOPMENT_PROCESSING_WORKSTATION =
             ITEMS.registerSimpleBlockItem(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION, new Item.Properties());
 
+    public static final DeferredItem<BlockItem> GRINDER =
+            ITEMS.registerSimpleBlockItem(ModBlocks.GRINDER, new Item.Properties());
+
     private ModItems() {
     }
 

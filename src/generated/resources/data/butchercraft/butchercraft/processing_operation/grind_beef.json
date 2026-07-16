@@ -20,6 +20,6 @@
   "required_processing_profiles": [
     "butchercraft:red_meat"
   ],
-  "workstation_capability": "butchercraft:workstation_capability/development_processing",
+  "workstation_capability": "butchercraft:grinding",
   "zero_output_policy": "forbid"
 }

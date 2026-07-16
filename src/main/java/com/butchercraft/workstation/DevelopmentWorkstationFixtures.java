@@ -17,7 +17,7 @@ public final class DevelopmentWorkstationFixtures {
         return new WorkstationCapability(
                 ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "development_processing_workstation"),
                 Set.of(BuiltInDefinitionIds.OPERATION_CATEGORY_GRINDING),
-                Set.of(DEVELOPMENT_WORKSTATION_CAPABILITY),
+                Set.of(DEVELOPMENT_WORKSTATION_CAPABILITY, BuiltInDefinitionIds.WORKSTATION_CAPABILITY_GRINDING),
                 Set.of(BuiltInDefinitionIds.RED_MEAT),
                 10_000,
                 true,

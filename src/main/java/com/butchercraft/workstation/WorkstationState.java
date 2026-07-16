@@ -1,5 +1,7 @@
 package com.butchercraft.workstation;
 
+import com.butchercraft.ButcherCraft;
+
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -28,6 +30,10 @@ public enum WorkstationState {
             throw new IllegalStateException("Invalid workstation transition " + this + " -> " + next);
         }
         return next;
+    }
+
+    public String messageKey() {
+        return "workstation." + ButcherCraft.MOD_ID + ".state." + name().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static Map<WorkstationState, Set<WorkstationState>> transitions() {

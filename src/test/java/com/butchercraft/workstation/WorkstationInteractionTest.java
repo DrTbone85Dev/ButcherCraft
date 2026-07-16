@@ -23,9 +23,11 @@ class WorkstationInteractionTest {
 
     @Test
     void blockEntityIsTheMenuProvider() throws IOException {
+        String baseSource = source("src/main/java/com/butchercraft/workstation/block/AbstractProcessingWorkstationBlockEntity.java");
         String source = source("src/main/java/com/butchercraft/workstation/block/ProcessingWorkstationBlockEntity.java");
 
-        assertTrue(source.contains("implements MenuProvider"), "Block entity should provide the menu");
+        assertTrue(baseSource.contains("implements MenuProvider"), "Block entity base should provide the menu");
+        assertTrue(source.contains("extends AbstractProcessingWorkstationBlockEntity"), "Development block entity should inherit menu-provider behavior");
         assertTrue(source.contains("Component.translatable(\"container.butchercraft.development_processing_workstation\")"));
         assertTrue(source.contains("new ProcessingWorkstationMenu(containerId, playerInventory, this)"));
     }
@@ -33,13 +35,15 @@ class WorkstationInteractionTest {
     @Test
     void clientScreenIsRegisteredForDevelopmentWorkstationMenu() throws IOException {
         String registration = source("src/main/java/com/butchercraft/client/ButcherCraftClient.java");
+        String abstractScreen = source("src/main/java/com/butchercraft/client/screen/AbstractProcessingWorkstationScreen.java");
         String screen = source("src/main/java/com/butchercraft/client/screen/ProcessingWorkstationScreen.java");
 
         assertTrue(registration.contains("RegisterMenuScreensEvent"));
         assertTrue(registration.contains("value = Dist.CLIENT"));
         assertTrue(registration.contains("event.register(ModMenuTypes.DEVELOPMENT_PROCESSING_WORKSTATION.get(), ProcessingWorkstationScreen::new)"));
         assertTrue(registration.contains("ModClientRegistrationStatus.markDevelopmentWorkstationScreenRegistered()"));
-        assertTrue(screen.contains("extends AbstractContainerScreen<ProcessingWorkstationMenu>"));
+        assertTrue(abstractScreen.contains("extends AbstractContainerScreen<T>"));
+        assertTrue(screen.contains("extends AbstractProcessingWorkstationScreen<ProcessingWorkstationMenu>"));
     }
 
     @Test
@@ -61,10 +65,13 @@ class WorkstationInteractionTest {
         assertTrue(source.contains("elapsedTicks()"));
         assertTrue(source.contains("totalTicks()"));
         assertTrue(source.contains("progressPercent()"));
+        assertTrue(source.contains("statusComponent()"));
         assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, WorkstationInventory.INPUT_SLOT"));
         assertTrue(source.contains("addSlot(new OutputSlot(inventory"));
         assertTrue(source.contains("public boolean mayPlace(ItemStack stack)"));
         assertTrue(source.contains("return false;"), "Output slot should reject manual insertion");
+        assertTrue(source.contains("inventory.isInputLocked()"), "Shift-click should respect active input reservation");
+        assertTrue(source.contains("inventory.isOutputExtractionAllowed()"), "Shift-click should respect output extraction state");
         assertTrue(source.contains("moveItemStackTo(original, WorkstationInventory.INPUT_SLOT, WorkstationInventory.INPUT_SLOT + 1, false)"));
     }
 

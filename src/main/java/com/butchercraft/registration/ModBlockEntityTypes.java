@@ -1,6 +1,7 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -18,6 +19,15 @@ public final class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             ProcessingWorkstationBlockEntity::new,
                             ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get()
+                    ).build(null)
+            );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GrinderBlockEntity>>
+            GRINDER = BLOCK_ENTITY_TYPES.register(
+                    "grinder",
+                    () -> BlockEntityType.Builder.of(
+                            GrinderBlockEntity::new,
+                            ModBlocks.GRINDER.get()
                     ).build(null)
             );
 

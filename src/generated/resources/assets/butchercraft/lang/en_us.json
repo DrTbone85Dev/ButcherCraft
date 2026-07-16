@@ -1,7 +1,9 @@
 {
   "block.butchercraft.development_processing_workstation": "Development Processing Workstation",
+  "block.butchercraft.grinder": "Grinder",
   "commands.butchercraft.diagnostic": "ButcherCraft Diagnostic",
   "container.butchercraft.development_processing_workstation": "Development Processing Workstation",
+  "container.butchercraft.grinder": "Grinder",
   "definition.butchercraft.processing_operation.grind_beef": "Grind Beef",
   "definition.butchercraft.processing_profile.red_meat": "Red Meat",
   "definition.butchercraft.product.beef_trim": "Beef Trim",
@@ -36,5 +38,11 @@
   "workstation.butchercraft.failure.registry_not_available": "Processing definitions are unavailable",
   "workstation.butchercraft.failure.result_creation_failed": "Could not create processing result",
   "workstation.butchercraft.failure.transaction_already_active": "Transaction is already active",
-  "workstation.butchercraft.failure.unknown_product_definition": "Product definition is not loaded"
+  "workstation.butchercraft.failure.unknown_product_definition": "Product definition is not loaded",
+  "workstation.butchercraft.state.blocked": "Blocked",
+  "workstation.butchercraft.state.complete": "Complete",
+  "workstation.butchercraft.state.error": "Error",
+  "workstation.butchercraft.state.idle": "Idle",
+  "workstation.butchercraft.state.processing": "Processing",
+  "workstation.butchercraft.state.ready": "Ready"
 }

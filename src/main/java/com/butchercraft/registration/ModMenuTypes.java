@@ -1,6 +1,7 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.grinder.GrinderMenu;
 import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -17,6 +18,12 @@ public final class ModMenuTypes {
             DEVELOPMENT_PROCESSING_WORKSTATION = MENU_TYPES.register(
                     "development_processing_workstation",
                     () -> IMenuTypeExtension.create(ProcessingWorkstationMenu::new)
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<GrinderMenu>>
+            GRINDER = MENU_TYPES.register(
+                    "grinder",
+                    () -> IMenuTypeExtension.create(GrinderMenu::new)
             );
 
     private ModMenuTypes() {

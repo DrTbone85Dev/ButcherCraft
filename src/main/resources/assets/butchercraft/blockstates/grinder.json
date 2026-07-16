@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "butchercraft:block/grinder",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "butchercraft:block/grinder"
+    },
+    "facing=south": {
+      "model": "butchercraft:block/grinder",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "butchercraft:block/grinder",
+      "y": 270
+    }
+  }
+}

@@ -6,6 +6,7 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 public final class WorkstationInventory extends ItemStackHandler {
     public static final int INPUT_SLOT = 0;
@@ -15,6 +16,7 @@ public final class WorkstationInventory extends ItemStackHandler {
     private final Runnable changeListener;
     private BooleanSupplier inputLocked = () -> false;
     private BooleanSupplier outputExtractionAllowed = () -> false;
+    private Predicate<ItemStack> inputValidator = stack -> ProductStackAdapter.readProductData(stack).succeeded();
     private boolean suppressChangeListener;
 
     public WorkstationInventory(Runnable changeListener) {
@@ -28,6 +30,18 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     public void setOutputExtractionAllowed(BooleanSupplier outputExtractionAllowed) {
         this.outputExtractionAllowed = Objects.requireNonNull(outputExtractionAllowed, "outputExtractionAllowed");
+    }
+
+    public void setInputValidator(Predicate<ItemStack> inputValidator) {
+        this.inputValidator = Objects.requireNonNull(inputValidator, "inputValidator");
+    }
+
+    public boolean isInputLocked() {
+        return inputLocked.getAsBoolean();
+    }
+
+    public boolean isOutputExtractionAllowed() {
+        return outputExtractionAllowed.getAsBoolean();
     }
 
     public ItemStack input() {
@@ -58,7 +72,7 @@ public final class WorkstationInventory extends ItemStackHandler {
         if (slot != INPUT_SLOT || stack.isEmpty()) {
             return false;
         }
-        return ProductStackAdapter.readProductData(stack).succeeded();
+        return inputValidator.test(stack);
     }
 
     @Override
@@ -71,10 +85,10 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        if (slot == INPUT_SLOT && inputLocked.getAsBoolean()) {
+        if (slot == INPUT_SLOT && isInputLocked()) {
             return ItemStack.EMPTY;
         }
-        if (slot == OUTPUT_SLOT && !outputExtractionAllowed.getAsBoolean()) {
+        if (slot == OUTPUT_SLOT && !isOutputExtractionAllowed()) {
             return ItemStack.EMPTY;
         }
         return super.extractItem(slot, amount, simulate);

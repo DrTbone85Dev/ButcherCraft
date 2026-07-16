@@ -1,10 +1,9 @@
-package com.butchercraft.workstation.block;
+package com.butchercraft.machine.grinder;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.workstation.DevelopmentProductItemMapping;
-import com.butchercraft.workstation.DevelopmentWorkstationFixtures;
 import com.butchercraft.workstation.WorkstationOperationResolver;
-import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
+import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -14,30 +13,30 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public final class ProcessingWorkstationBlockEntity extends AbstractProcessingWorkstationBlockEntity {
-    public ProcessingWorkstationBlockEntity(BlockPos pos, BlockState blockState) {
+public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlockEntity {
+    public GrinderBlockEntity(BlockPos pos, BlockState blockState) {
         super(
-                ModBlockEntityTypes.DEVELOPMENT_PROCESSING_WORKSTATION.get(),
+                ModBlockEntityTypes.GRINDER.get(),
                 pos,
                 blockState,
-                DevelopmentWorkstationFixtures.capability(),
+                GrinderWorkstation.capability(),
                 new WorkstationOperationResolver(),
                 DevelopmentProductItemMapping.fixtureMapping()
         );
     }
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, ProcessingWorkstationBlockEntity blockEntity) {
+    public static void serverTick(Level level, BlockPos pos, BlockState state, GrinderBlockEntity blockEntity) {
         AbstractProcessingWorkstationBlockEntity.serverTick(level, pos, state, blockEntity);
     }
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.butchercraft.development_processing_workstation");
+        return Component.translatable("container.butchercraft.grinder");
     }
 
     @Nullable
     @Override
     protected AbstractContainerMenu createWorkstationMenu(int containerId, Inventory playerInventory, Player player) {
-        return new ProcessingWorkstationMenu(containerId, playerInventory, this);
+        return new GrinderMenu(containerId, playerInventory, this);
     }
 }

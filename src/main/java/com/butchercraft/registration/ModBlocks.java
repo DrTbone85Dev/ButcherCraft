@@ -1,6 +1,7 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.grinder.GrinderBlock;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -17,6 +18,15 @@ public final class ModBlocks {
                     ProcessingWorkstationBlock::new,
                     BlockBehaviour.Properties.of()
                             .strength(2.0F)
+                            .sound(SoundType.METAL)
+            );
+
+    public static final DeferredBlock<GrinderBlock> GRINDER =
+            BLOCKS.registerBlock(
+                    "grinder",
+                    GrinderBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(2.5F)
                             .sound(SoundType.METAL)
             );
 

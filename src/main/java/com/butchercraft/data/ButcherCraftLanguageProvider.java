@@ -17,7 +17,9 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.DEVELOPMENT_TEST_ITEM.get(), "Development Test Item");
         add(ModItems.BEEF_TRIM_TEST.get(), "Beef Trim Test Product");
         add(ModItems.GROUND_BEEF_TEST.get(), "Ground Beef Test Product");
+        add(ModBlocks.GRINDER.get(), "Grinder");
         add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
+        add("container.butchercraft.grinder", "Grinder");
         add("container.butchercraft.development_processing_workstation", "Development Processing Workstation");
         add("commands.butchercraft.diagnostic", "ButcherCraft Diagnostic");
         add("definition.butchercraft.species.beef", "Beef");
@@ -51,5 +53,11 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("workstation.butchercraft.failure.registry_not_available", "Processing definitions are unavailable");
         add("workstation.butchercraft.failure.processing_validation_rejected", "Processing validation rejected the input");
         add("workstation.butchercraft.failure.result_creation_failed", "Could not create processing result");
+        add("workstation.butchercraft.state.idle", "Idle");
+        add("workstation.butchercraft.state.ready", "Ready");
+        add("workstation.butchercraft.state.processing", "Processing");
+        add("workstation.butchercraft.state.blocked", "Blocked");
+        add("workstation.butchercraft.state.complete", "Complete");
+        add("workstation.butchercraft.state.error", "Error");
     }
 }

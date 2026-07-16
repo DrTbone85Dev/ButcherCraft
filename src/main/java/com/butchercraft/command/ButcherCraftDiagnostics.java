@@ -4,6 +4,7 @@ import com.butchercraft.ButcherCraft;
 import com.butchercraft.config.CommonConfig;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.evaluation.ProcessingEvaluator;
+import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.processing.definition.DefinitionRegistryLoadResult;
 import com.butchercraft.processing.definition.DefinitionRegistryView;
@@ -50,6 +51,8 @@ public final class ButcherCraftDiagnostics {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_beef_test");
     private static final ResourceLocation DEVELOPMENT_WORKSTATION_BLOCK_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "development_processing_workstation");
+    private static final ResourceLocation GRINDER_BLOCK_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "grinder");
 
     private ButcherCraftDiagnostics() {
     }
@@ -89,6 +92,7 @@ public final class ButcherCraftDiagnostics {
         boolean initialGraphValid = definitionRegistries.allRegistriesAvailable() && !definitionReport.hasErrors();
         boolean beefTrimToGroundBeefExists = graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.GROUND_BEEF);
         WorkstationDiagnostic workstationDiagnostic = verifyWorkstation(source.registryAccess());
+        GrinderDiagnostic grinderDiagnostic = verifyGrinder(source.registryAccess());
 
         source.sendSuccess(() -> Component.literal("Project: " + ButcherCraft.PROJECT_NAME), false);
         source.sendSuccess(() -> Component.literal("Mod ID: " + ButcherCraft.MOD_ID), false);
@@ -123,11 +127,28 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("grind_beef duration resolves to 60 ticks: " + workstationDiagnostic.grindBeefDurationIs60Ticks()), false);
         source.sendSuccess(() -> Component.literal("Prototype processing context validates: " + workstationDiagnostic.prototypeContextValidates()), false);
         source.sendSuccess(() -> Component.literal("Output mapping resolves to Ground Beef Test Product: " + workstationDiagnostic.outputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Grinder block registered: " + grinderDiagnostic.blockRegistered()), false);
+        source.sendSuccess(() -> Component.literal("Grinder block entity registered: " + grinderDiagnostic.blockEntityRegistered()), false);
+        source.sendSuccess(() -> Component.literal("Grinder menu registered: " + grinderDiagnostic.menuRegistered()), false);
+        source.sendSuccess(() -> Component.literal("Grinder screen binding observed: " + ModClientRegistrationStatus.grinderScreenRegistered()), false);
+        source.sendSuccess(() -> Component.literal("Grinder capability available: " + grinderDiagnostic.capabilityAvailable()), false);
+        source.sendSuccess(() -> Component.literal("Built-in grind_beef supports Grinder capability: " + grinderDiagnostic.grindBeefSupportsCapability()), false);
+        source.sendSuccess(() -> Component.literal("Beef Trim resolves to grind_beef for Grinder: " + grinderDiagnostic.beefTrimResolvesToGrindBeef()), false);
+        source.sendSuccess(() -> Component.literal("Grinder grind_beef duration resolves to 60 ticks: " + grinderDiagnostic.grindBeefDurationIs60Ticks()), false);
+        source.sendSuccess(() -> Component.literal("Ground Beef output mapping resolves for Grinder: " + grinderDiagnostic.outputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Development workstation remains available: " + (
+                workstationDiagnostic.blockRegistered()
+                        && workstationDiagnostic.blockEntityRegistered()
+                        && workstationDiagnostic.menuRegistered()
+        )), false);
         if (!productRoundTrip.detail().isBlank()) {
             source.sendSuccess(() -> Component.literal("Product round-trip detail: " + productRoundTrip.detail()), false);
         }
         if (!workstationDiagnostic.detail().isBlank()) {
             source.sendSuccess(() -> Component.literal("Workstation diagnostic detail: " + workstationDiagnostic.detail()), false);
+        }
+        if (!grinderDiagnostic.detail().isBlank()) {
+            source.sendSuccess(() -> Component.literal("Grinder diagnostic detail: " + grinderDiagnostic.detail()), false);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -215,6 +236,57 @@ public final class ButcherCraftDiagnostics {
         );
     }
 
+    private static GrinderDiagnostic verifyGrinder(net.minecraft.core.RegistryAccess registryAccess) {
+        boolean blockRegistered = BuiltInRegistries.BLOCK.containsKey(GRINDER_BLOCK_ID);
+        boolean blockEntityRegistered = ModBlockEntityTypes.GRINDER.isBound()
+                && GRINDER_BLOCK_ID.equals(ModBlockEntityTypes.GRINDER.getId());
+        boolean menuRegistered = ModMenuTypes.GRINDER.isBound()
+                && GRINDER_BLOCK_ID.equals(ModMenuTypes.GRINDER.getId());
+        boolean capabilityAvailable = GrinderWorkstation.capability().supportsWorkstationCapability(GrinderWorkstation.CAPABILITY_ID);
+        boolean grindBeefSupportsCapability = false;
+        boolean beefTrimResolvesToGrindBeef = false;
+        boolean durationIs60Ticks = false;
+        boolean outputMappingResolves = DevelopmentProductItemMapping.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BEEF);
+        String detail = "";
+
+        try {
+            DefinitionRegistryLoadResult definitionRegistries = DefinitionRegistryView.fromRegistryAccess(registryAccess);
+            DefinitionResolution<ResolvedProcessingOperationDefinition> resolvedOperation =
+                    new ProcessingDefinitionResolver(definitionRegistries.view()).resolveOperation(BuiltInDefinitionIds.GRIND_BEEF);
+            grindBeefSupportsCapability = resolvedOperation.succeeded()
+                    && resolvedOperation.orThrow().operation().workstationCapability()
+                    .filter(GrinderWorkstation.CAPABILITY_ID::equals)
+                    .isPresent();
+
+            WorkstationOperationResolution resolution = new WorkstationOperationResolver().resolve(
+                    registryAccess,
+                    GrinderWorkstation.capability(),
+                    ModItems.BEEF_TRIM_TEST.get().getDefaultInstance()
+            );
+            if (resolution.succeeded()) {
+                var operation = resolution.operation().orElseThrow();
+                beefTrimResolvesToGrindBeef = BuiltInDefinitionIds.GRIND_BEEF.equals(operation.operationId());
+                durationIs60Ticks = operation.totalTicks() == WorkstationDuration.millisecondsToTicks(3_000);
+            } else {
+                detail = resolution.failure().orElseThrow().code().reasonCode();
+            }
+        } catch (RuntimeException exception) {
+            detail = exception.getClass().getSimpleName();
+        }
+
+        return new GrinderDiagnostic(
+                blockRegistered,
+                blockEntityRegistered,
+                menuRegistered,
+                capabilityAvailable,
+                grindBeefSupportsCapability,
+                beefTrimResolvesToGrindBeef,
+                durationIs60Ticks,
+                outputMappingResolves,
+                detail
+        );
+    }
+
     private record ProductRoundTripDiagnostic(
             boolean roundTripSucceeded,
             boolean quantityPreserved,
@@ -234,6 +306,19 @@ public final class ButcherCraftDiagnostics {
             boolean beefTrimResolvesToGrindBeef,
             boolean grindBeefDurationIs60Ticks,
             boolean prototypeContextValidates,
+            boolean outputMappingResolves,
+            String detail
+    ) {
+    }
+
+    private record GrinderDiagnostic(
+            boolean blockRegistered,
+            boolean blockEntityRegistered,
+            boolean menuRegistered,
+            boolean capabilityAvailable,
+            boolean grindBeefSupportsCapability,
+            boolean beefTrimResolvesToGrindBeef,
+            boolean grindBeefDurationIs60Ticks,
             boolean outputMappingResolves,
             String detail
     ) {

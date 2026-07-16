@@ -18,8 +18,10 @@ public final class ButcherCraftDataGenerators {
 
         if (event.includeServer()) {
             event.addProvider(new ButcherCraftDefinitionData(output));
+            event.addProvider(new ButcherCraftLootTableProvider(output, event.getLookupProvider()));
         }
         generator.addProvider(event.includeClient(), new ButcherCraftLanguageProvider(output));
         generator.addProvider(event.includeClient(), new ButcherCraftItemModelProvider(output, existingFileHelper));
+        generator.addProvider(event.includeClient(), new ButcherCraftBlockStateProvider(output, existingFileHelper));
     }
 }

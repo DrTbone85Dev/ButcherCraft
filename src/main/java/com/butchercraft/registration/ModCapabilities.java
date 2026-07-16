@@ -18,5 +18,10 @@ public final class ModCapabilities {
                 ModBlockEntityTypes.DEVELOPMENT_PROCESSING_WORKSTATION.get(),
                 (blockEntity, side) -> blockEntity.inventory()
         );
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                ModBlockEntityTypes.GRINDER.get(),
+                (blockEntity, side) -> blockEntity.inventory()
+        );
     }
 }
