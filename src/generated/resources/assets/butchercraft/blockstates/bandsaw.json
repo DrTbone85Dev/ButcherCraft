@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "butchercraft:block/bandsaw",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "butchercraft:block/bandsaw"
+    },
+    "facing=south": {
+      "model": "butchercraft:block/bandsaw",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "butchercraft:block/bandsaw",
+      "y": 270
+    }
+  }
+}

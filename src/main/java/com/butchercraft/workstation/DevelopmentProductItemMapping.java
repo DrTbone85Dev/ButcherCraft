@@ -1,14 +1,14 @@
 package com.butchercraft.workstation;
 
-import com.butchercraft.ButcherCraft;
 import com.butchercraft.engine.product.Product;
+import com.butchercraft.product.item.ProductTestItem;
 import com.butchercraft.product.integration.ProductDataResult;
 import com.butchercraft.product.integration.ProductStackAdapter;
-import com.butchercraft.registration.ModItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,11 +21,17 @@ public final class DevelopmentProductItemMapping {
         this.itemByProductId = Map.copyOf(Objects.requireNonNull(itemByProductId, "itemByProductId"));
     }
 
-    public static DevelopmentProductItemMapping fixtureMapping() {
-        return new DevelopmentProductItemMapping(Map.of(
-                ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "beef_trim"), ModItems.BEEF_TRIM_TEST,
-                ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_beef"), ModItems.GROUND_BEEF_TEST
-        ));
+    @SafeVarargs
+    public static DevelopmentProductItemMapping fromFixtureItems(Supplier<? extends ProductTestItem>... itemSuppliers) {
+        Map<ResourceLocation, Supplier<? extends Item>> mappings = new LinkedHashMap<>();
+        for (Supplier<? extends ProductTestItem> itemSupplier : itemSuppliers) {
+            ProductTestItem item = itemSupplier.get();
+            ResourceLocation productId = ResourceLocation.parse(item.defaultProductData().productTypeId());
+            if (mappings.put(productId, itemSupplier) != null) {
+                throw new IllegalStateException("Duplicate development product fixture mapping for " + productId);
+            }
+        }
+        return new DevelopmentProductItemMapping(mappings);
     }
 
     public Optional<ItemStack> createStack(Product product) {

@@ -22,7 +22,20 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
                         output.accept(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.PORK_TRIM_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_PORK_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BISON_TRIM_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_BISON_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_CHUCK_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_RIB_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_BRISKET_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_PLATE_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_SHANK_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_FAT_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_BONE_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GRINDER.get());
+                        output.accept(ModItems.BANDSAW.get());
                         output.accept(ModItems.DEVELOPMENT_PROCESSING_WORKSTATION.get());
                     })
                     .build());

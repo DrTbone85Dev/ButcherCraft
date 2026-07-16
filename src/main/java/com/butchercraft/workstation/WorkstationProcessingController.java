@@ -12,6 +12,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public final class WorkstationProcessingController {
@@ -80,7 +82,7 @@ public final class WorkstationProcessingController {
     }
 
     public void onInventoryChanged() {
-        if (state == WorkstationState.COMPLETE && inventory.output().isEmpty()) {
+        if (state == WorkstationState.COMPLETE && inventory.outputsEmpty()) {
             resetToIdle();
             return;
         }
@@ -188,7 +190,7 @@ public final class WorkstationProcessingController {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Processing is already active"));
             return;
         }
-        if (!inventory.output().isEmpty()) {
+        if (!inventory.outputsEmpty()) {
             block(WorkstationFailure.of(WorkstationFailureCode.OUTPUT_OCCUPIED, "Output slot must be empty before processing starts"));
             return;
         }
@@ -223,7 +225,7 @@ public final class WorkstationProcessingController {
             resetToIdle();
             return;
         }
-        if (selectedOperationId != null && elapsedTicks >= totalTicks && inventory.output().isEmpty()) {
+        if (selectedOperationId != null && elapsedTicks >= totalTicks && inventory.outputsEmpty()) {
             state = WorkstationState.PROCESSING;
             complete(registryAccess);
         }
@@ -234,7 +236,7 @@ public final class WorkstationProcessingController {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Completion was already committed"));
             return;
         }
-        if (!inventory.output().isEmpty()) {
+        if (!inventory.outputsEmpty()) {
             block(WorkstationFailure.of(WorkstationFailureCode.OUTPUT_OCCUPIED, "Output slot is occupied at completion"));
             return;
         }
@@ -264,27 +266,39 @@ public final class WorkstationProcessingController {
             return;
         }
         OperationResult committed = transaction.commit();
-        if (!committed.succeeded() || committed.committedOutput().isEmpty()) {
+        if (!committed.succeeded() || committed.committedOutputs().isEmpty()) {
             block(WorkstationFailure.of(
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
-                    committed.failureReason().map(reason -> reason.message()).orElse("Processing transaction did not produce committed output")
+                    committed.failureReason().map(reason -> reason.message()).orElse("Processing transaction did not produce committed outputs")
+            ));
+            return;
+        }
+        if (committed.committedOutputs().size() > capability.outputSlots()
+                || committed.committedOutputs().size() > inventory.outputSlotCount()) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.RESULT_CREATION_FAILED,
+                    "Processing transaction produced more outputs than this workstation can hold"
             ));
             return;
         }
 
-        Optional<ItemStack> output = outputMapping.createStack(committed.committedOutput().orElseThrow());
-        if (output.isEmpty()) {
-            block(WorkstationFailure.of(
-                    WorkstationFailureCode.RESULT_CREATION_FAILED,
-                    operation.definition().operation().outputProduct(),
-                    "No development item mapping exists for output product"
-            ));
-            return;
+        List<ItemStack> outputStacks = new ArrayList<>();
+        for (Product outputProduct : committed.committedOutputs()) {
+            Optional<ItemStack> output = outputMapping.createStack(outputProduct);
+            if (output.isEmpty()) {
+                block(WorkstationFailure.of(
+                        WorkstationFailureCode.RESULT_CREATION_FAILED,
+                        ResourceLocation.parse(outputProduct.typeId().value()),
+                        "No development item mapping exists for output product"
+                ));
+                return;
+            }
+            outputStacks.add(output.orElseThrow());
         }
 
         completionCommitted = true;
         inventory.clearInputInternal();
-        inventory.setOutputInternal(output.orElseThrow());
+        inventory.setOutputsInternal(outputStacks);
         elapsedTicks = totalTicks;
         clearFailure();
         setState(WorkstationState.COMPLETE);
@@ -341,7 +355,7 @@ public final class WorkstationProcessingController {
                 resetRuntimeProgress();
             }
         }
-        if (state == WorkstationState.COMPLETE && inventory.output().isEmpty()) {
+        if (state == WorkstationState.COMPLETE && inventory.outputsEmpty()) {
             resetRuntimeProgress();
             state = WorkstationState.IDLE;
         }

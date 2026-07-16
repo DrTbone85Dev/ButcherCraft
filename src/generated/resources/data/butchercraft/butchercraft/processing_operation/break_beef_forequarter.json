@@ -1,0 +1,108 @@
+{
+  "base_duration_milliseconds": 6000,
+  "display_name_key": "definition.butchercraft.processing_operation.break_beef_forequarter",
+  "input_product": "butchercraft:beef_forequarter",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 100000,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/fabrication",
+  "outputs": [
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_chuck",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100,
+        "numerator": 30
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_rib",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100,
+        "numerator": 10
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_brisket",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100,
+        "numerator": 10
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_plate",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100,
+        "numerator": 10
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_shank",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100,
+        "numerator": 5
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_trim",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:trim",
+      "yield": {
+        "denominator": 100,
+        "numerator": 15
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_fat",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:fat",
+      "yield": {
+        "denominator": 100,
+        "numerator": 5
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_bone",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:bone",
+      "yield": {
+        "denominator": 100,
+        "numerator": 10
+      }
+    }
+  ],
+  "required_input_processing_state": "butchercraft:forequarter",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "workstation_capability": "butchercraft:bandsaw",
+  "zero_output_policy": "forbid"
+}

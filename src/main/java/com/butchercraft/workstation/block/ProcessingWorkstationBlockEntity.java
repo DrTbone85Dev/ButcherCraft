@@ -1,7 +1,7 @@
 package com.butchercraft.workstation.block;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
-import com.butchercraft.workstation.DevelopmentProductItemMapping;
+import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.workstation.DevelopmentWorkstationFixtures;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
@@ -22,7 +22,7 @@ public final class ProcessingWorkstationBlockEntity extends AbstractProcessingWo
                 blockState,
                 DevelopmentWorkstationFixtures.capability(),
                 new WorkstationOperationResolver(),
-                DevelopmentProductItemMapping.fixtureMapping()
+                DevelopmentProductItemMappings.fixtureMapping()
         );
     }
 

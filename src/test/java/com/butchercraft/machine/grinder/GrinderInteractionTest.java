@@ -52,12 +52,14 @@ class GrinderInteractionTest {
         assertTrue(source.contains("addDataSlots(data)"));
         assertTrue(source.contains("progressPercent()"));
         assertTrue(source.contains("statusComponent()"));
-        assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, WorkstationInventory.INPUT_SLOT"));
+        assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, inventory.firstInputSlot()"));
         assertTrue(source.contains("addSlot(new OutputSlot(inventory"));
+        assertTrue(source.contains("for (int outputIndex = 0; outputIndex < inventory.outputSlotCount(); outputIndex++)"));
         assertTrue(source.contains("public boolean mayPlace(ItemStack stack)"));
         assertTrue(source.contains("inventory.isInputLocked()"));
         assertTrue(source.contains("inventory.isOutputExtractionAllowed()"));
-        assertTrue(source.contains("moveItemStackTo(original, WorkstationInventory.INPUT_SLOT, WorkstationInventory.INPUT_SLOT + 1, false)"));
+        assertTrue(source.contains("playerInventoryStart = workstationSlotCount"));
+        assertTrue(source.contains("moveItemStackTo(original, inventory.firstInputSlot(), inventory.firstOutputSlot(), false)"));
     }
 
     @Test
@@ -78,17 +80,27 @@ class GrinderInteractionTest {
         assertTrue(source.contains("GrinderWorkstation.capability()"));
         assertTrue(source.contains("GrinderWorkstation.CAPABILITY_ID"));
         assertTrue(source.contains("BuiltInDefinitionIds.GRIND_BEEF"));
+        assertTrue(source.contains("BuiltInDefinitionIds.GRIND_PORK"));
+        assertTrue(source.contains("BuiltInDefinitionIds.GRIND_BISON"));
         assertTrue(source.contains("WorkstationDuration.millisecondsToTicks(3_000)"));
-        assertTrue(source.contains("DevelopmentProductItemMapping.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BEEF)"));
+        assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BEEF)"));
+        assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_PORK)"));
+        assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BISON)"));
         assertTrue(source.contains("Grinder block registered: "));
         assertTrue(source.contains("Grinder block entity registered: "));
         assertTrue(source.contains("Grinder menu registered: "));
         assertTrue(source.contains("Grinder screen binding observed: "));
         assertTrue(source.contains("Grinder capability available: "));
         assertTrue(source.contains("Built-in grind_beef supports Grinder capability: "));
+        assertTrue(source.contains("Built-in grind_pork supports Grinder capability: "));
+        assertTrue(source.contains("Built-in grind_bison supports Grinder capability: "));
         assertTrue(source.contains("Beef Trim resolves to grind_beef for Grinder: "));
+        assertTrue(source.contains("Pork Trim resolves to grind_pork for Grinder: "));
+        assertTrue(source.contains("Bison Trim resolves to grind_bison for Grinder: "));
         assertTrue(source.contains("Grinder grind_beef duration resolves to 60 ticks: "));
         assertTrue(source.contains("Ground Beef output mapping resolves for Grinder: "));
+        assertTrue(source.contains("Ground Pork output mapping resolves for Grinder: "));
+        assertTrue(source.contains("Ground Bison output mapping resolves for Grinder: "));
     }
 
     private static String source(String relativePath) throws IOException {

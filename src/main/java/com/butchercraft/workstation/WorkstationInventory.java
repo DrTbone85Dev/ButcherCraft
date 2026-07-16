@@ -1,9 +1,15 @@
 package com.butchercraft.workstation;
 
 import com.butchercraft.product.integration.ProductStackAdapter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
@@ -11,8 +17,12 @@ import java.util.function.Predicate;
 public final class WorkstationInventory extends ItemStackHandler {
     public static final int INPUT_SLOT = 0;
     public static final int OUTPUT_SLOT = 1;
-    public static final int SLOT_COUNT = 2;
 
+    private final int inputSlotCount;
+    private final int outputSlotCount;
+    private final int firstInputSlot;
+    private final int firstOutputSlot;
+    private final int totalSlotCount;
     private final Runnable changeListener;
     private BooleanSupplier inputLocked = () -> false;
     private BooleanSupplier outputExtractionAllowed = () -> false;
@@ -20,8 +30,59 @@ public final class WorkstationInventory extends ItemStackHandler {
     private boolean suppressChangeListener;
 
     public WorkstationInventory(Runnable changeListener) {
-        super(SLOT_COUNT);
+        this(1, 1, changeListener);
+    }
+
+    public WorkstationInventory(WorkstationCapability capability, Runnable changeListener) {
+        this(capability.inputSlots(), capability.outputSlots(), changeListener);
+    }
+
+    public WorkstationInventory(int inputSlotCount, int outputSlotCount, Runnable changeListener) {
+        super(totalSlotCount(inputSlotCount, outputSlotCount));
+        this.inputSlotCount = inputSlotCount;
+        this.outputSlotCount = outputSlotCount;
+        this.firstInputSlot = 0;
+        this.firstOutputSlot = inputSlotCount;
+        this.totalSlotCount = inputSlotCount + outputSlotCount;
         this.changeListener = Objects.requireNonNull(changeListener, "changeListener");
+    }
+
+    private static int totalSlotCount(int inputSlotCount, int outputSlotCount) {
+        if (inputSlotCount != 1) {
+            throw new IllegalArgumentException("Workstation inventories currently support exactly one input slot");
+        }
+        if (outputSlotCount <= 0) {
+            throw new IllegalArgumentException("Workstation inventories must support at least one output slot");
+        }
+        return inputSlotCount + outputSlotCount;
+    }
+
+    public int inputSlotCount() {
+        return inputSlotCount;
+    }
+
+    public int outputSlotCount() {
+        return outputSlotCount;
+    }
+
+    public int firstInputSlot() {
+        return firstInputSlot;
+    }
+
+    public int firstOutputSlot() {
+        return firstOutputSlot;
+    }
+
+    public int totalSlotCount() {
+        return totalSlotCount;
+    }
+
+    public List<Integer> outputSlotRange() {
+        List<Integer> slots = new ArrayList<>();
+        for (int slot = firstOutputSlot; slot < totalSlotCount; slot++) {
+            slots.add(slot);
+        }
+        return List.copyOf(slots);
     }
 
     public void setInputLocked(BooleanSupplier inputLocked) {
@@ -45,31 +106,69 @@ public final class WorkstationInventory extends ItemStackHandler {
     }
 
     public ItemStack input() {
-        return getStackInSlot(INPUT_SLOT);
+        return getStackInSlot(firstInputSlot);
     }
 
     public ItemStack output() {
-        return getStackInSlot(OUTPUT_SLOT);
+        return getStackInSlot(firstOutputSlot);
+    }
+
+    public List<ItemStack> outputs() {
+        List<ItemStack> outputs = new ArrayList<>();
+        for (int slot = firstOutputSlot; slot < totalSlotCount; slot++) {
+            outputs.add(getStackInSlot(slot));
+        }
+        return List.copyOf(outputs);
+    }
+
+    public boolean outputsEmpty() {
+        for (int slot = firstOutputSlot; slot < totalSlotCount; slot++) {
+            if (!getStackInSlot(slot).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void setInputInternal(ItemStack stack) {
-        setStackMuted(INPUT_SLOT, stack);
+        setStackMuted(firstInputSlot, stack);
     }
 
     public void setOutputInternal(ItemStack stack) {
-        setStackMuted(OUTPUT_SLOT, stack);
+        setStackMuted(firstOutputSlot, stack);
+    }
+
+    public void setOutputsInternal(List<ItemStack> stacks) {
+        List<ItemStack> copiedStacks = List.copyOf(Objects.requireNonNull(stacks, "stacks"));
+        if (copiedStacks.size() > outputSlotCount) {
+            throw new IllegalArgumentException("Too many output stacks for workstation inventory");
+        }
+        suppressChangeListener = true;
+        try {
+            for (int slot = firstOutputSlot; slot < totalSlotCount; slot++) {
+                int outputIndex = slot - firstOutputSlot;
+                setStackInSlot(slot, outputIndex < copiedStacks.size() ? copiedStacks.get(outputIndex) : ItemStack.EMPTY);
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
     }
 
     public void clearInputInternal() {
-        setStackMuted(INPUT_SLOT, ItemStack.EMPTY);
+        setStackMuted(firstInputSlot, ItemStack.EMPTY);
+    }
+
+    public void clearOutputsInternal() {
+        setOutputsInternal(List.of());
     }
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
-        if (slot == OUTPUT_SLOT) {
+        if (isOutputSlot(slot)) {
             return false;
         }
-        if (slot != INPUT_SLOT || stack.isEmpty()) {
+        if (!isInputSlot(slot) || stack.isEmpty()) {
             return false;
         }
         return inputValidator.test(stack);
@@ -77,7 +176,7 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-        if (slot == OUTPUT_SLOT) {
+        if (isOutputSlot(slot)) {
             return stack;
         }
         return super.insertItem(slot, stack, simulate);
@@ -85,10 +184,10 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        if (slot == INPUT_SLOT && isInputLocked()) {
+        if (isInputSlot(slot) && isInputLocked()) {
             return ItemStack.EMPTY;
         }
-        if (slot == OUTPUT_SLOT && !isOutputExtractionAllowed()) {
+        if (isOutputSlot(slot) && !isOutputExtractionAllowed()) {
             return ItemStack.EMPTY;
         }
         return super.extractItem(slot, amount, simulate);
@@ -106,6 +205,27 @@ public final class WorkstationInventory extends ItemStackHandler {
         }
     }
 
+    @Override
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        suppressChangeListener = true;
+        try {
+            for (int slot = 0; slot < totalSlotCount; slot++) {
+                stacks.set(slot, ItemStack.EMPTY);
+            }
+            ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
+            for (int i = 0; i < tagList.size(); i++) {
+                CompoundTag itemTags = tagList.getCompound(i);
+                int slot = itemTags.getInt("Slot");
+                if (slot >= 0 && slot < totalSlotCount) {
+                    ItemStack.parse(provider, itemTags).ifPresent(stack -> stacks.set(slot, stack));
+                }
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        onLoad();
+    }
+
     private void setStackMuted(int slot, ItemStack stack) {
         suppressChangeListener = true;
         try {
@@ -114,5 +234,13 @@ public final class WorkstationInventory extends ItemStackHandler {
             suppressChangeListener = false;
         }
         changeListener.run();
+    }
+
+    public boolean isInputSlot(int slot) {
+        return slot >= firstInputSlot && slot < firstOutputSlot;
+    }
+
+    public boolean isOutputSlot(int slot) {
+        return slot >= firstOutputSlot && slot < totalSlotCount;
     }
 }

@@ -36,7 +36,7 @@ public final class ValidationRules {
         return new SimpleRule(EngineId.of("validation/required_source_category"), context -> {
             ProductCategory actual = context.inputProduct().sourceCategory();
             if (context.operation().requiredSourceCategory().isPresent()
-                    && actual != context.operation().requiredSourceCategory().orElseThrow()) {
+                    && !actual.equals(context.operation().requiredSourceCategory().orElseThrow())) {
                 return ValidationResult.rejected("wrong_source_category", "Input source category does not match operation requirement");
             }
             return ValidationResult.accepted();
@@ -45,7 +45,7 @@ public final class ValidationRules {
 
     public static ValidationRule requiredProcessingState() {
         return new SimpleRule(EngineId.of("validation/required_processing_state"), context -> {
-            if (context.inputProduct().processingState() != context.operation().requiredProcessingState()) {
+            if (!context.inputProduct().processingState().equals(context.operation().requiredProcessingState())) {
                 return ValidationResult.rejected("wrong_processing_state", "Input processing state does not match operation requirement");
             }
             return ValidationResult.accepted();
@@ -95,7 +95,7 @@ public final class ValidationRules {
             explicitModifiers.addAll(context.operation().modifiers());
             explicitModifiers.addAll(context.additionalModifiers());
             ModifierApplication application = ModifierSystem.apply(explicitModifiers);
-            ProductQuantity quantity = context.operation().baseYield().apply(
+            ProductQuantity quantity = context.operation().totalOutputQuantity(
                     context.inputProduct().quantity(),
                     application.yieldBasisPointsDelta()
             );

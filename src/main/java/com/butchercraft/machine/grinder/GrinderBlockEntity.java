@@ -1,7 +1,7 @@
 package com.butchercraft.machine.grinder;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
-import com.butchercraft.workstation.DevelopmentProductItemMapping;
+import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -21,7 +21,7 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
                 blockState,
                 GrinderWorkstation.capability(),
                 new WorkstationOperationResolver(),
-                DevelopmentProductItemMapping.fixtureMapping()
+                DevelopmentProductItemMappings.fixtureMapping()
         );
     }
 

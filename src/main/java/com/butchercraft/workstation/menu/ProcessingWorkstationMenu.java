@@ -2,9 +2,11 @@ package com.butchercraft.workstation.menu;
 
 import com.butchercraft.registration.ModBlocks;
 import com.butchercraft.registration.ModMenuTypes;
+import com.butchercraft.workstation.DevelopmentWorkstationFixtures;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.WorkstationCapability;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlockEntity;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,15 +24,14 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class ProcessingWorkstationMenu extends AbstractContainerMenu {
-    protected static final int WORKSTATION_SLOT_COUNT = 2;
-    private static final int PLAYER_INVENTORY_START = WORKSTATION_SLOT_COUNT;
-    private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
-    private static final int HOTBAR_END = PLAYER_INVENTORY_END + 9;
-
     private final WorkstationInventory inventory;
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final Block validBlock;
+    private final int workstationSlotCount;
+    private final int playerInventoryStart;
+    private final int playerInventoryEnd;
+    private final int hotbarEnd;
 
     public ProcessingWorkstationMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf ignoredExtraData) {
         this(
@@ -38,7 +39,8 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 ignoredExtraData,
-                ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get()
+                ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(),
+                DevelopmentWorkstationFixtures.capability()
         );
     }
 
@@ -57,9 +59,10 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
             int containerId,
             Inventory playerInventory,
             RegistryFriendlyByteBuf ignoredExtraData,
-            Block validBlock
+            Block validBlock,
+            WorkstationCapability capability
     ) {
-        this(menuType, containerId, playerInventory, clientInventory(), new SimpleContainerData(4), ContainerLevelAccess.NULL, validBlock);
+        this(menuType, containerId, playerInventory, clientInventory(capability), new SimpleContainerData(4), ContainerLevelAccess.NULL, validBlock);
     }
 
     protected ProcessingWorkstationMenu(
@@ -89,11 +92,32 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
         this.data = data;
         this.access = access;
         this.validBlock = validBlock;
+        this.workstationSlotCount = inventory.totalSlotCount();
+        this.playerInventoryStart = workstationSlotCount;
+        this.playerInventoryEnd = playerInventoryStart + 27;
+        this.hotbarEnd = playerInventoryEnd + 9;
 
-        addSlot(new SlotItemHandler(inventory, WorkstationInventory.INPUT_SLOT, 56, 35));
-        addSlot(new OutputSlot(inventory, 116, 35));
+        addSlot(new SlotItemHandler(inventory, inventory.firstInputSlot(), 26, 35));
+        for (int outputIndex = 0; outputIndex < inventory.outputSlotCount(); outputIndex++) {
+            int column = outputIndex % 4;
+            int row = outputIndex / 4;
+            int slot = inventory.firstOutputSlot() + outputIndex;
+            addSlot(new OutputSlot(inventory, slot, 86 + column * 18, 26 + row * 18));
+        }
         addPlayerInventory(playerInventory);
         addDataSlots(data);
+    }
+
+    public int workstationSlotCount() {
+        return workstationSlotCount;
+    }
+
+    public int playerInventoryStart() {
+        return playerInventoryStart;
+    }
+
+    public int outputSlotCount() {
+        return inventory.outputSlotCount();
     }
 
     public WorkstationState workstationState() {
@@ -131,24 +155,27 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        if (index < 0 || index >= slots.size()) {
+            return ItemStack.EMPTY;
+        }
         Slot slot = slots.get(index);
         if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
-        if (index == WorkstationInventory.INPUT_SLOT && inventory.isInputLocked()) {
+        if (inventory.isInputSlot(index) && inventory.isInputLocked()) {
             return ItemStack.EMPTY;
         }
-        if (index == WorkstationInventory.OUTPUT_SLOT && !inventory.isOutputExtractionAllowed()) {
+        if (inventory.isOutputSlot(index) && !inventory.isOutputExtractionAllowed()) {
             return ItemStack.EMPTY;
         }
 
         ItemStack original = slot.getItem();
         ItemStack moved = original.copy();
-        if (index < WORKSTATION_SLOT_COUNT) {
-            if (!moveItemStackTo(original, PLAYER_INVENTORY_START, HOTBAR_END, true)) {
+        if (index < workstationSlotCount) {
+            if (!moveItemStackTo(original, playerInventoryStart, hotbarEnd, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(original, WorkstationInventory.INPUT_SLOT, WorkstationInventory.INPUT_SLOT + 1, false)) {
+        } else if (!moveItemStackTo(original, inventory.firstInputSlot(), inventory.firstOutputSlot(), false)) {
             return ItemStack.EMPTY;
         }
 
@@ -176,15 +203,15 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
         }
     }
 
-    private static WorkstationInventory clientInventory() {
-        WorkstationInventory inventory = new WorkstationInventory(() -> {});
+    private static WorkstationInventory clientInventory(WorkstationCapability capability) {
+        WorkstationInventory inventory = new WorkstationInventory(capability, () -> {});
         inventory.setOutputExtractionAllowed(() -> true);
         return inventory;
     }
 
     private static final class OutputSlot extends SlotItemHandler {
-        private OutputSlot(WorkstationInventory inventory, int x, int y) {
-            super(inventory, WorkstationInventory.OUTPUT_SLOT, x, y);
+        private OutputSlot(WorkstationInventory inventory, int slot, int x, int y) {
+            super(inventory, slot, x, y);
         }
 
         @Override

@@ -72,7 +72,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
         super(type, pos, blockState);
         this.capability = Objects.requireNonNull(capability, "capability");
         this.resolver = Objects.requireNonNull(resolver, "resolver");
-        this.inventory = new WorkstationInventory(this::onInventoryChanged);
+        this.inventory = new WorkstationInventory(capability, this::onInventoryChanged);
         this.controller = new WorkstationProcessingController(
                 inventory,
                 capability,
@@ -119,9 +119,11 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
     public void dropContents(Level level, BlockPos pos) {
         controller.cancelPreservingInput();
         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), inventory.input());
-        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), inventory.output());
+        for (ItemStack output : inventory.outputs()) {
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), output);
+        }
         inventory.setInputInternal(ItemStack.EMPTY);
-        inventory.setOutputInternal(ItemStack.EMPTY);
+        inventory.clearOutputsInternal();
     }
 
     @Nullable

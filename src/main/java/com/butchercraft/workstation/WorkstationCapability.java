@@ -27,8 +27,8 @@ public record WorkstationCapability(
         if (inputSlots != 1) {
             throw new IllegalArgumentException("Milestone 2B workstations support exactly one input slot");
         }
-        if (outputSlots != 1) {
-            throw new IllegalArgumentException("Milestone 2B workstations support exactly one output slot");
+        if (outputSlots <= 0) {
+            throw new IllegalArgumentException("Workstations must support at least one output slot");
         }
     }
 

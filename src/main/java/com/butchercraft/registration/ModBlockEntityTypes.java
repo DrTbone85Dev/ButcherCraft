@@ -1,6 +1,7 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.bandsaw.BandsawBlockEntity;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlockEntity;
 import net.minecraft.core.registries.Registries;
@@ -28,6 +29,15 @@ public final class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             GrinderBlockEntity::new,
                             ModBlocks.GRINDER.get()
+                    ).build(null)
+            );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BandsawBlockEntity>>
+            BANDSAW = BLOCK_ENTITY_TYPES.register(
+                    "bandsaw",
+                    () -> BlockEntityType.Builder.of(
+                            BandsawBlockEntity::new,
+                            ModBlocks.BANDSAW.get()
                     ).build(null)
             );
 

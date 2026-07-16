@@ -62,7 +62,12 @@ class WorkstationOperationResolverTest {
     @Test
     void productDataMismatchIsRejected() {
         ItemStack stack = beefTrimStack();
-        ProductStackAdapter.writeProductData(stack, productData("butchercraft:beef_trim", ProductCategory.POULTRY, ProcessingState.RAW, 1_000));
+        ProductStackAdapter.writeProductData(stack, productData(
+                "butchercraft:beef_trim",
+                ProductCategory.fromId(EngineId.of("butchercraft:poultry")),
+                ProcessingState.RAW,
+                1_000
+        ));
 
         assertFailure(resolve(stack, DevelopmentWorkstationFixtures.capability()), WorkstationFailureCode.PRODUCT_DATA_MISMATCH);
     }

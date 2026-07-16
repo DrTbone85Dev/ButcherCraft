@@ -1,0 +1,15 @@
+{
+  "bone_state": "not_applicable",
+  "display_name_key": "definition.butchercraft.product.beef_fat",
+  "edible": true,
+  "graph_input": false,
+  "graph_output": true,
+  "processing_state": "butchercraft:fat",
+  "product_category": "butchercraft:beef",
+  "quantity_unit": "gram",
+  "species": "butchercraft:beef",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/fat"
+  ]
+}

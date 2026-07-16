@@ -1,0 +1,15 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.ground_pork",
+  "edible": true,
+  "graph_input": false,
+  "graph_output": true,
+  "processing_state": "butchercraft:ground",
+  "product_category": "butchercraft:pork",
+  "quantity_unit": "gram",
+  "species": "butchercraft:pork",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/ground"
+  ]
+}

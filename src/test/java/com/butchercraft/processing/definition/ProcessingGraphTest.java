@@ -20,6 +20,26 @@ class ProcessingGraphTest {
         assertFalse(graph.validationReport().hasErrors());
         assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.GROUND_BEEF));
         assertEquals(List.of(BuiltInDefinitionIds.GROUND_BEEF), graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_TRIM));
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.PORK_TRIM, BuiltInDefinitionIds.GROUND_PORK));
+        assertEquals(List.of(BuiltInDefinitionIds.GROUND_PORK), graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.PORK_TRIM));
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BISON_TRIM, BuiltInDefinitionIds.GROUND_BISON));
+        assertEquals(List.of(BuiltInDefinitionIds.GROUND_BISON), graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BISON_TRIM));
+        assertEquals(List.of(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER), graph.operationsAvailableFor(BuiltInDefinitionIds.BEEF_FOREQUARTER).stream()
+                .map(ProcessingGraphEdge::operationId)
+                .toList());
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_FOREQUARTER, BuiltInDefinitionIds.BEEF_CHUCK));
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_FOREQUARTER, BuiltInDefinitionIds.BEEF_BONE));
+        assertEquals(List.of(
+                        BuiltInDefinitionIds.BEEF_BONE,
+                        BuiltInDefinitionIds.BEEF_BRISKET,
+                        BuiltInDefinitionIds.BEEF_CHUCK,
+                        BuiltInDefinitionIds.BEEF_FAT,
+                        BuiltInDefinitionIds.BEEF_PLATE,
+                        BuiltInDefinitionIds.BEEF_RIB,
+                        BuiltInDefinitionIds.BEEF_SHANK,
+                        BuiltInDefinitionIds.BEEF_TRIM
+                ),
+                graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_FOREQUARTER));
     }
 
     @Test

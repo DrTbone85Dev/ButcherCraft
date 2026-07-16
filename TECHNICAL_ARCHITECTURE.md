@@ -45,7 +45,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.product` | Minecraft-facing product data components, ItemStack adapters, product item fixtures, quality summaries, freshness and temperature services. |
 | `com.butchercraft.processing` | Manual stations, processing recipes, process state, yield results. |
 | `com.butchercraft.workstation` | Reusable server-side workstation state, operation resolution, inventory reservation, progress, failure reporting, and temporary development workstation fixtures. |
-| `com.butchercraft.machine` | Grinder, packaging station, base machine block entities, tick helpers. |
+| `com.butchercraft.machine` | Grinder, Bandsaw, packaging station, base machine block entities, tick helpers. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -80,6 +80,8 @@ Required boundaries:
 - Facility state owns identity and membership summaries only; business, inspections, work orders, refrigeration, and cleanliness keep their own domain state.
 - Client menus and screens consume synchronized summaries only. They do not mutate product quality, business state, employee skill, inspection outcomes, or saved data directly.
 - Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
+- The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Beef, pork, and bison grinding flows are selected through product/species/profile/operation definitions, not Grinder code branches.
+- The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
@@ -422,9 +424,13 @@ Use data generation for:
 
 Generated data should be deterministic and reviewed. Hand-written JSON is acceptable for small prototypes, but generated data should become the default once patterns are stable.
 
-Milestone 2A generates the built-in beef prototype definitions under the custom datapack registry paths documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`.
+Milestone 2A introduced the built-in beef prototype definitions under the custom datapack registry paths documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`.
 
 Milestone 2B adds placeholder blockstate, model, item model, loot table, and language coverage for the temporary Development Processing Workstation. Final machine artwork remains deferred.
+
+Milestone 2D extends built-in generated definitions with pork and bison red-meat grinding flows. These definitions use the same processing profile and Grinder capability as beef to prove multi-species behavior remains data-driven.
+
+Milestone 2E extends operation definitions and the pure engine from one output to ordered output collections. It adds generated definitions and placeholder assets for the two-block Bandsaw and the Beef Forequarter fabrication proof.
 
 ## Testing Strategy
 

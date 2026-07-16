@@ -7,10 +7,12 @@ import com.butchercraft.engine.modifier.ModifierCategory;
 import com.butchercraft.engine.modifier.ModifierSystem;
 import com.butchercraft.engine.modifier.ProcessingModifier;
 import com.butchercraft.engine.operation.ProcessingOperation;
+import com.butchercraft.engine.operation.ProcessingOutputDefinition;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.quality.ProductQuality;
 import com.butchercraft.engine.quantity.ProductQuantity;
 import com.butchercraft.engine.result.FailureReason;
+import com.butchercraft.engine.result.OperationOutputResult;
 import com.butchercraft.engine.result.OperationResult;
 import com.butchercraft.engine.result.OperationWarning;
 import com.butchercraft.engine.transaction.TransactionState;
@@ -105,11 +107,12 @@ public final class ProcessingEvaluator {
                     .map(modifier -> new OperationWarning(modifier.id(), modifier.reason()))
                     .toList());
 
-            ProductQuantity resultingQuantity = operation.baseYield().apply(
+            List<ProductQuantity> outputQuantities = operation.outputQuantities(
                     context.inputProduct().quantity(),
                     application.yieldBasisPointsDelta()
             );
-            if (resultingQuantity.isZero() && !operation.zeroOutputPermitted()) {
+            ProductQuantity totalQuantity = sum(outputQuantities);
+            if (totalQuantity.isZero() && !operation.zeroOutputPermitted()) {
                 return OperationResult.failure(
                         context.inputProduct(),
                         TransactionState.REJECTED,
@@ -120,21 +123,39 @@ public final class ProcessingEvaluator {
                 );
             }
 
-            int qualityDelta = Math.addExact(operation.baseQualityDelta(), application.qualityDelta());
-            ProductQuality resultingQuality = context.inputProduct().quality().adjustedByClamped(qualityDelta);
-            Product proposedOutput = new Product(
-                    operation.outputProductType(),
-                    context.inputProduct().sourceCategory(),
-                    operation.outputProcessingState(),
-                    resultingQuantity,
-                    resultingQuality
-            );
+            List<OperationOutputResult> proposedOutputs = new ArrayList<>();
+            List<ProcessingOutputDefinition> outputDefinitions = operation.outputs();
+            for (int index = 0; index < outputDefinitions.size(); index++) {
+                ProcessingOutputDefinition outputDefinition = outputDefinitions.get(index);
+                ProductQuantity outputQuantity = outputQuantities.get(index);
+                if (outputQuantity.isZero() && !outputDefinition.zeroOutputPermitted()) {
+                    return OperationResult.failure(
+                            context.inputProduct(),
+                            TransactionState.REJECTED,
+                            new FailureReason("zero_output_not_permitted", "Operation would produce zero output"),
+                            Optional.empty(),
+                            application.appliedModifiers(),
+                            warnings
+                    );
+                }
 
-            return OperationResult.success(
+                int qualityDelta = Math.addExact(outputDefinition.qualityDelta(), application.qualityDelta());
+                ProductQuality resultingQuality = context.inputProduct().quality().adjustedByClamped(qualityDelta);
+                Product proposedOutput = new Product(
+                        outputDefinition.productType(),
+                        context.inputProduct().sourceCategory(),
+                        outputDefinition.processingState(),
+                        outputQuantity,
+                        resultingQuality
+                );
+                proposedOutputs.add(new OperationOutputResult(index, proposedOutput));
+            }
+
+            return OperationResult.successOutputs(
                     context.inputProduct(),
                     TransactionState.PREPARED,
-                    Optional.of(proposedOutput),
-                    Optional.empty(),
+                    proposedOutputs,
+                    List.of(),
                     application.appliedModifiers(),
                     warnings
             );
@@ -148,6 +169,14 @@ public final class ProcessingEvaluator {
                     validation.warnings()
             );
         }
+    }
+
+    private static ProductQuantity sum(List<ProductQuantity> quantities) {
+        ProductQuantity total = new ProductQuantity(0, quantities.getFirst().unit());
+        for (ProductQuantity quantity : quantities) {
+            total = total.add(quantity);
+        }
+        return total;
     }
 
     private static List<ProcessingModifier> collectModifiers(ProcessingContext context) {

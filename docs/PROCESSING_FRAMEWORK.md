@@ -1,12 +1,12 @@
 # ButcherCraft Processing Framework
 
-Status: Milestone 1C foundation
+Status: Milestones 1C through 2E framework
 
 ## Purpose
 
 The processing framework extends the Minecraft-independent engine. It describes how an operation is validated, how supplied processing conditions affect the proposal, and how a transaction prepares output without committing it.
 
-This framework does not add visible Minecraft gameplay. It does not register items, blocks, block entities, menus, screens, recipes, machines, employees, refrigeration, cleanliness simulation, MCDA, customers, business accounts, sounds, art, or public expansion APIs.
+The pure framework does not register items, blocks, block entities, menus, screens, recipes, machines, employees, refrigeration, cleanliness simulation, MCDA, customers, business accounts, sounds, art, or public expansion APIs.
 
 ## Dependency Direction
 
@@ -30,14 +30,13 @@ It owns:
 - Required input product type.
 - Optional required source category.
 - Required input processing state.
-- Output product type.
-- Output processing state.
+- Ordered output definitions.
 - Exact base duration in milliseconds.
-- Exact base yield.
-- Base quality adjustment.
 - Ordered validation rules.
 - Static modifiers.
 - Whether zero output is permitted.
+
+Each output definition owns output product type, output processing state, exact base yield, base quality adjustment, quantity unit, and whether zero quantity is allowed. Legacy single-output operations are represented as a one-entry output list and still expose first-output helper methods for existing callers.
 
 It does not own transaction state, progress, inventory behavior, machine behavior, employee behavior, recipe loading, or Minecraft data.
 
@@ -103,9 +102,9 @@ Sequence:
 4. Preserve warnings from accepted rules.
 5. Collect static operation modifiers, derived context modifiers, and additional context modifiers.
 6. Sort modifiers with the existing deterministic modifier order.
-7. Calculate proposed output quantity with exact yield arithmetic.
-8. Calculate proposed quality through `ProductQuality`.
-9. Create an immutable proposed output product.
+7. Calculate proposed output quantities with exact yield arithmetic.
+8. Calculate proposed quality for each output through `ProductQuality`.
+9. Create immutable proposed output products in definition order.
 10. Return an `OperationResult` suitable for `ProcessingTransaction`.
 11. Do not commit automatically.
 
@@ -118,7 +117,7 @@ Sequence:
 - Positive yield modifiers explicitly increase yield.
 - Negative yield modifiers reduce yield.
 
-Effective yield:
+For single-output operations, effective yield is:
 
 ```text
 base ratio + additive yield basis points
@@ -127,6 +126,8 @@ base ratio + additive yield basis points
 The result rounds half up to the nearest smallest quantity unit. Effective yield cannot become negative. The final amount must fit in a `long`, and the output keeps the input quantity unit.
 
 If the final output is zero and the operation forbids zero output, evaluation rejects the operation.
+
+For multi-output operations, each output stores an exact ratio. The allocator uses integer arithmetic, floors each exact share, and then assigns remaining units to the largest fractional remainders until the intended total output amount is reached. Output-order ties are stable. The current framework rejects additive yield modifiers on multi-output operations until a distribution rule is deliberately designed.
 
 ## Quality Modifier Flow
 
@@ -154,10 +155,10 @@ Derived context quality modifiers are inspectable:
 It delegates validation and proposal preparation to `ProcessingEvaluator`, then keeps the existing transaction guarantees:
 
 - Input is not consumed during validation or preparation.
-- Proposed output is inspectable before commit.
+- Proposed outputs are inspectable before commit.
 - Commit succeeds exactly once.
 - Repeated commit is safely rejected.
-- Cancellation before commit preserves input and proposed output for inspection.
+- Cancellation before commit preserves input and proposed outputs for inspection.
 - Rejection and failure expose stable reasons.
 - No inventory reservation or mutation occurs in this milestone.
 
@@ -201,3 +202,5 @@ Future integration should:
 Milestone 2A introduces the datapack definition layer documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`. The resolver validates species, profile, product, and operation references before converting a valid operation definition into this framework's `ProcessingOperation`.
 
 Milestone 2B introduces a server-side workstation controller that supplies prototype cleanliness, operator-skill, and equipment-condition values to `ProcessingContext`. Those values prove the integration path only; final cleanliness, worker skill, and maintenance systems remain deferred.
+
+Milestone 2E adds the Beef Forequarter to Bandsaw fabrication fixture, which proves one operation can return multiple ordered outputs without importing Minecraft or NeoForge into the engine.

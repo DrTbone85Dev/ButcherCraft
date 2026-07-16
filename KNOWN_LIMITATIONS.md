@@ -12,7 +12,9 @@ This file records expected risks, limitations, and prototype areas. It should be
 - Milestone 1D adds only Minecraft ItemStack product data integration and development fixture items; it is not player-facing processing gameplay.
 - Milestone 2A adds datapack-backed species, processing-profile, product, and operation definitions plus graph validation. It still does not add player-triggered processing, machines, workstations, poultry content, or visible gameplay.
 - Milestone 2B adds a development-only processing workstation framework and block. It proves one prototype Beef Trim to Ground Beef transaction, but it is not the final grinder, not final machine content, and not a full recipe-selection system.
-- The grinder and packaging station scope formerly listed as Milestone 1B has been deferred and needs owner scheduling before order or employee milestones depend on packaged output.
+- Milestone 2D adds pork and bison red-meat grinding prototype definitions and development fixture items to prove the Grinder remains data-driven. It does not add full species catalogs, animal entities, regulatory rules, final product items, or final balance.
+- Milestone 2E adds a permanent Bandsaw machine and one prototype beef forequarter fabrication flow. It does not add animal entities, carcass entities, full cut catalogs, recipe-selection UI, power, employees, refrigeration, commerce, regulatory rules, or final balance.
+- The packaging station scope formerly listed as Milestone 1B has been deferred and needs owner scheduling before order or employee milestones depend on packaged output.
 - The simple refrigerated storage scope formerly listed as Milestone 1C has been deferred and needs owner scheduling before cold-storage gameplay depends on it.
 - The customer order and business summary scope formerly listed as Milestone 1D has been deferred until product output, packaging, and persistence dependencies are scheduled.
 - Client and dedicated-server launches may depend on local graphics and runtime support.
@@ -32,10 +34,14 @@ This file records expected risks, limitations, and prototype areas. It should be
 - The development test item is only a harmless registration and diagnostics check.
 - The engine foundation is pure Java domain code and does not prove item components, station inventories, menus, world persistence, or in-game processing behavior.
 - The processing framework uses test fixture definitions such as Beef Trim to Ground Beef only to prove domain behavior. Those fixtures are not registered Minecraft content and are not final gameplay balance.
-- The Beef Trim Test Product and Ground Beef Test Product items are development-only integration fixtures. They carry product data but provide no food, processing, recipe, station, commerce, or world behavior.
-- The built-in beef trim to ground beef definition dataset is prototype data used to prove registry loading and graph validation. Its duration, yield, quality adjustment, and thresholds are not final balance.
-- The Development Processing Workstation is a temporary fixture block. Its explicit product-definition-to-item mapping supports only Beef Trim Test Product and Ground Beef Test Product.
-- The temporary workstation menu and client screen are plain development views over server-owned state and are not final UI.
+- The Beef, Pork, and Bison trim/ground test product items are development-only integration fixtures. They carry product data but provide no food, recipe, commerce, or world behavior outside the temporary workstation and Grinder processing proofs.
+- The Beef Forequarter, Chuck, Rib, Brisket, Plate, Shank, Fat, and Bone test product items are development-only integration fixtures for the Bandsaw proof. They are not final product catalogs or final economic balance.
+- The built-in red-meat grinding definition dataset is prototype data used to prove registry loading, graph validation, and generic Grinder resolution. Its duration, yield, quality adjustment, and thresholds are not final balance.
+- The built-in Beef Forequarter fabrication definition is prototype data used to prove ordered multi-output operation handling. Its cut names, ratios, duration, quality adjustment, and process loss are not final balance.
+- Multi-output yield modifiers are intentionally unsupported until the project defines how an additive modifier should be distributed across multiple outputs.
+- The Development Processing Workstation is a temporary fixture block. Its explicit product-definition-to-item mapping supports only the registered development product fixture items.
+- The shared workstation menu and client screens are plain development views over server-owned state and are not final UI.
+- Manual test worlds created before the Milestone 2E slot-layout fix may contain stale workstation block entity data if a prior removal crashed mid-cleanup. Load once with the fixed code, or use a fresh development test world if the chunk remains corrupted.
 - Poultry is a deferred design case. Milestone 2A tests profile compatibility with hypothetical test definitions but does not add live poultry species, products, operations, regulations, or equipment.
 - The diagnostic command is safe by design and must not grant items, alter the world, expose local paths, expose environment variables, or report sensitive system details.
 - The project foundation should not be treated as proof that meat processing, employees, refrigeration, cleanliness, MCDA, orders, or business gameplay have been implemented.

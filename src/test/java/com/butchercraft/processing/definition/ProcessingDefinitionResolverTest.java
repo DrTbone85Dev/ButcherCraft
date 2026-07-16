@@ -18,6 +18,8 @@ class ProcessingDefinitionResolverTest {
         ProcessingDefinitionResolver resolver = new ProcessingDefinitionResolver(DefinitionTestFixtures.builtIns());
 
         assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.BEEF).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.PORK).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.BISON).succeeded());
         assertTrue(resolver.resolveProcessingProfile(BuiltInDefinitionIds.RED_MEAT).succeeded());
     }
 
@@ -76,10 +78,20 @@ class ProcessingDefinitionResolverTest {
 
         DefinitionResolution<ResolvedProcessingOperationDefinition> resolved = resolver.resolveOperation(BuiltInDefinitionIds.GRIND_BEEF);
         DefinitionResolution<ProcessingOperation> engineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BEEF);
+        DefinitionResolution<ProcessingOperation> porkEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_PORK);
+        DefinitionResolution<ProcessingOperation> bisonEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BISON);
+        DefinitionResolution<ProcessingOperation> bandsawEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER);
 
         assertTrue(resolved.succeeded());
         assertTrue(engineOperation.succeeded());
         assertEquals("butchercraft:grind_beef", engineOperation.orThrow().id().value());
+        assertTrue(porkEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_pork", porkEngineOperation.orThrow().id().value());
+        assertTrue(bisonEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_bison", bisonEngineOperation.orThrow().id().value());
+        assertTrue(bandsawEngineOperation.succeeded(), bandsawEngineOperation.report().issues().toString());
+        assertEquals(8, bandsawEngineOperation.orThrow().outputs().size());
     }
 
     @Test
@@ -134,5 +146,51 @@ class ProcessingDefinitionResolverTest {
         assertFalse(result.succeeded());
         assertTrue(result.report().issues().stream().anyMatch(issue -> issue.reasonCode().equals("missing_required_processing_profile")));
         assertTrue(result.report().issues().stream().anyMatch(issue -> issue.reasonCode().equals("profile_mismatch")));
+    }
+
+    @Test
+    void duplicateOutputProductsAndExcessYieldAreRejected() {
+        ProcessingOperationDefinition invalid = new ProcessingOperationDefinition(
+                "definition.butchercraft_test.operation.invalid_multi_output",
+                BuiltInDefinitionIds.OPERATION_CATEGORY_FABRICATION,
+                List.of(BuiltInDefinitionIds.RED_MEAT),
+                BuiltInDefinitionIds.BEEF_FOREQUARTER,
+                BuiltInDefinitionIds.id("forequarter"),
+                1_000,
+                new QuantityDefinition(100, "gram"),
+                600,
+                500,
+                ZeroOutputPolicy.FORBID,
+                List.of(
+                        new ProcessingOutputDefinition(
+                                BuiltInDefinitionIds.BEEF_CHUCK,
+                                BuiltInDefinitionIds.id("primal"),
+                                new YieldDefinition(60, 100),
+                                0,
+                                "gram",
+                                false
+                        ),
+                        new ProcessingOutputDefinition(
+                                BuiltInDefinitionIds.BEEF_CHUCK,
+                                BuiltInDefinitionIds.id("primal"),
+                                new YieldDefinition(60, 100),
+                                0,
+                                "gram",
+                                false
+                        )
+                ),
+                List.of(),
+                java.util.Optional.empty(),
+                false,
+                false
+        );
+
+        DefinitionResolution<ResolvedProcessingOperationDefinition> result =
+                new ProcessingDefinitionResolver(DefinitionTestFixtures.withOperation(DefinitionTestFixtures.id("bad_outputs"), invalid))
+                        .resolveOperation(DefinitionTestFixtures.id("bad_outputs"));
+
+        assertFalse(result.succeeded());
+        assertTrue(result.report().issues().stream().anyMatch(issue -> issue.reasonCode().equals("duplicate_output_product")));
+        assertTrue(result.report().issues().stream().anyMatch(issue -> issue.reasonCode().equals("total_yield_too_high")));
     }
 }

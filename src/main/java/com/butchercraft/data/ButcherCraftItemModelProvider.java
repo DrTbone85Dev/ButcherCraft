@@ -25,6 +25,18 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.DEVELOPMENT_TEST_ITEM.get());
         placeholderProductItem(ModItems.BEEF_TRIM_TEST.get());
         placeholderProductItem(ModItems.GROUND_BEEF_TEST.get());
+        placeholderProductItem(ModItems.PORK_TRIM_TEST.get());
+        placeholderProductItem(ModItems.GROUND_PORK_TEST.get());
+        placeholderProductItem(ModItems.BISON_TRIM_TEST.get());
+        placeholderProductItem(ModItems.GROUND_BISON_TEST.get());
+        placeholderProductItem(ModItems.BEEF_FOREQUARTER_TEST.get());
+        placeholderProductItem(ModItems.BEEF_CHUCK_TEST.get());
+        placeholderProductItem(ModItems.BEEF_RIB_TEST.get());
+        placeholderProductItem(ModItems.BEEF_BRISKET_TEST.get());
+        placeholderProductItem(ModItems.BEEF_PLATE_TEST.get());
+        placeholderProductItem(ModItems.BEEF_SHANK_TEST.get());
+        placeholderProductItem(ModItems.BEEF_FAT_TEST.get());
+        placeholderProductItem(ModItems.BEEF_BONE_TEST.get());
     }
 
     private void placeholderProductItem(Item item) {

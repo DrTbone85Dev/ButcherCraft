@@ -1,6 +1,8 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.bandsaw.BandsawBlock;
+import com.butchercraft.machine.bandsaw.BandsawUpperBlock;
 import com.butchercraft.machine.grinder.GrinderBlock;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -28,6 +30,25 @@ public final class ModBlocks {
                     BlockBehaviour.Properties.of()
                             .strength(2.5F)
                             .sound(SoundType.METAL)
+            );
+
+    public static final DeferredBlock<BandsawBlock> BANDSAW =
+            BLOCKS.registerBlock(
+                    "bandsaw",
+                    BandsawBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(3.0F)
+                            .sound(SoundType.METAL)
+            );
+
+    public static final DeferredBlock<BandsawUpperBlock> BANDSAW_UPPER =
+            BLOCKS.registerBlock(
+                    "bandsaw_upper",
+                    BandsawUpperBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(3.0F)
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
             );
 
     private ModBlocks() {

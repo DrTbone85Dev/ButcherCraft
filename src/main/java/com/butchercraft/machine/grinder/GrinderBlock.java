@@ -91,8 +91,15 @@ public final class GrinderBlock extends BaseEntityBlock {
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity) {
-            blockEntity.dropContents(level, pos);
+        if (!state.is(newState.getBlock())) {
+            try {
+                if (level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity) {
+                    blockEntity.dropContents(level, pos);
+                }
+            } finally {
+                super.onRemove(state, level, pos, newState, movedByPiston);
+            }
+            return;
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }

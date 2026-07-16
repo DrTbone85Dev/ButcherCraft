@@ -1,9 +1,10 @@
 package com.butchercraft.machine.grinder;
 
 import com.butchercraft.processing.definition.BuiltInProcessingDefinitions;
+import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
-import com.butchercraft.workstation.DevelopmentProductItemMapping;
+import com.butchercraft.workstation.WorkstationCapability;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
@@ -66,6 +67,20 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
+    void completionProducesAdjustedPorkAndBisonThroughSameControllerPath() {
+        assertCompletesTo(
+                ModItems.PORK_TRIM_TEST.get().getDefaultInstance(),
+                "butchercraft:ground_pork",
+                "butchercraft:pork"
+        );
+        assertCompletesTo(
+                ModItems.BISON_TRIM_TEST.get().getDefaultInstance(),
+                "butchercraft:ground_bison",
+                "butchercraft:bison"
+        );
+    }
+
+    @Test
     void outputObstructionBlocksCompletionSafely() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
@@ -124,6 +139,24 @@ class GrinderProcessingControllerTest {
         assertEquals(900, ProductStackAdapter.readProductData(restored.inventory.output()).orThrow().quantityValue());
     }
 
+    private static void assertCompletesTo(net.minecraft.world.item.ItemStack input, String outputProductId, String sourceId) {
+        Harness harness = Harness.create();
+        harness.inventory.setInputInternal(input);
+        harness.tick();
+
+        for (int i = 0; i < 60; i++) {
+            harness.tick();
+        }
+
+        assertEquals(WorkstationState.COMPLETE, harness.controller.state());
+        assertTrue(harness.inventory.input().isEmpty());
+        var data = ProductStackAdapter.readProductData(harness.inventory.output()).orThrow();
+        assertEquals(outputProductId, data.productTypeId());
+        assertEquals(sourceId, data.sourceCategoryId());
+        assertEquals(900, data.quantityValue());
+        assertEquals(695, data.qualityScore());
+    }
+
     private record Harness(
             WorkstationInventory inventory,
             WorkstationProcessingController controller,
@@ -131,14 +164,15 @@ class GrinderProcessingControllerTest {
     ) {
         static Harness create() {
             AtomicInteger changes = new AtomicInteger();
-            WorkstationInventory inventory = new WorkstationInventory(changes::incrementAndGet);
+            WorkstationCapability workstationCapability = GrinderWorkstation.capability();
+            WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
             WorkstationOperationLookup lookup = (registryAccess, capability, stack) ->
                     new WorkstationOperationResolver().resolve(BuiltInProcessingDefinitions.builtInView(), capability, stack);
             WorkstationProcessingController controller = new WorkstationProcessingController(
                     inventory,
-                    GrinderWorkstation.capability(),
+                    workstationCapability,
                     lookup,
-                    DevelopmentProductItemMapping.fixtureMapping(),
+                    DevelopmentProductItemMappings.fixtureMapping(),
                     changes::incrementAndGet
             );
             inventory.setInputLocked(controller::inputLocked);

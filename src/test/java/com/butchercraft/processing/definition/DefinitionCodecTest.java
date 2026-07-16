@@ -28,6 +28,9 @@ class DefinitionCodecTest {
     @Test
     void operationDefinitionRoundTrips() {
         assertRoundTrip(ProcessingOperationDefinition.CODEC, BuiltInProcessingDefinitions.grindBeefOperation());
+        assertRoundTrip(ProcessingOperationDefinition.CODEC, BuiltInProcessingDefinitions.breakBeefForequarterOperation());
+        assertEquals(1, BuiltInProcessingDefinitions.grindBeefOperation().outputs().size());
+        assertEquals(8, BuiltInProcessingDefinitions.breakBeefForequarterOperation().outputs().size());
     }
 
     @Test

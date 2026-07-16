@@ -15,20 +15,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GrinderDatagenTest {
     @Test
     void generatedGrindBeefDefinitionUsesGrinderCapability() throws IOException {
-        Path grindBeefDefinition = TestProjectPaths.projectPath(
-                "src/generated/resources/data/butchercraft/butchercraft/processing_operation/grind_beef.json"
-        );
-        assertTrue(
-                Files.isRegularFile(grindBeefDefinition),
-                "Missing generated grind_beef definition. Run .\\gradlew.bat runData and copy src/generated/resources."
-        );
-
-        var json = JsonParser.parseString(Files.readString(grindBeefDefinition)).getAsJsonObject();
-
-        assertEquals("butchercraft:grinding", json.get("workstation_capability").getAsString());
+        assertGeneratedGrindingCapability("grind_beef");
+        assertGeneratedGrindingCapability("grind_pork");
+        assertGeneratedGrindingCapability("grind_bison");
         assertEquals(
                 "butchercraft:grinding",
                 BuiltInProcessingDefinitions.grindBeefOperation().workstationCapability().orElseThrow().toString()
+        );
+        assertEquals(
+                "butchercraft:grinding",
+                BuiltInProcessingDefinitions.grindPorkOperation().workstationCapability().orElseThrow().toString()
+        );
+        assertEquals(
+                "butchercraft:grinding",
+                BuiltInProcessingDefinitions.grindBisonOperation().workstationCapability().orElseThrow().toString()
         );
     }
 
@@ -51,10 +51,24 @@ class GrinderDatagenTest {
         assertTrue(lootTables.contains("extends BlockLootSubProvider"));
         assertTrue(lootTables.contains("dropSelf(ModBlocks.GRINDER.get())"));
         assertTrue(lootTables.contains("protected Iterable<Block> getKnownBlocks()"));
-        assertTrue(lootTables.contains("return List.of(ModBlocks.GRINDER.get())"));
+        assertTrue(lootTables.contains("ModBlocks.GRINDER.get()"));
     }
 
     private static String source(String relativePath) throws IOException {
         return Files.readString(TestProjectPaths.projectPath(relativePath));
+    }
+
+    private static void assertGeneratedGrindingCapability(String operationName) throws IOException {
+        Path definition = TestProjectPaths.projectPath(
+                "src/generated/resources/data/butchercraft/butchercraft/processing_operation/" + operationName + ".json"
+        );
+        assertTrue(
+                Files.isRegularFile(definition),
+                "Missing generated " + operationName + " definition. Run .\\gradlew.bat runData and copy src/generated/resources."
+        );
+
+        var json = JsonParser.parseString(Files.readString(definition)).getAsJsonObject();
+
+        assertEquals("butchercraft:grinding", json.get("workstation_capability").getAsString());
     }
 }
