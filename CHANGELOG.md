@@ -1,5 +1,18 @@
 # Changelog
 
+## ButcherCraft v0.6.1 - Grinder Transformation Bridge
+
+### Core
+
+- Connected the Grinder workstation path to the pure Java material transformation engine.
+- Added capability-based transformation execution while preserving existing Grinder product behavior.
+- Kept Bandsaw and other workstations on the existing execution path for a future deliberate migration.
+
+### Stability
+
+- Added regression coverage for accepted-evaluation execution and Grinder capability advertisement.
+- Preserved compatibility with existing processing-operation definitions through the transformation adapter.
+
 ## ButcherCraft v0.5.2 - Foundation Update
 
 ### Core

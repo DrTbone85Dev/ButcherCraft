@@ -29,6 +29,16 @@ class GrinderInteractionTest {
         assertTrue(baseSource.contains("implements MenuProvider"));
         assertTrue(source.contains("Component.translatable(\"container.butchercraft.grinder\")"));
         assertTrue(source.contains("new GrinderMenu(containerId, playerInventory, this)"));
+        assertTrue(source.contains("WorkstationExecutionStrategy.transformation()"));
+    }
+
+    @Test
+    void onlyGrinderBlockEntityOptsIntoTransformationExecutionForNow() throws IOException {
+        String grinderSource = source("src/main/java/com/butchercraft/machine/grinder/GrinderBlockEntity.java");
+        String bandsawSource = source("src/main/java/com/butchercraft/machine/bandsaw/BandsawBlockEntity.java");
+
+        assertTrue(grinderSource.contains("WorkstationExecutionStrategy.transformation()"));
+        assertTrue(!bandsawSource.contains("WorkstationExecutionStrategy.transformation()"));
     }
 
     @Test

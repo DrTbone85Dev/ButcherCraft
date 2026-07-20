@@ -4,6 +4,45 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.1: Grinder Transformation Execution Bridge
+
+Goal: connect the workstation framework to the pure Java transformation engine by migrating only the Grinder to capability-based transformation execution.
+
+Included work:
+
+- Pure Java `TransformationExecutor` that executes only previously accepted matching evaluations.
+- Pure Java transformation `WorkstationCapability` model for workstation capability advertisement.
+- Minecraft-facing `WorkstationCapability` adapter into the pure transformation capability model.
+- Workstation execution strategies so migrated and un-migrated machines can share the controller without changing each machine at once.
+- Grinder-only opt-in to transformation execution.
+- Regression tests proving Grinder processing still produces the same outputs and rejects transformation execution when the workstation resolves by category but does not advertise `butchercraft:grinding`.
+
+Excluded work:
+
+- Bandsaw, smoker, packaging, cooler, development workstation, menu, screen, datapack registry, or product component migration.
+- Datapack loading for transformation definitions.
+- New gameplay systems, recipes, product items, or machine behaviors.
+
+Acceptance criteria:
+
+- Grinder behavior remains data-driven through product definitions, processing-operation definitions, the processing graph, and `butchercraft:grinding`.
+- Bandsaw and other workstations continue using the legacy execution strategy.
+- Existing `ProcessingOperation` compatibility remains available through `ProcessingOperationTransformationAdapter`.
+- Transformation code remains free of Minecraft and NeoForge imports.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+
+Manual in-game verification:
+
+- Optional before release: insert Beef Trim, Pork Trim, and Bison Trim test products into the Grinder and confirm each still produces the matching ground product after the normal processing duration.
+
+Rollback considerations:
+
+- Reverting the Grinder to the default workstation execution strategy returns it to the legacy transaction path while preserving the transformation package.
+
 ## Milestone 0.6.0: Material Transformation Engine Foundation
 
 Goal: create a backwards-compatible pure Java foundation for generic material transformations without replacing the existing processing framework.

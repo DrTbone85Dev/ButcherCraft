@@ -120,13 +120,14 @@ class TransformationDomainTest {
         TransformationDefinition definition = grindDefinition();
         TransformationContext context = new TransformationContext(
                 List.of(MaterialAmount.grams("butchercraft:beef_trim", 1_000)),
-                Optional.of(GRINDING)
+                Optional.of(capability(GRINDING))
         );
 
         TransformationEvaluation evaluation = TransformationEvaluator.evaluate(definition, context);
 
         assertTrue(evaluation.acceptedResult());
         assertEquals(TransformationEvaluationCode.ACCEPTED, evaluation.code());
+        assertEquals(Optional.of(definition.id()), evaluation.transformationId());
         assertEquals(1_000, context.availableMaterials().getFirst().quantity().amount());
     }
 
@@ -168,7 +169,7 @@ class TransformationDomainTest {
         ));
         TransformationEvaluation wrongCapability = TransformationEvaluator.evaluate(grindDefinition(), new TransformationContext(
                 List.of(),
-                Optional.of(BANDSAW)
+                Optional.of(capability(BANDSAW))
         ));
 
         assertEquals(TransformationEvaluationCode.UNSUPPORTED_CAPABILITY, missingCapability.code());
@@ -185,6 +186,61 @@ class TransformationDomainTest {
                 TransformationEvaluationCode.INVALID_CONTEXT,
                 TransformationEvaluator.evaluate(grindDefinition(), null).code()
         );
+    }
+
+    @Test
+    void workstationCapabilityAdvertisesSupportedCapabilities() {
+        WorkstationCapability capability = new WorkstationCapability(
+                EngineId.of("butchercraft:grinder"),
+                java.util.Set.of(GRINDING)
+        );
+
+        assertTrue(capability.advertises(GRINDING));
+        assertFalse(capability.advertises(BANDSAW));
+        assertThrows(NullPointerException.class, () -> new WorkstationCapability(null, java.util.Set.of(GRINDING)));
+        assertThrows(NullPointerException.class, () -> new WorkstationCapability(EngineId.of("butchercraft:grinder"), null));
+    }
+
+    @Test
+    void executorRequiresAcceptedMatchingEvaluationBeforeProducingOutputs() {
+        TransformationDefinition definition = grindDefinition();
+        TransformationContext context = new TransformationContext(
+                List.of(MaterialAmount.grams("butchercraft:beef_trim", 1_000)),
+                Optional.of(capability(GRINDING))
+        );
+        TransformationEvaluation accepted = TransformationEvaluator.evaluate(definition, context);
+
+        TransformationExecution executed = TransformationExecutor.execute(definition, context, accepted);
+        TransformationExecution rejectedEvaluation = TransformationExecutor.execute(
+                definition,
+                context,
+                TransformationEvaluation.rejected(TransformationEvaluationCode.MISSING_INPUT, "Missing input")
+        );
+        TransformationExecution staleEvaluation = TransformationExecutor.execute(
+                definition,
+                new TransformationContext(List.of(MaterialAmount.grams("butchercraft:beef_trim", 500)), Optional.of(capability(GRINDING))),
+                accepted
+        );
+        TransformationExecution wrongTransformation = TransformationExecutor.execute(
+                new TransformationDefinition(
+                        TransformationId.of("butchercraft:other"),
+                        definition.inputs(),
+                        definition.outputs(),
+                        definition.duration(),
+                        definition.workstationCapability()
+                ),
+                context,
+                accepted
+        );
+
+        assertTrue(executed.succeeded());
+        assertEquals(TransformationExecutionCode.EXECUTED, executed.code());
+        assertEquals(List.of(GROUND_BEEF), executed.outputs().stream()
+                .map(output -> output.producedAmount().materialId())
+                .toList());
+        assertEquals(TransformationExecutionCode.EVALUATION_NOT_ACCEPTED, rejectedEvaluation.code());
+        assertEquals(TransformationExecutionCode.EVALUATION_MISMATCH, staleEvaluation.code());
+        assertEquals(TransformationExecutionCode.EVALUATION_MISMATCH, wrongTransformation.code());
     }
 
     @Test
@@ -246,5 +302,9 @@ class TransformationDomainTest {
             TransformationOutputClassification classification
     ) {
         return new TransformationOutput(new MaterialAmount(materialId, ProductQuantity.grams(grams)), classification);
+    }
+
+    private static WorkstationCapability capability(EngineId advertisedCapability) {
+        return new WorkstationCapability(EngineId.of("butchercraft:test_workstation"), java.util.Set.of(advertisedCapability));
     }
 }

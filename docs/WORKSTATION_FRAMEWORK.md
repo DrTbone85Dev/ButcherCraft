@@ -1,10 +1,10 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework
+Status: Milestones 2B through 2E workstation framework, with v0.6.1 Grinder transformation execution
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge.
 
 This is not final artwork, not a player recipe-selection system, and not a complete product item factory.
 
@@ -13,7 +13,8 @@ This is not final artwork, not a player recipe-selection system, and not a compl
 - `com.butchercraft.engine` remains Minecraft-independent and owns validation, yield, quality adjustment, and transaction rules.
 - `com.butchercraft.processing.definition` owns datapack-backed product and operation definitions.
 - `com.butchercraft.product.integration.ProductStackAdapter` owns ItemStack/product conversion.
-- `com.butchercraft.workstation` owns workstation capability, state, failure, inventory, operation resolution, duration conversion, and transaction orchestration.
+- `com.butchercraft.workstation` owns workstation capability, state, failure, inventory, operation resolution, duration conversion, and execution orchestration.
+- `com.butchercraft.transformation` owns pure Java transformation evaluation and execution. Minecraft-facing workstations adapt their advertised capabilities into this pure model only at the integration boundary.
 - `ProcessingWorkstationBlockEntity` owns local persistence, server ticking, menu creation, and block-break recovery.
 - `ProcessingWorkstationMenu` and its client screens are temporary views. They do not own inventory or processing state.
 
@@ -59,6 +60,16 @@ Input accepts product-bearing stacks only. Output rejects insertion. Product-bea
 
 Exactly one compatible operation is selected automatically. Multiple compatible operations return `MULTIPLE_COMPATIBLE_OPERATIONS`; recipe-selection UI is deferred.
 
+Workstations advertise capabilities through `WorkstationCapability`. Operation resolution may match by operation category or workstation capability for compatibility with existing definition data. Transformation execution uses only advertised workstation capability ids, such as `butchercraft:grinding`.
+
+## Execution Strategies
+
+`WorkstationProcessingController` delegates processing preparation and commit to a `WorkstationExecutionStrategy`.
+
+- The default legacy strategy preserves the existing processing transaction path.
+- The Grinder opts into the transformation strategy, which adapts the resolved `ProcessingOperation` into a `TransformationDefinition`, evaluates and executes it through the pure Java transformation engine, then delegates product commit to the existing transaction path.
+- Bandsaw, development workstation, and any future un-migrated workstations remain on the legacy strategy until explicitly migrated.
+
 ## Transaction Lifecycle
 
 The controller keeps input visible in the input slot as a reserved stack while processing. The player and automation cannot extract it while active.
@@ -67,7 +78,7 @@ On completion:
 
 1. The input is revalidated.
 2. Output slot obstruction is checked.
-3. The engine transaction prepares and commits once.
+3. The selected execution strategy prepares and commits the operation.
 4. Committed engine products are converted into ItemStacks through the temporary development mapping.
 5. Input is cleared and ordered outputs are inserted into output slots.
 6. State becomes `COMPLETE`.
