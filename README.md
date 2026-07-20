@@ -13,7 +13,7 @@ Registered content is limited to development fixtures used to verify registratio
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.1.0`
+- Version: `0.5.2`
 
 ## Commands
 
@@ -50,6 +50,14 @@ If Java is not on `PATH`, set `JAVA_HOME` to a Java 21 JDK before running Gradle
 In Codex environments without a system Java installation, future sessions may need to provide a local Java 21 JDK and set `JAVA_HOME` for the current shell before running the wrapper. If Java reports `AccessDeniedException` from `Path.toRealPath()` inside the sandbox, NeoForge artifact extraction can fail before source compilation; report that environment limitation explicitly.
 
 ## Development Diagnostic
+
+In any world or server console with commands available, run:
+
+```text
+/butchercraft info
+```
+
+The info command displays the installed ButcherCraft version and current Early Development / Foundation Update status for ordinary players without exposing development diagnostics.
 
 In a development world or server console with commands available, run:
 
