@@ -4,6 +4,48 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.5: Transformation Serialization Foundation
+
+Goal: introduce a pure Java serialization layer for `TransformationDefinition` that freezes the stable external schema contract before datapack loading exists.
+
+Included work:
+
+- Serializer and deserializer interfaces for transformation definitions.
+- Canonical pure Java serialized transformation representation.
+- Stable external field-name constants for every current transformation schema field.
+- `TransformationSchemaVersion` abstraction.
+- Future migration interface with no implemented migrations.
+- Round-trip serialization of id, display name, schema version, required capability, inputs, outputs, duration, yield, and metadata.
+- Unit tests for field names, round trips, built-in Grinder transformations, validation, defensive copying, null handling, and unsupported schema versions.
+- Documentation in `docs/TRANSFORMATION_SERIALIZATION.md`.
+
+Excluded work:
+
+- Datapack loading, resource reload listeners, JSON resource discovery, codecs tied to Minecraft registries, or automatic schema migrations.
+- Bandsaw, smoker, packaging, cooler, menu, screen, item data component, product-to-item mapping, or workstation migrations.
+- Embedding product definitions inside transformation definitions.
+
+Acceptance criteria:
+
+- Serialization code remains pure Java and free of Minecraft and NeoForge imports.
+- All current `TransformationDefinition` fields are represented by the canonical serialized form.
+- Built-in Grinder transformations round-trip through the serializer and deserializer unchanged.
+- Unsupported schema versions fail clearly until migrations are deliberately implemented.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- None required. This milestone is a pure domain serialization foundation and does not change live workstation behavior.
+
+Rollback considerations:
+
+- The serialization package is additive. Rollback can remove the canonical serialization layer while leaving the current transformation registry, product registry, and Grinder runtime path intact.
+
 ## Milestone 0.6.4: Product Definition Foundation
 
 Goal: introduce a pure Java canonical product definition system so transformation product ids can be validated against authoritative immutable product data.

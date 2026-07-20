@@ -1,12 +1,12 @@
 # ButcherCraft Material Transformation Engine
 
-Status: v0.6.3 canonical transformation schema
+Status: v0.6.5 transformation serialization foundation
 
 ## Purpose
 
 The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and a workstation capability.
 
-This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
+This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
 
 ## Package
 
@@ -74,6 +74,8 @@ INVALID_CONTEXT
 
 `TransformationProductReferenceValidator` validates transformation input and output product ids against a `ProductRegistry` after definitions are constructed. It reports missing products and quantity-unit mismatches without requiring product registry access during transformation construction.
 
+The `com.butchercraft.transformation.serialization` package defines the stable external schema contract for serialized transformation definitions. It includes serializer and deserializer interfaces, canonical serialized records, frozen field-name constants, a schema-version abstraction, and a future migration contract. This layer remains pure Java and performs no datapack loading or resource discovery.
+
 `ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This remains available for compatibility tests and future migration work, but live Grinder transformation execution now queries the transformation registry by resolved operation id.
 
 ## Relationship To Existing Processing
@@ -112,7 +114,7 @@ The evaluator does not consume inputs, create outputs, inspect ItemStacks, or co
 The v0.6.3 schema slice intentionally does not add:
 
 - Datapack migration to transformation definitions.
-- Serialization, codecs, JSON files, or schema migration.
+- Datapack loading, resource reload listeners, JSON resource discovery, or implemented schema migrations.
 - Product definition embedding inside transformation definitions.
 - Bandsaw, smoker, packaging, cooler, menu, or screen migration.
 - ItemStack or product data component changes.
@@ -121,8 +123,8 @@ The v0.6.3 schema slice intentionally does not add:
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
 
-Version 0.6.2 registers built-in Grinder transformations in Java only. Version 0.6.3 keeps those definitions builder-backed and schema-valid. Datapack loading for transformation definitions remains out of scope.
+Version 0.6.2 registers built-in Grinder transformations in Java only. Version 0.6.3 keeps those definitions builder-backed and schema-valid. Version 0.6.5 proves those definitions round-trip through the canonical serialization contract. Datapack loading for transformation definitions remains out of scope.
 
 ## Next Proposed Slice
 
-Before serialization, the project should define stable field names, metadata key policy, schema migration rules, and error-reporting behavior for malformed external definitions. After that, datapack loading can decode into the canonical schema instead of inventing validation rules in the loader.
+Before datapack integration, the project should define the concrete file format, resource paths, reload-scoped error reporting, migration lookup, registry assembly order, and how decoded transformation references are validated against product definitions and workstation capabilities.

@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge mod planned as a meat-processing and business-management simulation. This repository currently contains the project foundation and early development frameworks.
 
-Registered content is limited to development fixtures used to verify registration, assets, data generation, diagnostics, ItemStack product data integration, data-driven processing definitions, the temporary workstation framework, and the current Grinder and Bandsaw proofs. Milestones 1B and 1C add pure Java engine and processing-framework foundations only; Milestone 1D connects product snapshots to ItemStacks; Milestone 2A adds server datapack definitions and a processing graph; Milestone 2B adds a development-only Processing Workstation block; Milestone 2D proves the Grinder can process Beef, Pork, and Bison Trim to matching ground products through data-driven definitions; Milestone 2E proves ordered multi-output fabrication through the Bandsaw; version 0.6.0 begins the pure Java Material Transformation Engine foundation; version 0.6.1 connects the Grinder to capability-based transformation execution; version 0.6.2 adds the immutable transformation registry; version 0.6.3 formalizes the canonical transformation definition schema; version 0.6.4 adds the canonical product definition foundation.
+Registered content is limited to development fixtures used to verify registration, assets, data generation, diagnostics, ItemStack product data integration, data-driven processing definitions, the temporary workstation framework, and the current Grinder and Bandsaw proofs. Milestones 1B and 1C add pure Java engine and processing-framework foundations only; Milestone 1D connects product snapshots to ItemStacks; Milestone 2A adds server datapack definitions and a processing graph; Milestone 2B adds a development-only Processing Workstation block; Milestone 2D proves the Grinder can process Beef, Pork, and Bison Trim to matching ground products through data-driven definitions; Milestone 2E proves ordered multi-output fabrication through the Bandsaw; version 0.6.0 begins the pure Java Material Transformation Engine foundation; version 0.6.1 connects the Grinder to capability-based transformation execution; version 0.6.2 adds the immutable transformation registry; version 0.6.3 formalizes the canonical transformation definition schema; version 0.6.4 adds the canonical product definition foundation; version 0.6.5 adds the pure Java transformation serialization contract.
 
 ## Project Identity
 
@@ -13,7 +13,7 @@ Registered content is limited to development fixtures used to verify registratio
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.6.4`
+- Version: `0.6.5`
 
 ## Commands
 
@@ -85,6 +85,6 @@ The trim, ground, forequarter, and beef fabrication test products are developmen
 
 ## Documentation
 
-Planning and architecture documents live at the repository root. Treat `PROJECT_IDENTITY.md`, `PROJECT_RULES.md`, and accepted decisions in `DECISIONS.md` as authoritative. The pure domain engine is documented in `docs/BUTCHERCRAFT_ENGINE.md`, the processing framework is documented in `docs/PROCESSING_FRAMEWORK.md`, the Material Transformation Engine is documented in `docs/MATERIAL_TRANSFORMATION_ENGINE.md`, the ItemStack product data bridge is documented in `docs/PRODUCT_DATA_INTEGRATION.md`, datapack-backed definitions are documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`, multi-output processing is documented in `docs/MULTI_OUTPUT_PROCESSING.md`, the workstation framework is documented in `docs/WORKSTATION_FRAMEWORK.md`, the Grinder proof is documented in `docs/GRINDER.md`, and the Bandsaw proof is documented in `docs/BANDSAW.md`.
+Planning and architecture documents live at the repository root. Treat `PROJECT_IDENTITY.md`, `PROJECT_RULES.md`, and accepted decisions in `DECISIONS.md` as authoritative. The pure domain engine is documented in `docs/BUTCHERCRAFT_ENGINE.md`, the processing framework is documented in `docs/PROCESSING_FRAMEWORK.md`, the Material Transformation Engine is documented in `docs/MATERIAL_TRANSFORMATION_ENGINE.md`, transformation serialization is documented in `docs/TRANSFORMATION_SERIALIZATION.md`, the ItemStack product data bridge is documented in `docs/PRODUCT_DATA_INTEGRATION.md`, datapack-backed definitions are documented in `docs/PRODUCT_AND_PROCESSING_DEFINITIONS.md`, multi-output processing is documented in `docs/MULTI_OUTPUT_PROCESSING.md`, the workstation framework is documented in `docs/WORKSTATION_FRAMEWORK.md`, the Grinder proof is documented in `docs/GRINDER.md`, and the Bandsaw proof is documented in `docs/BANDSAW.md`.
 
 Development environment verified on VS Code.
