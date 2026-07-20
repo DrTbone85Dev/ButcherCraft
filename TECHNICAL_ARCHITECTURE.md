@@ -434,6 +434,8 @@ Milestone 2D extends built-in generated definitions with pork and bison red-meat
 
 Milestone 2E extends operation definitions and the pure engine from one output to ordered output collections. It adds generated definitions and placeholder assets for the two-block Bandsaw and the Beef Forequarter fabrication proof.
 
+Version 0.6.1 adds a strategy bridge between the workstation framework and the pure transformation engine. The Grinder uses transformation execution after operation resolution and before legacy transaction commit. Bandsaw and other workstations remain on the legacy execution strategy until they are deliberately migrated.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

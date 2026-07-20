@@ -1,9 +1,11 @@
 package com.butchercraft.workstation;
 
+import com.butchercraft.engine.EngineId;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public record WorkstationCapability(
         ResourceLocation id,
@@ -42,5 +44,15 @@ public record WorkstationCapability(
 
     public boolean supportsWorkstationCapability(ResourceLocation workstationCapability) {
         return supportedWorkstationCapabilities.contains(workstationCapability);
+    }
+
+    public com.butchercraft.transformation.WorkstationCapability toTransformationCapability() {
+        return new com.butchercraft.transformation.WorkstationCapability(
+                EngineId.of(id.toString()),
+                supportedWorkstationCapabilities.stream()
+                        .map(ResourceLocation::toString)
+                        .map(EngineId::of)
+                        .collect(Collectors.toUnmodifiableSet())
+        );
     }
 }

@@ -557,6 +557,22 @@ Consequences:
 - Transformation code must stay free of Minecraft and NeoForge imports.
 - The first evaluator validates capability and material availability only; quality, probabilistic outputs, inventory mutation, ItemStack operations, and public expansion APIs remain out of scope.
 
+## DEC-0039: Grinder Uses Capability-Based Transformation Execution First
+
+Status: Accepted
+
+Decision: version 0.6.1 migrates only the Grinder onto a capability-based transformation execution strategy. The shared workstation controller delegates preparation and commit through `WorkstationExecutionStrategy`; un-migrated machines keep the default legacy strategy.
+
+Rationale: this proves the v0.6.0 transformation engine can execute a live workstation path without forcing every workstation through the new bridge at once or rewriting the established processing framework.
+
+Consequences:
+
+- The pure transformation executor executes only accepted evaluations that still match the same definition and context.
+- Minecraft-facing workstations advertise capabilities through `WorkstationCapability`, which can be adapted into the pure transformation capability model at the boundary.
+- Grinder operation resolution still comes from product definitions, processing-operation definitions, the processing graph, and `butchercraft:grinding`.
+- Product quality, source data, ItemStack creation, and inventory mutation remain owned by the existing processing transaction and workstation controller.
+- Bandsaw, smoker, packaging, coolers, datapack transformation loading, menus, and screens are not migrated in this decision.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

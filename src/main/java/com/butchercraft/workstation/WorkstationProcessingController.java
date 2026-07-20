@@ -1,9 +1,7 @@
 package com.butchercraft.workstation;
 
-import com.butchercraft.engine.context.ProcessingContext;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.result.OperationResult;
-import com.butchercraft.engine.transaction.ProcessingTransaction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -29,6 +27,7 @@ public final class WorkstationProcessingController {
     private final WorkstationCapability capability;
     private final WorkstationOperationLookup resolver;
     private final DevelopmentProductItemMapping outputMapping;
+    private final WorkstationExecutionStrategy executionStrategy;
     private final Runnable changed;
 
     private WorkstationState state = WorkstationState.IDLE;
@@ -46,10 +45,22 @@ public final class WorkstationProcessingController {
             DevelopmentProductItemMapping outputMapping,
             Runnable changed
     ) {
+        this(inventory, capability, resolver, outputMapping, WorkstationExecutionStrategy.legacy(), changed);
+    }
+
+    public WorkstationProcessingController(
+            WorkstationInventory inventory,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            Runnable changed
+    ) {
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.capability = Objects.requireNonNull(capability, "capability");
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
+        this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");
         this.changed = Objects.requireNonNull(changed, "changed");
     }
 
@@ -202,7 +213,7 @@ public final class WorkstationProcessingController {
         }
 
         ResolvedWorkstationOperation operation = resolution.operation().orElseThrow();
-        OperationResult prepared = prepare(operation);
+        OperationResult prepared = executionStrategy.prepare(capability, operation);
         if (!prepared.succeeded()) {
             block(WorkstationFailure.of(
                     WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED,
@@ -256,16 +267,7 @@ public final class WorkstationProcessingController {
             return;
         }
 
-        ProcessingTransaction transaction = ProcessingTransaction.create(context(operation.inputProduct(), operation.engineOperation()));
-        OperationResult prepared = transaction.prepare();
-        if (!prepared.succeeded()) {
-            block(WorkstationFailure.of(
-                    WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED,
-                    prepared.failureReason().map(reason -> reason.message()).orElse("Processing preparation failed")
-            ));
-            return;
-        }
-        OperationResult committed = transaction.commit();
+        OperationResult committed = executionStrategy.commit(capability, operation);
         if (!committed.succeeded() || committed.committedOutputs().isEmpty()) {
             block(WorkstationFailure.of(
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
@@ -302,15 +304,6 @@ public final class WorkstationProcessingController {
         elapsedTicks = totalTicks;
         clearFailure();
         setState(WorkstationState.COMPLETE);
-    }
-
-    private OperationResult prepare(ResolvedWorkstationOperation operation) {
-        ProcessingTransaction transaction = ProcessingTransaction.create(context(operation.inputProduct(), operation.engineOperation()));
-        return transaction.prepare();
-    }
-
-    private ProcessingContext context(Product input, com.butchercraft.engine.operation.ProcessingOperation operation) {
-        return PrototypeProcessingContextValues.context(input, operation);
     }
 
     private void block(WorkstationFailure failure) {

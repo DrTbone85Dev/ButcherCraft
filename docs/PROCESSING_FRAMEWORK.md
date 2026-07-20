@@ -209,4 +209,6 @@ Milestone 2E adds the Beef Forequarter to Bandsaw fabrication fixture, which pro
 
 Version 0.6.0 adds `com.butchercraft.transformation` as a pure Java foundation beside the existing engine processing framework. It models generic transformation ids, material amounts, ordered inputs and outputs, optional workstation capabilities, and deterministic acceptance or rejection.
 
-The current processing framework remains in use for live workstation behavior. `ProcessingOperationTransformationAdapter` can represent an existing `ProcessingOperation` as a `TransformationDefinition` when supplied a concrete input amount, which gives future milestones a compatibility bridge without migrating Grinder, Bandsaw, datapack registries, block entities, menus, or item data components in this slice.
+Version 0.6.1 connects the Grinder to that foundation through `WorkstationExecutionStrategy.transformation()`. The strategy adapts the already resolved `ProcessingOperation` into a `TransformationDefinition`, executes only an accepted matching evaluation, and then delegates product commit to the existing processing transaction so quality and ItemStack behavior remain unchanged.
+
+Bandsaw, datapack registries, menus, screens, and item data components are not migrated in this slice.

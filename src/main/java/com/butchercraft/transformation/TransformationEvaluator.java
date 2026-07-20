@@ -2,7 +2,6 @@ package com.butchercraft.transformation;
 
 import com.butchercraft.engine.quantity.ProductQuantity;
 
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -40,7 +39,7 @@ public final class TransformationEvaluator {
                 return inputEvaluation;
             }
         }
-        return TransformationEvaluation.accepted();
+        return TransformationEvaluation.accepted(definition.id());
     }
 
     private static Optional<TransformationEvaluation> validateCapability(
@@ -56,10 +55,11 @@ public final class TransformationEvaluator {
                     "Transformation requires workstation capability " + definition.workstationCapability().orElseThrow().value()
             ));
         }
-        if (!Objects.equals(definition.workstationCapability().orElseThrow(), context.workstationCapability().orElseThrow())) {
+        if (!context.workstationCapability().orElseThrow().advertises(definition.workstationCapability().orElseThrow())) {
             return Optional.of(TransformationEvaluation.rejected(
                     TransformationEvaluationCode.UNSUPPORTED_CAPABILITY,
-                    "Transformation does not support workstation capability " + context.workstationCapability().orElseThrow().value()
+                    "Workstation " + context.workstationCapability().orElseThrow().id().value()
+                            + " does not advertise capability " + definition.workstationCapability().orElseThrow().value()
             ));
         }
         return Optional.empty();

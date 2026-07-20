@@ -1,10 +1,12 @@
 package com.butchercraft.machine.grinder;
 
+import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.processing.definition.BuiltInProcessingDefinitions;
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.workstation.WorkstationCapability;
+import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
@@ -15,6 +17,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,6 +101,19 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
+    void transformationExecutionRequiresAdvertisedGrindingCapability() {
+        Harness harness = Harness.createWithCapability(categoryOnlyGrindingWorkstation());
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+
+        harness.tick();
+
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED, harness.controller.lastFailure().orElseThrow().code());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.output().isEmpty());
+    }
+
+    @Test
     void saveLoadMidProcessPreservesProgressAndCompletes() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
@@ -163,8 +179,11 @@ class GrinderProcessingControllerTest {
             AtomicInteger changes
     ) {
         static Harness create() {
+            return createWithCapability(GrinderWorkstation.capability());
+        }
+
+        static Harness createWithCapability(WorkstationCapability workstationCapability) {
             AtomicInteger changes = new AtomicInteger();
-            WorkstationCapability workstationCapability = GrinderWorkstation.capability();
             WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
             WorkstationOperationLookup lookup = (registryAccess, capability, stack) ->
                     new WorkstationOperationResolver().resolve(BuiltInProcessingDefinitions.builtInView(), capability, stack);
@@ -173,6 +192,7 @@ class GrinderProcessingControllerTest {
                     workstationCapability,
                     lookup,
                     DevelopmentProductItemMappings.fixtureMapping(),
+                    WorkstationExecutionStrategy.transformation(),
                     changes::incrementAndGet
             );
             inventory.setInputLocked(controller::inputLocked);
@@ -194,5 +214,19 @@ class GrinderProcessingControllerTest {
         void tick() {
             controller.serverTick(null);
         }
+    }
+
+    private static WorkstationCapability categoryOnlyGrindingWorkstation() {
+        return new WorkstationCapability(
+                GrinderWorkstation.ID,
+                Set.of(BuiltInDefinitionIds.OPERATION_CATEGORY_GRINDING),
+                Set.of(),
+                Set.of(),
+                10_000,
+                true,
+                true,
+                1,
+                1
+        );
     }
 }

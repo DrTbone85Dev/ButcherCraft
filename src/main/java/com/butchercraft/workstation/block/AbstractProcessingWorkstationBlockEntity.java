@@ -3,6 +3,7 @@ package com.butchercraft.workstation.block;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.workstation.DevelopmentProductItemMapping;
 import com.butchercraft.workstation.WorkstationCapability;
+import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailure;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
@@ -69,6 +70,18 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
             WorkstationOperationLookup resolver,
             DevelopmentProductItemMapping outputMapping
     ) {
+        this(type, pos, blockState, capability, resolver, outputMapping, WorkstationExecutionStrategy.legacy());
+    }
+
+    protected AbstractProcessingWorkstationBlockEntity(
+            BlockEntityType<?> type,
+            BlockPos pos,
+            BlockState blockState,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy
+    ) {
         super(type, pos, blockState);
         this.capability = Objects.requireNonNull(capability, "capability");
         this.resolver = Objects.requireNonNull(resolver, "resolver");
@@ -78,6 +91,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
                 capability,
                 resolver,
                 Objects.requireNonNull(outputMapping, "outputMapping"),
+                Objects.requireNonNull(executionStrategy, "executionStrategy"),
                 this::markChanged
         );
         inventory.setInputLocked(controller::inputLocked);

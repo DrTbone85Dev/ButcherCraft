@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public record TransformationContext(
         List<MaterialAmount> availableMaterials,
-        Optional<EngineId> workstationCapability
+        Optional<WorkstationCapability> workstationCapability
 ) {
     public TransformationContext {
         availableMaterials = List.copyOf(Objects.requireNonNull(availableMaterials, "availableMaterials"));
