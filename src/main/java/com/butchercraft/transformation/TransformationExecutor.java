@@ -39,4 +39,20 @@ public final class TransformationExecutor {
         }
         return TransformationExecution.executed(definition);
     }
+
+    public static TransformationExecution execute(
+            TransformationDefinition definition,
+            TransformationContext context,
+            TransformationEvaluation evaluation,
+            TransformationMaterialStore inputStore,
+            TransformationMaterialStore outputStore
+    ) {
+        if (definition == null || context == null || evaluation == null || inputStore == null || outputStore == null) {
+            return TransformationExecution.rejected(
+                    TransformationExecutionCode.INVALID_REQUEST,
+                    "Transformation definition, context, evaluation, input store, and output store are required"
+            );
+        }
+        return TransformationTransaction.create(definition, context, evaluation, inputStore, outputStore).commit();
+    }
 }
