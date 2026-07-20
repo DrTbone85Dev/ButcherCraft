@@ -46,6 +46,7 @@ public final class ProcessingOperationTransformationAdapter {
 
         return new TransformationDefinition(
                 new TransformationId(operation.id()),
+                operation.name(),
                 List.of(new TransformationInput(inputAmount)),
                 outputs,
                 operation.baseDuration(),

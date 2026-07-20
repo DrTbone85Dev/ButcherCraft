@@ -1,10 +1,10 @@
 # ButcherCraft Grinder
 
-Status: Milestone 2C/2D machine wrapper, data-driven grinding proof, and v0.6.2 registry-backed transformation execution
+Status: Milestone 2C/2D machine wrapper, data-driven grinding proof, and v0.6.4 product-definition validation foundation
 
 ## Purpose
 
-The Grinder is the first named machine built on the generic processing workstation framework. It proves a final-named machine can process products without owning species, product, yield, quality, or operation-selection logic. Version 0.6.1 proves the Grinder can execute through the pure Java transformation engine without hardcoding species or product behavior into the machine. Version 0.6.2 makes the transformation registry the source of the Grinder transformation definitions.
+The Grinder is the first named machine built on the generic processing workstation framework. It proves a final-named machine can process products without owning species, product, yield, quality, or operation-selection logic. Version 0.6.1 proves the Grinder can execute through the pure Java transformation engine without hardcoding species or product behavior into the machine. Version 0.6.2 makes the transformation registry the source of the Grinder transformation definitions. Version 0.6.3 keeps those definitions on the canonical transformation schema. Version 0.6.4 adds canonical product definitions for the Grinder product ids and validates transformation references separately.
 
 ## Boundaries
 
@@ -47,6 +47,7 @@ Automated tests cover:
 - Controller completion producing the matching ground product with `900 gram` and adjusted quality.
 - Regression coverage showing Grinder execution rejects an operation when the workstation resolves by category but does not advertise the `butchercraft:grinding` transformation capability.
 - Regression coverage showing Grinder execution rejects a resolved operation when no registered transformation definition exists.
+- Pure validation coverage showing the built-in Grinder transformation product references resolve through the built-in product registry.
 - Source coverage showing only the Grinder block entity opts into transformation execution in this slice.
 - Grinder and generic workstation source scans for species-specific branches.
 - Generated operation JSON using `butchercraft:grinding`.
