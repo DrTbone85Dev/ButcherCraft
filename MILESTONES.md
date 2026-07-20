@@ -4,6 +4,46 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.2: Transformation Registry
+
+Goal: make an immutable pure Java transformation registry the authoritative source of transformation definitions used by the Grinder transformation execution bridge.
+
+Included work:
+
+- `TransformationRegistryBuilder` for registering definitions before freeze.
+- Immutable `TransformationRegistry` with `contains`, `find`, `size`, `stream`, and `findByCapability`.
+- Duplicate id and null registration rejection.
+- Insertion-order preservation for registry streams and capability queries.
+- Built-in Grinder transformations registered through the registry.
+- Grinder transformation execution now resolves the already selected operation id through the registry before evaluation and execution.
+- Regression tests for registry invariants and Grinder registry lookup.
+
+Excluded work:
+
+- Datapack loading for transformation definitions.
+- Bandsaw, smoker, packaging, cooler, menu, screen, data-component, or product item migration.
+- New gameplay systems or new transformation authoring formats.
+
+Acceptance criteria:
+
+- Registry code remains pure Java with no Minecraft or NeoForge imports.
+- Existing Grinder behavior remains unchanged for Beef, Pork, and Bison Trim fixtures.
+- Missing registry definitions fail safely instead of consuming input or creating output.
+- Existing `ProcessingOperation` compatibility adapter remains available.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+
+Manual in-game verification:
+
+- Optional before release: insert Beef Trim, Pork Trim, and Bison Trim test products into the Grinder and confirm each still produces the matching ground product after the normal processing duration.
+
+Rollback considerations:
+
+- The Grinder can be returned to the legacy strategy or the v0.6.1 registry-free transformation bridge if the registry lookup path proves too early.
+
 ## Milestone 0.6.1: Grinder Transformation Execution Bridge
 
 Goal: connect the workstation framework to the pure Java transformation engine by migrating only the Grinder to capability-based transformation execution.

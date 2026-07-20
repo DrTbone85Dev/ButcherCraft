@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge mod planned as a meat-processing and business-management simulation. This repository currently contains the project foundation and early development frameworks.
 
-Registered content is limited to development fixtures used to verify registration, assets, data generation, diagnostics, ItemStack product data integration, data-driven processing definitions, the temporary workstation framework, and the current Grinder and Bandsaw proofs. Milestones 1B and 1C add pure Java engine and processing-framework foundations only; Milestone 1D connects product snapshots to ItemStacks; Milestone 2A adds server datapack definitions and a processing graph; Milestone 2B adds a development-only Processing Workstation block; Milestone 2D proves the Grinder can process Beef, Pork, and Bison Trim to matching ground products through data-driven definitions; Milestone 2E proves ordered multi-output fabrication through the Bandsaw; version 0.6.0 begins the pure Java Material Transformation Engine foundation; version 0.6.1 connects the Grinder to capability-based transformation execution.
+Registered content is limited to development fixtures used to verify registration, assets, data generation, diagnostics, ItemStack product data integration, data-driven processing definitions, the temporary workstation framework, and the current Grinder and Bandsaw proofs. Milestones 1B and 1C add pure Java engine and processing-framework foundations only; Milestone 1D connects product snapshots to ItemStacks; Milestone 2A adds server datapack definitions and a processing graph; Milestone 2B adds a development-only Processing Workstation block; Milestone 2D proves the Grinder can process Beef, Pork, and Bison Trim to matching ground products through data-driven definitions; Milestone 2E proves ordered multi-output fabrication through the Bandsaw; version 0.6.0 begins the pure Java Material Transformation Engine foundation; version 0.6.1 connects the Grinder to capability-based transformation execution; version 0.6.2 adds the immutable transformation registry.
 
 ## Project Identity
 
@@ -13,7 +13,7 @@ Registered content is limited to development fixtures used to verify registratio
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.6.1`
+- Version: `0.6.2`
 
 ## Commands
 

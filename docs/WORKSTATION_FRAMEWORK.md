@@ -1,10 +1,10 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, with v0.6.1 Grinder transformation execution
+Status: Milestones 2B through 2E workstation framework, with v0.6.2 registry-backed Grinder transformation execution
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry.
 
 This is not final artwork, not a player recipe-selection system, and not a complete product item factory.
 
@@ -67,7 +67,7 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 `WorkstationProcessingController` delegates processing preparation and commit to a `WorkstationExecutionStrategy`.
 
 - The default legacy strategy preserves the existing processing transaction path.
-- The Grinder opts into the transformation strategy, which adapts the resolved `ProcessingOperation` into a `TransformationDefinition`, evaluates and executes it through the pure Java transformation engine, then delegates product commit to the existing transaction path.
+- The Grinder opts into the transformation strategy, which looks up the resolved operation id in the immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path.
 - Bandsaw, development workstation, and any future un-migrated workstations remain on the legacy strategy until explicitly migrated.
 
 ## Transaction Lifecycle
