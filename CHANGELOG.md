@@ -1,5 +1,18 @@
 # Changelog
 
+## ButcherCraft v0.6.6 - Atomic Multi-Output Transformations
+
+### Core
+
+- Added a pure Java in-memory material store and transaction model for transformation execution.
+- Extended transformation execution with an atomic commit path that can consume inputs and insert any number of ordered outputs.
+- Added output-capacity and rollback failure codes for transformation transactions.
+
+### Stability
+
+- Added regression tests for multi-output ordering, capacity rejection, commit-time revalidation, rollback after partial insertion failure, and existing Grinder one-output compatibility.
+- Kept Bandsaw and other workstations on their current execution paths; this release proves the transformation engine capability only.
+
 ## ButcherCraft v0.6.5 - Transformation Serialization Foundation
 
 ### Core

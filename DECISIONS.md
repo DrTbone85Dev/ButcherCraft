@@ -638,6 +638,22 @@ Consequences:
 - A migration interface is defined for future version changes, but v0.6.5 does not implement migrations.
 - Datapack loading, resource reload listeners, JSON resource discovery, Minecraft codecs, registry access, and workstation migrations remain out of scope.
 
+## DEC-0044: Transformation Transactions Must Be Atomic Before Bandsaw Migration
+
+Status: Accepted
+
+Decision: version 0.6.6 adds a pure Java in-memory transaction model to the transformation engine before migrating any multi-output workstation. `TransformationTransaction` validates all input extraction and output insertion against material stores before committing, and restores snapshots if a commit-time mutation fails after partial progress.
+
+Rationale: multi-output transformations are more duplication-prone than one-output grinding. Proving atomic input consumption and ordered output insertion in the pure transformation domain lets future workstation migrations reuse tested behavior instead of coupling transaction safety to a specific block entity.
+
+Consequences:
+
+- `TransformationExecutor` keeps the existing side-effect-free execution path and gains an overload for transactional material-store execution.
+- `TransformationMaterialStore` and `InMemoryTransformationMaterialStore` model material quantities and capacity without Minecraft inventories or ItemStacks.
+- Ordered outputs are committed in definition order and roll back as a unit on failure.
+- Existing Grinder behavior remains unchanged and one-output transformations remain compatible.
+- Bandsaw, datapack loading, resource reload listeners, Minecraft inventory mutation, menus, screens, and product-to-item mapping remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

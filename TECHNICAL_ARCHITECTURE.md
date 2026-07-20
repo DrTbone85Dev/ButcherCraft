@@ -444,6 +444,8 @@ Version 0.6.4 adds `com.butchercraft.product.definition` as a pure Java product 
 
 Version 0.6.5 adds `com.butchercraft.transformation.serialization` as a pure Java transformation serialization contract. It freezes stable external field names for the canonical `TransformationDefinition` schema, supports full field round trips through canonical serialized records, introduces explicit schema-version handling, and leaves datapack loading, resource reload listeners, JSON discovery, and implemented migrations to a later milestone.
 
+Version 0.6.6 adds pure Java atomic multi-output transformation transactions. `TransformationMaterialStore` models bounded material quantities, `TransformationTransaction` stages and validates all input extraction and ordered output insertion before commit, and snapshot rollback prevents partial material changes if a commit-time insertion fails. This remains separate from Minecraft inventories and does not migrate the Bandsaw.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

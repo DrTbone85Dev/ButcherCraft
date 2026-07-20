@@ -4,6 +4,49 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.6: Atomic Multi-Output Transformations
+
+Goal: extend the pure Java transformation engine with deterministic, atomic multi-output transactions while preserving existing Grinder behavior.
+
+Included work:
+
+- `TransformationMaterialStore` contract for pure material storage.
+- `InMemoryTransformationMaterialStore` with ordered quantities, optional per-material capacity limits, material-slot capacity, snapshots, extraction, and insertion.
+- `TransformationTransaction` and `TransformationTransactionState` for prepare, commit, rejection, and rollback.
+- Executor overload that commits a transformation against input and output material stores.
+- Multi-output execution support for any number of ordered outputs declared by `TransformationDefinition`.
+- Regression tests for output ordering, capacity failures, rollback, commit-time revalidation, snapshot restore, and built-in Grinder one-output compatibility.
+- Documentation in `docs/MULTI_OUTPUT_TRANSFORMATIONS.md`.
+
+Excluded work:
+
+- Bandsaw migration to transformation execution.
+- Datapack loading, resource reload listeners, JSON resource discovery, or transformation file parsing.
+- Minecraft inventory mutation, ItemStack conversion, menus, screens, or product-to-item mapping changes.
+- New product definitions, new gameplay content, or public expansion APIs.
+
+Acceptance criteria:
+
+- Transformation transactions validate all required input extraction and output insertion before committing.
+- If any output cannot be inserted, no input is consumed and no partial output remains.
+- Output order follows `TransformationDefinition.outputs()`.
+- Existing built-in Grinder transformations still execute as one-input/one-output transformations.
+- Transformation sources remain free of Minecraft and NeoForge imports.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- None required. Bandsaw and live workstation migration are intentionally deferred.
+
+Rollback considerations:
+
+- The transaction model is additive to the transformation package. The live Grinder bridge can continue using the side-effect-free executor path while future migrations adopt the transaction commit path deliberately.
+
 ## Milestone 0.6.5: Transformation Serialization Foundation
 
 Goal: introduce a pure Java serialization layer for `TransformationDefinition` that freezes the stable external schema contract before datapack loading exists.
