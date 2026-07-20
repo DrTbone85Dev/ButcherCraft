@@ -4,6 +4,48 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.4: Product Definition Foundation
+
+Goal: introduce a pure Java canonical product definition system so transformation product ids can be validated against authoritative immutable product data.
+
+Included work:
+
+- Immutable `ProductDefinition` with stable id, display name, schema version, typed category, default quantity unit, tags, and typed metadata.
+- Fluent product definition builder.
+- Immutable `ProductRegistry` and `ProductRegistryBuilder`.
+- Ordered lookup APIs for id, category, and tag queries.
+- Built-in product definitions for the six current Grinder products only.
+- Separate deterministic transformation product-reference validation against a product registry.
+- Unit tests for schema validation, registry behavior, dependency boundaries, built-in Grinder products, and transformation reference validation.
+- Documentation in `docs/PRODUCT_DEFINITION_SYSTEM.md`.
+
+Excluded work:
+
+- Serialization, codecs, JSON, datapack loading, reload listeners, product-to-item mapping, spoilage, quality expansion, packaging states, storage rules, or other workstation migrations.
+- Embedding `ProductDefinition` instances inside `TransformationDefinition`.
+- Replacing existing ItemStack product data or datapack-backed processing definitions.
+
+Acceptance criteria:
+
+- Product definition and transformation domains remain free of Minecraft and NeoForge imports.
+- Existing Grinder behavior remains unchanged.
+- Built-in Grinder transformation input and output product ids validate against the built-in product registry.
+- Transformations can still be constructed before a product registry exists.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Optional before release: insert Beef Trim, Pork Trim, and Bison Trim test products into the Grinder and confirm each still produces the matching ground product after the normal processing duration.
+
+Rollback considerations:
+
+- The product definition package is additive. The Grinder runtime path does not depend on it yet, so rollback can remove the validation foundation without changing workstation behavior.
+
 ## Milestone 0.6.3: Canonical Transformation Definition Schema
 
 Goal: formalize `TransformationDefinition` as the canonical immutable schema for all future transformations before serialization or datapack loading exists.

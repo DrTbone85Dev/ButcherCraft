@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReleaseVersionTest {
-    private static final String RELEASE_VERSION = "0.6.3";
+    private static final String RELEASE_VERSION = "0.6.4";
     private static final String STALE_RELEASE_VERSION = "0.5." + "1";
 
     @Test

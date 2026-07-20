@@ -605,6 +605,23 @@ Consequences:
 - Metadata is stored as an immutable `Map<EngineId, String>` so keys are typed and Minecraft-independent.
 - Serialization, datapack loading, schema migration, and public expansion APIs remain out of scope.
 
+## DEC-0042: Product Definitions Are Pure Registry Data Separate From Transformations
+
+Status: Accepted
+
+Decision: version 0.6.4 introduces `com.butchercraft.product.definition` as a pure Java product definition foundation. Transformations continue to reference stable product ids, and product-reference validation runs as a separate deterministic step against a `ProductRegistry`.
+
+Rationale: future serialization needs product ids to resolve against authoritative descriptive data, but transformation definitions must be decodable before every registry is assembled. Keeping validation separate protects the assembly order and avoids embedding product data into transformations.
+
+Consequences:
+
+- `ProductDefinition` contains id, display name, schema version, typed category, default quantity unit, tags, and typed metadata.
+- `ProductRegistry` preserves insertion order and supports id, category, and tag lookup.
+- Built-in product definitions are limited to the six current Grinder products.
+- `TransformationProductReferenceValidator` checks missing product ids and quantity-unit mismatches after construction.
+- Product definition code must remain free of Minecraft and NeoForge imports.
+- Serialization, datapack loading, product-to-item mapping, spoilage, packaging, storage rules, and broader product catalogs remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

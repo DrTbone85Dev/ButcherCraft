@@ -440,6 +440,8 @@ Version 0.6.2 adds an immutable pure Java transformation registry. The Grinder t
 
 Version 0.6.3 formalizes `TransformationDefinition` as the canonical pure Java transformation schema. New definitions should use the fluent builder and include display name, schema version, required capability, inputs, outputs, duration, yield, and typed metadata. Serialization and datapack loading should target this schema after their error-reporting and migration rules are designed.
 
+Version 0.6.4 adds `com.butchercraft.product.definition` as a pure Java product definition foundation. `ProductDefinition` is the authoritative descriptive source for stable product ids, and `ProductRegistry` validates transformation product references through a separate deterministic validation pass. Transformation definitions continue storing product ids rather than embedding product definition records.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

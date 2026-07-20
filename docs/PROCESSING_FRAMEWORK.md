@@ -215,4 +215,6 @@ Version 0.6.2 adds an immutable `TransformationRegistry` and updates the Grinder
 
 Version 0.6.3 expands `TransformationDefinition` into the canonical schema for future transformation serialization. The compatibility adapter and Grinder built-ins now populate the richer schema while preserving existing processing behavior.
 
+Version 0.6.4 adds a pure Java product definition registry beside the transformation registry. Transformation definitions still store product ids only; product-reference validation is a separate pass so future decoded definitions can be checked after registries are assembled.
+
 Bandsaw, datapack registries, menus, screens, and item data components are not migrated in this slice.

@@ -1,5 +1,18 @@
 # Changelog
 
+## ButcherCraft v0.6.4 - Product Definition Foundation
+
+### Core
+
+- Added a pure Java canonical `ProductDefinition` schema and immutable `ProductRegistry`.
+- Registered the six current Grinder products as built-in product definitions.
+- Added deterministic transformation product-reference validation against the product registry.
+
+### Stability
+
+- Added tests for product schema validation, registry behavior, pure dependency boundaries, and built-in Grinder transformation product references.
+- Preserved existing Grinder behavior and kept product definitions separate from ItemStack data and transformation definitions.
+
 ## ButcherCraft v0.6.3 - Transformation Schema
 
 ### Core
