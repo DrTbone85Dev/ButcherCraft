@@ -204,3 +204,9 @@ Milestone 2A introduces the datapack definition layer documented in `docs/PRODUC
 Milestone 2B introduces a server-side workstation controller that supplies prototype cleanliness, operator-skill, and equipment-condition values to `ProcessingContext`. Those values prove the integration path only; final cleanliness, worker skill, and maintenance systems remain deferred.
 
 Milestone 2E adds the Beef Forequarter to Bandsaw fabrication fixture, which proves one operation can return multiple ordered outputs without importing Minecraft or NeoForge into the engine. The named whole-brisket output uses Packer Brisket terminology through definitions and fixture data, not engine logic.
+
+## Material Transformation Engine Relationship
+
+Version 0.6.0 adds `com.butchercraft.transformation` as a pure Java foundation beside the existing engine processing framework. It models generic transformation ids, material amounts, ordered inputs and outputs, optional workstation capabilities, and deterministic acceptance or rejection.
+
+The current processing framework remains in use for live workstation behavior. `ProcessingOperationTransformationAdapter` can represent an existing `ProcessingOperation` as a `TransformationDefinition` when supplied a concrete input amount, which gives future milestones a compatibility bridge without migrating Grinder, Bandsaw, datapack registries, block entities, menus, or item data components in this slice.

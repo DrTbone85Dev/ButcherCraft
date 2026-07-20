@@ -6,7 +6,7 @@
   "commands.butchercraft.diagnostic": "ButcherCraft Diagnostic",
   "commands.butchercraft.info.status": "Processing, inventory, employee, and business simulation systems are under active development.",
   "commands.butchercraft.info.title": "ButcherCraft",
-  "commands.butchercraft.info.version": "Version %s - Early Development / Foundation Update",
+  "commands.butchercraft.info.version": "Version %s - Early Development / Material Transformation Engine",
   "container.butchercraft.development_processing_workstation": "Development Processing Workstation",
   "container.butchercraft.bandsaw": "Industrial Bandsaw",
   "container.butchercraft.grinder": "Grinder",
