@@ -217,4 +217,6 @@ Version 0.6.3 expands `TransformationDefinition` into the canonical schema for f
 
 Version 0.6.4 adds a pure Java product definition registry beside the transformation registry. Transformation definitions still store product ids only; product-reference validation is a separate pass so future decoded definitions can be checked after registries are assembled.
 
+Version 0.6.5 adds a pure Java transformation serialization contract. It freezes the external field names for the canonical transformation schema and proves the built-in Grinder transformations can round-trip before datapack loading or reload behavior is introduced.
+
 Bandsaw, datapack registries, menus, screens, and item data components are not migrated in this slice.

@@ -442,6 +442,8 @@ Version 0.6.3 formalizes `TransformationDefinition` as the canonical pure Java t
 
 Version 0.6.4 adds `com.butchercraft.product.definition` as a pure Java product definition foundation. `ProductDefinition` is the authoritative descriptive source for stable product ids, and `ProductRegistry` validates transformation product references through a separate deterministic validation pass. Transformation definitions continue storing product ids rather than embedding product definition records.
 
+Version 0.6.5 adds `com.butchercraft.transformation.serialization` as a pure Java transformation serialization contract. It freezes stable external field names for the canonical `TransformationDefinition` schema, supports full field round trips through canonical serialized records, introduces explicit schema-version handling, and leaves datapack loading, resource reload listeners, JSON discovery, and implemented migrations to a later milestone.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

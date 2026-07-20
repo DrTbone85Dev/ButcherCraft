@@ -76,9 +76,11 @@ This separation allows future serialization to decode transformation definitions
 
 This slice does not add serialization, codecs, JSON files, datapack loading, reload listeners, product-to-item mapping, spoilage, quality expansion, packaging states, storage rules, recipe selection, or other workstation migrations.
 
-## Before Serialization
+## Before Datapack Integration
 
-Before product or transformation serialization is added, the project still needs:
+After v0.6.5, transformation definitions have a pure Java serialization contract. Product definitions still need their own external schema before product datapack integration can move onto the pure product registry.
+
+For product definitions and datapack integration, the project still needs:
 
 - Stable serialized field names.
 - Metadata key policy.

@@ -622,6 +622,22 @@ Consequences:
 - Product definition code must remain free of Minecraft and NeoForge imports.
 - Serialization, datapack loading, product-to-item mapping, spoilage, packaging, storage rules, and broader product catalogs remain out of scope.
 
+## DEC-0043: Transformation Serialization Is A Pure Schema Contract
+
+Status: Accepted
+
+Decision: version 0.6.5 introduces `com.butchercraft.transformation.serialization` as a pure Java serialization contract for `TransformationDefinition`. The canonical serialized representation freezes external field names for id, display name, schema version, required capability, inputs, outputs, duration, yield, and metadata.
+
+Rationale: future datapack loading needs a stable external schema before resource discovery, reload behavior, and migration handling are added. Keeping serialization separate from Minecraft and NeoForge allows definitions to be decoded, validated, tested, and migrated without registry access or game runtime dependencies.
+
+Consequences:
+
+- Serializer and deserializer contracts operate on pure Java types and current transformation definitions.
+- Built-in Grinder transformations must round-trip through canonical serialization without behavior changes.
+- `TransformationSchemaVersion` is the explicit version boundary for external transformation schema data.
+- A migration interface is defined for future version changes, but v0.6.5 does not implement migrations.
+- Datapack loading, resource reload listeners, JSON resource discovery, Minecraft codecs, registry access, and workstation migrations remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

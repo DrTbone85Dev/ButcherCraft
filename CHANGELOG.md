@@ -1,5 +1,18 @@
 # Changelog
 
+## ButcherCraft v0.6.5 - Transformation Serialization Foundation
+
+### Core
+
+- Added pure Java serializer and deserializer contracts for `TransformationDefinition`.
+- Added the canonical serialized transformation representation with stable external field names.
+- Added a `TransformationSchemaVersion` abstraction and a future migration interface without implementing migrations.
+
+### Stability
+
+- Added round-trip and validation tests for transformation serialization.
+- Preserved built-in Grinder transformations and kept serialization independent of Minecraft, NeoForge, datapack loading, and resource reload behavior.
+
 ## ButcherCraft v0.6.4 - Product Definition Foundation
 
 ### Core
