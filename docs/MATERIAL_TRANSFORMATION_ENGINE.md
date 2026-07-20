@@ -1,12 +1,12 @@
 # ButcherCraft Material Transformation Engine
 
-Status: v0.6.1 Grinder execution bridge
+Status: v0.6.2 immutable transformation registry
 
 ## Purpose
 
 The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and an optional workstation capability.
 
-This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
+This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
 
 ## Package
 
@@ -36,6 +36,10 @@ WASTE
 
 `TransformationDefinition` stores a stable id, ordered non-empty input and output lists, positive duration, and an optional workstation capability id. It defensively copies lists, preserves order, and rejects duplicate input or output material ids.
 
+`TransformationRegistryBuilder` is the mutable construction boundary for transformation definitions. It rejects null definitions and duplicate transformation ids.
+
+`TransformationRegistry` is immutable after build. It supports ordered `register` output through its builder, `contains`, `find`, `size`, `stream`, and `findByCapability`. Iteration and capability queries preserve registration order.
+
 `WorkstationCapability` is the pure Java capability advertisement used by transformation evaluation. It stores a workstation id and the capability ids that workstation advertises, such as `butchercraft:grinding`.
 
 `TransformationContext` stores the currently available material amounts and optional runtime workstation capability. It does not contain worlds, block entities, inventories, menus, clients, networking, registry access, or ItemStacks.
@@ -54,7 +58,7 @@ INVALID_CONTEXT
 
 `TransformationExecutor` executes only a previously accepted evaluation that still matches the supplied definition and context. Execution returns the definition's declared outputs as a pure result; inventory mutation and ItemStack creation remain outside this package.
 
-`ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This is a bridge for future migration and comparison work, not a replacement for the current processing pipeline.
+`ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This remains available for compatibility tests and future migration work, but live Grinder transformation execution now queries the transformation registry by resolved operation id.
 
 ## Relationship To Existing Processing
 
@@ -64,7 +68,7 @@ The existing processing framework remains authoritative for product quality, val
 - `ProcessingDefinitionResolver` still converts datapack-backed operation definitions into `ProcessingOperation`.
 - `WorkstationOperationResolver` still chooses operations for the Grinder, Bandsaw, and development workstation.
 - `WorkstationProcessingController` still owns inventory reservation, progress, transaction commit, and output insertion.
-- The Grinder opts into a transformation execution strategy that evaluates and executes the adapted transformation before delegating product commit to the existing processing transaction.
+- The Grinder opts into a transformation execution strategy that looks up the registered transformation by resolved operation id, rebases that definition to the current input quantity, evaluates and executes it, then delegates product commit to the existing processing transaction.
 - Bandsaw and all other workstations continue using the legacy workstation execution strategy.
 
 The transformation domain is narrower. It answers the generic question:
@@ -89,7 +93,7 @@ The evaluator does not consume inputs, create outputs, inspect ItemStacks, or co
 
 ## Out Of Scope
 
-The v0.6.1 bridge intentionally does not add:
+The v0.6.2 registry slice intentionally does not add:
 
 - Datapack migration to transformation definitions.
 - Bandsaw, smoker, packaging, cooler, menu, or screen migration.
@@ -98,6 +102,8 @@ The v0.6.1 bridge intentionally does not add:
 - Quality, freshness, temperature, packaging, lineage, lot history, employees, operator skill, energy, maintenance, spoilage, organizations, MCDA, commerce, or probabilistic yields.
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
+
+Version 0.6.2 registers built-in Grinder transformations in Java only. Datapack loading for transformation definitions remains out of scope.
 
 ## Next Proposed Slice
 

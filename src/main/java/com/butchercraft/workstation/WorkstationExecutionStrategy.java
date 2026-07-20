@@ -1,6 +1,7 @@
 package com.butchercraft.workstation;
 
 import com.butchercraft.engine.result.OperationResult;
+import com.butchercraft.transformation.TransformationRegistry;
 
 public interface WorkstationExecutionStrategy {
     OperationResult prepare(WorkstationCapability capability, ResolvedWorkstationOperation operation);
@@ -13,5 +14,9 @@ public interface WorkstationExecutionStrategy {
 
     static WorkstationExecutionStrategy transformation() {
         return TransformationWorkstationExecutionStrategy.INSTANCE;
+    }
+
+    static WorkstationExecutionStrategy transformation(TransformationRegistry registry) {
+        return new TransformationWorkstationExecutionStrategy(registry);
     }
 }

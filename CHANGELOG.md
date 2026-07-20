@@ -1,5 +1,18 @@
 # Changelog
 
+## ButcherCraft v0.6.2 - Transformation Registry
+
+### Core
+
+- Added an immutable pure Java transformation registry and builder.
+- Registered the built-in Grinder transformations through the registry.
+- Updated Grinder transformation execution to query registered definitions by resolved operation id.
+
+### Stability
+
+- Added registry tests for insertion order, lookup, duplicate rejection, null rejection, capability queries, and built-in Grinder coverage.
+- Preserved existing Grinder processing output behavior while making transformation definitions registry-backed.
+
 ## ButcherCraft v0.6.1 - Grinder Transformation Bridge
 
 ### Core

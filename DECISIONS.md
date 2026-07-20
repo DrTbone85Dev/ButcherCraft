@@ -573,6 +573,22 @@ Consequences:
 - Product quality, source data, ItemStack creation, and inventory mutation remain owned by the existing processing transaction and workstation controller.
 - Bandsaw, smoker, packaging, coolers, datapack transformation loading, menus, and screens are not migrated in this decision.
 
+## DEC-0040: Transformation Definitions Are Resolved Through An Immutable Registry
+
+Status: Accepted
+
+Decision: version 0.6.2 introduces a pure Java immutable `TransformationRegistry` as the authoritative lookup source for transformation definitions. A mutable `TransformationRegistryBuilder` is used only before the registry is frozen.
+
+Rationale: the Grinder should execute registered transformation definitions rather than constructing transformation definitions directly from the resolved operation at the workstation boundary. This gives the transformation engine a stable definition source before datapack loading exists.
+
+Consequences:
+
+- Registry iteration and capability queries preserve insertion order.
+- Duplicate transformation ids and null registrations are rejected during building.
+- The built-in Grinder transformations are registered centrally in the pure transformation package.
+- The Grinder transformation strategy looks up the resolved operation id in the registry, rebases the registered definition to the current input quantity, and then evaluates/executes it.
+- Datapack loading, public expansion APIs, and other workstation migrations remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

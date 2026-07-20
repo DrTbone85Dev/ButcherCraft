@@ -5,6 +5,7 @@ import com.butchercraft.processing.definition.BuiltInProcessingDefinitions;
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
+import com.butchercraft.transformation.TransformationRegistry;
 import com.butchercraft.workstation.WorkstationCapability;
 import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailureCode;
@@ -114,6 +115,21 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
+    void transformationExecutionRequiresRegisteredTransformationDefinition() {
+        Harness harness = Harness.createWithStrategy(WorkstationExecutionStrategy.transformation(
+                TransformationRegistry.builder().build()
+        ));
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+
+        harness.tick();
+
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED, harness.controller.lastFailure().orElseThrow().code());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.output().isEmpty());
+    }
+
+    @Test
     void saveLoadMidProcessPreservesProgressAndCompletes() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
@@ -183,6 +199,17 @@ class GrinderProcessingControllerTest {
         }
 
         static Harness createWithCapability(WorkstationCapability workstationCapability) {
+            return createWithCapabilityAndStrategy(workstationCapability, WorkstationExecutionStrategy.transformation());
+        }
+
+        static Harness createWithStrategy(WorkstationExecutionStrategy executionStrategy) {
+            return createWithCapabilityAndStrategy(GrinderWorkstation.capability(), executionStrategy);
+        }
+
+        static Harness createWithCapabilityAndStrategy(
+                WorkstationCapability workstationCapability,
+                WorkstationExecutionStrategy executionStrategy
+        ) {
             AtomicInteger changes = new AtomicInteger();
             WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
             WorkstationOperationLookup lookup = (registryAccess, capability, stack) ->
@@ -192,7 +219,7 @@ class GrinderProcessingControllerTest {
                     workstationCapability,
                     lookup,
                     DevelopmentProductItemMappings.fixtureMapping(),
-                    WorkstationExecutionStrategy.transformation(),
+                    executionStrategy,
                     changes::incrementAndGet
             );
             inventory.setInputLocked(controller::inputLocked);

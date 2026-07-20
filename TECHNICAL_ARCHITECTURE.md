@@ -436,6 +436,8 @@ Milestone 2E extends operation definitions and the pure engine from one output t
 
 Version 0.6.1 adds a strategy bridge between the workstation framework and the pure transformation engine. The Grinder uses transformation execution after operation resolution and before legacy transaction commit. Bandsaw and other workstations remain on the legacy execution strategy until they are deliberately migrated.
 
+Version 0.6.2 adds an immutable pure Java transformation registry. The Grinder transformation strategy looks up the resolved operation id in that registry before evaluation and execution. Built-in Grinder transformations are registered in Java until datapack transformation loading is deliberately added.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy
