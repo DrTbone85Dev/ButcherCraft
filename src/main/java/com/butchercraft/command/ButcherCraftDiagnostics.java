@@ -41,6 +41,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
+import java.util.List;
+import java.util.Objects;
+
 public final class ButcherCraftDiagnostics {
     private static final ResourceLocation DEVELOPMENT_TEST_ITEM_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "development_test_item");
@@ -72,8 +75,25 @@ public final class ButcherCraftDiagnostics {
 
     public static void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal(ButcherCraft.MOD_ID)
+                .then(Commands.literal("info")
+                        .executes(context -> runInfo(context.getSource())))
                 .then(Commands.literal("diagnostic")
                         .executes(context -> runDiagnostic(context.getSource()))));
+    }
+
+    private static int runInfo(net.minecraft.commands.CommandSourceStack source) {
+        for (InfoMessageLine line : infoLines(modVersion(ButcherCraft.MOD_ID))) {
+            source.sendSuccess(line::toComponent, false);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    static List<InfoMessageLine> infoLines(String modVersion) {
+        return List.of(
+                new InfoMessageLine("commands.butchercraft.info.title", List.of()),
+                new InfoMessageLine("commands.butchercraft.info.version", List.of(modVersion)),
+                new InfoMessageLine("commands.butchercraft.info.status", List.of())
+        );
     }
 
     private static int runDiagnostic(net.minecraft.commands.CommandSourceStack source) {
@@ -264,6 +284,23 @@ public final class ButcherCraftDiagnostics {
         return ModList.get().getModContainerById(modId)
                 .map(container -> container.getModInfo().getVersion().toString())
                 .orElse("unavailable");
+    }
+
+    record InfoMessageLine(String translationKey, List<String> arguments) {
+        InfoMessageLine {
+            translationKey = Objects.requireNonNull(translationKey, "translationKey").strip();
+            if (translationKey.isEmpty()) {
+                throw new IllegalArgumentException("Info message translation key cannot be blank");
+            }
+            arguments = List.copyOf(Objects.requireNonNull(arguments, "arguments"));
+        }
+
+        Component toComponent() {
+            if (arguments.isEmpty()) {
+                return Component.translatable(translationKey);
+            }
+            return Component.translatable(translationKey, arguments.toArray());
+        }
     }
 
     private static WorkstationDiagnostic verifyWorkstation(net.minecraft.core.RegistryAccess registryAccess) {
