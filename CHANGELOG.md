@@ -1,5 +1,19 @@
 # Changelog
 
+## ButcherCraft v0.6.3 - Transformation Schema
+
+### Core
+
+- Expanded `TransformationDefinition` into the canonical immutable schema for future transformations.
+- Added display name, schema version, required capability, yield, and metadata fields.
+- Added a fluent builder API for transformation definitions.
+- Preserved legacy constructor compatibility for the existing Grinder transformation path.
+
+### Stability
+
+- Added schema tests for validation, equality, immutability, metadata handling, and builder behavior.
+- Kept transformation schema code pure Java with no serialization or datapack loading in this slice.
+
 ## ButcherCraft v0.6.2 - Transformation Registry
 
 ### Core

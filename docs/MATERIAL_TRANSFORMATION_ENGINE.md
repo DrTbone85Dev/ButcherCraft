@@ -1,12 +1,12 @@
 # ButcherCraft Material Transformation Engine
 
-Status: v0.6.2 immutable transformation registry
+Status: v0.6.3 canonical transformation schema
 
 ## Purpose
 
-The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and an optional workstation capability.
+The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and a workstation capability.
 
-This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
+This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
 
 ## Package
 
@@ -34,7 +34,21 @@ BYPRODUCT
 WASTE
 ```
 
-`TransformationDefinition` stores a stable id, ordered non-empty input and output lists, positive duration, and an optional workstation capability id. It defensively copies lists, preserves order, and rejects duplicate input or output material ids.
+`TransformationDefinition` is the canonical immutable schema for future transformation definitions. It stores:
+
+- Stable `TransformationId`.
+- Nonblank display name.
+- Positive schema version.
+- Explicit required capability field.
+- Ordered non-empty input list.
+- Ordered non-empty output list.
+- Positive duration.
+- Yield ratio.
+- Immutable metadata map keyed by `EngineId`.
+
+Definitions validate during construction. They reject incomplete data, blank display names, invalid schema versions, duplicate input materials, duplicate output materials, inconsistent same-unit yield totals, and blank metadata values.
+
+`TransformationDefinition.Builder` is the preferred fluent construction API for new definitions. Legacy constructors remain only as compatibility bridges for existing Grinder and adapter code.
 
 `TransformationRegistryBuilder` is the mutable construction boundary for transformation definitions. It rejects null definitions and duplicate transformation ids.
 
@@ -93,9 +107,10 @@ The evaluator does not consume inputs, create outputs, inspect ItemStacks, or co
 
 ## Out Of Scope
 
-The v0.6.2 registry slice intentionally does not add:
+The v0.6.3 schema slice intentionally does not add:
 
 - Datapack migration to transformation definitions.
+- Serialization, codecs, JSON files, or schema migration.
 - Bandsaw, smoker, packaging, cooler, menu, or screen migration.
 - ItemStack or product data component changes.
 - Direct transformation-owned inventory mutation or transaction commits.
@@ -103,8 +118,8 @@ The v0.6.2 registry slice intentionally does not add:
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
 
-Version 0.6.2 registers built-in Grinder transformations in Java only. Datapack loading for transformation definitions remains out of scope.
+Version 0.6.2 registers built-in Grinder transformations in Java only. Version 0.6.3 keeps those definitions builder-backed and schema-valid. Datapack loading for transformation definitions remains out of scope.
 
 ## Next Proposed Slice
 
-The next slice should migrate another workstation only when its output model can be represented and validated through the transformation adapter without changing machine-specific behavior. Bandsaw migration needs deliberate multi-output compatibility review before it moves off the legacy execution strategy.
+Before serialization, the project should define stable field names, metadata key policy, schema migration rules, and error-reporting behavior for malformed external definitions. After that, datapack loading can decode into the canonical schema instead of inventing validation rules in the loader.

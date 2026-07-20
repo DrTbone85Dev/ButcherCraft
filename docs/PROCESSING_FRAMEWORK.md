@@ -213,4 +213,6 @@ Version 0.6.1 connected the Grinder to that foundation through `WorkstationExecu
 
 Version 0.6.2 adds an immutable `TransformationRegistry` and updates the Grinder bridge to query registered transformation definitions by resolved operation id. The compatibility adapter remains available, but the live Grinder path no longer constructs transformation definitions directly from the resolved operation.
 
+Version 0.6.3 expands `TransformationDefinition` into the canonical schema for future transformation serialization. The compatibility adapter and Grinder built-ins now populate the richer schema while preserving existing processing behavior.
+
 Bandsaw, datapack registries, menus, screens, and item data components are not migrated in this slice.

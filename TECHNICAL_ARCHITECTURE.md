@@ -438,6 +438,8 @@ Version 0.6.1 adds a strategy bridge between the workstation framework and the p
 
 Version 0.6.2 adds an immutable pure Java transformation registry. The Grinder transformation strategy looks up the resolved operation id in that registry before evaluation and execution. Built-in Grinder transformations are registered in Java until datapack transformation loading is deliberately added.
 
+Version 0.6.3 formalizes `TransformationDefinition` as the canonical pure Java transformation schema. New definitions should use the fluent builder and include display name, schema version, required capability, inputs, outputs, duration, yield, and typed metadata. Serialization and datapack loading should target this schema after their error-reporting and migration rules are designed.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

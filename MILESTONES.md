@@ -4,6 +4,45 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.3: Canonical Transformation Definition Schema
+
+Goal: formalize `TransformationDefinition` as the canonical immutable schema for all future transformations before serialization or datapack loading exists.
+
+Included work:
+
+- Canonical transformation definition fields for id, display name, schema version, required capability, inputs, outputs, duration, yield, and metadata.
+- Fluent builder API for complete definition construction.
+- Construction-time validation for incomplete, duplicate, inconsistent, or invalid transformations.
+- Immutable defensive copying for inputs, outputs, and metadata.
+- Legacy constructor compatibility for existing Grinder transformation definitions and adapter tests.
+- Unit tests for validation, equality, immutability, canonical defaults, and builder behavior.
+
+Excluded work:
+
+- Serialization, codecs, JSON files, datapack loading, migration systems, or public expansion APIs.
+- Bandsaw, smoker, packaging, cooler, menu, screen, data-component, or product item migration.
+- New gameplay systems or new transformation authoring formats.
+
+Acceptance criteria:
+
+- Transformation schema code remains pure Java with no Minecraft or NeoForge imports.
+- Existing Grinder transformation behavior remains unchanged.
+- Invalid definitions fail during construction, before registry registration or execution.
+- Registry, evaluator, executor, and compatibility adapter continue to work with the canonical schema.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+
+Manual in-game verification:
+
+- Optional before release: insert Beef Trim, Pork Trim, and Bison Trim test products into the Grinder and confirm each still produces the matching ground product after the normal processing duration.
+
+Rollback considerations:
+
+- The legacy constructor bridge allows the schema expansion to be rolled back independently from the v0.6.2 registry if needed.
+
 ## Milestone 0.6.2: Transformation Registry
 
 Goal: make an immutable pure Java transformation registry the authoritative source of transformation definitions used by the Grinder transformation execution bridge.

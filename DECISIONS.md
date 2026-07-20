@@ -589,6 +589,22 @@ Consequences:
 - The Grinder transformation strategy looks up the resolved operation id in the registry, rebases the registered definition to the current input quantity, and then evaluates/executes it.
 - Datapack loading, public expansion APIs, and other workstation migrations remain out of scope.
 
+## DEC-0041: TransformationDefinition Is The Canonical Transformation Schema
+
+Status: Accepted
+
+Decision: version 0.6.3 expands `TransformationDefinition` into the canonical immutable schema for future transformations. The schema includes id, display name, schema version, required capability, ordered inputs, ordered outputs, duration, yield, and typed metadata.
+
+Rationale: serialization and datapack loading need a complete domain schema before any file format is introduced. Validating the pure Java schema first keeps future loading work focused on decoding and reporting rather than inventing rules at the I/O boundary.
+
+Consequences:
+
+- Definitions validate completeness, duplicate materials, yield consistency, nonblank display names, positive schema versions, and metadata values during construction.
+- A fluent builder is the preferred construction API for new definitions.
+- Legacy constructors remain as compatibility bridges for existing Grinder transformation and adapter code.
+- Metadata is stored as an immutable `Map<EngineId, String>` so keys are typed and Minecraft-independent.
+- Serialization, datapack loading, schema migration, and public expansion APIs remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.
