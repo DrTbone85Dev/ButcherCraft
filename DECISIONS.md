@@ -542,6 +542,21 @@ Consequences:
 - No unsafe alias or migration system is introduced for the retired pre-release `butchercraft:beef_brisket` fixture id.
 - Grinder, Bandsaw, workstation framework, resolver, and pure engine code remain product-agnostic and must not translate cut names.
 
+## DEC-0038: Material Transformation Extends Processing Without Replacing It
+
+Status: Accepted
+
+Decision: begin version 0.6.0 with an additive pure Java material-transformation domain under `com.butchercraft.transformation`. It uses existing engine identifiers, quantities, and durations; returns stable evaluation codes; and provides a compatibility adapter from `ProcessingOperation` to `TransformationDefinition`.
+
+Rationale: ButcherCraft needs a generic material-transformation vocabulary before future production systems broaden beyond current product processing. Keeping the first slice additive protects the working Grinder, Bandsaw, workstation controller, datapack registries, and item data components.
+
+Consequences:
+
+- Existing `ProcessingOperation` APIs remain supported.
+- Workstations continue using the current resolver and controller until a later milestone deliberately migrates an integration path.
+- Transformation code must stay free of Minecraft and NeoForge imports.
+- The first evaluator validates capability and material availability only; quality, probabilistic outputs, inventory mutation, ItemStack operations, and public expansion APIs remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

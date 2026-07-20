@@ -14,6 +14,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 - Milestone 2B adds a development-only processing workstation framework and block. It proves one prototype Beef Trim to Ground Beef transaction, but it is not the final grinder, not final machine content, and not a full recipe-selection system.
 - Milestone 2D adds pork and bison red-meat grinding prototype definitions and development fixture items to prove the Grinder remains data-driven. It does not add full species catalogs, animal entities, regulatory rules, final product items, or final balance.
 - Milestone 2E adds a permanent Bandsaw machine and one prototype beef forequarter fabrication flow. It does not add animal entities, carcass entities, full cut catalogs, recipe-selection UI, power, employees, refrigeration, commerce, regulatory rules, or final balance.
+- Version 0.6.0 begins the pure Java Material Transformation Engine foundation. It does not migrate datapack registries, Grinder behavior, Bandsaw behavior, workstation block entities, menus, screens, or product data components.
 - The packaging station scope formerly listed as Milestone 1B has been deferred and needs owner scheduling before order or employee milestones depend on packaged output.
 - The simple refrigerated storage scope formerly listed as Milestone 1C has been deferred and needs owner scheduling before cold-storage gameplay depends on it.
 - The customer order and business summary scope formerly listed as Milestone 1D has been deferred until product output, packaging, and persistence dependencies are scheduled.
@@ -39,6 +40,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 - The built-in red-meat grinding definition dataset is prototype data used to prove registry loading, graph validation, and generic Grinder resolution. Its duration, yield, quality adjustment, and thresholds are not final balance.
 - The built-in Beef Forequarter fabrication definition is prototype data used to prove ordered multi-output operation handling. Its cut names, ratios, duration, quality adjustment, and process loss are not final balance.
 - Multi-output yield modifiers are intentionally unsupported until the project defines how an additive modifier should be distributed across multiple outputs.
+- The transformation evaluator currently validates material availability and workstation capability only. It does not perform inventory mutation, quality calculation, random output selection, ItemStack conversion, or transaction commits.
 - The Development Processing Workstation is a temporary fixture block. Its explicit product-definition-to-item mapping supports only the registered development product fixture items.
 - The shared workstation menu and client screens are plain development views over server-owned state and are not final UI.
 - Manual test worlds created before the Milestone 2E slot-layout fix may contain stale workstation block entity data if a prior removal crashed mid-cleanup. Load once with the fixed code, or use a fresh development test world if the chunk remains corrupted.

@@ -52,7 +52,7 @@ class ButcherCraftInfoCommandTest {
 
         assertEquals("ButcherCraft", language.get("commands.butchercraft.info.title").getAsString());
         assertEquals(
-                "Version %s - Early Development / Foundation Update",
+                "Version %s - Early Development / Material Transformation Engine",
                 language.get("commands.butchercraft.info.version").getAsString()
         );
         assertEquals(

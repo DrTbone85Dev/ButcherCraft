@@ -37,7 +37,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("container.butchercraft.bandsaw", "Industrial Bandsaw");
         add("container.butchercraft.development_processing_workstation", "Development Processing Workstation");
         add("commands.butchercraft.info.title", "ButcherCraft");
-        add("commands.butchercraft.info.version", "Version %s - Early Development / Foundation Update");
+        add("commands.butchercraft.info.version", "Version %s - Early Development / Material Transformation Engine");
         add("commands.butchercraft.info.status", "Processing, inventory, employee, and business simulation systems are under active development.");
         add("commands.butchercraft.diagnostic", "ButcherCraft Diagnostic");
         add("definition.butchercraft.species.beef", "Beef");

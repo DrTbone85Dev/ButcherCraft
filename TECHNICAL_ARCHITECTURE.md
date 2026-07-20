@@ -35,6 +35,7 @@ Every major system has a proposed technical owner in package form:
 | --- | --- |
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
 | `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, operation, context, validation, evaluation, result, and transaction domain rules. |
+| `com.butchercraft.transformation` | Minecraft-independent generic material-transformation ids, material amounts, definitions, contexts, evaluations, evaluators, and compatibility adapters. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
 | `com.butchercraft.api` | Documented public API intended for expansion mods. |
@@ -62,7 +63,7 @@ Every major system has a proposed technical owner in package form:
 
 Expansion mods should depend on the core mod and its documented `api` package, not on internal implementation packages.
 
-Minecraft integration packages may depend on `com.butchercraft.engine`. Engine packages must not import Minecraft or NeoForge classes.
+Minecraft integration packages may depend on `com.butchercraft.engine` and `com.butchercraft.transformation`. Engine and transformation packages must not import Minecraft or NeoForge classes.
 
 ## Pre-Implementation Boundary Decisions
 
@@ -71,6 +72,7 @@ The architecture review identified facility, quality, cleanliness, refrigeration
 Required boundaries:
 
 - Product processing starts with pure engine records, processing contexts, validation rules, evaluators, and transactions under `com.butchercraft.engine`; item stacks and registries convert to engine products at the Minecraft boundary.
+- Generic material transformation starts with pure records and evaluators under `com.butchercraft.transformation`; it extends existing processing concepts and does not replace current workstation behavior until a later milestone schedules that migration.
 - Product and quality systems exchange `QualityContext` and `QualityResult` style records.
 - Cleanliness exposes dirty events, cleaning events, local snapshots, and facility summaries.
 - Refrigeration exposes storage and room summaries rather than equipment internals.

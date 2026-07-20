@@ -4,6 +4,47 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.0: Material Transformation Engine Foundation
+
+Goal: create a backwards-compatible pure Java foundation for generic material transformations without replacing the existing processing framework.
+
+Included work:
+
+- `com.butchercraft.transformation` domain records for transformation ids, material amounts, inputs, outputs, output classifications, definitions, contexts, evaluations, and deterministic evaluation.
+- Exact quantity handling through existing engine quantity types.
+- Optional workstation capability matching through pure engine identifiers.
+- A compatibility adapter from existing `ProcessingOperation` values into `TransformationDefinition` values for concrete input amounts.
+- Unit tests for validation, defensive copying, deterministic rejection, capability matching, valid acceptance, and the adapter.
+- Documentation in `docs/MATERIAL_TRANSFORMATION_ENGINE.md`.
+
+Excluded work:
+
+- Datapack registry migration.
+- Grinder, Bandsaw, workstation block entity, menu, screen, or data component changes.
+- Inventory mutation, transaction commits, or ItemStack operations.
+- Quality, lineage, operator skills, energy, temperature, probabilistic yield, spoilage, organizations, optional ingredients, tags, substitutes, catalysts, or public expansion APIs.
+
+Acceptance criteria:
+
+- Existing `ProcessingOperation` APIs and tests continue to pass.
+- Transformation sources have no Minecraft or NeoForge imports.
+- Evaluation is side-effect free and returns stable reason codes.
+- The transformation adapter proves current processing definitions can be represented by the new foundation when supplied a concrete input amount.
+
+Automated verification:
+
+- `gradlew test`
+- `gradlew build`
+
+Manual in-game verification:
+
+- None required. This milestone is pure domain foundation work and does not change live workstation behavior.
+
+Rollback considerations:
+
+- The new package is additive and isolated.
+- Current workstations continue using the existing processing resolver/controller path.
+
 ## Milestone 0: Repository Foundation
 
 Goal: create a clean NeoForge 1.21.1 Java 21 project foundation without gameplay systems.
