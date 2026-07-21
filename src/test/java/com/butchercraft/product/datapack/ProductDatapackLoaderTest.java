@@ -15,6 +15,39 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProductDatapackLoaderTest {
+    private static final List<String> EXPECTED_BUNDLED_PRODUCT_IDS = List.of(
+            "butchercraft:beef_trim",
+            "butchercraft:ground_beef",
+            "butchercraft:pork_trim",
+            "butchercraft:ground_pork",
+            "butchercraft:bison_trim",
+            "butchercraft:ground_bison",
+            "butchercraft:beef_forequarter",
+            "butchercraft:beef_chuck",
+            "butchercraft:beef_rib",
+            "butchercraft:beef_packer_brisket",
+            "butchercraft:beef_plate",
+            "butchercraft:beef_shank",
+            "butchercraft:beef_fat",
+            "butchercraft:beef_bone",
+            "butchercraft:beef_hindquarter",
+            "butchercraft:beef_round",
+            "butchercraft:beef_sirloin",
+            "butchercraft:beef_short_loin",
+            "butchercraft:beef_flank",
+            "butchercraft:t_bone_steak",
+            "butchercraft:porterhouse_steak",
+            "butchercraft:beef_strip_loin",
+            "butchercraft:beef_tenderloin",
+            "butchercraft:top_round",
+            "butchercraft:bottom_round",
+            "butchercraft:eye_of_round",
+            "butchercraft:sirloin_tip",
+            "butchercraft:top_sirloin",
+            "butchercraft:sirloin_steak",
+            "butchercraft:tri_tip"
+    );
+
     @Test
     void validProductDatapackLoadsInResourceOrder() {
         ProductDatapackLoadResult result = loader().load(resources(
@@ -35,23 +68,7 @@ public class ProductDatapackLoaderTest {
 
         assertTrue(result.succeeded(), result::describeErrors);
         assertEquals(BuiltInProductRegistry.BUILT_IN_RESOURCE_PATHS.size(), result.registry().orElseThrow().size());
-        assertEquals(List.of(
-                        "butchercraft:beef_trim",
-                        "butchercraft:ground_beef",
-                        "butchercraft:pork_trim",
-                        "butchercraft:ground_pork",
-                        "butchercraft:bison_trim",
-                        "butchercraft:ground_bison",
-                        "butchercraft:beef_forequarter",
-                        "butchercraft:beef_chuck",
-                        "butchercraft:beef_rib",
-                        "butchercraft:beef_packer_brisket",
-                        "butchercraft:beef_plate",
-                        "butchercraft:beef_shank",
-                        "butchercraft:beef_fat",
-                        "butchercraft:beef_bone"
-                ),
-                result.registry().orElseThrow().stream()
+        assertEquals(EXPECTED_BUNDLED_PRODUCT_IDS, result.registry().orElseThrow().stream()
                         .map(definition -> definition.id().value())
                         .toList());
     }

@@ -82,6 +82,14 @@ class ProcessingDefinitionResolverTest {
         DefinitionResolution<ProcessingOperation> bisonEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BISON);
         DefinitionResolution<ProcessingOperation> bandsawEngineOperation =
                 resolver.toEngineOperation(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER);
+        DefinitionResolution<ProcessingOperation> hindquarterEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER);
+        DefinitionResolution<ProcessingOperation> shortLoinEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN);
+        DefinitionResolution<ProcessingOperation> roundEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.CUT_BEEF_ROUND);
+        DefinitionResolution<ProcessingOperation> sirloinEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.CUT_BEEF_SIRLOIN);
 
         assertTrue(resolved.succeeded());
         assertTrue(engineOperation.succeeded());
@@ -92,6 +100,14 @@ class ProcessingDefinitionResolverTest {
         assertEquals("butchercraft:grind_bison", bisonEngineOperation.orThrow().id().value());
         assertTrue(bandsawEngineOperation.succeeded(), bandsawEngineOperation.report().issues().toString());
         assertEquals(8, bandsawEngineOperation.orThrow().outputs().size());
+        assertTrue(hindquarterEngineOperation.succeeded(), hindquarterEngineOperation.report().issues().toString());
+        assertEquals(7, hindquarterEngineOperation.orThrow().outputs().size());
+        assertTrue(shortLoinEngineOperation.succeeded(), shortLoinEngineOperation.report().issues().toString());
+        assertEquals(6, shortLoinEngineOperation.orThrow().outputs().size());
+        assertTrue(roundEngineOperation.succeeded(), roundEngineOperation.report().issues().toString());
+        assertEquals(7, roundEngineOperation.orThrow().outputs().size());
+        assertTrue(sirloinEngineOperation.succeeded(), sirloinEngineOperation.report().issues().toString());
+        assertEquals(6, sirloinEngineOperation.orThrow().outputs().size());
     }
 
     @Test

@@ -692,7 +692,7 @@ Consequences:
 
 Status: Accepted
 
-Decision: version 0.6.9 moves the current built-in product definitions into datapack JSON resources under `data/<namespace>/butchercraft/product` and introduces a reload-safe content snapshot containing both the immutable `ProductRegistry` and immutable `TransformationRegistry`. Product content is validated first; transformations then validate their product references against that candidate product registry. The active snapshot is replaced only when both registries load successfully.
+Decision: version 0.6.9 moves the current built-in product definitions into content snapshot JSON resources under `data/<namespace>/butchercraft/content/product` and introduces a reload-safe content snapshot containing both the immutable `ProductRegistry` and immutable `TransformationRegistry`. The path remains separate from the existing Minecraft datapack registry path `data/<namespace>/butchercraft/product`, which is decoded by the richer processing product schema. Product content is validated first; transformations then validate their product references against that candidate product registry. The active snapshot is replaced only when both registries load successfully.
 
 Rationale: transformations reference product ids, so reloading those registries separately can briefly expose mismatched content or incorrectly validate against stale products. A single content snapshot keeps the data boundary deterministic while preserving pure Java product and transformation domains.
 
@@ -704,6 +704,22 @@ Consequences:
 - Failed product reloads prevent transformation loading. Failed transformation reloads reject the full snapshot.
 - Product-to-ItemStack mappings remain Java-controlled development fixtures; datapacks do not dynamically register Minecraft items.
 - Expanded fabrication, schema migrations, datapack-driven category catalogs, product-to-item factories, and public expansion APIs remain out of scope.
+
+## DEC-0048: Beef Fabrication Expansion Is Data Content Over Existing Bandsaw Architecture
+
+Status: Accepted
+
+Decision: version 0.7.0 adds the first substantial beef fabrication chain as bundled product datapack resources, bundled transformation datapack resources, processing-operation definitions, and development fixture item mappings. The Bandsaw continues to advertise only `butchercraft:bandsaw` and remains free of product-specific cut-list behavior.
+
+Rationale: the project needs broader fabrication content to prove the v0.6.x registry, snapshot, resolver, and atomic transaction architecture under a larger multi-stage chain. Adding content through existing definitions verifies the architecture without expanding scope into a machine redesign or dynamic item factory.
+
+Consequences:
+
+- Beef Hindquarter, Round, Sirloin, Short Loin, Flank, T-Bone Steak, Porterhouse Steak, Beef Strip Loin, Beef Tenderloin, Top Round, Bottom Round, Eye of Round, Sirloin Tip, Top Sirloin, Sirloin Steak, and Tri-Tip are bundled product definitions and development fixture items.
+- `break_beef_hindquarter`, `cut_beef_short_loin`, `cut_beef_round`, and `cut_beef_sirloin` are bundled Bandsaw transformation definitions.
+- Matching processing-operation definitions are required so the existing processing graph and operation resolver can discover the new transformations by input product and capability.
+- Product-to-ItemStack output remains a controlled Java development fixture mapping until a real product item creation system is scheduled.
+- Full carcass fabrication, recipe selection, balancing, dynamic product items, other workstation migrations, and public expansion APIs remain out of scope.
 
 ## Decisions Needing Owner Approval
 

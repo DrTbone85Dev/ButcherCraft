@@ -1,12 +1,12 @@
 # ButcherCraft Material Transformation Engine
 
-Status: v0.6.9 datapack-backed content snapshot integration
+Status: v0.7.0 datapack-backed content snapshot integration
 
 ## Purpose
 
 The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and a workstation capability.
 
-This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. Version 0.6.6 adds pure Java atomic multi-output material transactions. Version 0.6.7 migrates only the Bandsaw proof to registry-driven atomic transformation validation. Version 0.6.8 loads transformation definitions from datapack JSON resources. Version 0.6.9 loads product definitions from datapack JSON resources and activates products and transformations as one content snapshot. It does not replace `ProcessingOperation`, datapack processing-operation registries, other workstation behavior, menus, screens, or item data components.
+This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. Version 0.6.6 adds pure Java atomic multi-output material transactions. Version 0.6.7 migrates only the Bandsaw proof to registry-driven atomic transformation validation. Version 0.6.8 loads transformation definitions from datapack JSON resources. Version 0.6.9 loads product definitions from datapack JSON resources and activates products and transformations as one content snapshot. Version 0.7.0 expands the bundled Bandsaw transformation catalog with beef hindquarter and primal fabrication definitions without changing engine behavior. It does not replace `ProcessingOperation`, datapack processing-operation registries, other workstation behavior, menus, screens, or item data components.
 
 ## Package
 
@@ -118,7 +118,7 @@ The evaluator does not consume inputs, create outputs, inspect ItemStacks, or co
 
 ## Out Of Scope
 
-The v0.6.9 content slice intentionally does not add:
+The v0.7.0 content slice intentionally does not add:
 
 - Implemented schema migrations.
 - Datapack-driven product category catalogs.
@@ -130,7 +130,7 @@ The v0.6.9 content slice intentionally does not add:
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
 
-Version 0.6.8 moves the built-in Grinder and Bandsaw transformation definitions into bundled datapack JSON resources. Version 0.6.9 moves the current product definitions into bundled datapack JSON resources and introduces an active content snapshot so product and transformation registries swap together only after successful validation. Expanded transformation catalogs remain out of scope.
+Version 0.6.8 moves the built-in Grinder and Bandsaw transformation definitions into bundled datapack JSON resources. Version 0.6.9 moves the current product definitions into bundled datapack JSON resources and introduces an active content snapshot so product and transformation registries swap together only after successful validation. Version 0.7.0 adds a bounded beef fabrication catalog; full carcass fabrication and recipe-selection UI remain out of scope.
 
 ## Next Proposed Slice
 

@@ -1,12 +1,12 @@
 # ButcherCraft Product Definition System
 
-Status: v0.6.9 datapack-backed product registry foundation
+Status: v0.7.0 datapack-backed product registry foundation
 
 ## Purpose
 
 The Product Definition System gives stable product ids an authoritative pure Java source of descriptive data. It is separate from Minecraft ItemStack product snapshots, existing datapack-backed processing product definitions, and temporary development item mappings.
 
-This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft.
+This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path.
 
 ## Package
 
@@ -98,7 +98,30 @@ butchercraft:beef_fat
 butchercraft:beef_bone
 ```
 
-Version 0.6.9 moves these definitions into bundled datapack JSON resources under `data/butchercraft/butchercraft/product`. All use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
+Version 0.6.9 moves these definitions into bundled content snapshot JSON resources under `data/butchercraft/butchercraft/content/product`. This path is separate from the existing Minecraft datapack registry path `data/butchercraft/butchercraft/product`, which continues to use the richer processing `ProductDefinition` codec. All content snapshot products use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
+
+Version 0.7.0 adds the first beef fabrication expansion products:
+
+```text
+butchercraft:beef_hindquarter
+butchercraft:beef_round
+butchercraft:beef_sirloin
+butchercraft:beef_short_loin
+butchercraft:beef_flank
+butchercraft:t_bone_steak
+butchercraft:porterhouse_steak
+butchercraft:beef_strip_loin
+butchercraft:beef_tenderloin
+butchercraft:top_round
+butchercraft:bottom_round
+butchercraft:eye_of_round
+butchercraft:sirloin_tip
+butchercraft:top_sirloin
+butchercraft:sirloin_steak
+butchercraft:tri_tip
+```
+
+These remain descriptive product definitions only. Java development fixture items and mappings are still separate Minecraft-facing bridge data.
 
 ## Transformation Validation
 
@@ -116,7 +139,7 @@ This slice does not add codecs tied to Minecraft registries, product-to-item map
 
 ## Remaining Work
 
-After v0.6.9, product definitions have a pure Java serialization contract and datapack loading path. The project still needs:
+After v0.7.0, product definitions have a pure Java serialization contract, datapack loading path, and bounded beef fabrication proof catalog. The project still needs:
 
 - Metadata key policy.
 - Schema migration rules.

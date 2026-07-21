@@ -1,12 +1,12 @@
 # ButcherCraft Datapack Transformations
 
-Status: v0.6.9 transformation loading within atomic content snapshots
+Status: v0.7.0 transformation loading within atomic content snapshots
 
 ## Purpose
 
 Datapack transformation loading makes the immutable `TransformationRegistry` data-driven without changing the pure evaluator, executor, transaction engine, Grinder, or Bandsaw behavior.
 
-Version 0.6.8 loads transformation JSON resources, maps them to the existing serialized schema records, deserializes through the canonical transformation deserializer, and validates references. Version 0.6.9 loads transformations after candidate products and activates the product registry and transformation registry together only after the full content snapshot succeeds.
+Version 0.6.8 loads transformation JSON resources, maps them to the existing serialized schema records, deserializes through the canonical transformation deserializer, and validates references. Version 0.6.9 loads transformations after candidate products and activates the product registry and transformation registry together only after the full content snapshot succeeds. Version 0.7.0 adds four more bundled Bandsaw transformation resources for the beef fabrication expansion without changing the loader.
 
 ## Resource Path
 
@@ -23,6 +23,10 @@ data/butchercraft/butchercraft/transformation/grind_beef.json
 data/butchercraft/butchercraft/transformation/grind_pork.json
 data/butchercraft/butchercraft/transformation/grind_bison.json
 data/butchercraft/butchercraft/transformation/break_beef_forequarter.json
+data/butchercraft/butchercraft/transformation/break_beef_hindquarter.json
+data/butchercraft/butchercraft/transformation/cut_beef_short_loin.json
+data/butchercraft/butchercraft/transformation/cut_beef_round.json
+data/butchercraft/butchercraft/transformation/cut_beef_sirloin.json
 ```
 
 ## JSON Shape
@@ -99,8 +103,12 @@ The following transformations are now bundled datapack resources:
 - `butchercraft:grind_pork`
 - `butchercraft:grind_bison`
 - `butchercraft:break_beef_forequarter`
+- `butchercraft:break_beef_hindquarter`
+- `butchercraft:cut_beef_short_loin`
+- `butchercraft:cut_beef_round`
+- `butchercraft:cut_beef_sirloin`
 
-Their ids, display names, capabilities, inputs, outputs, durations, yields, and metadata match the previous Java-defined built-ins.
+Their ids, display names, capabilities, inputs, outputs, durations, yields, and metadata are the authoritative bundled content loaded into the active transformation registry.
 
 ## Runtime Behavior
 
@@ -112,7 +120,7 @@ No gameplay behavior changes in this slice. The v0.6.8 and v0.6.9 milestones cha
 
 This milestone does not add:
 
-- Expanded fabrication catalogs.
+- Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain.
 - Transformation schema migrations.
 - A general product-to-ItemStack factory.
 - Recipe-selection UI.

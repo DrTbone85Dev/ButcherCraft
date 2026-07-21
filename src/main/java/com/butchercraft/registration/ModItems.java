@@ -161,6 +161,93 @@ public final class ModItems {
             () -> beefOutputFixture("butchercraft:beef_bone", "butchercraft:bone", 10_000)
     );
 
+    public static final DeferredItem<ProductTestItem> BEEF_HINDQUARTER_TEST = ITEMS.register(
+            "beef_hindquarter_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:beef_hindquarter"),
+                    ProductCategory.BEEF,
+                    ProcessingState.fromId(EngineId.of("butchercraft:hindquarter")),
+                    100_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_ROUND_TEST = ITEMS.register(
+            "beef_round_test",
+            () -> beefOutputFixture("butchercraft:beef_round", "butchercraft:primal", 30_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_SIRLOIN_TEST = ITEMS.register(
+            "beef_sirloin_test",
+            () -> beefOutputFixture("butchercraft:beef_sirloin", "butchercraft:primal", 15_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_SHORT_LOIN_TEST = ITEMS.register(
+            "beef_short_loin_test",
+            () -> beefOutputFixture("butchercraft:beef_short_loin", "butchercraft:primal", 15_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_FLANK_TEST = ITEMS.register(
+            "beef_flank_test",
+            () -> beefOutputFixture("butchercraft:beef_flank", "butchercraft:primal", 7_500)
+    );
+
+    public static final DeferredItem<ProductTestItem> T_BONE_STEAK_TEST = ITEMS.register(
+            "t_bone_steak_test",
+            () -> beefOutputFixture("butchercraft:t_bone_steak", "butchercraft:steak", 4_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> PORTERHOUSE_STEAK_TEST = ITEMS.register(
+            "porterhouse_steak_test",
+            () -> beefOutputFixture("butchercraft:porterhouse_steak", "butchercraft:steak", 3_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_STRIP_LOIN_TEST = ITEMS.register(
+            "beef_strip_loin_test",
+            () -> beefOutputFixture("butchercraft:beef_strip_loin", "butchercraft:subprimal", 3_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> BEEF_TENDERLOIN_TEST = ITEMS.register(
+            "beef_tenderloin_test",
+            () -> beefOutputFixture("butchercraft:beef_tenderloin", "butchercraft:subprimal", 2_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> TOP_ROUND_TEST = ITEMS.register(
+            "top_round_test",
+            () -> beefOutputFixture("butchercraft:top_round", "butchercraft:subprimal", 7_500)
+    );
+
+    public static final DeferredItem<ProductTestItem> BOTTOM_ROUND_TEST = ITEMS.register(
+            "bottom_round_test",
+            () -> beefOutputFixture("butchercraft:bottom_round", "butchercraft:subprimal", 6_500)
+    );
+
+    public static final DeferredItem<ProductTestItem> EYE_OF_ROUND_TEST = ITEMS.register(
+            "eye_of_round_test",
+            () -> beefOutputFixture("butchercraft:eye_of_round", "butchercraft:subprimal", 3_500)
+    );
+
+    public static final DeferredItem<ProductTestItem> SIRLOIN_TIP_TEST = ITEMS.register(
+            "sirloin_tip_test",
+            () -> beefOutputFixture("butchercraft:sirloin_tip", "butchercraft:subprimal", 5_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> TOP_SIRLOIN_TEST = ITEMS.register(
+            "top_sirloin_test",
+            () -> beefOutputFixture("butchercraft:top_sirloin", "butchercraft:subprimal", 5_000)
+    );
+
+    public static final DeferredItem<ProductTestItem> SIRLOIN_STEAK_TEST = ITEMS.register(
+            "sirloin_steak_test",
+            () -> beefOutputFixture("butchercraft:sirloin_steak", "butchercraft:steak", 3_500)
+    );
+
+    public static final DeferredItem<ProductTestItem> TRI_TIP_TEST = ITEMS.register(
+            "tri_tip_test",
+            () -> beefOutputFixture("butchercraft:tri_tip", "butchercraft:subprimal", 2_000)
+    );
+
     /**
      * Development-only workstation block item used to prove the reusable processing workstation framework.
      */

@@ -14,7 +14,11 @@ public final class BuiltInTransformationRegistry {
             "data/butchercraft/butchercraft/transformation/grind_beef.json",
             "data/butchercraft/butchercraft/transformation/grind_pork.json",
             "data/butchercraft/butchercraft/transformation/grind_bison.json",
-            "data/butchercraft/butchercraft/transformation/break_beef_forequarter.json"
+            "data/butchercraft/butchercraft/transformation/break_beef_forequarter.json",
+            "data/butchercraft/butchercraft/transformation/break_beef_hindquarter.json",
+            "data/butchercraft/butchercraft/transformation/cut_beef_short_loin.json",
+            "data/butchercraft/butchercraft/transformation/cut_beef_round.json",
+            "data/butchercraft/butchercraft/transformation/cut_beef_sirloin.json"
     );
 
     public static final EngineId WORKSTATION_CAPABILITY_GRINDING = EngineId.of("butchercraft:grinding");

@@ -1,38 +1,58 @@
 # ButcherCraft Datapack Products
 
-Status: v0.6.9 datapack product loading foundation
+Status: v0.7.0 datapack product loading with beef fabrication content
 
 ## Purpose
 
 Datapack product loading makes the immutable `ProductRegistry` data-driven without changing ItemStack product data, development product item mappings, Grinder behavior, or Bandsaw behavior.
 
-Version 0.6.9 loads product JSON resources, maps them to canonical serialized product records, deserializes through the canonical product deserializer, and assembles products and transformations as one validated content snapshot.
+Version 0.6.9 loads product JSON resources, maps them to canonical serialized product records, deserializes through the canonical product deserializer, and assembles products and transformations as one validated content snapshot. Version 0.7.0 expands the bundled product resources with the first multi-stage beef fabrication catalog while preserving the same loading path.
 
 ## Resource Path
 
 Product files live under:
 
 ```text
-data/<namespace>/butchercraft/product/<path>.json
+data/<namespace>/butchercraft/content/product/<path>.json
 ```
+
+This path is intentionally separate from the Minecraft datapack registry path
+`data/<namespace>/butchercraft/product/<id>.json`, which is reserved for the
+existing richer processing `butchercraft:product` registry codec.
 
 The bundled ButcherCraft resources cover the current Grinder and Bandsaw proof products:
 
 ```text
-data/butchercraft/butchercraft/product/beef_trim.json
-data/butchercraft/butchercraft/product/ground_beef.json
-data/butchercraft/butchercraft/product/pork_trim.json
-data/butchercraft/butchercraft/product/ground_pork.json
-data/butchercraft/butchercraft/product/bison_trim.json
-data/butchercraft/butchercraft/product/ground_bison.json
-data/butchercraft/butchercraft/product/beef_forequarter.json
-data/butchercraft/butchercraft/product/beef_chuck.json
-data/butchercraft/butchercraft/product/beef_rib.json
-data/butchercraft/butchercraft/product/beef_packer_brisket.json
-data/butchercraft/butchercraft/product/beef_plate.json
-data/butchercraft/butchercraft/product/beef_shank.json
-data/butchercraft/butchercraft/product/beef_fat.json
-data/butchercraft/butchercraft/product/beef_bone.json
+data/butchercraft/butchercraft/content/product/beef_trim.json
+data/butchercraft/butchercraft/content/product/ground_beef.json
+data/butchercraft/butchercraft/content/product/pork_trim.json
+data/butchercraft/butchercraft/content/product/ground_pork.json
+data/butchercraft/butchercraft/content/product/bison_trim.json
+data/butchercraft/butchercraft/content/product/ground_bison.json
+data/butchercraft/butchercraft/content/product/beef_forequarter.json
+data/butchercraft/butchercraft/content/product/beef_chuck.json
+data/butchercraft/butchercraft/content/product/beef_rib.json
+data/butchercraft/butchercraft/content/product/beef_packer_brisket.json
+data/butchercraft/butchercraft/content/product/beef_plate.json
+data/butchercraft/butchercraft/content/product/beef_shank.json
+data/butchercraft/butchercraft/content/product/beef_fat.json
+data/butchercraft/butchercraft/content/product/beef_bone.json
+data/butchercraft/butchercraft/content/product/beef_hindquarter.json
+data/butchercraft/butchercraft/content/product/beef_round.json
+data/butchercraft/butchercraft/content/product/beef_sirloin.json
+data/butchercraft/butchercraft/content/product/beef_short_loin.json
+data/butchercraft/butchercraft/content/product/beef_flank.json
+data/butchercraft/butchercraft/content/product/t_bone_steak.json
+data/butchercraft/butchercraft/content/product/porterhouse_steak.json
+data/butchercraft/butchercraft/content/product/beef_strip_loin.json
+data/butchercraft/butchercraft/content/product/beef_tenderloin.json
+data/butchercraft/butchercraft/content/product/top_round.json
+data/butchercraft/butchercraft/content/product/bottom_round.json
+data/butchercraft/butchercraft/content/product/eye_of_round.json
+data/butchercraft/butchercraft/content/product/sirloin_tip.json
+data/butchercraft/butchercraft/content/product/top_sirloin.json
+data/butchercraft/butchercraft/content/product/sirloin_steak.json
+data/butchercraft/butchercraft/content/product/tri_tip.json
 ```
 
 ## JSON Shape
@@ -98,7 +118,7 @@ Failed product loading prevents transformation loading. Failed transformation lo
 
 ## Compatibility
 
-Product-to-ItemStack mappings remain Java-controlled development fixtures. Datapacks do not dynamically register Minecraft items, change creative tab entries, or create item models.
+Product-to-ItemStack mappings remain Java-controlled development fixtures. Datapacks do not dynamically register Minecraft items, change creative tab entries, or create item models. Version 0.7.0 adds Java fixture items and mappings only for the new bundled beef fabrication products.
 
 The Grinder and Bandsaw still resolve processing operations through existing processing definitions and workstation controllers. Version 0.6.9 changes how product definitions reach the pure registry, not how workstations behave.
 
@@ -110,7 +130,7 @@ This milestone does not add:
 - Product-to-ItemStack factories.
 - Datapack-driven category catalogs.
 - Schema migrations.
-- Expanded fabrication catalogs.
+- Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain.
 - Spoilage, quality expansion, packaging states, storage rules, or recipe-selection UI.
 - Smoker, packaging, cooler, or other workstation migrations.
 - Public expansion APIs.

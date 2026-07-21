@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:cut_beef_round",
+  "display_name": "Cut Beef Round",
+  "required_capability": "butchercraft:bandsaw",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_round",
+      "quantity": 30000,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:top_round",
+      "quantity": 7500,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:bottom_round",
+      "quantity": 6500,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:eye_of_round",
+      "quantity": 3500,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:sirloin_tip",
+      "quantity": 5000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 4000,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_fat",
+      "quantity": 1500,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_bone",
+      "quantity": 2000,
+      "unit": "gram",
+      "classification": "waste"
+    }
+  ],
+  "duration": {
+    "milliseconds": 6000
+  },
+  "yield": {
+    "numerator": 1,
+    "denominator": 1
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

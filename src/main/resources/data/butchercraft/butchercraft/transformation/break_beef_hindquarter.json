@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:break_beef_hindquarter",
+  "display_name": "Break Beef Hindquarter",
+  "required_capability": "butchercraft:bandsaw",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_hindquarter",
+      "quantity": 100000,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:beef_round",
+      "quantity": 30000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_sirloin",
+      "quantity": 15000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_short_loin",
+      "quantity": 15000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_flank",
+      "quantity": 7500,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 15000,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_fat",
+      "quantity": 7500,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_bone",
+      "quantity": 10000,
+      "unit": "gram",
+      "classification": "waste"
+    }
+  ],
+  "duration": {
+    "milliseconds": 6000
+  },
+  "yield": {
+    "numerator": 1,
+    "denominator": 1
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

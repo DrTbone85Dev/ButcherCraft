@@ -37,10 +37,30 @@ class DefinitionDatagenResourceTest {
             new ExpectedTranslation("definition.butchercraft.product.beef_shank", "Beef Shank"),
             new ExpectedTranslation("definition.butchercraft.product.beef_fat", "Beef Fat"),
             new ExpectedTranslation("definition.butchercraft.product.beef_bone", "Beef Bone"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_hindquarter", "Beef Hindquarter"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_round", "Beef Round"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_sirloin", "Beef Sirloin"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_short_loin", "Beef Short Loin"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_flank", "Beef Flank"),
+            new ExpectedTranslation("definition.butchercraft.product.t_bone_steak", "T-Bone Steak"),
+            new ExpectedTranslation("definition.butchercraft.product.porterhouse_steak", "Porterhouse Steak"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_strip_loin", "Beef Strip Loin"),
+            new ExpectedTranslation("definition.butchercraft.product.beef_tenderloin", "Beef Tenderloin"),
+            new ExpectedTranslation("definition.butchercraft.product.top_round", "Top Round"),
+            new ExpectedTranslation("definition.butchercraft.product.bottom_round", "Bottom Round"),
+            new ExpectedTranslation("definition.butchercraft.product.eye_of_round", "Eye of Round"),
+            new ExpectedTranslation("definition.butchercraft.product.sirloin_tip", "Sirloin Tip"),
+            new ExpectedTranslation("definition.butchercraft.product.top_sirloin", "Top Sirloin"),
+            new ExpectedTranslation("definition.butchercraft.product.sirloin_steak", "Sirloin Steak"),
+            new ExpectedTranslation("definition.butchercraft.product.tri_tip", "Tri-Tip"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_beef", "Grind Beef"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_pork", "Grind Pork"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_bison", "Grind Bison"),
-            new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_forequarter", "Break Beef Forequarter")
+            new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_forequarter", "Break Beef Forequarter"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_hindquarter", "Break Beef Hindquarter"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_short_loin", "Cut Beef Short Loin"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_round", "Cut Beef Round"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_sirloin", "Cut Beef Sirloin")
     );
 
     @Test
@@ -64,10 +84,30 @@ class DefinitionDatagenResourceTest {
         assertTrue(Files.isRegularFile(path("product/beef_shank.json")));
         assertTrue(Files.isRegularFile(path("product/beef_fat.json")));
         assertTrue(Files.isRegularFile(path("product/beef_bone.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_hindquarter.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_round.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_sirloin.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_short_loin.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_flank.json")));
+        assertTrue(Files.isRegularFile(path("product/t_bone_steak.json")));
+        assertTrue(Files.isRegularFile(path("product/porterhouse_steak.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_strip_loin.json")));
+        assertTrue(Files.isRegularFile(path("product/beef_tenderloin.json")));
+        assertTrue(Files.isRegularFile(path("product/top_round.json")));
+        assertTrue(Files.isRegularFile(path("product/bottom_round.json")));
+        assertTrue(Files.isRegularFile(path("product/eye_of_round.json")));
+        assertTrue(Files.isRegularFile(path("product/sirloin_tip.json")));
+        assertTrue(Files.isRegularFile(path("product/top_sirloin.json")));
+        assertTrue(Files.isRegularFile(path("product/sirloin_steak.json")));
+        assertTrue(Files.isRegularFile(path("product/tri_tip.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_beef.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_pork.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_bison.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/break_beef_forequarter.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/break_beef_hindquarter.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_short_loin.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_round.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_sirloin.json")));
     }
 
     @Test
@@ -90,10 +130,65 @@ class DefinitionDatagenResourceTest {
         assertDecodes(ProductDefinition.CODEC, path("product/beef_shank.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_fat.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_bone.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_hindquarter.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_round.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_sirloin.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_short_loin.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_flank.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/t_bone_steak.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/porterhouse_steak.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_strip_loin.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/beef_tenderloin.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/top_round.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/bottom_round.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/eye_of_round.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/sirloin_tip.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/top_sirloin.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/sirloin_steak.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/tri_tip.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_beef.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_pork.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_bison.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/break_beef_forequarter.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/break_beef_hindquarter.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_short_loin.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_round.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_sirloin.json"));
+    }
+
+    @Test
+    void generatedProductRegistryJsonUsesRuntimeSchemaNotSerializedContentSchema() throws IOException {
+        JsonObject topSirloin = JsonParser.parseString(Files.readString(path("product/top_sirloin.json")))
+                .getAsJsonObject();
+
+        for (String runtimeField : List.of(
+                "display_name_key",
+                "species",
+                "product_category",
+                "processing_state",
+                "quantity_unit",
+                "edible",
+                "bone_state",
+                "spoilage_eligible",
+                "graph_input",
+                "graph_output"
+        )) {
+            assertTrue(topSirloin.has(runtimeField), "Missing runtime product registry field: " + runtimeField);
+        }
+
+        for (String serializedContentField : List.of(
+                "schema_version",
+                "id",
+                "display_name",
+                "category",
+                "default_quantity_unit",
+                "metadata"
+        )) {
+            assertFalse(
+                    topSirloin.has(serializedContentField),
+                    "Runtime product registry JSON must not use serialized content field: " + serializedContentField
+            );
+        }
     }
 
     @Test

@@ -1,0 +1,16 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.top_sirloin",
+  "edible": true,
+  "graph_input": false,
+  "graph_output": true,
+  "processing_state": "butchercraft:subprimal",
+  "product_category": "butchercraft:beef",
+  "quantity_unit": "gram",
+  "species": "butchercraft:beef",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/subprimal",
+    "butchercraft:top_sirloin"
+  ]
+}

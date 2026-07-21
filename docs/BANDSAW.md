@@ -1,6 +1,6 @@
 # ButcherCraft Bandsaw
 
-Status: Milestone 2E industrial machine proof with v0.6.9 datapack-backed content snapshots
+Status: Milestone 2E industrial machine proof with v0.7.0 beef fabrication content
 
 ## Purpose
 
@@ -27,6 +27,10 @@ The built-in red-meat prototype definitions currently support:
 
 ```text
 butchercraft:beef_forequarter -> butchercraft:break_beef_forequarter
+butchercraft:beef_hindquarter -> butchercraft:break_beef_hindquarter
+butchercraft:beef_short_loin -> butchercraft:cut_beef_short_loin
+butchercraft:beef_round -> butchercraft:cut_beef_round
+butchercraft:beef_sirloin -> butchercraft:cut_beef_sirloin
 ```
 
 The operation declares:
@@ -50,6 +54,8 @@ For a `100000 gram` beef forequarter, ordered outputs are:
 
 The ratios intentionally sum to 95%, leaving 5% process loss. Rounding is deterministic and uses integer arithmetic. For multi-output operations, remaining units are assigned by largest remainders with stable ties resolved by output order.
 
+Version 0.7.0 adds the hindquarter and primal follow-on transformations documented in `docs/BEEF_FABRICATION_EXPANSION.md`. Those definitions use the same six-second duration, Bandsaw capability, transformation registry lookup, and atomic output-slot validation path as the forequarter proof.
+
 ## Boundaries
 
 - `BandsawBlock`, `BandsawBlockEntity`, `BandsawMenu`, and `BandsawScreen` must stay free of beef-specific output logic.
@@ -61,8 +67,8 @@ The ratios intentionally sum to 95%, leaving 5% process loss. Rounding is determ
 
 ## Verification Notes
 
-Automated tests cover registration, paired-block placement and removal behavior, upper-half forwarding, resolver compatibility, ordered output quantities, output-slot filling, generated assets, definition JSON, missing transformation definitions, missing output item mappings, and inventory material-store bridge capacity checks.
+Automated tests cover registration, paired-block placement and removal behavior, upper-half forwarding, resolver compatibility, ordered output quantities, output-slot filling, generated assets, definition JSON, missing transformation definitions, missing output item mappings, inventory material-store bridge capacity checks, and the v0.7.0 beef hindquarter/primal fabrication chain.
 
-Manual verification should place the Bandsaw, confirm the upper half is placed and removed with it, insert Beef Forequarter Test Product, and confirm the eight ordered outputs, including Packer Brisket, appear after processing.
+Manual verification should place the Bandsaw, confirm the upper half is placed and removed with it, insert Beef Forequarter, Beef Hindquarter, Beef Short Loin, Beef Round, and Beef Sirloin test products, and confirm the ordered outputs appear after processing.
 
 If a pre-fix manual test world contains a stale workstation block entity attached to air, first try loading the world with the fixed code so invalid saved slot data can be skipped safely. For development-only worlds, creating a fresh manual-test world is acceptable if the affected chunk remains corrupted.

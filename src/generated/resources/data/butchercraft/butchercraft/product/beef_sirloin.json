@@ -1,0 +1,16 @@
+{
+  "bone_state": "bone_in",
+  "display_name_key": "definition.butchercraft.product.beef_sirloin",
+  "edible": true,
+  "graph_input": true,
+  "graph_output": true,
+  "processing_state": "butchercraft:primal",
+  "product_category": "butchercraft:beef",
+  "quantity_unit": "gram",
+  "species": "butchercraft:beef",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/primal",
+    "butchercraft:beef_sirloin"
+  ]
+}

@@ -3,6 +3,7 @@ package com.butchercraft.content;
 import com.butchercraft.engine.EngineId;
 import com.butchercraft.product.datapack.ProductDatapackErrorCode;
 import com.butchercraft.product.datapack.ProductDatapackLoaderTest;
+import com.butchercraft.product.definition.BuiltInProductRegistry;
 import com.butchercraft.transformation.BuiltInTransformationRegistry;
 import com.butchercraft.transformation.TransformationId;
 import com.butchercraft.transformation.TransformationOutput;
@@ -37,8 +38,8 @@ class ContentSnapshotServiceTest {
         );
 
         assertTrue(result.succeeded(), result::describeErrors);
-        assertEquals(14, ContentSnapshotService.currentProductRegistry().size());
-        assertEquals(4, ContentSnapshotService.currentTransformationRegistry().size());
+        assertEquals(30, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(8, ContentSnapshotService.currentTransformationRegistry().size());
         assertEquals(previous.products().stream().toList(), ContentSnapshotService.currentProductRegistry().stream().toList());
         assertEquals(previous.transformations().stream().toList(),
                 ContentSnapshotService.currentTransformationRegistry().stream().toList());
@@ -138,7 +139,7 @@ class ContentSnapshotServiceTest {
     void removedProductReferencedByTransformationRejectsEntireReload() {
         ContentSnapshot previous = ContentSnapshotService.currentSnapshot();
         LinkedHashMap<String, JsonElement> productsWithoutGroundBeef = new LinkedHashMap<>(ContentSnapshotService.bundledProductResources());
-        productsWithoutGroundBeef.remove("data/butchercraft/butchercraft/product/ground_beef.json");
+        productsWithoutGroundBeef.remove("data/butchercraft/butchercraft/content/product/ground_beef.json");
 
         ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(
                 productsWithoutGroundBeef,
@@ -159,6 +160,10 @@ class ContentSnapshotServiceTest {
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:grind_pork")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:grind_bison")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:break_beef_forequarter")));
+        assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:break_beef_hindquarter")));
+        assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_short_loin")));
+        assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_round")));
+        assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_sirloin")));
         assertEquals(8, snapshot.transformations()
                 .find(TransformationId.of("butchercraft:break_beef_forequarter"))
                 .orElseThrow()
@@ -170,6 +175,22 @@ class ContentSnapshotServiceTest {
                 .count());
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_trim")));
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_forequarter")));
+        assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_hindquarter")));
+        assertTrue(snapshot.products().contains(EngineId.of("butchercraft:tri_tip")));
+    }
+
+    @Test
+    void bundledSnapshotLoadsEveryBeefFabricationProduct() {
+        ContentSnapshot snapshot = ContentSnapshotService.loadBundledSnapshot();
+
+        for (String resourcePath : BuiltInProductRegistry.BUILT_IN_RESOURCE_PATHS) {
+            String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1, resourcePath.length() - ".json".length());
+            assertTrue(
+                    snapshot.products().contains(EngineId.of("butchercraft:" + fileName)),
+                    "Missing bundled product from content snapshot: " + fileName
+            );
+        }
+        assertEquals(30, snapshot.products().size());
     }
 
     @Test

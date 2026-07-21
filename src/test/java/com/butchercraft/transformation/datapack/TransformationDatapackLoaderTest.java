@@ -19,6 +19,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TransformationDatapackLoaderTest {
+    private static final List<String> EXPECTED_BUNDLED_TRANSFORMATION_IDS = List.of(
+            "butchercraft:grind_beef",
+            "butchercraft:grind_pork",
+            "butchercraft:grind_bison",
+            "butchercraft:break_beef_forequarter",
+            "butchercraft:break_beef_hindquarter",
+            "butchercraft:cut_beef_short_loin",
+            "butchercraft:cut_beef_round",
+            "butchercraft:cut_beef_sirloin"
+    );
+
     @AfterEach
     void resetRegistryService() {
         TransformationRegistryService.resetToBundledRegistry();
@@ -29,13 +40,7 @@ class TransformationDatapackLoaderTest {
         TransformationDatapackLoadResult result = loader().load(TransformationRegistryService.bundledResources());
 
         assertTrue(result.succeeded());
-        assertEquals(List.of(
-                        "butchercraft:grind_beef",
-                        "butchercraft:grind_pork",
-                        "butchercraft:grind_bison",
-                        "butchercraft:break_beef_forequarter"
-                ),
-                result.registry().orElseThrow().stream()
+        assertEquals(EXPECTED_BUNDLED_TRANSFORMATION_IDS, result.registry().orElseThrow().stream()
                         .map(definition -> definition.id().value())
                         .toList());
     }
