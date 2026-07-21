@@ -36,6 +36,26 @@ class BeefFabricationProductItemMappingTest {
         }
     }
 
+    @Test
+    void fixtureMappingCreatesPackagedRetailGroundBeefStack() {
+        DevelopmentProductItemMapping mapping = DevelopmentProductItemMappings.fixtureMapping();
+        Product product = new Product(
+                EngineId.of("butchercraft:retail_ground_beef"),
+                ProductCategory.BEEF,
+                ProcessingState.fromId(EngineId.of("butchercraft:retail_packaged")),
+                ProductQuantity.grams(900),
+                ProductQuality.ofScore(700)
+        );
+
+        var stack = mapping.createStack(product).orElseThrow();
+        ProductStackData data = ProductStackAdapter.readProductData(stack).orThrow();
+
+        assertEquals("butchercraft:retail_ground_beef", data.productTypeId());
+        assertEquals("butchercraft:retail_packaged", data.processingStateId());
+        assertEquals(900, data.quantityValue());
+        assertTrue(data.packaging().isEmpty());
+    }
+
     private static List<Fixture> fixtures() {
         return List.of(
                 fixture(BuiltInDefinitionIds.BEEF_HINDQUARTER, "hindquarter", 100_000),

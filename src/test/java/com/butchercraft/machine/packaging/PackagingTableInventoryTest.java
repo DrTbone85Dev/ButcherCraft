@@ -5,7 +5,6 @@ import com.butchercraft.workstation.WorkstationInventory;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -34,10 +33,12 @@ class PackagingTableInventoryTest {
     @Test
     void packagingInputSlotsAcceptItemsAndResultSlotRejectsInsertion() {
         WorkstationInventory inventory = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
-        inventory.setInputValidator(stack -> !stack.isEmpty());
-        ItemStack meat = ModItems.BEEF_TRIM_TEST.get().getDefaultInstance();
-        ItemStack tray = new ItemStack(Items.PAPER);
-        ItemStack wrap = new ItemStack(Items.STRING);
+        inventory.setInputSlotValidator((slot, stack) -> slot == 0
+                ? stack.getItem() == ModItems.GROUND_BEEF_TEST.get()
+                : PackagingSupplyItemMappings.isKnownSupplyItem(stack));
+        ItemStack meat = ModItems.GROUND_BEEF_TEST.get().getDefaultInstance();
+        ItemStack tray = new ItemStack(ModItems.FOAM_TRAY.get());
+        ItemStack wrap = new ItemStack(ModItems.PLASTIC_WRAP_ROLL.get());
 
         assertTrue(inventory.insertItem(0, meat, false).isEmpty());
         assertTrue(inventory.insertItem(1, tray, false).isEmpty());
@@ -46,7 +47,7 @@ class PackagingTableInventoryTest {
         assertEquals(1, inventory.inputs().get(1).getCount());
         assertEquals(1, inventory.inputs().get(2).getCount());
 
-        ItemStack rejectedResult = inventory.insertItem(3, new ItemStack(Items.PAPER), false);
+        ItemStack rejectedResult = inventory.insertItem(3, new ItemStack(ModItems.FOAM_TRAY.get()), false);
 
         assertEquals(1, rejectedResult.getCount());
         assertTrue(inventory.output().isEmpty());
@@ -57,9 +58,9 @@ class PackagingTableInventoryTest {
         WorkstationInventory source = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
         source.setInputValidator(stack -> !stack.isEmpty());
         source.setInputInternal(0, ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
-        source.setInputInternal(1, new ItemStack(Items.PAPER));
-        source.setInputInternal(2, new ItemStack(Items.STRING));
-        source.setOutputInternal(new ItemStack(Items.BOWL));
+        source.setInputInternal(1, new ItemStack(ModItems.FOAM_TRAY.get()));
+        source.setInputInternal(2, new ItemStack(ModItems.PLASTIC_WRAP_ROLL.get()));
+        source.setOutputInternal(ModItems.RETAIL_GROUND_BEEF_TEST.get().getDefaultInstance());
 
         CompoundTag saved = source.serializeNBT(RegistryAccess.EMPTY);
         WorkstationInventory restored = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
@@ -75,9 +76,9 @@ class PackagingTableInventoryTest {
     void multiInputInventoryNotifiesOwnerWhenCleared() {
         AtomicInteger changes = new AtomicInteger();
         WorkstationInventory inventory = new WorkstationInventory(PackagingTableWorkstation.capability(), changes::incrementAndGet);
-        inventory.setInputInternal(0, new ItemStack(Items.PAPER));
-        inventory.setInputInternal(1, new ItemStack(Items.STRING));
-        inventory.setInputInternal(2, new ItemStack(Items.BOWL));
+        inventory.setInputInternal(0, ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+        inventory.setInputInternal(1, new ItemStack(ModItems.FOAM_TRAY.get()));
+        inventory.setInputInternal(2, new ItemStack(ModItems.PLASTIC_WRAP_ROLL.get()));
 
         inventory.clearInputsInternal();
 

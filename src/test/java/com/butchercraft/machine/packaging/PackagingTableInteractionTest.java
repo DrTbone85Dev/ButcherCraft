@@ -34,16 +34,16 @@ class PackagingTableInteractionTest {
     }
 
     @Test
-    void packagingTableUsesInventoryOnlyBlockEntityFoundation() throws IOException {
+    void packagingTableUsesProcessingBlockEntityFoundation() throws IOException {
         String source = source("src/main/java/com/butchercraft/machine/packaging/PackagingTableBlockEntity.java");
 
-        assertTrue(source.contains("extends AbstractInventoryWorkstationBlockEntity"));
+        assertTrue(source.contains("extends AbstractProcessingWorkstationBlockEntity"));
         assertTrue(source.contains("PackagingTableWorkstation.capability()"));
+        assertTrue(source.contains("new WorkstationOperationResolver()"));
+        assertTrue(source.contains("new PackagingTableExecutionStrategy()"));
         assertTrue(source.contains("Component.translatable(\"container.butchercraft.packaging_table\")"));
         assertTrue(source.contains("new PackagingTableMenu(containerId, playerInventory, this)"));
-        assertFalse(source.contains("WorkstationProcessingController"));
-        assertFalse(source.contains("WorkstationExecutionStrategy"));
-        assertFalse(source.contains("WorkstationOperationResolver"));
+        assertTrue(source.contains("PackagingSupplyItemMappings.isKnownSupplyItem(stack)"));
     }
 
     @Test
@@ -61,6 +61,7 @@ class PackagingTableInteractionTest {
         assertTrue(screen.contains("slot.tray"));
         assertTrue(screen.contains("slot.wrap"));
         assertTrue(screen.contains("slot.result"));
+        assertTrue(screen.contains("renderProgress(guiGraphics"));
     }
 
     private static String source(String relativePath) throws IOException {

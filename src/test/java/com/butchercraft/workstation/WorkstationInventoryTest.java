@@ -174,4 +174,36 @@ class WorkstationInventoryTest {
 
         assertEquals(8, bandsaw.outputs().stream().filter(stack -> !stack.isEmpty()).count());
     }
+
+    @Test
+    void commitPlanConsumesSelectedInputsAndRestoresSnapshotsOnRollback() {
+        WorkstationInventory inventory = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
+        inventory.setInputInternal(0, ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+        inventory.setInputInternal(1, new ItemStack(ModItems.FOAM_TRAY.get()));
+        inventory.setInputInternal(2, new ItemStack(ModItems.PLASTIC_WRAP_ROLL.get()));
+
+        WorkstationInventoryCommitPlan plan = new WorkstationInventoryCommitPlan(
+                inventory,
+                List.of(0, 1, 2),
+                List.of(ModItems.RETAIL_GROUND_BEEF_TEST.get().getDefaultInstance())
+        );
+
+        plan.commit();
+
+        assertTrue(inventory.inputs().stream().allMatch(ItemStack::isEmpty));
+        assertEquals("butchercraft:retail_ground_beef",
+                com.butchercraft.product.integration.ProductStackAdapter.readProductData(inventory.output())
+                        .orThrow()
+                        .productTypeId());
+
+        plan.rollback();
+
+        assertEquals("butchercraft:ground_beef",
+                com.butchercraft.product.integration.ProductStackAdapter.readProductData(inventory.getStackInSlot(0))
+                        .orThrow()
+                        .productTypeId());
+        assertEquals(ModItems.FOAM_TRAY.get(), inventory.getStackInSlot(1).getItem());
+        assertEquals(ModItems.PLASTIC_WRAP_ROLL.get(), inventory.getStackInSlot(2).getItem());
+        assertTrue(inventory.output().isEmpty());
+    }
 }

@@ -6,12 +6,14 @@ Each milestone should remain small, testable, and rollback-friendly. Do not clai
 
 ## Milestone 0.8.0: Project Meat Counter - Packaging Foundation
 
-Goal: add the Packaging Table as a permanent workstation foundation, establish a data-only Retail Product Framework, and introduce Packaging Supplies without implementing packaging recipes or product mutation.
+Goal: add the Packaging Table as a permanent workstation foundation, establish the Retail Product Framework, introduce Packaging Supplies, and implement the first data-driven packaging gameplay flow without adding packaging recipes, labels, freshness, spoilage, or business logic.
 
 Included work:
 
 - `butchercraft:packaging_table` block, block item, block entity, menu type, client screen, creative-tab entry, language entries, loot table, and placeholder generated assets.
 - Inventory-only workstation base for station foundations that need persisted slots and menu synchronization without processing-controller behavior.
+- Slot-aware workstation input validation for multi-input processing workstations.
+- Shared workstation commit plan that atomically consumes selected input slots and inserts outputs with rollback.
 - Packaging Table inventory layout with Meat, Tray, Wrap, and Result slots.
 - Server-owned inventory persistence, menu opening, item-handler capability exposure, and block-break inventory recovery.
 - Data-driven `PackagingDefinition` loading from `data/<namespace>/butchercraft/content/packaging`.
@@ -19,29 +21,32 @@ Included work:
 - Optional product packaging metadata for packaged retail products.
 - Built-in `butchercraft:retail_package`, `butchercraft:vacuum_package`, `butchercraft:butcher_paper_package`, and `butchercraft:freezer_paper_package` packaging definitions.
 - Built-in `butchercraft:retail_ground_beef` product definition.
-- Graph-only `butchercraft:package_retail` processing operation using `butchercraft:packaging`.
+- `butchercraft:package_retail` processing operation using `butchercraft:packaging`.
 - Packaging supply items: Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll.
 - Optional `required_supply_items` validation on packaging definitions.
-- Automated coverage for registration, menu wiring, inventory layout, serialization, generated data, packaging definition loading, supply reference validation, creative-tab population, content-snapshot compatibility, and product metadata validation.
+- Packaging Table execution for Ground Beef plus Foam Tray plus Plastic Wrap Roll into Retail Ground Beef.
+- Stack-level packaging metadata on packaged product ItemStacks.
+- Automated coverage for registration, menu wiring, inventory layout, serialization, generated data, packaging definition loading, supply reference validation, creative-tab population, content-snapshot compatibility, product metadata validation, packaging execution, blocked output behavior, and rollback safety.
 - Documentation in `docs/PACKAGING_TABLE.md`.
 - Documentation in `docs/RETAIL_PRODUCT_FRAMEWORK.md`.
 - Documentation in `docs/PACKAGING_SUPPLIES.md`.
 
 Excluded work:
 
-- Packaging recipes, packaging execution, packaging supply consumption, product transformations, labels, quality changes, order fulfillment, employees, commerce, storage rules, sounds, animations, final artwork, or dynamic product item creation.
+- Packaging recipes, product transformations, labels, quality changes, freshness, spoilage, order fulfillment, employees, commerce, storage rules, custom sounds, animations, final artwork, or dynamic product item creation.
 - Migration of Grinder, Bandsaw, smoker, coolers, or any other workstation behavior.
 
 Acceptance criteria:
 
-- The Packaging Table is visible in the ButcherCraft creative tab, can be placed, and opens its placeholder GUI.
+- The Packaging Table is visible in the ButcherCraft creative tab, can be placed, and opens its processing GUI.
 - All four workstation slots persist through save/load and drop safely when the block is removed.
-- The table exposes item-handler inventory capability while remaining outside the processing resolver, evaluator, executor, and transformation registry paths.
+- The table exposes item-handler inventory capability and executes packaging through the processing resolver and controller while remaining outside transformation definitions and transformation execution.
 - Packaging definition datapacks load deterministically and malformed definitions produce structured validation errors.
 - Packaging supply items are registered, localized, modeled with placeholder assets, and visible in the ButcherCraft creative tab.
 - Packaging definitions can reference known supply item ids and reject malformed or unknown supply ids.
 - Product, packaging, and transformation registries activate atomically.
-- `package_retail` appears in the processing graph but is not executed by the Packaging Table.
+- `package_retail` appears in the processing graph and is executed by the Packaging Table when required supplies are present.
+- Required supplies are consumed only after successful completion, and blocked or failed packaging does not consume or duplicate items.
 - Existing Grinder and Bandsaw behavior and datapack reload compatibility remain unchanged.
 
 Automated verification:
@@ -55,11 +60,11 @@ Automated verification:
 
 Manual in-game verification:
 
-- Recommended before upload: launch a client, create or load a development world, find the Packaging Table and all six packaging supply items in the creative tab, place the table, open the GUI, move items through Meat, Tray, Wrap, and Result slot behavior, and confirm existing Grinder and Bandsaw test flows still work.
+- Recommended before upload: launch a client, create or load a development world, find the Packaging Table, Retail Ground Beef Test Product, and all six packaging supply items in the creative tab, place the table, open the GUI, package Ground Beef Test Product with Foam Tray and Plastic Wrap Roll, verify Retail Ground Beef appears in the result slot, verify missing supplies and blocked output preserve input, and confirm existing Grinder and Bandsaw test flows still work.
 
 Rollback considerations:
 
-- The v0.8.0 feature is additive. Removing the Packaging Table registrations, supply item registrations, assets, menu/screen, retail packaging definitions, retail product definition, graph-only `package_retail` operation, tests, and docs should restore the v0.7.0 feature surface without changing Grinder or Bandsaw behavior.
+- The v0.8.0 feature is additive. Removing the Packaging Table registrations, supply item registrations, assets, menu/screen, retail packaging definitions, retail product definition, `package_retail` operation, packaging execution strategy, retail fixture item, tests, and docs should restore the v0.7.0 feature surface without changing Grinder or Bandsaw behavior.
 
 ## Milestone 0.7.0: Beef Fabrication Expansion
 

@@ -6,17 +6,20 @@
 
 - Added the Packaging Table workstation foundation as a placeable block with a block item, block entity, menu, client screen, creative-tab entry, language entries, loot table, and placeholder assets.
 - Added a shared inventory-only workstation block entity base so non-processing station foundations can persist, synchronize, expose inventory capability, and drop contents without joining the processing controller path.
-- Generalized workstation inventory and menu layout support for multi-input station foundations while preserving existing Grinder, Bandsaw, and Development Processing Workstation behavior.
+- Generalized workstation inventory, menu layout, and controller commit handling for multi-input workstations while preserving existing Grinder, Bandsaw, and Development Processing Workstation behavior.
 - Added the Retail Product Framework with datapack-backed packaging definitions, optional product packaging metadata, and atomic content snapshot integration.
 - Added data-only `butchercraft:retail_package`, `butchercraft:retail_ground_beef`, and the graph-only `butchercraft:package_retail` processing operation.
 - Added Packaging Supplies: Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll.
 - Expanded packaging definitions with `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats plus optional required supply item references.
+- Implemented the first Packaging Table gameplay flow: Ground Beef plus required retail packaging supplies now processes through `butchercraft:package_retail` into Retail Ground Beef.
+- Added stack-level packaging metadata for packaged product fixtures while preserving legacy product stack data compatibility.
 
 ### Stability
 
-- Kept packaging recipes, transformations, product mutation, employee behavior, order integration, and gameplay packaging logic out of scope.
-- Preserved existing Grinder, Bandsaw, and Packaging Table gameplay behavior while extending datapack loading to product, packaging, and transformation snapshots.
-- Added regression coverage for Packaging Table registration, lifecycle, inventory persistence, menu layout, generated data, packaging definition loading, supply reference validation, product metadata validation, serialization, creative-tab population, and content-loading compatibility.
+- Kept packaging recipes, labels, freshness, spoilage, dynamic rendering, employee behavior, order integration, and business logic out of scope.
+- Preserved existing Grinder and Bandsaw gameplay behavior while extending datapack loading to product, packaging, and transformation snapshots.
+- Added atomic workstation commit planning so packaging product input, required supplies, and output insertion commit or roll back together.
+- Added regression coverage for Packaging Table registration, lifecycle, inventory persistence, menu layout, generated data, packaging definition loading, supply reference validation, product metadata validation, serialization, creative-tab population, packaging execution, blocked output behavior, and content-loading compatibility.
 
 ## ButcherCraft v0.7.0 - Beef Fabrication Expansion
 

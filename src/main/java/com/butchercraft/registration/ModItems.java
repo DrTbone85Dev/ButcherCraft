@@ -6,6 +6,7 @@ import com.butchercraft.engine.product.ProcessingState;
 import com.butchercraft.engine.product.ProductCategory;
 import com.butchercraft.engine.quantity.QuantityUnit;
 import com.butchercraft.product.component.ProductStackData;
+import com.butchercraft.product.component.ProductStackPackagingData;
 import com.butchercraft.product.item.ProductTestItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -82,6 +83,25 @@ public final class ModItems {
                     QuantityUnit.GRAM,
                     700
             ))
+    );
+
+    /**
+     * Development-only product fixture used to verify Packaging Table output.
+     */
+    public static final DeferredItem<ProductTestItem> RETAIL_GROUND_BEEF_TEST = ITEMS.register(
+            "retail_ground_beef_test",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:retail_ground_beef"),
+                    ProductCategory.BEEF,
+                    ProcessingState.fromId(EngineId.of("butchercraft:retail_packaged")),
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ).withPackaging(new ProductStackPackagingData(
+                    "butchercraft:retail_package",
+                    "tray_wrap",
+                    "butchercraft:ground_beef"
+            )))
     );
 
     /**

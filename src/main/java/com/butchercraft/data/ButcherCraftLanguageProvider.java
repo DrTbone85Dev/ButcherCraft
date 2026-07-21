@@ -23,6 +23,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.RETAIL_LABEL_ROLL.get(), "Retail Label Roll");
         add(ModItems.BEEF_TRIM_TEST.get(), "Beef Trim Test Product");
         add(ModItems.GROUND_BEEF_TEST.get(), "Ground Beef Test Product");
+        add(ModItems.RETAIL_GROUND_BEEF_TEST.get(), "Retail Ground Beef Test Product");
         add(ModItems.PORK_TRIM_TEST.get(), "Pork Trim Test Product");
         add(ModItems.GROUND_PORK_TEST.get(), "Ground Pork Test Product");
         add(ModItems.BISON_TRIM_TEST.get(), "Bison Trim Test Product");
@@ -117,6 +118,8 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("tooltip.butchercraft.product_data.state", "State: %s");
         add("tooltip.butchercraft.product_data.quantity", "Quantity: %s %s");
         add("tooltip.butchercraft.product_data.quality", "Quality: %s");
+        add("tooltip.butchercraft.product_data.packaging", "Packaging: %s (%s)");
+        add("tooltip.butchercraft.product_data.packaging_source", "Packaged from: %s");
         add("tooltip.butchercraft.product_data.quality_score", "Quality score: %s");
         add("tooltip.butchercraft.product_data.missing", "Missing ButcherCraft product data");
         add("tooltip.butchercraft.product_data.invalid", "Invalid ButcherCraft product data");
@@ -138,6 +141,9 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("workstation.butchercraft.failure.registry_not_available", "Processing definitions are unavailable");
         add("workstation.butchercraft.failure.processing_validation_rejected", "Processing validation rejected the input");
         add("workstation.butchercraft.failure.result_creation_failed", "Could not create processing result");
+        add("workstation.butchercraft.failure.missing_required_supply", "Required packaging supplies are missing");
+        add("workstation.butchercraft.failure.invalid_supply_item", "Invalid packaging supply");
+        add("workstation.butchercraft.failure.packaging_definition_missing", "Packaging definition is unavailable");
         add("workstation.butchercraft.state.idle", "Idle");
         add("workstation.butchercraft.state.ready", "Ready");
         add("workstation.butchercraft.state.processing", "Processing");

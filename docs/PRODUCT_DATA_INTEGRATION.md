@@ -38,12 +38,12 @@ Stored fields:
 - `quantity_value`: exact `long` quantity value.
 - `quantity_unit_id`: supported engine unit id, such as `gram`.
 - `quality_score`: internal quality score from `0` to `1000`.
+- Optional `packaging`: stack-level packaging metadata for packaged products.
 
 Not stored yet:
 
 - Temperature.
 - Freshness.
-- Packaging.
 - Batch or lot id.
 - Traceability.
 - Owner, employee, machine, cleanliness, customer, or business metadata.
@@ -73,6 +73,18 @@ Processing state ids are open engine identifiers so datapack definitions can int
 
 The stream codec reconstructs the immutable record through the same constructor validation. Invalid stream data therefore fails fast instead of creating unrelated product data.
 
+## Packaging Metadata
+
+Packaged product stacks may carry optional `ProductStackPackagingData`.
+
+Stored fields:
+
+- `packaging_definition_id`: stable id such as `butchercraft:retail_package`.
+- `packaging_format_id`: stable packaging format id such as `tray_wrap`.
+- `source_product_id`: stable source product id such as `butchercraft:ground_beef`.
+
+Legacy stacks that omit the `packaging` field still decode with an empty packaging value. The current metadata does not store labels, order ids, price, freshness, spoilage, dynamic texture state, or business data.
+
 ## Conversion Boundary
 
 `ProductStackAdapter` lives under `com.butchercraft.product.integration`.
@@ -97,10 +109,11 @@ Future stackability may be revisited only after the project defines precise rule
 
 ## Creative-Tab Fixtures
 
-Thirty development-only product fixtures are registered:
+Thirty-one development-only product fixtures are registered:
 
 - `butchercraft:beef_trim_test`
 - `butchercraft:ground_beef_test`
+- `butchercraft:retail_ground_beef_test`
 - `butchercraft:pork_trim_test`
 - `butchercraft:ground_pork_test`
 - `butchercraft:bison_trim_test`
@@ -138,6 +151,7 @@ Default values are test fixtures, not final balance:
 | --- | --- | --- | --- | --- | --- |
 | Beef Trim Test Product | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Beef Test Product | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
+| Retail Ground Beef Test Product | `butchercraft:retail_ground_beef` | `butchercraft:beef` | `butchercraft:retail_packaged` | `900 gram` | `700` |
 | Pork Trim Test Product | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Pork Test Product | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
 | Bison Trim Test Product | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
@@ -182,10 +196,12 @@ Shown by default:
 - Processing state identifier.
 - Quantity.
 - Visible quality grade.
+- Packaging definition and format when present.
 
 Shown with advanced tooltips:
 
 - Internal quality score.
+- Packaging source product when present.
 
 Missing or invalid product data shows a development warning rather than crashing. The tooltip uses common Minecraft item APIs only and does not import `net.minecraft.client` classes.
 
@@ -224,12 +240,12 @@ This milestone does not implement:
 - Menus or screens.
 - Recipes or datapack processing operations.
 - Networking request payloads.
-- Temperature, freshness, or packaging.
+- Temperature, freshness, labels, or order metadata.
 - Employees, refrigeration, cleanliness, MCDA, customers, business systems, sounds, or final artwork.
 
 ## Future Extension Boundary
 
-Temperature, freshness, packaging, batch identity, traceability, and order-bound metadata should be added as separate component records or carefully versioned extensions after their gameplay rules exist.
+Temperature, freshness, labels, batch identity, traceability, and order-bound metadata should be added as separate component records or carefully versioned extensions after their gameplay rules exist.
 
 Do not expand `ProductStackData` into a catch-all metadata blob. Each future component needs clear ownership, validation, migration behavior, tooltip rules, and synchronization cost.
 
@@ -238,3 +254,5 @@ Milestone 2A adds `ProductStackDefinitionValidator`, which compares immutable `P
 Milestone 2B adds station processing around existing product stacks but does not expand `ProductStackData`. Workstation progress, selected operation, failure state, and reserved input snapshots belong to the block entity/controller boundary, not to item components.
 
 Milestone 2E keeps the same component shape while allowing data-driven processing state ids beyond the original trim and ground states. Version 0.7.0 adds more product fixture defaults but still does not expand the component schema. Multi-output workstation results create separate product-bearing stacks; output order and quantity come from processing definitions and the engine transaction, not from `ProductStackData`.
+
+Version 0.8.0 Sprint D adds optional stack-level packaging metadata. Packaging Table output writes only packaging definition id, packaging format id, and source product id while preserving the engine product fields created by the processing operation.

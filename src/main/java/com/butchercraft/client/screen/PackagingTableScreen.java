@@ -27,7 +27,7 @@ public final class PackagingTableScreen extends AbstractProcessingWorkstationScr
                 left + menu.workstationSlotX(menu.firstOutputSlot()) - 1,
                 top + menu.workstationSlotY(menu.firstOutputSlot()) - 1
         );
-        renderReservedProgressSpace(guiGraphics, left + 116, top + 39);
+        renderProgress(guiGraphics, left + 116, top + 39);
     }
 
     @Override
@@ -37,11 +37,8 @@ public final class PackagingTableScreen extends AbstractProcessingWorkstationScr
         drawCentered(guiGraphics, Component.translatable("container.butchercraft.packaging_table.slot.tray"), 70, 17);
         drawCentered(guiGraphics, Component.translatable("container.butchercraft.packaging_table.slot.wrap"), 100, 17);
         drawCentered(guiGraphics, Component.translatable("container.butchercraft.packaging_table.slot.result"), 70, 75);
+        drawClippedStatus(guiGraphics, menu.statusComponent(), 108, 52, 60);
         guiGraphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, TEXT_COLOR, false);
-    }
-
-    private void renderReservedProgressSpace(GuiGraphics guiGraphics, int x, int y) {
-        guiGraphics.fill(x, y, x + 24, y + 6, PROGRESS_BACKGROUND_COLOR);
     }
 
     private void drawCentered(GuiGraphics guiGraphics, Component component, int centerX, int y) {

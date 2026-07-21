@@ -1,10 +1,10 @@
 # ButcherCraft Retail Product Framework
 
-Status: v0.8.0 Sprint C data foundation
+Status: v0.8.0 Sprint D packaging gameplay foundation
 
 ## Purpose
 
-The Retail Product Framework establishes datapack-backed definitions for packaged retail products without implementing packaging gameplay. It gives future packaging work an authoritative content layer while the Packaging Table remains an inventory-only workstation foundation. Sprint C adds physical packaging supply items and optional supply references on packaging definitions, but still does not execute packaging.
+The Retail Product Framework establishes datapack-backed definitions for packaged retail products. Sprint D uses that data for the first Packaging Table gameplay flow while keeping recipes, labels, freshness, spoilage, and business systems out of scope.
 
 This sprint adds:
 
@@ -15,8 +15,10 @@ This sprint adds:
 - One built-in retail product definition: `butchercraft:retail_ground_beef`.
 - One processing graph operation: `butchercraft:package_retail`.
 - Six registered packaging supply items documented in `docs/PACKAGING_SUPPLIES.md`.
+- Stack-level packaging metadata on packaged product ItemStacks.
+- Packaging Table execution that validates required supplies from `PackagingDefinition` and consumes them only after successful completion.
 
-It does not add recipes, execution, supply consumption, labels, weights, freshness, spoilage, dynamic textures, overlays, business logic, GUI changes, sounds, or animations.
+It does not add packaging recipes, labels, weights, freshness, spoilage, dynamic textures, overlays, business logic, custom sounds, or animations.
 
 ## Packaging Definition Schema
 
@@ -32,7 +34,7 @@ It does not add recipes, execution, supply consumption, labels, weights, freshne
 - Immutable compatible product tags.
 - Immutable metadata keyed by `EngineId`.
 
-At least one compatibility rule is required. A packaging definition may match by category, tag, or both. Required supply items are descriptive until packaging execution is scheduled. The built-in retail package matches red-meat categories and the `butchercraft:trait/ground` source-product tag.
+At least one compatibility rule is required. A packaging definition may match by category, tag, or both. Required supply items are validated by datapack loading and consumed by the Packaging Table execution strategy after successful processing. The built-in retail package matches red-meat categories and the `butchercraft:trait/ground` source-product tag.
 
 ## Resource Path
 
@@ -99,7 +101,7 @@ The bundled retail product is:
 butchercraft:retail_ground_beef
 ```
 
-It references `butchercraft:retail_package` and `butchercraft:ground_beef`, uses the beef category, uses grams, and carries the `butchercraft:trait/retail_packaged` tag.
+It references `butchercraft:retail_package` and `butchercraft:ground_beef`, uses the beef category, uses grams, and carries the `butchercraft:trait/retail_packaged` tag. At runtime, the packaged ItemStack also stores stack-level packaging metadata with the packaging definition id, packaging format id, and source product id.
 
 ## Atomic Reload
 
@@ -129,7 +131,19 @@ The operation uses:
 - Yield: `1/1`.
 - Quantity unit: `gram`.
 
-This operation is graph content only in this sprint. The Packaging Table does not create a processing controller, does not execute the operation, and has no transformation definition for packaging.
+Sprint D executes this operation on the Packaging Table through the normal workstation resolver and processing controller. It has no transformation definition for packaging.
+
+## Runtime Execution
+
+The Packaging Table execution path is data-driven:
+
+1. The input product resolves `butchercraft:package_retail` through the processing graph and `butchercraft:packaging` workstation capability.
+2. The output product definition must declare packaging metadata.
+3. The active `PackagingRegistry` supplies the packaging format and required supply item ids.
+4. The table validates supplies in auxiliary input slots.
+5. The processing operation commits through the existing pure engine processing transaction.
+6. The output ItemStack is created from the controlled fixture mapping and receives stack-level packaging metadata.
+7. Product input, required supplies, and output insertion commit through the shared workstation commit plan.
 
 ## Validation
 
@@ -139,4 +153,4 @@ Product packaging metadata validation rejects unknown packaging definitions, unk
 
 ## Out Of Scope
 
-This framework intentionally excludes packaging recipes, packaging execution, supply consumption, labels, weights, freshness, spoilage, vacuum packaging gameplay, dynamic textures, overlay rendering, business logic, GUI changes, sounds, animations, and item factory behavior.
+This framework intentionally excludes packaging recipes, labels, weights, freshness, spoilage, vacuum packaging gameplay, dynamic textures, overlay rendering, business logic, custom sounds, animations, and item factory behavior.

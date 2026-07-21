@@ -21,6 +21,8 @@ public final class WorkstationProcessingController {
     private static final String TOTAL_TICKS_TAG = "TotalTicks";
     private static final String LAST_FAILURE_TAG = "LastFailure";
     private static final String RESERVED_INPUT_TAG = "ReservedInput";
+    private static final String RESERVED_INPUTS_TAG = "ReservedInputs";
+    private static final String RESERVED_INPUT_INDEX_TAG = "InputIndex";
     private static final String COMPLETION_COMMITTED_TAG = "CompletionCommitted";
 
     private final WorkstationInventory inventory;
@@ -36,6 +38,7 @@ public final class WorkstationProcessingController {
     private int elapsedTicks;
     private int totalTicks;
     private ItemStack reservedInputSnapshot = ItemStack.EMPTY;
+    private List<ItemStack> reservedInputSnapshots = List.of();
     private boolean completionCommitted;
 
     public WorkstationProcessingController(
@@ -58,9 +61,6 @@ public final class WorkstationProcessingController {
     ) {
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.capability = Objects.requireNonNull(capability, "capability");
-        if (capability.inputSlots() != 1 || inventory.inputSlotCount() != 1) {
-            throw new IllegalArgumentException("Processing workstations currently support exactly one input slot");
-        }
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
         this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");
@@ -107,6 +107,9 @@ public final class WorkstationProcessingController {
         if (state == WorkstationState.IDLE && !inventory.input().isEmpty()) {
             setState(WorkstationState.READY);
         }
+        if (state == WorkstationState.BLOCKED && selectedOperationId == null && !inventory.input().isEmpty()) {
+            setState(WorkstationState.READY);
+        }
         changed.run();
     }
 
@@ -129,7 +132,7 @@ public final class WorkstationProcessingController {
                 block(WorkstationFailure.of(WorkstationFailureCode.NO_INPUT, "Reserved input is missing during processing"));
                 return;
             }
-            if (!ItemStack.isSameItemSameComponents(inventory.input(), reservedInputSnapshot)) {
+            if (!reservedInputsMatchInventory()) {
                 block(WorkstationFailure.of(WorkstationFailureCode.PRODUCT_DATA_MISMATCH, "Reserved input changed during processing"));
                 return;
             }
@@ -168,6 +171,20 @@ public final class WorkstationProcessingController {
         if (!reservedInputSnapshot.isEmpty()) {
             tag.put(RESERVED_INPUT_TAG, reservedInputSnapshot.save(registries, new CompoundTag()));
         }
+        if (!reservedInputSnapshots.isEmpty()) {
+            net.minecraft.nbt.ListTag inputsTag = new net.minecraft.nbt.ListTag();
+            for (int inputIndex = 0; inputIndex < reservedInputSnapshots.size(); inputIndex++) {
+                ItemStack stack = reservedInputSnapshots.get(inputIndex);
+                if (!stack.isEmpty()) {
+                    CompoundTag inputTag = (CompoundTag) stack.save(registries, new CompoundTag());
+                    inputTag.putInt(RESERVED_INPUT_INDEX_TAG, inputIndex);
+                    inputsTag.add(inputTag);
+                }
+            }
+            if (!inputsTag.isEmpty()) {
+                tag.put(RESERVED_INPUTS_TAG, inputsTag);
+            }
+        }
         tag.putBoolean(COMPLETION_COMMITTED_TAG, completionCommitted);
     }
 
@@ -187,6 +204,7 @@ public final class WorkstationProcessingController {
             reservedInputSnapshot = tag.contains(RESERVED_INPUT_TAG, Tag.TAG_COMPOUND)
                     ? ItemStack.parse(registries, tag.getCompound(RESERVED_INPUT_TAG)).orElse(ItemStack.EMPTY)
                     : ItemStack.EMPTY;
+            reservedInputSnapshots = loadReservedInputs(tag, registries);
             completionCommitted = tag.getBoolean(COMPLETION_COMMITTED_TAG);
             validateLoadedRuntimeState();
         } catch (RuntimeException exception) {
@@ -219,7 +237,7 @@ public final class WorkstationProcessingController {
         OperationResult prepared = executionStrategy.prepare(capability, operation, inventory, outputMapping);
         if (!prepared.succeeded()) {
             block(WorkstationFailure.of(
-                    WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED,
+                    failureCodeForResult(prepared, WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED),
                     prepared.failureReason().map(reason -> reason.message()).orElse("Processing validation rejected the input")
             ));
             return;
@@ -229,6 +247,7 @@ public final class WorkstationProcessingController {
         elapsedTicks = 0;
         totalTicks = operation.totalTicks();
         reservedInputSnapshot = inventory.input().copy();
+        reservedInputSnapshots = inventory.inputs().stream().map(ItemStack::copy).toList();
         completionCommitted = false;
         clearFailure();
         setState(WorkstationState.PROCESSING);
@@ -273,7 +292,7 @@ public final class WorkstationProcessingController {
         OperationResult committed = executionStrategy.commit(capability, operation, inventory, outputMapping);
         if (!committed.succeeded() || committed.committedOutputs().isEmpty()) {
             block(WorkstationFailure.of(
-                    WorkstationFailureCode.RESULT_CREATION_FAILED,
+                    failureCodeForResult(committed, WorkstationFailureCode.RESULT_CREATION_FAILED),
                     committed.failureReason().map(reason -> reason.message()).orElse("Processing transaction did not produce committed outputs")
             ));
             return;
@@ -289,7 +308,12 @@ public final class WorkstationProcessingController {
 
         List<ItemStack> outputStacks = new ArrayList<>();
         for (Product outputProduct : committed.committedOutputs()) {
-            Optional<ItemStack> output = outputMapping.createStack(outputProduct);
+            Optional<ItemStack> output = executionStrategy.createOutputStack(
+                    operation,
+                    outputProduct,
+                    inventory.input(),
+                    outputMapping
+            );
             if (output.isEmpty()) {
                 block(WorkstationFailure.of(
                         WorkstationFailureCode.RESULT_CREATION_FAILED,
@@ -301,21 +325,29 @@ public final class WorkstationProcessingController {
             outputStacks.add(output.orElseThrow());
         }
 
-        ItemStack inputSnapshot = inventory.input().copy();
-        List<ItemStack> outputSnapshot = inventory.outputs().stream()
-                .map(ItemStack::copy)
-                .toList();
+        WorkstationInventoryCommitPlan commitPlan;
+        try {
+            commitPlan = new WorkstationInventoryCommitPlan(
+                    inventory,
+                    executionStrategy.consumedInputSlots(capability, operation, inventory),
+                    outputStacks
+            );
+        } catch (RuntimeException exception) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.RESULT_CREATION_FAILED,
+                    "Unable to create a workstation inventory commit plan: " + exception.getMessage()
+            ));
+            return;
+        }
+
         try {
             completionCommitted = true;
-            inventory.clearInputInternal();
-            inventory.setOutputsInternal(outputStacks);
+            commitPlan.commit();
             elapsedTicks = totalTicks;
             clearFailure();
             setState(WorkstationState.COMPLETE);
         } catch (RuntimeException exception) {
             completionCommitted = false;
-            inventory.setInputInternal(inputSnapshot);
-            inventory.setOutputsInternal(outputSnapshot);
             block(WorkstationFailure.of(
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
                     "Output insertion failed and workstation inventory was restored"
@@ -344,6 +376,7 @@ public final class WorkstationProcessingController {
         elapsedTicks = 0;
         totalTicks = 0;
         reservedInputSnapshot = ItemStack.EMPTY;
+        reservedInputSnapshots = List.of();
         completionCommitted = false;
     }
 
@@ -364,10 +397,69 @@ public final class WorkstationProcessingController {
                 );
                 resetRuntimeProgress();
             }
+            if (state == WorkstationState.PROCESSING && reservedInputSnapshots.isEmpty()) {
+                state = WorkstationState.ERROR;
+                lastFailure = WorkstationFailure.of(
+                        WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                        "Active processing state had no reserved input snapshot after load"
+                );
+                resetRuntimeProgress();
+            }
         }
         if (state == WorkstationState.COMPLETE && inventory.outputsEmpty()) {
             resetRuntimeProgress();
             state = WorkstationState.IDLE;
         }
+    }
+
+    private boolean reservedInputsMatchInventory() {
+        if (reservedInputSnapshots.isEmpty()) {
+            return ItemStack.isSameItemSameComponents(inventory.input(), reservedInputSnapshot);
+        }
+        List<ItemStack> currentInputs = inventory.inputs();
+        if (currentInputs.size() != reservedInputSnapshots.size()) {
+            return false;
+        }
+        for (int inputIndex = 0; inputIndex < currentInputs.size(); inputIndex++) {
+            if (!ItemStack.isSameItemSameComponents(currentInputs.get(inputIndex), reservedInputSnapshots.get(inputIndex))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<ItemStack> loadReservedInputs(CompoundTag tag, HolderLookup.Provider registries) {
+        ArrayList<ItemStack> snapshots = new ArrayList<>();
+        for (int inputIndex = 0; inputIndex < inventory.inputSlotCount(); inputIndex++) {
+            snapshots.add(ItemStack.EMPTY);
+        }
+        if (tag.contains(RESERVED_INPUTS_TAG, Tag.TAG_LIST)) {
+            net.minecraft.nbt.ListTag inputsTag = tag.getList(RESERVED_INPUTS_TAG, Tag.TAG_COMPOUND);
+            for (int index = 0; index < inputsTag.size(); index++) {
+                CompoundTag inputTag = inputsTag.getCompound(index);
+                int inputIndex = inputTag.getInt(RESERVED_INPUT_INDEX_TAG);
+                if (inputIndex >= 0 && inputIndex < snapshots.size()) {
+                    snapshots.set(inputIndex, ItemStack.parse(registries, inputTag).orElse(ItemStack.EMPTY));
+                }
+            }
+            return List.copyOf(snapshots);
+        }
+        if (!reservedInputSnapshot.isEmpty()) {
+            snapshots.set(0, reservedInputSnapshot);
+            return List.copyOf(snapshots);
+        }
+        return List.of();
+    }
+
+    private static WorkstationFailureCode failureCodeForResult(OperationResult result, WorkstationFailureCode fallback) {
+        return result.failureReason()
+                .map(reason -> switch (reason.code()) {
+                    case "missing_required_supply" -> WorkstationFailureCode.MISSING_REQUIRED_SUPPLY;
+                    case "invalid_supply_item" -> WorkstationFailureCode.INVALID_SUPPLY_ITEM;
+                    case "packaging_definition_missing", "packaging_metadata_missing" ->
+                            WorkstationFailureCode.PACKAGING_DEFINITION_MISSING;
+                    default -> fallback;
+                })
+                .orElse(fallback);
     }
 }

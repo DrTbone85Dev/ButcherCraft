@@ -22,6 +22,7 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
                         output.accept(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.RETAIL_GROUND_BEEF_TEST.get().getDefaultInstance());
                         output.accept(ModItems.PORK_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_PORK_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BISON_TRIM_TEST.get().getDefaultInstance());

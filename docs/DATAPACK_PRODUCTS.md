@@ -161,7 +161,7 @@ This milestone does not add:
 - Datapack-driven category catalogs.
 - Schema migrations.
 - Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain.
-- Spoilage, quality expansion, storage rules, packaging recipes, packaging execution, labels, or recipe-selection UI.
+- Spoilage, quality expansion, storage rules, packaging recipes, packaging choices beyond the first table flow, labels, or recipe-selection UI.
 - Smoker, packaging, cooler, or other workstation migrations.
 - Public expansion APIs.
 

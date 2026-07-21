@@ -3,6 +3,7 @@ package com.butchercraft.machine.packaging;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.test.TestProjectPaths;
 import com.google.gson.JsonParser;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,16 @@ class PackagingSupplyItemTest {
             assertTrue(item.registration().isBound(), "Expected registered packaging supply item " + item.id());
             assertEquals("butchercraft:" + item.id(), item.registration().getId().toString());
         }
+    }
+
+    @Test
+    void packagingSupplyItemMappingsIdentifyKnownSuppliesOnly() {
+        assertTrue(PackagingSupplyItemMappings.matches(
+                new ItemStack(ModItems.FOAM_TRAY.get()),
+                com.butchercraft.packaging.definition.BuiltInPackagingRegistry.FOAM_TRAY
+        ));
+        assertTrue(PackagingSupplyItemMappings.isKnownSupplyItem(new ItemStack(ModItems.PLASTIC_WRAP_ROLL.get())));
+        assertTrue(!PackagingSupplyItemMappings.isKnownSupplyItem(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance()));
     }
 
     @Test
