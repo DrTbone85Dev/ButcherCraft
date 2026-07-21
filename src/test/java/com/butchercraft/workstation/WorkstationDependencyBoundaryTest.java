@@ -21,6 +21,15 @@ class WorkstationDependencyBoundaryTest {
     }
 
     @Test
+    void transformationModelStillDoesNotImportMinecraftOrNeoForge() throws IOException {
+        List<Path> offenders = javaFiles(TestProjectPaths.projectPath("src/main/java/com/butchercraft/transformation")).stream()
+                .filter(path -> sourceContains(path, "import net.minecraft") || sourceContains(path, "import net.neoforged"))
+                .toList();
+
+        assertTrue(offenders.isEmpty(), "Transformation model must remain Minecraft-independent: " + offenders);
+    }
+
+    @Test
     void commonSourcesDoNotImportClientClasses() throws IOException {
         List<Path> offenders = javaFiles(TestProjectPaths.projectPath("src/main/java")).stream()
                 .filter(path -> !isClientSource(path))

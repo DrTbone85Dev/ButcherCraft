@@ -448,6 +448,8 @@ Version 0.6.6 adds pure Java atomic multi-output transformation transactions. `T
 
 Version 0.6.7 migrates only the Bandsaw to the atomic transformation execution strategy. The Bandsaw still resolves operations through the existing processing graph, but the resolved operation id must exist in the immutable transformation registry and pass transaction validation through Minecraft-facing material-store adapters before the controller creates output ItemStacks. Grinder behavior remains on its existing transformation strategy, and un-migrated workstations remain on the legacy strategy.
 
+Version 0.6.8 loads transformation definitions from datapack JSON resources under `data/<namespace>/butchercraft/transformation`. The loader maps JSON onto the canonical serialized transformation records, reuses the canonical deserializer, validates product and capability references, and swaps the active immutable registry only after a successful reload. The evaluator, executor, transaction engine, and workstation behavior remain unchanged.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

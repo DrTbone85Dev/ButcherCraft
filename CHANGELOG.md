@@ -1,5 +1,19 @@
 # Changelog
 
+## ButcherCraft v0.6.8 - Datapack Transformation Loading
+
+### Core
+
+- Added datapack JSON loading for transformation definitions.
+- Moved the existing Grinder and Bandsaw transformation definitions into bundled datapack resources.
+- Added reload-safe transformation registry replacement for successful datapack reloads.
+
+### Stability
+
+- Added structured validation errors for malformed transformation datapacks.
+- Rejected duplicate transformation ids, unknown products, unknown capabilities, unsupported schema versions, and malformed definitions.
+- Preserved existing Grinder and Bandsaw runtime behavior.
+
 ## ButcherCraft v0.6.7 - Bandsaw Transformation Migration
 
 ### Core

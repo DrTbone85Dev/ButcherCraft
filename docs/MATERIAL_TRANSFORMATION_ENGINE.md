@@ -1,12 +1,12 @@
 # ButcherCraft Material Transformation Engine
 
-Status: v0.6.7 Bandsaw atomic transformation migration
+Status: v0.6.8 datapack-backed transformation registry
 
 ## Purpose
 
 The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and a workstation capability.
 
-This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. Version 0.6.6 adds pure Java atomic multi-output material transactions. Version 0.6.7 migrates only the Bandsaw proof to registry-driven atomic transformation validation. It does not replace `ProcessingOperation`, datapack processing-operation registries, other workstation behavior, menus, screens, or item data components.
+This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. Version 0.6.6 adds pure Java atomic multi-output material transactions. Version 0.6.7 migrates only the Bandsaw proof to registry-driven atomic transformation validation. Version 0.6.8 loads transformation definitions from datapack JSON resources. It does not replace `ProcessingOperation`, datapack processing-operation registries, other workstation behavior, menus, screens, or item data components.
 
 ## Package
 
@@ -78,7 +78,9 @@ INVALID_CONTEXT
 
 `TransformationProductReferenceValidator` validates transformation input and output product ids against a `ProductRegistry` after definitions are constructed. It reports missing products and quantity-unit mismatches without requiring product registry access during transformation construction.
 
-The `com.butchercraft.transformation.serialization` package defines the stable external schema contract for serialized transformation definitions. It includes serializer and deserializer interfaces, canonical serialized records, frozen field-name constants, a schema-version abstraction, and a future migration contract. This layer remains pure Java and performs no datapack loading or resource discovery.
+The `com.butchercraft.transformation.serialization` package defines the stable external schema contract for serialized transformation definitions. It includes serializer and deserializer interfaces, canonical serialized records, frozen field-name constants, a schema-version abstraction, and a future migration contract. This layer remains pure Java.
+
+The `com.butchercraft.transformation.datapack` package parses JSON resources into the serialized schema, validates references, and assembles immutable transformation registries. Minecraft reload listener code lives outside the pure transformation package.
 
 `ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This remains available for compatibility tests and future migration work, but live Grinder and Bandsaw transformation execution now query the transformation registry by resolved operation id.
 
@@ -116,10 +118,10 @@ The evaluator does not consume inputs, create outputs, inspect ItemStacks, or co
 
 ## Out Of Scope
 
-The v0.6.7 transformation slice intentionally does not add:
+The v0.6.8 transformation slice intentionally does not add:
 
-- Datapack migration to transformation definitions.
-- Datapack loading, resource reload listeners, JSON resource discovery, or implemented schema migrations.
+- Implemented schema migrations.
+- Product definition datapack loading into the pure product registry.
 - Product definition embedding inside transformation definitions.
 - Smoker, packaging, cooler, menu, or screen migration.
 - ItemStack or product data component schema changes.
@@ -128,8 +130,8 @@ The v0.6.7 transformation slice intentionally does not add:
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
 
-Version 0.6.2 registers built-in Grinder transformations in Java only. Version 0.6.3 keeps those definitions builder-backed and schema-valid. Version 0.6.5 proves those definitions round-trip through the canonical serialization contract. Version 0.6.6 proves one-input/one-output Grinder definitions still execute through the transaction-capable executor. Version 0.6.7 registers the built-in Bandsaw forequarter transformation in Java and validates Bandsaw completion through the transaction-capable executor. Datapack loading for transformation definitions remains out of scope.
+Version 0.6.8 moves the built-in Grinder and Bandsaw transformation definitions into bundled datapack JSON resources. The active transformation registry is reload-safe and swaps only after successful validation. Expanded transformation catalogs remain out of scope.
 
 ## Next Proposed Slice
 
-Before datapack integration, the project should define the concrete file format, resource paths, reload-scoped error reporting, migration lookup, registry assembly order, and how decoded transformation references are validated against product definitions and workstation capabilities.
+Before expanded fabrication, the project should define larger catalogs, product-to-item creation rules, schema migration lookup, reload-scoped user-facing diagnostics, and validation behavior for custom content beyond the current built-in proofs.

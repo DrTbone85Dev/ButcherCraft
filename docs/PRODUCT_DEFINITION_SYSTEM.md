@@ -1,6 +1,6 @@
 # ButcherCraft Product Definition System
 
-Status: v0.6.7 pure Java foundation with current Grinder and Bandsaw proof products
+Status: v0.6.8 pure Java foundation with current Grinder and Bandsaw proof products
 
 ## Purpose
 
@@ -84,6 +84,8 @@ Transformation definitions continue to reference product ids through `EngineId` 
 `TransformationProductReferenceValidator` provides the separate deterministic validation step. It reports missing input products, missing output products, input unit mismatches, and output unit mismatches in definition order.
 
 This separation allows future serialization to decode transformation definitions before all registries are assembled, then validate references once registries are available.
+
+Version 0.6.8 uses this registry to reject transformation datapack resources that reference unknown products.
 
 ## Out Of Scope
 

@@ -671,6 +671,23 @@ Consequences:
 - The controller still owns progress, save/load, ItemStack creation, output insertion, and block-entity lifecycle; the pure transaction validates atomic feasibility before those Minecraft mutations occur.
 - Grinder behavior is preserved. Smoker, packaging, coolers, datapack loading, full carcass fabrication, and public expansion APIs remain out of scope.
 
+## DEC-0046: Transformation Definitions Load From Datapack JSON
+
+Status: Accepted
+
+Decision: version 0.6.8 replaces Java-defined built-in transformation registrations with datapack JSON resources under `data/<namespace>/butchercraft/transformation`. The loader parses JSON into `SerializedTransformationDefinition`, deserializes through the canonical schema deserializer, validates products and capabilities, and atomically replaces the active immutable `TransformationRegistry` only after a successful reload.
+
+Rationale: transformation serialization is already the stable external schema contract. Loading that schema from datapacks proves the registry can become data-driven without changing evaluator, executor, transaction, Grinder, or Bandsaw behavior.
+
+Consequences:
+
+- Bundled Grinder and Bandsaw transformations live as datapack JSON resources.
+- `TransformationRegistryService` owns the reload-safe active registry reference.
+- Workstation transformation strategies query the active registry at execution time instead of capturing a static Java-built registry.
+- Malformed datapacks produce structured validation errors for duplicate ids, unknown products, unknown capabilities, unsupported schema versions, and malformed definitions.
+- Minecraft reload listener code lives outside the pure transformation model.
+- Expanded fabrication, schema migrations, product datapack loading, product-to-item factories, and public expansion APIs remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

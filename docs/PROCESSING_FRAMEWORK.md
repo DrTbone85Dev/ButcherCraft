@@ -219,4 +219,6 @@ Version 0.6.4 adds a pure Java product definition registry beside the transforma
 
 Version 0.6.5 adds a pure Java transformation serialization contract. It freezes the external field names for the canonical transformation schema and proves the built-in Grinder transformations can round-trip before datapack loading or reload behavior is introduced.
 
-Bandsaw, datapack registries, menus, screens, and item data components are not migrated in this slice.
+Version 0.6.6 adds atomic transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation execution path. Version 0.6.8 loads the current Grinder and Bandsaw transformation definitions from datapack JSON while preserving the existing processing-operation resolver and workstation controller behavior.
+
+Smoker, packaging, coolers, menus, screens, item data components, and full fabrication catalogs are not migrated in this slice.

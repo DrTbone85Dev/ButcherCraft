@@ -1,10 +1,10 @@
 # ButcherCraft Multi-Output Transformations
 
-Status: v0.6.7 Bandsaw migration on pure transaction foundation
+Status: v0.6.8 datapack-backed Bandsaw migration on pure transaction foundation
 
 ## Purpose
 
-Multi-output transformations let one accepted `TransformationDefinition` produce an ordered collection of material outputs atomically. This document covers the pure transformation engine layer and the v0.6.7 Bandsaw bridge that validates the live Bandsaw proof through that layer.
+Multi-output transformations let one accepted `TransformationDefinition` produce an ordered collection of material outputs atomically. This document covers the pure transformation engine layer and the Bandsaw bridge that validates the live Bandsaw proof through that layer.
 
 The goal is to keep transaction safety in pure Java while letting Minecraft-facing workstations adapt inventory snapshots at a narrow boundary.
 
@@ -79,21 +79,18 @@ The live Bandsaw uses the atomic transformation strategy. Its ItemStack inventor
 
 ## Out Of Scope
 
-Version 0.6.7 does not add:
+Version 0.6.8 does not add:
 
-- Datapack loading.
-- Resource reload listeners.
-- JSON resource discovery.
+- Expanded transformation datapack catalogs beyond the current Grinder and Bandsaw proof resources.
 - Direct Minecraft inventory mutation from the pure transformation package.
 - General ItemStack conversion.
 - General product-to-item mapping.
 - Quality, freshness, temperature, packaging, employee, maintenance, commerce, or MCDA behavior.
 
-## Remaining Work Before Datapack Integration And Full Fabrication
+## Remaining Work Before Expanded Fabrication
 
 After the Bandsaw proof migration, the project still needs:
 
-- Datapack loading for transformation definitions.
 - Reload-scoped validation that transformation ids match processing-operation ids where compatibility is required.
 - A real product item factory to replace the development fixture mapping.
 - Full carcass and primal fabrication catalogs beyond the single beef forequarter proof.

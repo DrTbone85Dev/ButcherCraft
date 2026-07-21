@@ -4,6 +4,49 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.8: Datapack Transformation Loading
+
+Goal: replace Java-defined transformation registrations with datapack-driven loading while preserving identical Grinder and Bandsaw runtime behavior.
+
+Included work:
+
+- Datapack JSON parser for the frozen transformation serialization field names.
+- Conversion from JSON into `SerializedTransformationDefinition`.
+- Reuse of `CanonicalTransformationDefinitionDeserializer` to construct `TransformationDefinition`.
+- Immutable `TransformationRegistry` assembly from datapack content.
+- Reload-safe active registry replacement after successful validation.
+- Structured validation errors for malformed datapacks.
+- Bundled datapack JSON resources for `grind_beef`, `grind_pork`, `grind_bison`, and `break_beef_forequarter`.
+- Regression tests for successful bundled loading, duplicate ids, unknown products, unknown capabilities, unsupported schema versions, malformed definitions, resource coverage, and reload-safe replacement.
+- Documentation in `docs/DATAPACK_TRANSFORMATIONS.md`.
+
+Excluded work:
+
+- Changes to `TransformationEvaluator`, `TransformationExecutor`, `TransformationTransaction`, or workstation behavior.
+- Expanded fabrication catalogs, recipe-selection UI, product-to-item factories, datapack product-definition loading, schema migrations, or public expansion APIs.
+- Migration of smoker, packaging, coolers, or other workstations.
+
+Acceptance criteria:
+
+- Existing Grinder and Bandsaw transformations load from datapack resources and produce the same registry ids, quantities, capabilities, durations, yields, and output order.
+- Failed datapack reloads report structured errors and do not replace the previously active registry.
+- Duplicate ids, unknown products, unknown capabilities, unsupported schema versions, and malformed definitions are rejected.
+- Minecraft-specific reload code remains outside the pure transformation model.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Recommended before upload: confirm Grinder trim-to-ground flows and Bandsaw forequarter fabrication still complete after a datapack reload in a development world.
+
+Rollback considerations:
+
+- The runtime registry service can reset to bundled datapack resources. Workstation strategies still resolve by operation id and can continue using the prior transformation definitions if datapack reload fails.
+
 ## Milestone 0.6.7: Bandsaw Transformation Migration
 
 Goal: migrate only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution while preserving existing Bandsaw gameplay and lifecycle behavior.
