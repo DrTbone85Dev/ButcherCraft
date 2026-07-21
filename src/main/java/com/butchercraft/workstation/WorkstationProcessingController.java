@@ -213,7 +213,7 @@ public final class WorkstationProcessingController {
         }
 
         ResolvedWorkstationOperation operation = resolution.operation().orElseThrow();
-        OperationResult prepared = executionStrategy.prepare(capability, operation);
+        OperationResult prepared = executionStrategy.prepare(capability, operation, inventory, outputMapping);
         if (!prepared.succeeded()) {
             block(WorkstationFailure.of(
                     WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED,
@@ -267,7 +267,7 @@ public final class WorkstationProcessingController {
             return;
         }
 
-        OperationResult committed = executionStrategy.commit(capability, operation);
+        OperationResult committed = executionStrategy.commit(capability, operation, inventory, outputMapping);
         if (!committed.succeeded() || committed.committedOutputs().isEmpty()) {
             block(WorkstationFailure.of(
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
@@ -298,12 +298,26 @@ public final class WorkstationProcessingController {
             outputStacks.add(output.orElseThrow());
         }
 
-        completionCommitted = true;
-        inventory.clearInputInternal();
-        inventory.setOutputsInternal(outputStacks);
-        elapsedTicks = totalTicks;
-        clearFailure();
-        setState(WorkstationState.COMPLETE);
+        ItemStack inputSnapshot = inventory.input().copy();
+        List<ItemStack> outputSnapshot = inventory.outputs().stream()
+                .map(ItemStack::copy)
+                .toList();
+        try {
+            completionCommitted = true;
+            inventory.clearInputInternal();
+            inventory.setOutputsInternal(outputStacks);
+            elapsedTicks = totalTicks;
+            clearFailure();
+            setState(WorkstationState.COMPLETE);
+        } catch (RuntimeException exception) {
+            completionCommitted = false;
+            inventory.setInputInternal(inputSnapshot);
+            inventory.setOutputsInternal(outputSnapshot);
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.RESULT_CREATION_FAILED,
+                    "Output insertion failed and workstation inventory was restored"
+            ));
+        }
     }
 
     private void block(WorkstationFailure failure) {

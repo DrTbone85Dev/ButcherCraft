@@ -654,6 +654,23 @@ Consequences:
 - Existing Grinder behavior remains unchanged and one-output transformations remain compatible.
 - Bandsaw, datapack loading, resource reload listeners, Minecraft inventory mutation, menus, screens, and product-to-item mapping remain out of scope.
 
+## DEC-0045: Bandsaw Uses Atomic Transformation Execution Through A Minecraft Boundary Adapter
+
+Status: Accepted
+
+Decision: version 0.6.7 migrates only the Bandsaw to the registry-backed atomic transformation execution strategy. The Bandsaw continues resolving operations through the existing processing definitions and workstation resolver, then validates completion through `TransformationEvaluator`, `TransformationExecutor`, and `TransformationTransaction` using Minecraft-side material-store adapters.
+
+Rationale: the Bandsaw is the first live multi-output workstation and is the right proof that the transformation engine can govern ordered output capacity without moving species, product, or cut-list logic into machine classes. Keeping the adapter in `com.butchercraft.workstation` preserves the pure transformation and product-definition package boundaries.
+
+Consequences:
+
+- `butchercraft:break_beef_forequarter` is registered in the immutable transformation registry with the same ordered outputs as the existing processing-operation definition.
+- The built-in product registry now includes the minimum current Bandsaw proof product ids in addition to the Grinder proof products.
+- `WorkstationInventoryMaterialStore` adapts Bandsaw ItemStack inventory snapshots to pure input and output `TransformationMaterialStore` instances for transaction validation.
+- Missing transformation definitions, rejected transaction validation, output capacity failures, and missing development product-item mappings surface as explicit workstation blocked states.
+- The controller still owns progress, save/load, ItemStack creation, output insertion, and block-entity lifecycle; the pure transaction validates atomic feasibility before those Minecraft mutations occur.
+- Grinder behavior is preserved. Smoker, packaging, coolers, datapack loading, full carcass fabrication, and public expansion APIs remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

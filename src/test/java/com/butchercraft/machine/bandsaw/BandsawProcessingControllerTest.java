@@ -1,10 +1,13 @@
 package com.butchercraft.machine.bandsaw;
 
 import com.butchercraft.processing.definition.BuiltInProcessingDefinitions;
+import com.butchercraft.transformation.TransformationRegistry;
+import com.butchercraft.workstation.DevelopmentProductItemMapping;
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.workstation.WorkstationCapability;
+import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
@@ -79,6 +82,39 @@ class BandsawProcessingControllerTest {
     }
 
     @Test
+    void missingBandsawTransformationDefinitionBlocksWithoutConsumingInput() {
+        Harness harness = Harness.createWithStrategy(WorkstationExecutionStrategy.atomicTransformation(
+                TransformationRegistry.builder().build()
+        ));
+        harness.inventory.setInputInternal(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
+
+        harness.tick();
+
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED, harness.controller.lastFailure().orElseThrow().code());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.outputs().stream().allMatch(ItemStack::isEmpty));
+    }
+
+    @Test
+    void missingOutputItemMappingBlocksWithoutPartialOutputInsertion() {
+        Harness harness = Harness.createWithMapping(DevelopmentProductItemMapping.fromFixtureItems(
+                ModItems.BEEF_CHUCK_TEST
+        ));
+        harness.inventory.setInputInternal(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
+        harness.tick();
+
+        for (int i = 0; i < 120; i++) {
+            harness.tick();
+        }
+
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.RESULT_CREATION_FAILED, harness.controller.lastFailure().orElseThrow().code());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.outputs().stream().allMatch(ItemStack::isEmpty));
+    }
+
+    @Test
     void saveLoadAfterCompletionDoesNotDuplicateMultiOutputs() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
@@ -105,6 +141,18 @@ class BandsawProcessingControllerTest {
             AtomicInteger changes
     ) {
         static Harness create() {
+            return createWithStrategy(WorkstationExecutionStrategy.atomicTransformation());
+        }
+
+        static Harness createWithStrategy(WorkstationExecutionStrategy executionStrategy) {
+            return create(executionStrategy, DevelopmentProductItemMappings.fixtureMapping());
+        }
+
+        static Harness createWithMapping(DevelopmentProductItemMapping outputMapping) {
+            return create(WorkstationExecutionStrategy.atomicTransformation(), outputMapping);
+        }
+
+        static Harness create(WorkstationExecutionStrategy executionStrategy, DevelopmentProductItemMapping outputMapping) {
             AtomicInteger changes = new AtomicInteger();
             WorkstationCapability workstationCapability = BandsawWorkstation.capability();
             WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
@@ -114,7 +162,8 @@ class BandsawProcessingControllerTest {
                     inventory,
                     workstationCapability,
                     lookup,
-                    DevelopmentProductItemMappings.fixtureMapping(),
+                    outputMapping,
+                    executionStrategy,
                     changes::incrementAndGet
             );
             inventory.setInputLocked(controller::inputLocked);

@@ -8,6 +8,24 @@ public interface WorkstationExecutionStrategy {
 
     OperationResult commit(WorkstationCapability capability, ResolvedWorkstationOperation operation);
 
+    default OperationResult prepare(
+            WorkstationCapability capability,
+            ResolvedWorkstationOperation operation,
+            WorkstationInventory inventory,
+            DevelopmentProductItemMapping outputMapping
+    ) {
+        return prepare(capability, operation);
+    }
+
+    default OperationResult commit(
+            WorkstationCapability capability,
+            ResolvedWorkstationOperation operation,
+            WorkstationInventory inventory,
+            DevelopmentProductItemMapping outputMapping
+    ) {
+        return commit(capability, operation);
+    }
+
     static WorkstationExecutionStrategy legacy() {
         return LegacyWorkstationExecutionStrategy.INSTANCE;
     }
@@ -18,5 +36,13 @@ public interface WorkstationExecutionStrategy {
 
     static WorkstationExecutionStrategy transformation(TransformationRegistry registry) {
         return new TransformationWorkstationExecutionStrategy(registry);
+    }
+
+    static WorkstationExecutionStrategy atomicTransformation() {
+        return TransformationWorkstationExecutionStrategy.ATOMIC_INSTANCE;
+    }
+
+    static WorkstationExecutionStrategy atomicTransformation(TransformationRegistry registry) {
+        return new TransformationWorkstationExecutionStrategy(registry, true);
     }
 }

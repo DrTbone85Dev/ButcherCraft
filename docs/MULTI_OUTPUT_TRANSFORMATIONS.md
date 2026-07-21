@@ -1,16 +1,16 @@
 # ButcherCraft Multi-Output Transformations
 
-Status: v0.6.6 pure Java transformation transaction foundation
+Status: v0.6.7 Bandsaw migration on pure transaction foundation
 
 ## Purpose
 
-Multi-output transformations let one accepted `TransformationDefinition` produce an ordered collection of material outputs atomically. This document covers the pure transformation engine layer, not the existing processing-operation Bandsaw path.
+Multi-output transformations let one accepted `TransformationDefinition` produce an ordered collection of material outputs atomically. This document covers the pure transformation engine layer and the v0.6.7 Bandsaw bridge that validates the live Bandsaw proof through that layer.
 
-The goal is to prove transaction safety before any multi-output workstation is migrated to transformation execution.
+The goal is to keep transaction safety in pure Java while letting Minecraft-facing workstations adapt inventory snapshots at a narrow boundary.
 
 ## Transaction Model
 
-The v0.6.6 transaction model is pure Java and lives under:
+The transaction model is pure Java and lives under:
 
 ```text
 com.butchercraft.transformation
@@ -54,7 +54,7 @@ butchercraft:beef_forequarter -> [
 ]
 ```
 
-This fixture exists only to prove the transformation transaction model. It does not migrate the live Bandsaw machine.
+The live Bandsaw proof now uses the built-in `butchercraft:break_beef_forequarter` transformation definition with the full eight-output forequarter cut list.
 
 ## Capacity Failures
 
@@ -75,25 +75,26 @@ One-input/one-output transformations remain valid. Tests prove the built-in `but
 
 The live Grinder workstation behavior is unchanged. It still uses the transformation strategy as a validation bridge and delegates product quality, ItemStack creation, and inventory mutation to the existing workstation processing path.
 
+The live Bandsaw uses the atomic transformation strategy. Its ItemStack inventory is adapted to pure material stores for transaction validation, while the existing workstation controller still owns progress, save/load, output ItemStack creation, and final slot insertion.
+
 ## Out Of Scope
 
-Version 0.6.6 does not add:
+Version 0.6.7 does not add:
 
-- Bandsaw migration to transformation execution.
 - Datapack loading.
 - Resource reload listeners.
 - JSON resource discovery.
-- Minecraft inventory mutation.
-- ItemStack conversion.
-- Product-to-item mapping changes.
+- Direct Minecraft inventory mutation from the pure transformation package.
+- General ItemStack conversion.
+- General product-to-item mapping.
 - Quality, freshness, temperature, packaging, employee, maintenance, commerce, or MCDA behavior.
 
-## Remaining Work Before Bandsaw Migration
+## Remaining Work Before Datapack Integration And Full Fabrication
 
-Before the Bandsaw moves to transformation execution, the project still needs:
+After the Bandsaw proof migration, the project still needs:
 
-- Built-in Bandsaw `TransformationDefinition` coverage for the full ordered output set.
-- A workstation bridge from committed transformation outputs to existing `Product` and ItemStack output creation.
-- Output-slot capacity mapping from workstation inventories into pure material-store capacity checks.
-- Error mapping from transformation transaction failures into player-safe workstation failure messages.
-- Regression coverage proving Bandsaw block break, output obstruction, save/load, and paired-block behavior stay atomic on the new path.
+- Datapack loading for transformation definitions.
+- Reload-scoped validation that transformation ids match processing-operation ids where compatibility is required.
+- A real product item factory to replace the development fixture mapping.
+- Full carcass and primal fabrication catalogs beyond the single beef forequarter proof.
+- GameTest or manual in-game verification coverage for the live Bandsaw path before public gameplay reliance.

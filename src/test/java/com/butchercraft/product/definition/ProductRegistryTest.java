@@ -74,17 +74,25 @@ class ProductRegistryTest {
     }
 
     @Test
-    void builtInRegistryContainsOnlyCurrentGrinderProducts() {
+    void builtInRegistryContainsCurrentGrinderAndBandsawProducts() {
         ProductRegistry registry = BuiltInProductRegistry.builtInRegistry();
 
-        assertEquals(6, registry.size());
+        assertEquals(14, registry.size());
         assertEquals(List.of(
                         "butchercraft:beef_trim",
                         "butchercraft:ground_beef",
                         "butchercraft:pork_trim",
                         "butchercraft:ground_pork",
                         "butchercraft:bison_trim",
-                        "butchercraft:ground_bison"
+                        "butchercraft:ground_bison",
+                        "butchercraft:beef_forequarter",
+                        "butchercraft:beef_chuck",
+                        "butchercraft:beef_rib",
+                        "butchercraft:beef_packer_brisket",
+                        "butchercraft:beef_plate",
+                        "butchercraft:beef_shank",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
                 ),
                 registry.stream()
                         .map(definition -> definition.id().value())
@@ -95,6 +103,16 @@ class ProductRegistryTest {
                         .toList());
         assertEquals(List.of("butchercraft:ground_beef", "butchercraft:ground_pork", "butchercraft:ground_bison"),
                 registry.findByTag(BuiltInProductRegistry.TAG_GROUND)
+                        .map(definition -> definition.id().value())
+                        .toList());
+        assertEquals(List.of(
+                        "butchercraft:beef_chuck",
+                        "butchercraft:beef_rib",
+                        "butchercraft:beef_packer_brisket",
+                        "butchercraft:beef_plate",
+                        "butchercraft:beef_shank"
+                ),
+                registry.findByTag(BuiltInProductRegistry.TAG_PRIMAL)
                         .map(definition -> definition.id().value())
                         .toList());
     }

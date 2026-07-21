@@ -73,16 +73,21 @@ class TransformationRegistryTest {
     void builtInRegistryContainsExistingGrinderTransformations() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(3, registry.size());
+        assertEquals(4, registry.size());
         assertTrue(registry.contains(TransformationId.of("butchercraft:grind_beef")));
         assertTrue(registry.contains(TransformationId.of("butchercraft:grind_pork")));
         assertTrue(registry.contains(TransformationId.of("butchercraft:grind_bison")));
+        assertTrue(registry.contains(TransformationId.of("butchercraft:break_beef_forequarter")));
         assertEquals(List.of(
                         "butchercraft:grind_beef",
                         "butchercraft:grind_pork",
                         "butchercraft:grind_bison"
                 ),
                 registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING)
+                        .map(definition -> definition.id().value())
+                        .toList());
+        assertEquals(List.of("butchercraft:break_beef_forequarter"),
+                registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW)
                         .map(definition -> definition.id().value())
                         .toList());
     }
@@ -97,6 +102,33 @@ class TransformationRegistryTest {
         assertEquals(1_000, definition.inputs().getFirst().requiredAmount().quantity().amount());
         assertEquals(900, definition.outputs().getFirst().producedAmount().quantity().amount());
         assertEquals(Optional.of(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING), definition.workstationCapability());
+    }
+
+    @Test
+    void registeredBandsawDefinitionDefinesOrderedForequarterOutputs() {
+        TransformationDefinition definition = BuiltInTransformationRegistry.builtInRegistry()
+                .find(TransformationId.of("butchercraft:break_beef_forequarter"))
+                .orElseThrow();
+
+        assertEquals(ProductQuantity.grams(100_000), definition.inputs().getFirst().requiredAmount().quantity());
+        assertEquals(Optional.of(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW), definition.workstationCapability());
+        assertEquals(List.of(
+                        "butchercraft:beef_chuck",
+                        "butchercraft:beef_rib",
+                        "butchercraft:beef_packer_brisket",
+                        "butchercraft:beef_plate",
+                        "butchercraft:beef_shank",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                definition.outputs().stream()
+                        .map(output -> output.producedAmount().materialId().value())
+                        .toList());
+        assertEquals(List.of(30_000L, 10_000L, 10_000L, 10_000L, 5_000L, 15_000L, 5_000L, 10_000L),
+                definition.outputs().stream()
+                        .map(output -> output.producedAmount().quantity().amount())
+                        .toList());
     }
 
     private static TransformationDefinition definition(

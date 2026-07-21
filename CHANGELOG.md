@@ -1,5 +1,19 @@
 # Changelog
 
+## ButcherCraft v0.6.7 - Bandsaw Transformation Migration
+
+### Core
+
+- Migrated only the Bandsaw to capability-based, registry-driven transformation execution.
+- Registered the built-in `butchercraft:break_beef_forequarter` transformation with eight ordered outputs.
+- Added the minimum pure product definitions needed for the current Bandsaw proof products.
+
+### Stability
+
+- Added a Minecraft-side workstation inventory material-store bridge for atomic transformation validation.
+- Preserved existing Bandsaw paired-block, obstruction, duration, save/load, menu, and block-break behavior.
+- Added regression coverage for Bandsaw atomic failure handling, product mappings, bridge capacity checks, and existing Grinder compatibility.
+
 ## ButcherCraft v0.6.6 - Atomic Multi-Output Transformations
 
 ### Core

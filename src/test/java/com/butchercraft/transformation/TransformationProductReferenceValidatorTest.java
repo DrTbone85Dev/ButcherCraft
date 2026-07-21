@@ -22,7 +22,7 @@ class TransformationProductReferenceValidatorTest {
     private static final EngineId GROUND_BEEF = EngineId.of("butchercraft:ground_beef");
 
     @Test
-    void builtInGrinderTransformationsResolveThroughBuiltInProductRegistry() {
+    void builtInTransformationsResolveThroughBuiltInProductRegistry() {
         TransformationProductReferenceReport report = TransformationProductReferenceValidator.validate(
                 BuiltInTransformationRegistry.builtInRegistry(),
                 BuiltInProductRegistry.builtInRegistry()

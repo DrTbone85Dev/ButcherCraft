@@ -4,6 +4,49 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.7: Bandsaw Transformation Migration
+
+Goal: migrate only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution while preserving existing Bandsaw gameplay and lifecycle behavior.
+
+Included work:
+
+- Built-in Bandsaw transformation capability coverage through `butchercraft:bandsaw`.
+- Built-in `butchercraft:break_beef_forequarter` transformation definition with eight ordered outputs.
+- Minimum pure product definitions for the existing Bandsaw proof product ids.
+- Minecraft-side workstation inventory material-store bridge for transformation transaction validation.
+- Controlled development product-to-ItemStack mapping coverage for the existing Bandsaw proof outputs.
+- Bandsaw completion through `TransformationEvaluator`, `TransformationExecutor`, and `TransformationTransaction`.
+- Regression tests for ordered completion, obstruction, missing transformation definitions, missing output mappings, save/load idempotence, material-store bridge behavior, registry definitions, and Grinder compatibility.
+- Documentation in `docs/BANDSAW_TRANSFORMATION_MIGRATION.md`.
+
+Excluded work:
+
+- Migration of Grinder behavior beyond preserving its existing path.
+- Migration of smoker, packaging, coolers, or any other workstation.
+- Datapack transformation loading, JSON discovery, reload listeners, complete carcass fabrication, new GUI design, spoilage, packaging, power, employees, commerce, or public expansion APIs.
+
+Acceptance criteria:
+
+- Bandsaw operation lookup still resolves through existing processing definitions and workstation capability data.
+- Bandsaw transformation execution queries the immutable transformation registry by resolved operation id.
+- If any output cannot fit or cannot be mapped to a development ItemStack, input remains in place and no partial output is inserted.
+- Existing paired-block placement/removal, obstruction behavior, processing duration, save/load behavior, menus, and player interaction remain unchanged.
+- Pure transformation and product-definition packages remain free of Minecraft and NeoForge imports.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Recommended before upload: place and break both halves of the Bandsaw, insert Beef Forequarter Test Product, confirm the eight ordered outputs after processing, and confirm blocked output recovery in a development world.
+
+Rollback considerations:
+
+- The migration is isolated to the Bandsaw block entity execution strategy, built-in transformation/product registry entries, and workstation bridge validation. Other workstations remain on their previous strategies.
+
 ## Milestone 0.6.6: Atomic Multi-Output Transformations
 
 Goal: extend the pure Java transformation engine with deterministic, atomic multi-output transactions while preserving existing Grinder behavior.

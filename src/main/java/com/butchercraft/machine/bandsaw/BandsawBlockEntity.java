@@ -2,6 +2,7 @@ package com.butchercraft.machine.bandsaw;
 
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.registration.ModBlockEntityTypes;
+import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -21,7 +22,8 @@ public final class BandsawBlockEntity extends AbstractProcessingWorkstationBlock
                 blockState,
                 BandsawWorkstation.capability(),
                 new WorkstationOperationResolver(),
-                DevelopmentProductItemMappings.fixtureMapping()
+                DevelopmentProductItemMappings.fixtureMapping(),
+                WorkstationExecutionStrategy.atomicTransformation()
         );
     }
 

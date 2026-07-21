@@ -1,12 +1,12 @@
 # ButcherCraft Material Transformation Engine
 
-Status: v0.6.6 atomic multi-output transaction foundation
+Status: v0.6.7 Bandsaw atomic transformation migration
 
 ## Purpose
 
 The Material Transformation Engine is the first generic pure Java layer for describing whether a requested material transformation can run from explicit material amounts and a workstation capability.
 
-This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. Version 0.6.6 adds pure Java atomic multi-output material transactions. It does not replace `ProcessingOperation`, datapack processing-operation registries, Bandsaw behavior, other workstation behavior, menus, screens, or item data components.
+This foundation extends the existing processing framework. Version 0.6.1 connects the Grinder to transformation execution through a compatibility bridge. Version 0.6.2 adds an immutable transformation registry as the authoritative source of transformation definitions used by that bridge. Version 0.6.3 formalizes `TransformationDefinition` as the canonical immutable schema for future transformations. Version 0.6.4 adds a separate pure Java product definition registry so transformation product ids can be validated against authoritative product data. Version 0.6.5 adds a pure Java serialization contract for the canonical transformation schema. Version 0.6.6 adds pure Java atomic multi-output material transactions. Version 0.6.7 migrates only the Bandsaw proof to registry-driven atomic transformation validation. It does not replace `ProcessingOperation`, datapack processing-operation registries, other workstation behavior, menus, screens, or item data components.
 
 ## Package
 
@@ -80,7 +80,7 @@ INVALID_CONTEXT
 
 The `com.butchercraft.transformation.serialization` package defines the stable external schema contract for serialized transformation definitions. It includes serializer and deserializer interfaces, canonical serialized records, frozen field-name constants, a schema-version abstraction, and a future migration contract. This layer remains pure Java and performs no datapack loading or resource discovery.
 
-`ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This remains available for compatibility tests and future migration work, but live Grinder transformation execution now queries the transformation registry by resolved operation id.
+`ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This remains available for compatibility tests and future migration work, but live Grinder and Bandsaw transformation execution now query the transformation registry by resolved operation id.
 
 ## Relationship To Existing Processing
 
@@ -89,9 +89,10 @@ The existing processing framework remains authoritative for product quality, val
 - `ProcessingOperation` still describes product state, source category, yield ratios, quality deltas, validation rules, and modifiers.
 - `ProcessingDefinitionResolver` still converts datapack-backed operation definitions into `ProcessingOperation`.
 - `WorkstationOperationResolver` still chooses operations for the Grinder, Bandsaw, and development workstation.
-- `WorkstationProcessingController` still owns inventory reservation, progress, transaction commit, and output insertion.
+- `WorkstationProcessingController` still owns inventory reservation, progress, processing transaction commit, ItemStack creation, and output insertion.
 - The Grinder opts into a transformation execution strategy that looks up the registered transformation by resolved operation id, rebases that definition to the current input quantity, evaluates and executes it, then delegates product commit to the existing processing transaction.
-- Bandsaw and all other workstations continue using the legacy workstation execution strategy.
+- The Bandsaw opts into the atomic transformation execution strategy. `WorkstationInventoryMaterialStore` adapts the Bandsaw's ItemStack input and output slots to pure material stores, validates a transactional execution, then lets the existing controller commit the same ordered products to Minecraft inventory.
+- Development workstation and all other future un-migrated workstations continue using the legacy workstation execution strategy.
 
 The transformation domain is narrower. It answers the generic question:
 
@@ -115,19 +116,19 @@ The evaluator does not consume inputs, create outputs, inspect ItemStacks, or co
 
 ## Out Of Scope
 
-The v0.6.6 transformation slice intentionally does not add:
+The v0.6.7 transformation slice intentionally does not add:
 
 - Datapack migration to transformation definitions.
 - Datapack loading, resource reload listeners, JSON resource discovery, or implemented schema migrations.
 - Product definition embedding inside transformation definitions.
-- Bandsaw, smoker, packaging, cooler, menu, or screen migration.
-- ItemStack or product data component changes.
-- Minecraft inventory mutation or ItemStack commits.
+- Smoker, packaging, cooler, menu, or screen migration.
+- ItemStack or product data component schema changes.
+- Direct Minecraft inventory mutation from the pure transformation package.
 - Quality, freshness, temperature, packaging, lineage, lot history, employees, operator skill, energy, maintenance, spoilage, organizations, MCDA, commerce, or probabilistic yields.
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
 
-Version 0.6.2 registers built-in Grinder transformations in Java only. Version 0.6.3 keeps those definitions builder-backed and schema-valid. Version 0.6.5 proves those definitions round-trip through the canonical serialization contract. Version 0.6.6 proves one-input/one-output Grinder definitions still execute through the transaction-capable executor. Datapack loading for transformation definitions remains out of scope.
+Version 0.6.2 registers built-in Grinder transformations in Java only. Version 0.6.3 keeps those definitions builder-backed and schema-valid. Version 0.6.5 proves those definitions round-trip through the canonical serialization contract. Version 0.6.6 proves one-input/one-output Grinder definitions still execute through the transaction-capable executor. Version 0.6.7 registers the built-in Bandsaw forequarter transformation in Java and validates Bandsaw completion through the transaction-capable executor. Datapack loading for transformation definitions remains out of scope.
 
 ## Next Proposed Slice
 

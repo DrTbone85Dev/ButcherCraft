@@ -1,6 +1,7 @@
 package com.butchercraft.workstation;
 
 import com.butchercraft.engine.product.Product;
+import com.butchercraft.engine.EngineId;
 import com.butchercraft.product.item.ProductTestItem;
 import com.butchercraft.product.integration.ProductDataResult;
 import com.butchercraft.product.integration.ProductStackAdapter;
@@ -9,6 +10,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,5 +53,19 @@ public final class DevelopmentProductItemMapping {
 
     public boolean canCreate(ResourceLocation productId) {
         return itemByProductId.containsKey(productId);
+    }
+
+    public boolean canCreate(EngineId productId) {
+        Objects.requireNonNull(productId, "productId");
+        return canCreate(ResourceLocation.parse(productId.value()));
+    }
+
+    public boolean canCreateAll(List<Product> products) {
+        for (Product product : List.copyOf(Objects.requireNonNull(products, "products"))) {
+            if (!canCreate(product.typeId())) {
+                return false;
+            }
+        }
+        return true;
     }
 }
