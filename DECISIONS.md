@@ -688,6 +688,23 @@ Consequences:
 - Minecraft reload listener code lives outside the pure transformation model.
 - Expanded fabrication, schema migrations, product datapack loading, product-to-item factories, and public expansion APIs remain out of scope.
 
+## DEC-0047: Product And Transformation Registries Activate As One Content Snapshot
+
+Status: Accepted
+
+Decision: version 0.6.9 moves the current built-in product definitions into datapack JSON resources under `data/<namespace>/butchercraft/product` and introduces a reload-safe content snapshot containing both the immutable `ProductRegistry` and immutable `TransformationRegistry`. Product content is validated first; transformations then validate their product references against that candidate product registry. The active snapshot is replaced only when both registries load successfully.
+
+Rationale: transformations reference product ids, so reloading those registries separately can briefly expose mismatched content or incorrectly validate against stale products. A single content snapshot keeps the data boundary deterministic while preserving pure Java product and transformation domains.
+
+Consequences:
+
+- Product definitions have a canonical serialized schema with stable field names for id, display name, schema version, category, default quantity unit, tags, and metadata.
+- Bundled Grinder and Bandsaw proof products now live as datapack JSON resources.
+- `ProductRegistryService` and `TransformationRegistryService` are compatibility facades over the active content snapshot.
+- Failed product reloads prevent transformation loading. Failed transformation reloads reject the full snapshot.
+- Product-to-ItemStack mappings remain Java-controlled development fixtures; datapacks do not dynamically register Minecraft items.
+- Expanded fabrication, schema migrations, datapack-driven category catalogs, product-to-item factories, and public expansion APIs remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

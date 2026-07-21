@@ -1,13 +1,32 @@
 package com.butchercraft.product.definition;
 
 import com.butchercraft.engine.EngineId;
-import com.butchercraft.engine.product.ProductCategory;
-import com.butchercraft.engine.quantity.QuantityUnit;
+import com.butchercraft.product.datapack.ProductRegistryService;
+
+import java.util.List;
 
 /**
- * Built-in product definitions used before product-definition datapack loading exists.
+ * Built-in product datapack resource locations and stable product ids.
  */
 public final class BuiltInProductRegistry {
+    public static final String DATAPACK_DIRECTORY = "butchercraft/product";
+    public static final List<String> BUILT_IN_RESOURCE_PATHS = List.of(
+            "data/butchercraft/butchercraft/product/beef_trim.json",
+            "data/butchercraft/butchercraft/product/ground_beef.json",
+            "data/butchercraft/butchercraft/product/pork_trim.json",
+            "data/butchercraft/butchercraft/product/ground_pork.json",
+            "data/butchercraft/butchercraft/product/bison_trim.json",
+            "data/butchercraft/butchercraft/product/ground_bison.json",
+            "data/butchercraft/butchercraft/product/beef_forequarter.json",
+            "data/butchercraft/butchercraft/product/beef_chuck.json",
+            "data/butchercraft/butchercraft/product/beef_rib.json",
+            "data/butchercraft/butchercraft/product/beef_packer_brisket.json",
+            "data/butchercraft/butchercraft/product/beef_plate.json",
+            "data/butchercraft/butchercraft/product/beef_shank.json",
+            "data/butchercraft/butchercraft/product/beef_fat.json",
+            "data/butchercraft/butchercraft/product/beef_bone.json"
+    );
+
     public static final EngineId BEEF_TRIM = EngineId.of("butchercraft:beef_trim");
     public static final EngineId GROUND_BEEF = EngineId.of("butchercraft:ground_beef");
     public static final EngineId PORK_TRIM = EngineId.of("butchercraft:pork_trim");
@@ -39,94 +58,6 @@ public final class BuiltInProductRegistry {
     }
 
     public static ProductRegistry builtInRegistry() {
-        return ProductRegistry.builder()
-                .register(beefTrim())
-                .register(groundBeef())
-                .register(porkTrim())
-                .register(groundPork())
-                .register(bisonTrim())
-                .register(groundBison())
-                .register(beefForequarter())
-                .register(beefChuck())
-                .register(beefRib())
-                .register(beefPackerBrisket())
-                .register(beefPlate())
-                .register(beefShank())
-                .register(beefFat())
-                .register(beefBone())
-                .build();
-    }
-
-    public static ProductDefinition beefTrim() {
-        return product(BEEF_TRIM, "Beef Trim", CATEGORY_BEEF, TAG_TRIM);
-    }
-
-    public static ProductDefinition groundBeef() {
-        return product(GROUND_BEEF, "Ground Beef", CATEGORY_BEEF, TAG_GROUND);
-    }
-
-    public static ProductDefinition porkTrim() {
-        return product(PORK_TRIM, "Pork Trim", CATEGORY_PORK, TAG_TRIM);
-    }
-
-    public static ProductDefinition groundPork() {
-        return product(GROUND_PORK, "Ground Pork", CATEGORY_PORK, TAG_GROUND);
-    }
-
-    public static ProductDefinition bisonTrim() {
-        return product(BISON_TRIM, "Bison Trim", CATEGORY_BISON, TAG_TRIM);
-    }
-
-    public static ProductDefinition groundBison() {
-        return product(GROUND_BISON, "Ground Bison", CATEGORY_BISON, TAG_GROUND);
-    }
-
-    public static ProductDefinition beefForequarter() {
-        return product(BEEF_FOREQUARTER, "Beef Forequarter", CATEGORY_BEEF, TAG_FOREQUARTER);
-    }
-
-    public static ProductDefinition beefChuck() {
-        return product(BEEF_CHUCK, "Beef Chuck", CATEGORY_BEEF, TAG_PRIMAL);
-    }
-
-    public static ProductDefinition beefRib() {
-        return product(BEEF_RIB, "Beef Rib", CATEGORY_BEEF, TAG_PRIMAL);
-    }
-
-    public static ProductDefinition beefPackerBrisket() {
-        return product(BEEF_PACKER_BRISKET, "Packer Brisket", CATEGORY_BEEF, TAG_PRIMAL);
-    }
-
-    public static ProductDefinition beefPlate() {
-        return product(BEEF_PLATE, "Beef Plate", CATEGORY_BEEF, TAG_PRIMAL);
-    }
-
-    public static ProductDefinition beefShank() {
-        return product(BEEF_SHANK, "Beef Shank", CATEGORY_BEEF, TAG_PRIMAL);
-    }
-
-    public static ProductDefinition beefFat() {
-        return product(BEEF_FAT, "Beef Fat", CATEGORY_BEEF, TAG_FAT);
-    }
-
-    public static ProductDefinition beefBone() {
-        return product(BEEF_BONE, "Beef Bone", CATEGORY_BEEF, TAG_BONE);
-    }
-
-    private static ProductDefinition product(
-            EngineId id,
-            String displayName,
-            EngineId category,
-            EngineId tag
-    ) {
-        return ProductDefinition.builder()
-                .id(id)
-                .displayName(displayName)
-                .schemaVersion(ProductDefinition.CURRENT_SCHEMA_VERSION)
-                .category(ProductCategory.fromId(category))
-                .defaultQuantityUnit(QuantityUnit.GRAM)
-                .tag(tag)
-                .metadata(METADATA_SOURCE, "built_in")
-                .build();
+        return ProductRegistryService.loadBundledRegistry();
     }
 }

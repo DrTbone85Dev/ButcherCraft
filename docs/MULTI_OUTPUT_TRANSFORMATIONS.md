@@ -1,6 +1,6 @@
 # ButcherCraft Multi-Output Transformations
 
-Status: v0.6.8 datapack-backed Bandsaw migration on pure transaction foundation
+Status: v0.6.9 datapack-backed Bandsaw migration on pure transaction foundation
 
 ## Purpose
 
@@ -79,12 +79,13 @@ The live Bandsaw uses the atomic transformation strategy. Its ItemStack inventor
 
 ## Out Of Scope
 
-Version 0.6.8 does not add:
+Version 0.6.9 does not add:
 
 - Expanded transformation datapack catalogs beyond the current Grinder and Bandsaw proof resources.
 - Direct Minecraft inventory mutation from the pure transformation package.
 - General ItemStack conversion.
 - General product-to-item mapping.
+- Product or transformation schema migrations.
 - Quality, freshness, temperature, packaging, employee, maintenance, commerce, or MCDA behavior.
 
 ## Remaining Work Before Expanded Fabrication

@@ -1,0 +1,162 @@
+package com.butchercraft.product.datapack;
+
+import com.butchercraft.content.ContentSnapshotService;
+import com.butchercraft.product.definition.BuiltInProductRegistry;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Test;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class ProductDatapackLoaderTest {
+    @Test
+    void validProductDatapackLoadsInResourceOrder() {
+        ProductDatapackLoadResult result = loader().load(resources(
+                Map.entry("second", product("butchercraft:second", "Second", "butchercraft:pork", "gram")),
+                Map.entry("first", product("butchercraft:first", "First", "butchercraft:beef", "gram"))
+        ));
+
+        assertTrue(result.succeeded(), result::describeErrors);
+        assertEquals(List.of("butchercraft:second", "butchercraft:first"),
+                result.registry().orElseThrow().stream()
+                        .map(definition -> definition.id().value())
+                        .toList());
+    }
+
+    @Test
+    void bundledProductDatapackResourcesLoadInStableOrder() {
+        ProductDatapackLoadResult result = loader().load(ProductRegistryService.bundledResources());
+
+        assertTrue(result.succeeded(), result::describeErrors);
+        assertEquals(BuiltInProductRegistry.BUILT_IN_RESOURCE_PATHS.size(), result.registry().orElseThrow().size());
+        assertEquals(List.of(
+                        "butchercraft:beef_trim",
+                        "butchercraft:ground_beef",
+                        "butchercraft:pork_trim",
+                        "butchercraft:ground_pork",
+                        "butchercraft:bison_trim",
+                        "butchercraft:ground_bison",
+                        "butchercraft:beef_forequarter",
+                        "butchercraft:beef_chuck",
+                        "butchercraft:beef_rib",
+                        "butchercraft:beef_packer_brisket",
+                        "butchercraft:beef_plate",
+                        "butchercraft:beef_shank",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                result.registry().orElseThrow().stream()
+                        .map(definition -> definition.id().value())
+                        .toList());
+    }
+
+    @Test
+    void duplicateProductIdsAreRejectedBeforeRegistryBuild() {
+        ProductDatapackLoadResult result = loader().load(resources(
+                Map.entry("first", product("butchercraft:duplicate", "First", "butchercraft:beef", "gram")),
+                Map.entry("second", product("butchercraft:duplicate", "Second", "butchercraft:beef", "gram"))
+        ));
+
+        assertFalse(result.succeeded());
+        assertEquals(List.of(ProductDatapackErrorCode.DUPLICATE_ID, ProductDatapackErrorCode.DUPLICATE_ID),
+                result.errors().stream().map(ProductDatapackValidationError::code).toList());
+    }
+
+    @Test
+    void malformedJsonAndMissingRequiredIdentityFieldsAreRejected() {
+        ProductDatapackLoadResult malformed = loader().load(resources(Map.entry(
+                "malformed",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "gram")
+                        .replace("\"tags\"", "\"tagz\"")
+        )));
+        ProductDatapackLoadResult missingId = loader().load(resources(Map.entry(
+                "missing_id",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "gram")
+                        .replace("\"id\"", "\"product_id\"")
+        )));
+        ProductDatapackLoadResult missingDisplayName = loader().load(resources(Map.entry(
+                "missing_display",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "gram")
+                        .replace("\"display_name\"", "\"name\"")
+        )));
+
+        assertEquals(ProductDatapackErrorCode.MALFORMED_TAGS, malformed.errors().getFirst().code());
+        assertEquals(ProductDatapackErrorCode.MISSING_ID, missingId.errors().getFirst().code());
+        assertEquals(ProductDatapackErrorCode.MISSING_DISPLAY_NAME, missingDisplayName.errors().getFirst().code());
+    }
+
+    @Test
+    void unsupportedSchemaCategoryAndUnitValidationAreStructured() {
+        ProductDatapackLoadResult unsupportedSchema = loader().load(resources(Map.entry(
+                "schema",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "gram")
+                        .replace("\"schema_version\": 1", "\"schema_version\": 99")
+        )));
+        ProductDatapackLoadResult unknownCategory = loader().load(resources(Map.entry(
+                "category",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:venison", "gram")
+        )));
+        ProductDatapackLoadResult unknownUnit = loader().load(resources(Map.entry(
+                "unit",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "kilogram")
+        )));
+
+        assertEquals(ProductDatapackErrorCode.UNSUPPORTED_SCHEMA_VERSION, unsupportedSchema.errors().getFirst().code());
+        assertEquals(ProductDatapackErrorCode.UNKNOWN_CATEGORY, unknownCategory.errors().getFirst().code());
+        assertEquals(ProductDatapackErrorCode.UNKNOWN_QUANTITY_UNIT, unknownUnit.errors().getFirst().code());
+    }
+
+    @Test
+    void malformedTagsAndMetadataAreRejected() {
+        ProductDatapackLoadResult malformedTags = loader().load(resources(Map.entry(
+                "tags",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "gram")
+                        .replace("\"butchercraft:trait/trim\"", "10")
+        )));
+        ProductDatapackLoadResult malformedMetadata = loader().load(resources(Map.entry(
+                "metadata",
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:beef", "gram")
+                        .replace("\"built_in\"", "true")
+        )));
+
+        assertEquals(ProductDatapackErrorCode.MALFORMED_TAGS, malformedTags.errors().getFirst().code());
+        assertEquals(ProductDatapackErrorCode.MALFORMED_METADATA, malformedMetadata.errors().getFirst().code());
+    }
+
+    public static ProductDatapackLoader loader() {
+        return new ProductDatapackLoader(ContentSnapshotService.knownProductCategories());
+    }
+
+    @SafeVarargs
+    public static Map<String, JsonElement> resources(Map.Entry<String, String>... entries) {
+        LinkedHashMap<String, JsonElement> resources = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : entries) {
+            resources.put(entry.getKey(), JsonParser.parseString(entry.getValue()));
+        }
+        return resources;
+    }
+
+    public static String product(String id, String displayName, String category, String unit) {
+        return """
+                {
+                  "schema_version": 1,
+                  "id": "%s",
+                  "display_name": "%s",
+                  "category": "%s",
+                  "default_quantity_unit": "%s",
+                  "tags": [
+                    "butchercraft:trait/trim"
+                  ],
+                  "metadata": {
+                    "butchercraft:schema/source": "built_in"
+                  }
+                }
+                """.formatted(id, displayName, category, unit);
+    }
+}

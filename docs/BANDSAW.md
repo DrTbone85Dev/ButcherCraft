@@ -1,12 +1,12 @@
 # ButcherCraft Bandsaw
 
-Status: Milestone 2E industrial machine proof with v0.6.8 datapack-backed atomic transformation execution
+Status: Milestone 2E industrial machine proof with v0.6.9 datapack-backed content snapshots
 
 ## Purpose
 
 The Bandsaw is the first permanent fabrication machine built on the generic workstation framework. It proves that one input operation can create an ordered collection of output products without putting product, species, or cut-list logic into machine behavior.
 
-The Bandsaw supplies only the `butchercraft:bandsaw` workstation capability. Product choice, output order, yield, quality adjustment, and compatibility still come from definitions rather than Bandsaw code. Operation selection continues to come from datapack-backed product, species, processing-profile, and processing-operation definitions. Completion is additionally validated against the datapack-loaded transformation registry entry for the resolved operation id.
+The Bandsaw supplies only the `butchercraft:bandsaw` workstation capability. Product choice, output order, yield, quality adjustment, and compatibility still come from definitions rather than Bandsaw code. Operation selection continues to come from datapack-backed product, species, processing-profile, and processing-operation definitions. Completion is additionally validated against the datapack-loaded transformation registry entry for the resolved operation id, using product definitions loaded in the same active content snapshot.
 
 ## Structure
 

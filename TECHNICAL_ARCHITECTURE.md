@@ -450,6 +450,8 @@ Version 0.6.7 migrates only the Bandsaw to the atomic transformation execution s
 
 Version 0.6.8 loads transformation definitions from datapack JSON resources under `data/<namespace>/butchercraft/transformation`. The loader maps JSON onto the canonical serialized transformation records, reuses the canonical deserializer, validates product and capability references, and swaps the active immutable registry only after a successful reload. The evaluator, executor, transaction engine, and workstation behavior remain unchanged.
 
+Version 0.6.9 loads product definitions from datapack JSON resources under `data/<namespace>/butchercraft/product` and assembles product and transformation registries as a single immutable content snapshot. Product loading must succeed before transformation loading starts, and transformation references validate against the candidate product registry from the same reload. Snapshot activation is atomic: failed product or transformation content preserves both previously active registries.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

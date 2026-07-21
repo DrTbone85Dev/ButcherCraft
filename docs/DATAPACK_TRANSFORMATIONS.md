@@ -1,12 +1,12 @@
 # ButcherCraft Datapack Transformations
 
-Status: v0.6.8 datapack loading foundation
+Status: v0.6.9 transformation loading within atomic content snapshots
 
 ## Purpose
 
 Datapack transformation loading makes the immutable `TransformationRegistry` data-driven without changing the pure evaluator, executor, transaction engine, Grinder, or Bandsaw behavior.
 
-Version 0.6.8 loads transformation JSON resources, maps them to the existing serialized schema records, deserializes through the canonical transformation deserializer, validates references, and replaces the active registry only after the full reload succeeds.
+Version 0.6.8 loads transformation JSON resources, maps them to the existing serialized schema records, deserializes through the canonical transformation deserializer, and validates references. Version 0.6.9 loads transformations after candidate products and activates the product registry and transformation registry together only after the full content snapshot succeeds.
 
 ## Resource Path
 
@@ -67,12 +67,12 @@ The JSON field names match the stable external serialization contract:
 
 ## Loader Pipeline
 
-1. The Minecraft reload listener gathers JSON resources from the datapack directory.
+1. The Minecraft reload listener gathers JSON resources from the ButcherCraft content subtree.
 2. `TransformationJsonDefinitionParser` maps JSON into `SerializedTransformationDefinition`.
 3. `CanonicalTransformationDefinitionDeserializer` creates immutable `TransformationDefinition` instances.
-4. `TransformationDatapackLoader` validates duplicate ids, product references, capabilities, schema versions, and domain construction rules.
+4. `TransformationDatapackLoader` validates duplicate ids, product references, capabilities, schema versions, and domain construction rules against the candidate product registry from the same reload.
 5. A new immutable `TransformationRegistry` is built in resource order.
-6. `TransformationRegistryService` swaps the active registry only when loading succeeds.
+6. `ContentSnapshotService` swaps the active product and transformation registries together only when loading succeeds.
 
 The pure transformation model does not import Minecraft or NeoForge classes. The reload listener is the Minecraft-facing bridge.
 
@@ -89,7 +89,7 @@ Current error codes:
 - `UNKNOWN_CAPABILITY`
 - `UNSUPPORTED_SCHEMA_VERSION`
 
-Failed reloads do not replace the previously active registry.
+Failed reloads do not replace the previously active product registry or transformation registry.
 
 ## Migrated Transformations
 
@@ -106,14 +106,13 @@ Their ids, display names, capabilities, inputs, outputs, durations, yields, and 
 
 The Grinder and Bandsaw still resolve processing operations through the existing workstation resolver and processing definitions. The resolved operation id is looked up in the active transformation registry at execution time.
 
-No gameplay behavior changes in this slice. The v0.6.8 work only changes how transformation definitions reach the registry.
+No gameplay behavior changes in this slice. The v0.6.8 and v0.6.9 milestones change how definitions reach the registries, not how workstations behave.
 
 ## Out Of Scope
 
 This milestone does not add:
 
 - Expanded fabrication catalogs.
-- Product definition datapack loading into the pure product registry.
 - Transformation schema migrations.
 - A general product-to-ItemStack factory.
 - Recipe-selection UI.
@@ -122,4 +121,4 @@ This milestone does not add:
 
 ## Remaining Work
 
-Before expanded fabrication, ButcherCraft still needs larger cut catalogs, product-to-item creation rules, schema migration behavior, reload-scoped user-facing diagnostics, and manual in-game reload validation for custom datapacks.
+Before expanded fabrication, ButcherCraft still needs larger cut catalogs, product-to-item creation rules, schema migration behavior, datapack-driven category ownership, reload-scoped user-facing diagnostics, and manual in-game reload validation for custom datapacks.

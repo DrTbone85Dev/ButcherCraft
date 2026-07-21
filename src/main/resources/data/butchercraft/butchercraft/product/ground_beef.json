@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:ground_beef",
+  "display_name": "Ground Beef",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/ground"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

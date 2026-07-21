@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:ground_bison",
+  "display_name": "Ground Bison",
+  "category": "butchercraft:bison",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/ground"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

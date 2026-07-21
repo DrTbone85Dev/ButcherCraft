@@ -4,6 +4,52 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.6.9: Datapack Product Loading And Content Snapshots
+
+Goal: load product definitions from datapack JSON and activate product and transformation registries as one validated content snapshot.
+
+Included work:
+
+- Stable serialized product-definition schema with canonical serializer and deserializer contracts.
+- Product JSON parser for `data/<namespace>/butchercraft/product/*.json`.
+- Immutable candidate `ProductRegistry` assembly from product datapack content.
+- Product validation for duplicate ids, missing ids or display names, unsupported schema versions, unknown categories, unknown units, malformed tags, malformed metadata, and malformed JSON.
+- Candidate transformation loading after product loading succeeds.
+- Transformation product-reference validation against the candidate product registry.
+- Atomic active content snapshot replacement for product and transformation registries together.
+- Bundled datapack JSON resources for the current Grinder and Bandsaw proof products.
+- Regression tests for loader validation, deterministic ordering, atomic replacement, candidate-product references, and Grinder/Bandsaw compatibility.
+- Documentation in `docs/DATAPACK_PRODUCTS.md`.
+
+Excluded work:
+
+- Dynamic Minecraft item registration from datapacks.
+- Product-to-ItemStack mapping changes.
+- Product schema migrations, datapack-driven category catalogs, expanded fabrication catalogs, public expansion APIs, or other workstation migrations.
+- Changes to evaluator, executor, transaction engine, Grinder behavior, or Bandsaw behavior.
+
+Acceptance criteria:
+
+- Current product definitions load from bundled datapack JSON resources in deterministic order.
+- Transformations only load after candidate products are valid.
+- If either product or transformation loading fails, both previously active registries remain active.
+- Grinder and Bandsaw use the same runtime behavior as v0.6.8.
+- Minecraft and NeoForge code remains outside pure product and transformation domains.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Recommended before upload: reload datapacks in a development world, then confirm Grinder trim-to-ground flows and Bandsaw forequarter fabrication still complete.
+
+Rollback considerations:
+
+- The active content snapshot can reset to bundled datapack resources. Java development item mappings remain unchanged, so rollback can remove product datapack loading without introducing dynamic item registration.
+
 ## Milestone 0.6.8: Datapack Transformation Loading
 
 Goal: replace Java-defined transformation registrations with datapack-driven loading while preserving identical Grinder and Bandsaw runtime behavior.

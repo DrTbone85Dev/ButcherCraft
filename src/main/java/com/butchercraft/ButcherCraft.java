@@ -2,6 +2,7 @@ package com.butchercraft;
 
 import com.butchercraft.command.ButcherCraftDiagnostics;
 import com.butchercraft.config.CommonConfig;
+import com.butchercraft.integration.datapack.ContentDatapackReloadListener;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.registration.ModBlocks;
 import com.butchercraft.registration.ModCapabilities;
@@ -10,7 +11,6 @@ import com.butchercraft.registration.ModDataPackRegistries;
 import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
-import com.butchercraft.integration.datapack.TransformationDatapackReloadListener;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -40,7 +40,7 @@ public final class ButcherCraft {
 
         modEventBus.addListener(this::commonSetup);
         NeoForge.EVENT_BUS.addListener(ButcherCraftDiagnostics::registerCommands);
-        NeoForge.EVENT_BUS.addListener(TransformationDatapackReloadListener::register);
+        NeoForge.EVENT_BUS.addListener(ContentDatapackReloadListener::register);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }
