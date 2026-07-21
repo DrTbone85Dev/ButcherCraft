@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:sirloin_tip",
+  "display_name": "Sirloin Tip",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/subprimal"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

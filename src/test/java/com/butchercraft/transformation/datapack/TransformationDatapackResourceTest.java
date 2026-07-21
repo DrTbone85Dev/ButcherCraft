@@ -18,6 +18,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TransformationDatapackResourceTest {
+    private static final List<String> EXPECTED_BUNDLED_TRANSFORMATION_IDS = List.of(
+            "butchercraft:grind_beef",
+            "butchercraft:grind_pork",
+            "butchercraft:grind_bison",
+            "butchercraft:break_beef_forequarter",
+            "butchercraft:break_beef_hindquarter",
+            "butchercraft:cut_beef_short_loin",
+            "butchercraft:cut_beef_round",
+            "butchercraft:cut_beef_sirloin"
+    );
+
     @Test
     void bundledTransformationResourcesExistAndLoad() throws IOException {
         LinkedHashMap<String, JsonElement> resources = new LinkedHashMap<>();
@@ -40,17 +51,12 @@ class TransformationDatapackResourceTest {
     void builtInRegistryIsLoadedFromTransformationDatapackResources() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(4, registry.size());
-        assertEquals(List.of(
-                        "butchercraft:grind_beef",
-                        "butchercraft:grind_pork",
-                        "butchercraft:grind_bison",
-                        "butchercraft:break_beef_forequarter"
-                ),
-                registry.stream()
+        assertEquals(8, registry.size());
+        assertEquals(EXPECTED_BUNDLED_TRANSFORMATION_IDS, registry.stream()
                         .map(definition -> definition.id().value())
                         .toList());
         assertTrue(registry.contains(TransformationId.of("butchercraft:break_beef_forequarter")));
+        assertTrue(registry.contains(TransformationId.of("butchercraft:break_beef_hindquarter")));
     }
 
     @Test

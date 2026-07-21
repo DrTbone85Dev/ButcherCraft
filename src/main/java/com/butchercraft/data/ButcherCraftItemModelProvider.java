@@ -37,6 +37,22 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         placeholderProductItem(ModItems.BEEF_SHANK_TEST.get());
         placeholderProductItem(ModItems.BEEF_FAT_TEST.get());
         placeholderProductItem(ModItems.BEEF_BONE_TEST.get());
+        placeholderProductItem(ModItems.BEEF_HINDQUARTER_TEST.get());
+        placeholderProductItem(ModItems.BEEF_ROUND_TEST.get());
+        placeholderProductItem(ModItems.BEEF_SIRLOIN_TEST.get());
+        placeholderProductItem(ModItems.BEEF_SHORT_LOIN_TEST.get());
+        placeholderProductItem(ModItems.BEEF_FLANK_TEST.get());
+        placeholderProductItem(ModItems.T_BONE_STEAK_TEST.get());
+        placeholderProductItem(ModItems.PORTERHOUSE_STEAK_TEST.get());
+        placeholderProductItem(ModItems.BEEF_STRIP_LOIN_TEST.get());
+        placeholderProductItem(ModItems.BEEF_TENDERLOIN_TEST.get());
+        placeholderProductItem(ModItems.TOP_ROUND_TEST.get());
+        placeholderProductItem(ModItems.BOTTOM_ROUND_TEST.get());
+        placeholderProductItem(ModItems.EYE_OF_ROUND_TEST.get());
+        placeholderProductItem(ModItems.SIRLOIN_TIP_TEST.get());
+        placeholderProductItem(ModItems.TOP_SIRLOIN_TEST.get());
+        placeholderProductItem(ModItems.SIRLOIN_STEAK_TEST.get());
+        placeholderProductItem(ModItems.TRI_TIP_TEST.get());
     }
 
     private void placeholderProductItem(Item item) {

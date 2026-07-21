@@ -40,6 +40,14 @@ class BandsawOperationResolverTest {
     }
 
     @Test
+    void builtInBeefFabricationOperationsRequireBandsawCapability() {
+        assertBandsawOperation(BuiltInProcessingDefinitions.breakBeefHindquarterOperation(), 7);
+        assertBandsawOperation(BuiltInProcessingDefinitions.cutBeefShortLoinOperation(), 6);
+        assertBandsawOperation(BuiltInProcessingDefinitions.cutBeefRoundOperation(), 7);
+        assertBandsawOperation(BuiltInProcessingDefinitions.cutBeefSirloinOperation(), 6);
+    }
+
+    @Test
     void beefForequarterFindsBreakdownForBandsaw() {
         WorkstationOperationResolution result = resolve(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance(), BandsawWorkstation.capability());
 
@@ -47,6 +55,18 @@ class BandsawOperationResolverTest {
         assertEquals(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER, result.operation().orElseThrow().operationId());
         assertEquals(120, result.operation().orElseThrow().totalTicks());
         assertEquals(8, result.operation().orElseThrow().engineOperation().outputs().size());
+    }
+
+    @Test
+    void beefHindquarterAndPrimalsFindFabricationOperationsForBandsaw() {
+        assertResolvedOperation(ModItems.BEEF_HINDQUARTER_TEST.get().getDefaultInstance(),
+                BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER, 7);
+        assertResolvedOperation(ModItems.BEEF_SHORT_LOIN_TEST.get().getDefaultInstance(),
+                BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN, 6);
+        assertResolvedOperation(ModItems.BEEF_ROUND_TEST.get().getDefaultInstance(),
+                BuiltInDefinitionIds.CUT_BEEF_ROUND, 7);
+        assertResolvedOperation(ModItems.BEEF_SIRLOIN_TEST.get().getDefaultInstance(),
+                BuiltInDefinitionIds.CUT_BEEF_SIRLOIN, 6);
     }
 
     @Test
@@ -74,6 +94,23 @@ class BandsawOperationResolverTest {
 
     private WorkstationOperationResolution resolve(ItemStack stack, com.butchercraft.workstation.WorkstationCapability capability) {
         return resolver.resolve(BuiltInProcessingDefinitions.builtInView(), capability, stack);
+    }
+
+    private static void assertBandsawOperation(
+            com.butchercraft.processing.definition.ProcessingOperationDefinition operation,
+            int outputCount
+    ) {
+        assertEquals(BandsawWorkstation.CAPABILITY_ID, operation.workstationCapability().orElseThrow());
+        assertEquals(outputCount, operation.outputs().size());
+    }
+
+    private void assertResolvedOperation(ItemStack stack, ResourceLocation operationId, int outputCount) {
+        WorkstationOperationResolution result = resolve(stack, BandsawWorkstation.capability());
+
+        assertTrue(result.succeeded(), result.toString());
+        assertEquals(operationId, result.operation().orElseThrow().operationId());
+        assertEquals(120, result.operation().orElseThrow().totalTicks());
+        assertEquals(outputCount, result.operation().orElseThrow().engineOperation().outputs().size());
     }
 
     private static void assertFailure(WorkstationOperationResolution result, WorkstationFailureCode code) {

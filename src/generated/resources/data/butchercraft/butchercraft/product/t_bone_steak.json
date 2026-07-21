@@ -1,0 +1,16 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.t_bone_steak",
+  "edible": true,
+  "graph_input": false,
+  "graph_output": true,
+  "processing_state": "butchercraft:steak",
+  "product_category": "butchercraft:beef",
+  "quantity_unit": "gram",
+  "species": "butchercraft:beef",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/steak",
+    "butchercraft:t_bone_steak"
+  ]
+}

@@ -1,16 +1,16 @@
 # Bandsaw Transformation Migration
 
-Status: v0.6.9 implementation note
+Status: v0.7.0 implementation note
 
 ## Scope
 
-Version 0.6.7 migrates only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution. Version 0.6.8 keeps that behavior and loads the transformation definition from bundled datapack JSON. Version 0.6.9 loads the required product definitions from bundled datapack JSON and activates product and transformation registries together.
+Version 0.6.7 migrates only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution. Version 0.6.8 keeps that behavior and loads the transformation definition from bundled datapack JSON. Version 0.6.9 loads the required product definitions from bundled datapack JSON and activates product and transformation registries together. Version 0.7.0 adds more bundled beef fabrication content to the same Bandsaw migration path.
 
 The migration does not add full carcass fabrication, recipe-selection UI, new product item systems, spoilage, packaging, power, employees, commerce, or any other workstation migration.
 
 ## Bandsaw Transformation
 
-The bundled transformation datapack resources include:
+The original bundled transformation datapack resources include:
 
 ```text
 butchercraft:break_beef_forequarter
@@ -34,6 +34,8 @@ Ordered outputs:
 | 8 | `butchercraft:beef_bone` | `10000 gram` |
 
 The definition mirrors the existing processing-operation output order and quantities. Bandsaw machine classes do not contain these cut ids.
+
+Version 0.7.0 adds `butchercraft:break_beef_hindquarter`, `butchercraft:cut_beef_short_loin`, `butchercraft:cut_beef_round`, and `butchercraft:cut_beef_sirloin`. These use the same Bandsaw capability, active transformation registry lookup, and atomic transaction behavior.
 
 ## Product Definitions And Item Mapping
 

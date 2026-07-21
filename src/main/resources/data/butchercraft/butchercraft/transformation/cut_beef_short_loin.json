@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:cut_beef_short_loin",
+  "display_name": "Cut Beef Short Loin",
+  "required_capability": "butchercraft:bandsaw",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_short_loin",
+      "quantity": 15000,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:t_bone_steak",
+      "quantity": 4000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:porterhouse_steak",
+      "quantity": 3000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_strip_loin",
+      "quantity": 3000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_tenderloin",
+      "quantity": 2000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 1500,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_bone",
+      "quantity": 1500,
+      "unit": "gram",
+      "classification": "waste"
+    }
+  ],
+  "duration": {
+    "milliseconds": 6000
+  },
+  "yield": {
+    "numerator": 1,
+    "denominator": 1
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

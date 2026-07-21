@@ -1,0 +1,97 @@
+{
+  "base_duration_milliseconds": 6000,
+  "display_name_key": "definition.butchercraft.processing_operation.break_beef_hindquarter",
+  "input_product": "butchercraft:beef_hindquarter",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 100000,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/fabrication",
+  "outputs": [
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_round",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 30000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_sirloin",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 15000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_short_loin",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 15000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_flank",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:primal",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 7500
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_trim",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:trim",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 15000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_fat",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:fat",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 7500
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_bone",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:bone",
+      "yield": {
+        "denominator": 100000,
+        "numerator": 10000
+      }
+    }
+  ],
+  "required_input_processing_state": "butchercraft:hindquarter",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "workstation_capability": "butchercraft:bandsaw",
+  "zero_output_policy": "forbid"
+}

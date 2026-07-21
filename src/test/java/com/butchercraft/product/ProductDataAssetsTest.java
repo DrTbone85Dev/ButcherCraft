@@ -28,6 +28,22 @@ class ProductDataAssetsTest {
         assertTrue(language.contains("\"item.butchercraft.beef_shank_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_fat_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_bone_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_hindquarter_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_round_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_sirloin_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_short_loin_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_flank_test\""));
+        assertTrue(language.contains("\"item.butchercraft.t_bone_steak_test\""));
+        assertTrue(language.contains("\"item.butchercraft.porterhouse_steak_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_strip_loin_test\""));
+        assertTrue(language.contains("\"item.butchercraft.beef_tenderloin_test\""));
+        assertTrue(language.contains("\"item.butchercraft.top_round_test\""));
+        assertTrue(language.contains("\"item.butchercraft.bottom_round_test\""));
+        assertTrue(language.contains("\"item.butchercraft.eye_of_round_test\""));
+        assertTrue(language.contains("\"item.butchercraft.sirloin_tip_test\""));
+        assertTrue(language.contains("\"item.butchercraft.top_sirloin_test\""));
+        assertTrue(language.contains("\"item.butchercraft.sirloin_steak_test\""));
+        assertTrue(language.contains("\"item.butchercraft.tri_tip_test\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.product\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.quality_score\""));
     }
@@ -49,6 +65,22 @@ class ProductDataAssetsTest {
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_shank_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_fat_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_bone_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_hindquarter_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_round_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_sirloin_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_short_loin_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_flank_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/t_bone_steak_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/porterhouse_steak_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_strip_loin_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_tenderloin_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/top_round_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/bottom_round_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/eye_of_round_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/sirloin_tip_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/top_sirloin_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/sirloin_steak_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/tri_tip_test.json"));
     }
 
     private static void assertPlaceholderModel(Path path) throws IOException {

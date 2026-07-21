@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:eye_of_round",
+  "display_name": "Eye of Round",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/subprimal"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

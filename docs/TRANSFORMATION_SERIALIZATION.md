@@ -1,6 +1,6 @@
 # ButcherCraft Transformation Serialization
 
-Status: v0.6.9 schema contract used by datapack content loading
+Status: v0.7.0 schema contract used by datapack content loading
 
 ## Purpose
 
@@ -70,7 +70,7 @@ The canonical serializer and deserializer are:
 - `CanonicalTransformationDefinitionSerializer`
 - `CanonicalTransformationDefinitionDeserializer`
 
-They round-trip through pure Java records, not Minecraft codecs, datapack registries, or resource locations. Version 0.6.8 adds a separate JSON parser that maps datapack files onto these records. Version 0.6.9 loads transformations as part of a larger content snapshot after candidate product definitions are validated.
+They round-trip through pure Java records, not Minecraft codecs, datapack registries, or resource locations. Version 0.6.8 adds a separate JSON parser that maps datapack files onto these records. Version 0.6.9 loads transformations as part of a larger content snapshot after candidate product definitions are validated. Version 0.7.0 adds more bundled transformation content using the same serialized schema.
 
 ## Schema Versioning
 
@@ -105,6 +105,10 @@ butchercraft:grind_beef
 butchercraft:grind_pork
 butchercraft:grind_bison
 butchercraft:break_beef_forequarter
+butchercraft:break_beef_hindquarter
+butchercraft:cut_beef_short_loin
+butchercraft:cut_beef_round
+butchercraft:cut_beef_sirloin
 ```
 
 Tests prove all four load through datapack JSON, deserialize through the canonical serialization layer, and round-trip without changing ids, display names, required capability, inputs, outputs, duration, yield, or metadata.
@@ -121,4 +125,4 @@ This milestone does not add:
 
 ## Next Work
 
-After v0.6.9, transformation datapack integration still needs implemented schema migrations, broader reload diagnostics, expanded catalogs, and richer product/category ownership for custom content.
+After v0.7.0, transformation datapack integration still needs implemented schema migrations, broader reload diagnostics, full catalogs, and richer product/category ownership for custom content.

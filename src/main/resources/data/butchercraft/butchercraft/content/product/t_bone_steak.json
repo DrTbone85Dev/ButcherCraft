@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:t_bone_steak",
+  "display_name": "T-Bone Steak",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/steak"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

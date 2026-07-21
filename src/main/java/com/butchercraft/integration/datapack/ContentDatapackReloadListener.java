@@ -20,7 +20,7 @@ import java.util.Map;
 public final class ContentDatapackReloadListener extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new Gson();
     private static final String ROOT_DIRECTORY = "butchercraft";
-    private static final String PRODUCT_PREFIX = "product/";
+    private static final String PRODUCT_PREFIX = "content/product/";
     private static final String TRANSFORMATION_PREFIX = "transformation/";
 
     public ContentDatapackReloadListener() {
@@ -67,8 +67,6 @@ public final class ContentDatapackReloadListener extends SimpleJsonResourceReloa
             productResources.put(id.toString(), json);
         } else if (path.startsWith(TRANSFORMATION_PREFIX)) {
             transformationResources.put(id.toString(), json);
-        } else if (path.startsWith(ROOT_DIRECTORY + "/" + PRODUCT_PREFIX)) {
-            productResources.put(id.toString(), json);
         } else if (path.startsWith(ROOT_DIRECTORY + "/" + TRANSFORMATION_PREFIX)) {
             transformationResources.put(id.toString(), json);
         }

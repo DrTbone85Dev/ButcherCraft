@@ -1,0 +1,86 @@
+{
+  "base_duration_milliseconds": 6000,
+  "display_name_key": "definition.butchercraft.processing_operation.cut_beef_sirloin",
+  "input_product": "butchercraft:beef_sirloin",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 15000,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/fabrication",
+  "outputs": [
+    {
+      "allow_zero": false,
+      "product": "butchercraft:top_sirloin",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:subprimal",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 5000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:sirloin_steak",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:steak",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 3500
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:tri_tip",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:subprimal",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 2000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_trim",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:trim",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 2500
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_fat",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:fat",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 1000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_bone",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:bone",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 1000
+      }
+    }
+  ],
+  "required_input_processing_state": "butchercraft:primal",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "workstation_capability": "butchercraft:bandsaw",
+  "zero_output_policy": "forbid"
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:sirloin_steak",
+  "display_name": "Sirloin Steak",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/steak"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

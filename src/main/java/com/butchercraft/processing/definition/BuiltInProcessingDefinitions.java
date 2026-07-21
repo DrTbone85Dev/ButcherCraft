@@ -34,13 +34,33 @@ public final class BuiltInProcessingDefinitions {
                         Map.entry(BuiltInDefinitionIds.BEEF_PLATE, beefPrimalProduct("definition.butchercraft.product.beef_plate", BuiltInDefinitionIds.BEEF_PLATE)),
                         Map.entry(BuiltInDefinitionIds.BEEF_SHANK, beefPrimalProduct("definition.butchercraft.product.beef_shank", BuiltInDefinitionIds.BEEF_SHANK)),
                         Map.entry(BuiltInDefinitionIds.BEEF_FAT, beefFatProduct()),
-                        Map.entry(BuiltInDefinitionIds.BEEF_BONE, beefBoneProduct())
+                        Map.entry(BuiltInDefinitionIds.BEEF_BONE, beefBoneProduct()),
+                        Map.entry(BuiltInDefinitionIds.BEEF_HINDQUARTER, beefHindquarterProduct()),
+                        Map.entry(BuiltInDefinitionIds.BEEF_ROUND, beefPrimalProduct("definition.butchercraft.product.beef_round", BuiltInDefinitionIds.BEEF_ROUND, true)),
+                        Map.entry(BuiltInDefinitionIds.BEEF_SIRLOIN, beefPrimalProduct("definition.butchercraft.product.beef_sirloin", BuiltInDefinitionIds.BEEF_SIRLOIN, true)),
+                        Map.entry(BuiltInDefinitionIds.BEEF_SHORT_LOIN, beefPrimalProduct("definition.butchercraft.product.beef_short_loin", BuiltInDefinitionIds.BEEF_SHORT_LOIN, true)),
+                        Map.entry(BuiltInDefinitionIds.BEEF_FLANK, beefPrimalProduct("definition.butchercraft.product.beef_flank", BuiltInDefinitionIds.BEEF_FLANK)),
+                        Map.entry(BuiltInDefinitionIds.T_BONE_STEAK, beefFabricatedProduct("definition.butchercraft.product.t_bone_steak", BuiltInDefinitionIds.T_BONE_STEAK, "steak", "trait/steak")),
+                        Map.entry(BuiltInDefinitionIds.PORTERHOUSE_STEAK, beefFabricatedProduct("definition.butchercraft.product.porterhouse_steak", BuiltInDefinitionIds.PORTERHOUSE_STEAK, "steak", "trait/steak")),
+                        Map.entry(BuiltInDefinitionIds.BEEF_STRIP_LOIN, beefFabricatedProduct("definition.butchercraft.product.beef_strip_loin", BuiltInDefinitionIds.BEEF_STRIP_LOIN, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.BEEF_TENDERLOIN, beefFabricatedProduct("definition.butchercraft.product.beef_tenderloin", BuiltInDefinitionIds.BEEF_TENDERLOIN, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.TOP_ROUND, beefFabricatedProduct("definition.butchercraft.product.top_round", BuiltInDefinitionIds.TOP_ROUND, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.BOTTOM_ROUND, beefFabricatedProduct("definition.butchercraft.product.bottom_round", BuiltInDefinitionIds.BOTTOM_ROUND, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.EYE_OF_ROUND, beefFabricatedProduct("definition.butchercraft.product.eye_of_round", BuiltInDefinitionIds.EYE_OF_ROUND, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.SIRLOIN_TIP, beefFabricatedProduct("definition.butchercraft.product.sirloin_tip", BuiltInDefinitionIds.SIRLOIN_TIP, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.TOP_SIRLOIN, beefFabricatedProduct("definition.butchercraft.product.top_sirloin", BuiltInDefinitionIds.TOP_SIRLOIN, "subprimal", "trait/subprimal")),
+                        Map.entry(BuiltInDefinitionIds.SIRLOIN_STEAK, beefFabricatedProduct("definition.butchercraft.product.sirloin_steak", BuiltInDefinitionIds.SIRLOIN_STEAK, "steak", "trait/steak")),
+                        Map.entry(BuiltInDefinitionIds.TRI_TIP, beefFabricatedProduct("definition.butchercraft.product.tri_tip", BuiltInDefinitionIds.TRI_TIP, "subprimal", "trait/subprimal"))
                 ),
-                Map.of(
-                        BuiltInDefinitionIds.GRIND_BEEF, grindBeefOperation(),
-                        BuiltInDefinitionIds.GRIND_PORK, grindPorkOperation(),
-                        BuiltInDefinitionIds.GRIND_BISON, grindBisonOperation(),
-                        BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER, breakBeefForequarterOperation()
+                Map.ofEntries(
+                        Map.entry(BuiltInDefinitionIds.GRIND_BEEF, grindBeefOperation()),
+                        Map.entry(BuiltInDefinitionIds.GRIND_PORK, grindPorkOperation()),
+                        Map.entry(BuiltInDefinitionIds.GRIND_BISON, grindBisonOperation()),
+                        Map.entry(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER, breakBeefForequarterOperation()),
+                        Map.entry(BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER, breakBeefHindquarterOperation()),
+                        Map.entry(BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN, cutBeefShortLoinOperation()),
+                        Map.entry(BuiltInDefinitionIds.CUT_BEEF_ROUND, cutBeefRoundOperation()),
+                        Map.entry(BuiltInDefinitionIds.CUT_BEEF_SIRLOIN, cutBeefSirloinOperation())
                 )
         );
     }
@@ -85,6 +105,92 @@ public final class BuiltInProcessingDefinitions {
         ));
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_FAT), beefFatProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_BONE), beefBoneProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_HINDQUARTER), beefHindquarterProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_ROUND), beefPrimalProduct(
+                "definition.butchercraft.product.beef_round",
+                BuiltInDefinitionIds.BEEF_ROUND,
+                true
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_SIRLOIN), beefPrimalProduct(
+                "definition.butchercraft.product.beef_sirloin",
+                BuiltInDefinitionIds.BEEF_SIRLOIN,
+                true
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_SHORT_LOIN), beefPrimalProduct(
+                "definition.butchercraft.product.beef_short_loin",
+                BuiltInDefinitionIds.BEEF_SHORT_LOIN,
+                true
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_FLANK), beefPrimalProduct(
+                "definition.butchercraft.product.beef_flank",
+                BuiltInDefinitionIds.BEEF_FLANK
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.T_BONE_STEAK), beefFabricatedProduct(
+                "definition.butchercraft.product.t_bone_steak",
+                BuiltInDefinitionIds.T_BONE_STEAK,
+                "steak",
+                "trait/steak"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.PORTERHOUSE_STEAK), beefFabricatedProduct(
+                "definition.butchercraft.product.porterhouse_steak",
+                BuiltInDefinitionIds.PORTERHOUSE_STEAK,
+                "steak",
+                "trait/steak"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_STRIP_LOIN), beefFabricatedProduct(
+                "definition.butchercraft.product.beef_strip_loin",
+                BuiltInDefinitionIds.BEEF_STRIP_LOIN,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_TENDERLOIN), beefFabricatedProduct(
+                "definition.butchercraft.product.beef_tenderloin",
+                BuiltInDefinitionIds.BEEF_TENDERLOIN,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.TOP_ROUND), beefFabricatedProduct(
+                "definition.butchercraft.product.top_round",
+                BuiltInDefinitionIds.TOP_ROUND,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BOTTOM_ROUND), beefFabricatedProduct(
+                "definition.butchercraft.product.bottom_round",
+                BuiltInDefinitionIds.BOTTOM_ROUND,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.EYE_OF_ROUND), beefFabricatedProduct(
+                "definition.butchercraft.product.eye_of_round",
+                BuiltInDefinitionIds.EYE_OF_ROUND,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.SIRLOIN_TIP), beefFabricatedProduct(
+                "definition.butchercraft.product.sirloin_tip",
+                BuiltInDefinitionIds.SIRLOIN_TIP,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.TOP_SIRLOIN), beefFabricatedProduct(
+                "definition.butchercraft.product.top_sirloin",
+                BuiltInDefinitionIds.TOP_SIRLOIN,
+                "subprimal",
+                "trait/subprimal"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.SIRLOIN_STEAK), beefFabricatedProduct(
+                "definition.butchercraft.product.sirloin_steak",
+                BuiltInDefinitionIds.SIRLOIN_STEAK,
+                "steak",
+                "trait/steak"
+        ));
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.TRI_TIP), beefFabricatedProduct(
+                "definition.butchercraft.product.tri_tip",
+                BuiltInDefinitionIds.TRI_TIP,
+                "subprimal",
+                "trait/subprimal"
+        ));
     }
 
     public static void bootstrapOperations(BootstrapContext<ProcessingOperationDefinition> context) {
@@ -94,6 +200,22 @@ public final class BuiltInProcessingDefinitions {
         context.register(
                 key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER),
                 breakBeefForequarterOperation()
+        );
+        context.register(
+                key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER),
+                breakBeefHindquarterOperation()
+        );
+        context.register(
+                key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN),
+                cutBeefShortLoinOperation()
+        );
+        context.register(
+                key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.CUT_BEEF_ROUND),
+                cutBeefRoundOperation()
+        );
+        context.register(
+                key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.CUT_BEEF_SIRLOIN),
+                cutBeefSirloinOperation()
         );
     }
 
@@ -178,7 +300,27 @@ public final class BuiltInProcessingDefinitions {
         );
     }
 
+    public static ProductDefinition beefHindquarterProduct() {
+        return new ProductDefinition(
+                "definition.butchercraft.product.beef_hindquarter",
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.id("hindquarter"),
+                "gram",
+                true,
+                BoneState.BONE_IN,
+                true,
+                List.of(BuiltInDefinitionIds.id("trait/hindquarter")),
+                true,
+                false
+        );
+    }
+
     private static ProductDefinition beefPrimalProduct(String displayNameKey, ResourceLocation productId) {
+        return beefPrimalProduct(displayNameKey, productId, false);
+    }
+
+    private static ProductDefinition beefPrimalProduct(String displayNameKey, ResourceLocation productId, boolean graphInput) {
         return new ProductDefinition(
                 displayNameKey,
                 BuiltInDefinitionIds.BEEF,
@@ -189,6 +331,27 @@ public final class BuiltInProcessingDefinitions {
                 BoneState.BONE_IN,
                 true,
                 List.of(BuiltInDefinitionIds.id("trait/primal"), productId),
+                graphInput,
+                true
+        );
+    }
+
+    private static ProductDefinition beefFabricatedProduct(
+            String displayNameKey,
+            ResourceLocation productId,
+            String state,
+            String trait
+    ) {
+        return new ProductDefinition(
+                displayNameKey,
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.id(state),
+                "gram",
+                true,
+                BoneState.BONELESS,
+                true,
+                List.of(BuiltInDefinitionIds.id(trait), productId),
                 false,
                 true
         );
@@ -338,11 +501,123 @@ public final class BuiltInProcessingDefinitions {
         );
     }
 
+    public static ProcessingOperationDefinition breakBeefHindquarterOperation() {
+        return fabricationOperation(
+                "definition.butchercraft.processing_operation.break_beef_hindquarter",
+                BuiltInDefinitionIds.BEEF_HINDQUARTER,
+                BuiltInDefinitionIds.id("hindquarter"),
+                100_000,
+                List.of(
+                        outputQuantity(BuiltInDefinitionIds.BEEF_ROUND, BuiltInDefinitionIds.id("primal"), 30_000, 100_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_SIRLOIN, BuiltInDefinitionIds.id("primal"), 15_000, 100_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_SHORT_LOIN, BuiltInDefinitionIds.id("primal"), 15_000, 100_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_FLANK, BuiltInDefinitionIds.id("primal"), 7_500, 100_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.id("trim"), 15_000, 100_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_FAT, BuiltInDefinitionIds.id("fat"), 7_500, 100_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_BONE, BuiltInDefinitionIds.id("bone"), 10_000, 100_000)
+                )
+        );
+    }
+
+    public static ProcessingOperationDefinition cutBeefShortLoinOperation() {
+        return fabricationOperation(
+                "definition.butchercraft.processing_operation.cut_beef_short_loin",
+                BuiltInDefinitionIds.BEEF_SHORT_LOIN,
+                BuiltInDefinitionIds.id("primal"),
+                15_000,
+                List.of(
+                        outputQuantity(BuiltInDefinitionIds.T_BONE_STEAK, BuiltInDefinitionIds.id("steak"), 4_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.PORTERHOUSE_STEAK, BuiltInDefinitionIds.id("steak"), 3_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_STRIP_LOIN, BuiltInDefinitionIds.id("subprimal"), 3_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_TENDERLOIN, BuiltInDefinitionIds.id("subprimal"), 2_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.id("trim"), 1_500, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_BONE, BuiltInDefinitionIds.id("bone"), 1_500, 15_000)
+                )
+        );
+    }
+
+    public static ProcessingOperationDefinition cutBeefRoundOperation() {
+        return fabricationOperation(
+                "definition.butchercraft.processing_operation.cut_beef_round",
+                BuiltInDefinitionIds.BEEF_ROUND,
+                BuiltInDefinitionIds.id("primal"),
+                30_000,
+                List.of(
+                        outputQuantity(BuiltInDefinitionIds.TOP_ROUND, BuiltInDefinitionIds.id("subprimal"), 7_500, 30_000),
+                        outputQuantity(BuiltInDefinitionIds.BOTTOM_ROUND, BuiltInDefinitionIds.id("subprimal"), 6_500, 30_000),
+                        outputQuantity(BuiltInDefinitionIds.EYE_OF_ROUND, BuiltInDefinitionIds.id("subprimal"), 3_500, 30_000),
+                        outputQuantity(BuiltInDefinitionIds.SIRLOIN_TIP, BuiltInDefinitionIds.id("subprimal"), 5_000, 30_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.id("trim"), 4_000, 30_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_FAT, BuiltInDefinitionIds.id("fat"), 1_500, 30_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_BONE, BuiltInDefinitionIds.id("bone"), 2_000, 30_000)
+                )
+        );
+    }
+
+    public static ProcessingOperationDefinition cutBeefSirloinOperation() {
+        return fabricationOperation(
+                "definition.butchercraft.processing_operation.cut_beef_sirloin",
+                BuiltInDefinitionIds.BEEF_SIRLOIN,
+                BuiltInDefinitionIds.id("primal"),
+                15_000,
+                List.of(
+                        outputQuantity(BuiltInDefinitionIds.TOP_SIRLOIN, BuiltInDefinitionIds.id("subprimal"), 5_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.SIRLOIN_STEAK, BuiltInDefinitionIds.id("steak"), 3_500, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.TRI_TIP, BuiltInDefinitionIds.id("subprimal"), 2_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.id("trim"), 2_500, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_FAT, BuiltInDefinitionIds.id("fat"), 1_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_BONE, BuiltInDefinitionIds.id("bone"), 1_000, 15_000)
+                )
+        );
+    }
+
+    private static ProcessingOperationDefinition fabricationOperation(
+            String displayNameKey,
+            ResourceLocation inputProduct,
+            ResourceLocation inputState,
+            long inputGrams,
+            List<ProcessingOutputDefinition> outputs
+    ) {
+        return new ProcessingOperationDefinition(
+                displayNameKey,
+                BuiltInDefinitionIds.OPERATION_CATEGORY_FABRICATION,
+                List.of(BuiltInDefinitionIds.RED_MEAT),
+                inputProduct,
+                inputState,
+                6_000,
+                new QuantityDefinition(inputGrams, "gram"),
+                600,
+                500,
+                ZeroOutputPolicy.FORBID,
+                outputs,
+                List.of(),
+                java.util.Optional.of(BuiltInDefinitionIds.WORKSTATION_CAPABILITY_BANDSAW),
+                false,
+                false
+        );
+    }
+
     private static ProcessingOutputDefinition output(ResourceLocation product, ResourceLocation state, long percent) {
         return new ProcessingOutputDefinition(
                 product,
                 state,
                 new YieldDefinition(percent, 100),
+                -5,
+                "gram",
+                false
+        );
+    }
+
+    private static ProcessingOutputDefinition outputQuantity(
+            ResourceLocation product,
+            ResourceLocation state,
+            long outputGrams,
+            long inputGrams
+    ) {
+        return new ProcessingOutputDefinition(
+                product,
+                state,
+                new YieldDefinition(outputGrams, inputGrams),
                 -5,
                 "gram",
                 false

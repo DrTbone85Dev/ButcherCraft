@@ -6,7 +6,7 @@ Status: Milestone 2E ordered-output processing proof
 
 Multi-output processing lets one operation create an ordered collection of product outputs while keeping the same engine, definition resolver, workstation controller, and temporary fixture mapping used by one-output Grinder operations.
 
-The Bandsaw currently proves this with a Beef Forequarter fabrication operation. Product choice, output order, yield ratios, quality adjustment, and workstation compatibility are data facts from processing definitions, not Bandsaw Java behavior.
+The Bandsaw currently proves this with Beef Forequarter, Beef Hindquarter, and selected beef primal fabrication operations. Product choice, output order, yield ratios, quality adjustment, and workstation compatibility are data facts from processing definitions, not Bandsaw Java behavior.
 
 ## Operation Model
 

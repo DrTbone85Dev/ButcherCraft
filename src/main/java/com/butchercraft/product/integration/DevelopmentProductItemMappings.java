@@ -28,7 +28,23 @@ public final class DevelopmentProductItemMappings {
                 ModItems.BEEF_PLATE_TEST,
                 ModItems.BEEF_SHANK_TEST,
                 ModItems.BEEF_FAT_TEST,
-                ModItems.BEEF_BONE_TEST
+                ModItems.BEEF_BONE_TEST,
+                ModItems.BEEF_HINDQUARTER_TEST,
+                ModItems.BEEF_ROUND_TEST,
+                ModItems.BEEF_SIRLOIN_TEST,
+                ModItems.BEEF_SHORT_LOIN_TEST,
+                ModItems.BEEF_FLANK_TEST,
+                ModItems.T_BONE_STEAK_TEST,
+                ModItems.PORTERHOUSE_STEAK_TEST,
+                ModItems.BEEF_STRIP_LOIN_TEST,
+                ModItems.BEEF_TENDERLOIN_TEST,
+                ModItems.TOP_ROUND_TEST,
+                ModItems.BOTTOM_ROUND_TEST,
+                ModItems.EYE_OF_ROUND_TEST,
+                ModItems.SIRLOIN_TIP_TEST,
+                ModItems.TOP_SIRLOIN_TEST,
+                ModItems.SIRLOIN_STEAK_TEST,
+                ModItems.TRI_TIP_TEST
         );
     }
 }

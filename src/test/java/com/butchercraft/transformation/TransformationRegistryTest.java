@@ -16,6 +16,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TransformationRegistryTest {
     private static final EngineId GRINDING = EngineId.of("butchercraft:grinding");
     private static final EngineId CUTTING = EngineId.of("butchercraft:cutting");
+    private static final List<String> EXPECTED_BUILT_IN_TRANSFORMATION_IDS = List.of(
+            "butchercraft:grind_beef",
+            "butchercraft:grind_pork",
+            "butchercraft:grind_bison",
+            "butchercraft:break_beef_forequarter",
+            "butchercraft:break_beef_hindquarter",
+            "butchercraft:cut_beef_short_loin",
+            "butchercraft:cut_beef_round",
+            "butchercraft:cut_beef_sirloin"
+    );
 
     @Test
     void builderRegistersDefinitionsIntoImmutableRegistryInInsertionOrder() {
@@ -73,11 +83,10 @@ class TransformationRegistryTest {
     void builtInRegistryContainsExistingGrinderTransformations() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(4, registry.size());
-        assertTrue(registry.contains(TransformationId.of("butchercraft:grind_beef")));
-        assertTrue(registry.contains(TransformationId.of("butchercraft:grind_pork")));
-        assertTrue(registry.contains(TransformationId.of("butchercraft:grind_bison")));
-        assertTrue(registry.contains(TransformationId.of("butchercraft:break_beef_forequarter")));
+        assertEquals(8, registry.size());
+        assertEquals(EXPECTED_BUILT_IN_TRANSFORMATION_IDS, registry.stream()
+                .map(definition -> definition.id().value())
+                .toList());
         assertEquals(List.of(
                         "butchercraft:grind_beef",
                         "butchercraft:grind_pork",
@@ -86,7 +95,13 @@ class TransformationRegistryTest {
                 registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING)
                         .map(definition -> definition.id().value())
                         .toList());
-        assertEquals(List.of("butchercraft:break_beef_forequarter"),
+        assertEquals(List.of(
+                        "butchercraft:break_beef_forequarter",
+                        "butchercraft:break_beef_hindquarter",
+                        "butchercraft:cut_beef_short_loin",
+                        "butchercraft:cut_beef_round",
+                        "butchercraft:cut_beef_sirloin"
+                ),
                 registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW)
                         .map(definition -> definition.id().value())
                         .toList());
@@ -129,6 +144,90 @@ class TransformationRegistryTest {
                 definition.outputs().stream()
                         .map(output -> output.producedAmount().quantity().amount())
                         .toList());
+    }
+
+    @Test
+    void registeredBandsawDefinitionsDefineOrderedHindquarterAndPrimalOutputs() {
+        assertBandsawOutputs(
+                "butchercraft:break_beef_hindquarter",
+                "butchercraft:beef_hindquarter",
+                100_000,
+                List.of(
+                        "butchercraft:beef_round",
+                        "butchercraft:beef_sirloin",
+                        "butchercraft:beef_short_loin",
+                        "butchercraft:beef_flank",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(30_000L, 15_000L, 15_000L, 7_500L, 15_000L, 7_500L, 10_000L)
+        );
+        assertBandsawOutputs(
+                "butchercraft:cut_beef_short_loin",
+                "butchercraft:beef_short_loin",
+                15_000,
+                List.of(
+                        "butchercraft:t_bone_steak",
+                        "butchercraft:porterhouse_steak",
+                        "butchercraft:beef_strip_loin",
+                        "butchercraft:beef_tenderloin",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(4_000L, 3_000L, 3_000L, 2_000L, 1_500L, 1_500L)
+        );
+        assertBandsawOutputs(
+                "butchercraft:cut_beef_round",
+                "butchercraft:beef_round",
+                30_000,
+                List.of(
+                        "butchercraft:top_round",
+                        "butchercraft:bottom_round",
+                        "butchercraft:eye_of_round",
+                        "butchercraft:sirloin_tip",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(7_500L, 6_500L, 3_500L, 5_000L, 4_000L, 1_500L, 2_000L)
+        );
+        assertBandsawOutputs(
+                "butchercraft:cut_beef_sirloin",
+                "butchercraft:beef_sirloin",
+                15_000,
+                List.of(
+                        "butchercraft:top_sirloin",
+                        "butchercraft:sirloin_steak",
+                        "butchercraft:tri_tip",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(5_000L, 3_500L, 2_000L, 2_500L, 1_000L, 1_000L)
+        );
+    }
+
+    private static void assertBandsawOutputs(
+            String transformationId,
+            String inputProduct,
+            long inputQuantity,
+            List<String> outputProducts,
+            List<Long> outputQuantities
+    ) {
+        TransformationDefinition definition = BuiltInTransformationRegistry.builtInRegistry()
+                .find(TransformationId.of(transformationId))
+                .orElseThrow();
+
+        assertEquals(inputProduct, definition.inputs().getFirst().requiredAmount().materialId().value());
+        assertEquals(inputQuantity, definition.inputs().getFirst().requiredAmount().quantity().amount());
+        assertEquals(Optional.of(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW), definition.workstationCapability());
+        assertEquals(outputProducts, definition.outputs().stream()
+                .map(output -> output.producedAmount().materialId().value())
+                .toList());
+        assertEquals(outputQuantities, definition.outputs().stream()
+                .map(output -> output.producedAmount().quantity().amount())
+                .toList());
     }
 
     private static TransformationDefinition definition(

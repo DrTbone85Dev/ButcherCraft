@@ -1,6 +1,6 @@
 # ButcherCraft Multi-Output Transformations
 
-Status: v0.6.9 datapack-backed Bandsaw migration on pure transaction foundation
+Status: v0.7.0 datapack-backed Bandsaw content on pure transaction foundation
 
 ## Purpose
 
@@ -54,7 +54,7 @@ butchercraft:beef_forequarter -> [
 ]
 ```
 
-The live Bandsaw proof now uses the built-in `butchercraft:break_beef_forequarter` transformation definition with the full eight-output forequarter cut list.
+The live Bandsaw proof now uses bundled transformation definitions for forequarter, hindquarter, short-loin, round, and sirloin fabrication. Version 0.7.0 exercises the same atomic multi-output transaction path with output counts from six to eight products.
 
 ## Capacity Failures
 
@@ -75,13 +75,13 @@ One-input/one-output transformations remain valid. Tests prove the built-in `but
 
 The live Grinder workstation behavior is unchanged. It still uses the transformation strategy as a validation bridge and delegates product quality, ItemStack creation, and inventory mutation to the existing workstation processing path.
 
-The live Bandsaw uses the atomic transformation strategy. Its ItemStack inventory is adapted to pure material stores for transaction validation, while the existing workstation controller still owns progress, save/load, output ItemStack creation, and final slot insertion.
+The live Bandsaw uses the atomic transformation strategy. Its ItemStack inventory is adapted to pure material stores for transaction validation, while the existing workstation controller still owns progress, save/load, output ItemStack creation, and final slot insertion. The v0.7.0 beef fabrication chain adds more content to this path without changing the transaction model.
 
 ## Out Of Scope
 
-Version 0.6.9 does not add:
+Version 0.7.0 does not add:
 
-- Expanded transformation datapack catalogs beyond the current Grinder and Bandsaw proof resources.
+- Full transformation datapack catalogs beyond the bounded v0.7.0 beef proof resources.
 - Direct Minecraft inventory mutation from the pure transformation package.
 - General ItemStack conversion.
 - General product-to-item mapping.
@@ -94,5 +94,5 @@ After the Bandsaw proof migration, the project still needs:
 
 - Reload-scoped validation that transformation ids match processing-operation ids where compatibility is required.
 - A real product item factory to replace the development fixture mapping.
-- Full carcass and primal fabrication catalogs beyond the single beef forequarter proof.
+- Full carcass and primal fabrication catalogs beyond the bounded beef proof chain.
 - GameTest or manual in-game verification coverage for the live Bandsaw path before public gameplay reliance.

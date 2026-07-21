@@ -65,7 +65,7 @@ Rejected examples include:
 - Unsupported quantity units.
 - Quality scores below `0` or above `1000`.
 
-Processing state ids are open engine identifiers so datapack definitions can introduce states such as `butchercraft:forequarter`, `butchercraft:primal`, `butchercraft:fat`, and `butchercraft:bone` without changing an engine enum.
+Processing state ids are open engine identifiers so datapack definitions can introduce states such as `butchercraft:forequarter`, `butchercraft:hindquarter`, `butchercraft:primal`, `butchercraft:subprimal`, `butchercraft:steak`, `butchercraft:fat`, and `butchercraft:bone` without changing an engine enum.
 
 ## StreamCodec Strategy
 
@@ -97,7 +97,7 @@ Future stackability may be revisited only after the project defines precise rule
 
 ## Creative-Tab Fixtures
 
-Fourteen development-only product fixtures are registered:
+Thirty development-only product fixtures are registered:
 
 - `butchercraft:beef_trim_test`
 - `butchercraft:ground_beef_test`
@@ -113,6 +113,22 @@ Fourteen development-only product fixtures are registered:
 - `butchercraft:beef_shank_test`
 - `butchercraft:beef_fat_test`
 - `butchercraft:beef_bone_test`
+- `butchercraft:beef_hindquarter_test`
+- `butchercraft:beef_round_test`
+- `butchercraft:beef_sirloin_test`
+- `butchercraft:beef_short_loin_test`
+- `butchercraft:beef_flank_test`
+- `butchercraft:t_bone_steak_test`
+- `butchercraft:porterhouse_steak_test`
+- `butchercraft:beef_strip_loin_test`
+- `butchercraft:beef_tenderloin_test`
+- `butchercraft:top_round_test`
+- `butchercraft:bottom_round_test`
+- `butchercraft:eye_of_round_test`
+- `butchercraft:sirloin_tip_test`
+- `butchercraft:top_sirloin_test`
+- `butchercraft:sirloin_steak_test`
+- `butchercraft:tri_tip_test`
 
 They appear in the ButcherCraft creative tab and receive default product data from `ProductTestItem.getDefaultInstance()`.
 
@@ -127,13 +143,29 @@ Default values are test fixtures, not final balance:
 | Bison Trim Test Product | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Bison Test Product | `butchercraft:ground_bison` | `butchercraft:bison` | `butchercraft:ground` | `900 gram` | `700` |
 | Beef Forequarter Test Product | `butchercraft:beef_forequarter` | `butchercraft:beef` | `butchercraft:forequarter` | `100000 gram` | `700` |
-| Beef Chuck Test Product | `butchercraft:beef_chuck` | `butchercraft:beef` | `butchercraft:primal` | `30000 gram` | `700` |
-| Beef Rib Test Product | `butchercraft:beef_rib` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
-| Packer Brisket Test Product | `butchercraft:beef_packer_brisket` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
-| Beef Plate Test Product | `butchercraft:beef_plate` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `700` |
-| Beef Shank Test Product | `butchercraft:beef_shank` | `butchercraft:beef` | `butchercraft:primal` | `5000 gram` | `700` |
-| Beef Fat Test Product | `butchercraft:beef_fat` | `butchercraft:beef` | `butchercraft:fat` | `5000 gram` | `700` |
-| Beef Bone Test Product | `butchercraft:beef_bone` | `butchercraft:beef` | `butchercraft:bone` | `10000 gram` | `700` |
+| Beef Chuck Test Product | `butchercraft:beef_chuck` | `butchercraft:beef` | `butchercraft:primal` | `30000 gram` | `695` |
+| Beef Rib Test Product | `butchercraft:beef_rib` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `695` |
+| Packer Brisket Test Product | `butchercraft:beef_packer_brisket` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `695` |
+| Beef Plate Test Product | `butchercraft:beef_plate` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `695` |
+| Beef Shank Test Product | `butchercraft:beef_shank` | `butchercraft:beef` | `butchercraft:primal` | `5000 gram` | `695` |
+| Beef Fat Test Product | `butchercraft:beef_fat` | `butchercraft:beef` | `butchercraft:fat` | `5000 gram` | `695` |
+| Beef Bone Test Product | `butchercraft:beef_bone` | `butchercraft:beef` | `butchercraft:bone` | `10000 gram` | `695` |
+| Beef Hindquarter Test Product | `butchercraft:beef_hindquarter` | `butchercraft:beef` | `butchercraft:hindquarter` | `100000 gram` | `700` |
+| Beef Round Test Product | `butchercraft:beef_round` | `butchercraft:beef` | `butchercraft:primal` | `30000 gram` | `695` |
+| Beef Sirloin Test Product | `butchercraft:beef_sirloin` | `butchercraft:beef` | `butchercraft:primal` | `15000 gram` | `695` |
+| Beef Short Loin Test Product | `butchercraft:beef_short_loin` | `butchercraft:beef` | `butchercraft:primal` | `15000 gram` | `695` |
+| Beef Flank Test Product | `butchercraft:beef_flank` | `butchercraft:beef` | `butchercraft:primal` | `7500 gram` | `695` |
+| T-Bone Steak Test Product | `butchercraft:t_bone_steak` | `butchercraft:beef` | `butchercraft:steak` | `4000 gram` | `695` |
+| Porterhouse Steak Test Product | `butchercraft:porterhouse_steak` | `butchercraft:beef` | `butchercraft:steak` | `3000 gram` | `695` |
+| Beef Strip Loin Test Product | `butchercraft:beef_strip_loin` | `butchercraft:beef` | `butchercraft:subprimal` | `3000 gram` | `695` |
+| Beef Tenderloin Test Product | `butchercraft:beef_tenderloin` | `butchercraft:beef` | `butchercraft:subprimal` | `2000 gram` | `695` |
+| Top Round Test Product | `butchercraft:top_round` | `butchercraft:beef` | `butchercraft:subprimal` | `7500 gram` | `695` |
+| Bottom Round Test Product | `butchercraft:bottom_round` | `butchercraft:beef` | `butchercraft:subprimal` | `6500 gram` | `695` |
+| Eye of Round Test Product | `butchercraft:eye_of_round` | `butchercraft:beef` | `butchercraft:subprimal` | `3500 gram` | `695` |
+| Sirloin Tip Test Product | `butchercraft:sirloin_tip` | `butchercraft:beef` | `butchercraft:subprimal` | `5000 gram` | `695` |
+| Top Sirloin Test Product | `butchercraft:top_sirloin` | `butchercraft:beef` | `butchercraft:subprimal` | `5000 gram` | `695` |
+| Sirloin Steak Test Product | `butchercraft:sirloin_steak` | `butchercraft:beef` | `butchercraft:steak` | `3500 gram` | `695` |
+| Tri-Tip Test Product | `butchercraft:tri_tip` | `butchercraft:beef` | `butchercraft:subprimal` | `2000 gram` | `695` |
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
@@ -205,4 +237,4 @@ Milestone 2A adds `ProductStackDefinitionValidator`, which compares immutable `P
 
 Milestone 2B adds station processing around existing product stacks but does not expand `ProductStackData`. Workstation progress, selected operation, failure state, and reserved input snapshots belong to the block entity/controller boundary, not to item components.
 
-Milestone 2E keeps the same component shape while allowing data-driven processing state ids beyond the original trim and ground states. Multi-output workstation results create separate product-bearing stacks; output order and quantity come from processing definitions and the engine transaction, not from `ProductStackData`.
+Milestone 2E keeps the same component shape while allowing data-driven processing state ids beyond the original trim and ground states. Version 0.7.0 adds more product fixture defaults but still does not expand the component schema. Multi-output workstation results create separate product-bearing stacks; output order and quantity come from processing definitions and the engine transaction, not from `ProductStackData`.

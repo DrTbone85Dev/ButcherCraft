@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:beef_hindquarter",
+  "display_name": "Beef Hindquarter",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/hindquarter"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

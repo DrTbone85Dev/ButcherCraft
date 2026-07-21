@@ -65,6 +65,60 @@ class BandsawProcessingControllerTest {
     }
 
     @Test
+    void completionProducesBeefHindquarterAndPrimalOutputsInOrder() {
+        assertCompletesWithOutputs(
+                ModItems.BEEF_HINDQUARTER_TEST.get().getDefaultInstance(),
+                List.of(
+                        "butchercraft:beef_round",
+                        "butchercraft:beef_sirloin",
+                        "butchercraft:beef_short_loin",
+                        "butchercraft:beef_flank",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(30_000L, 15_000L, 15_000L, 7_500L, 15_000L, 7_500L, 10_000L)
+        );
+        assertCompletesWithOutputs(
+                ModItems.BEEF_SHORT_LOIN_TEST.get().getDefaultInstance(),
+                List.of(
+                        "butchercraft:t_bone_steak",
+                        "butchercraft:porterhouse_steak",
+                        "butchercraft:beef_strip_loin",
+                        "butchercraft:beef_tenderloin",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(4_000L, 3_000L, 3_000L, 2_000L, 1_500L, 1_500L)
+        );
+        assertCompletesWithOutputs(
+                ModItems.BEEF_ROUND_TEST.get().getDefaultInstance(),
+                List.of(
+                        "butchercraft:top_round",
+                        "butchercraft:bottom_round",
+                        "butchercraft:eye_of_round",
+                        "butchercraft:sirloin_tip",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(7_500L, 6_500L, 3_500L, 5_000L, 4_000L, 1_500L, 2_000L)
+        );
+        assertCompletesWithOutputs(
+                ModItems.BEEF_SIRLOIN_TEST.get().getDefaultInstance(),
+                List.of(
+                        "butchercraft:top_sirloin",
+                        "butchercraft:sirloin_steak",
+                        "butchercraft:tri_tip",
+                        "butchercraft:beef_trim",
+                        "butchercraft:beef_fat",
+                        "butchercraft:beef_bone"
+                ),
+                List.of(5_000L, 3_500L, 2_000L, 2_500L, 1_000L, 1_000L)
+        );
+    }
+
+    @Test
     void outputObstructionBlocksMultiOutputCompletionWithoutConsumingInput() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
@@ -185,5 +239,31 @@ class BandsawProcessingControllerTest {
         void tick() {
             controller.serverTick(null);
         }
+    }
+
+    private static void assertCompletesWithOutputs(
+            ItemStack input,
+            List<String> expectedProducts,
+            List<Long> expectedQuantities
+    ) {
+        Harness harness = Harness.create();
+        harness.inventory.setInputInternal(input);
+        harness.tick();
+        for (int i = 0; i < 120; i++) {
+            harness.tick();
+        }
+
+        assertEquals(WorkstationState.COMPLETE, harness.controller.state());
+        assertTrue(harness.inventory.input().isEmpty());
+        assertEquals(expectedProducts, harness.inventory.outputs().stream()
+                .filter(stack -> !stack.isEmpty())
+                .map(ProductStackAdapter::readProductData)
+                .map(result -> result.orThrow().productTypeId())
+                .toList());
+        assertEquals(expectedQuantities, harness.inventory.outputs().stream()
+                .filter(stack -> !stack.isEmpty())
+                .map(ProductStackAdapter::readProductData)
+                .map(result -> result.orThrow().quantityValue())
+                .toList());
     }
 }

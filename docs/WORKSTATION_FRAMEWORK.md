@@ -1,10 +1,10 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, with v0.6.9 datapack-backed content snapshots
+Status: Milestones 2B through 2E workstation framework, with v0.7.0 datapack-backed beef fabrication content
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior.
 
 This is not final artwork, not a player recipe-selection system, and not a complete product item factory.
 
@@ -144,6 +144,22 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:beef_shank` -> `butchercraft:beef_shank_test`
 - `butchercraft:beef_fat` -> `butchercraft:beef_fat_test`
 - `butchercraft:beef_bone` -> `butchercraft:beef_bone_test`
+- `butchercraft:beef_hindquarter` -> `butchercraft:beef_hindquarter_test`
+- `butchercraft:beef_round` -> `butchercraft:beef_round_test`
+- `butchercraft:beef_sirloin` -> `butchercraft:beef_sirloin_test`
+- `butchercraft:beef_short_loin` -> `butchercraft:beef_short_loin_test`
+- `butchercraft:beef_flank` -> `butchercraft:beef_flank_test`
+- `butchercraft:t_bone_steak` -> `butchercraft:t_bone_steak_test`
+- `butchercraft:porterhouse_steak` -> `butchercraft:porterhouse_steak_test`
+- `butchercraft:beef_strip_loin` -> `butchercraft:beef_strip_loin_test`
+- `butchercraft:beef_tenderloin` -> `butchercraft:beef_tenderloin_test`
+- `butchercraft:top_round` -> `butchercraft:top_round_test`
+- `butchercraft:bottom_round` -> `butchercraft:bottom_round_test`
+- `butchercraft:eye_of_round` -> `butchercraft:eye_of_round_test`
+- `butchercraft:sirloin_tip` -> `butchercraft:sirloin_tip_test`
+- `butchercraft:top_sirloin` -> `butchercraft:top_sirloin_test`
+- `butchercraft:sirloin_steak` -> `butchercraft:sirloin_steak_test`
+- `butchercraft:tri_tip` -> `butchercraft:tri_tip_test`
 
 This mapping is built from registered development fixture items and their default product data. It is not a universal item factory. Future product item creation needs a deliberate data-driven design.
 

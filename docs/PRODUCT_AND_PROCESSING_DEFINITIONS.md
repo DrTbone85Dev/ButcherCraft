@@ -34,6 +34,7 @@ src/generated/resources/data/butchercraft/butchercraft/product/beef_trim.json
 src/generated/resources/data/butchercraft/butchercraft/product/ground_beef.json
 src/generated/resources/data/butchercraft/butchercraft/processing_operation/grind_beef.json
 src/generated/resources/data/butchercraft/butchercraft/processing_operation/break_beef_forequarter.json
+src/generated/resources/data/butchercraft/butchercraft/processing_operation/break_beef_hindquarter.json
 ```
 
 ## Definition Models
@@ -109,7 +110,7 @@ Prototype balance values:
 
 These values prove the data and graph model. They are not final balance.
 
-The prototype dataset also contains one red-meat fabrication flow for the Bandsaw:
+The prototype dataset also contains red-meat fabrication flows for the Bandsaw:
 
 ```text
 butchercraft:beef_forequarter --butchercraft:break_beef_forequarter--> [
@@ -118,6 +119,48 @@ butchercraft:beef_forequarter --butchercraft:break_beef_forequarter--> [
   butchercraft:beef_packer_brisket,
   butchercraft:beef_plate,
   butchercraft:beef_shank,
+  butchercraft:beef_trim,
+  butchercraft:beef_fat,
+  butchercraft:beef_bone
+]
+```
+
+Version 0.7.0 adds follow-on beef fabrication flows:
+
+```text
+butchercraft:beef_hindquarter --butchercraft:break_beef_hindquarter--> [
+  butchercraft:beef_round,
+  butchercraft:beef_sirloin,
+  butchercraft:beef_short_loin,
+  butchercraft:beef_flank,
+  butchercraft:beef_trim,
+  butchercraft:beef_fat,
+  butchercraft:beef_bone
+]
+
+butchercraft:beef_short_loin --butchercraft:cut_beef_short_loin--> [
+  butchercraft:t_bone_steak,
+  butchercraft:porterhouse_steak,
+  butchercraft:beef_strip_loin,
+  butchercraft:beef_tenderloin,
+  butchercraft:beef_trim,
+  butchercraft:beef_bone
+]
+
+butchercraft:beef_round --butchercraft:cut_beef_round--> [
+  butchercraft:top_round,
+  butchercraft:bottom_round,
+  butchercraft:eye_of_round,
+  butchercraft:sirloin_tip,
+  butchercraft:beef_trim,
+  butchercraft:beef_fat,
+  butchercraft:beef_bone
+]
+
+butchercraft:beef_sirloin --butchercraft:cut_beef_sirloin--> [
+  butchercraft:top_sirloin,
+  butchercraft:sirloin_steak,
+  butchercraft:tri_tip,
   butchercraft:beef_trim,
   butchercraft:beef_fat,
   butchercraft:beef_bone
@@ -136,7 +179,7 @@ Prototype balance values:
 
 Multi-output allocation uses integer arithmetic and deterministic largest-remainder rounding. Ties are resolved by output order.
 
-Milestones 2B through 2E consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific branches; they supply only their workstation capabilities.
+Milestones 2B through 2E and version 0.7.0 consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific or cut-specific branches; they supply only their workstation capabilities.
 
 ## Canonical Butcher-Cut Terminology
 

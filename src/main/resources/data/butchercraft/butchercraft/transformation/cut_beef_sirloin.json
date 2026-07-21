@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:cut_beef_sirloin",
+  "display_name": "Cut Beef Sirloin",
+  "required_capability": "butchercraft:bandsaw",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_sirloin",
+      "quantity": 15000,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:top_sirloin",
+      "quantity": 5000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:sirloin_steak",
+      "quantity": 3500,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:tri_tip",
+      "quantity": 2000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 2500,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_fat",
+      "quantity": 1000,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_bone",
+      "quantity": 1000,
+      "unit": "gram",
+      "classification": "waste"
+    }
+  ],
+  "duration": {
+    "milliseconds": 6000
+  },
+  "yield": {
+    "numerator": 1,
+    "denominator": 1
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

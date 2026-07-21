@@ -40,6 +40,47 @@ class ProcessingGraphTest {
                         BuiltInDefinitionIds.BEEF_TRIM
                 ),
                 graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_FOREQUARTER));
+        assertEquals(List.of(BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER), graph.operationsAvailableFor(BuiltInDefinitionIds.BEEF_HINDQUARTER).stream()
+                .map(ProcessingGraphEdge::operationId)
+                .toList());
+        assertEquals(List.of(
+                        BuiltInDefinitionIds.BEEF_BONE,
+                        BuiltInDefinitionIds.BEEF_FAT,
+                        BuiltInDefinitionIds.BEEF_FLANK,
+                        BuiltInDefinitionIds.BEEF_ROUND,
+                        BuiltInDefinitionIds.BEEF_SHORT_LOIN,
+                        BuiltInDefinitionIds.BEEF_SIRLOIN,
+                        BuiltInDefinitionIds.BEEF_TRIM
+                ),
+                graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_HINDQUARTER));
+        assertEquals(List.of(
+                        BuiltInDefinitionIds.BEEF_BONE,
+                        BuiltInDefinitionIds.BEEF_STRIP_LOIN,
+                        BuiltInDefinitionIds.BEEF_TENDERLOIN,
+                        BuiltInDefinitionIds.BEEF_TRIM,
+                        BuiltInDefinitionIds.PORTERHOUSE_STEAK,
+                        BuiltInDefinitionIds.T_BONE_STEAK
+                ),
+                graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_SHORT_LOIN));
+        assertEquals(List.of(
+                        BuiltInDefinitionIds.BEEF_BONE,
+                        BuiltInDefinitionIds.BEEF_FAT,
+                        BuiltInDefinitionIds.BEEF_TRIM,
+                        BuiltInDefinitionIds.BOTTOM_ROUND,
+                        BuiltInDefinitionIds.EYE_OF_ROUND,
+                        BuiltInDefinitionIds.SIRLOIN_TIP,
+                        BuiltInDefinitionIds.TOP_ROUND
+                ),
+                graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_ROUND));
+        assertEquals(List.of(
+                        BuiltInDefinitionIds.BEEF_BONE,
+                        BuiltInDefinitionIds.BEEF_FAT,
+                        BuiltInDefinitionIds.BEEF_TRIM,
+                        BuiltInDefinitionIds.SIRLOIN_STEAK,
+                        BuiltInDefinitionIds.TOP_SIRLOIN,
+                        BuiltInDefinitionIds.TRI_TIP
+                ),
+                graph.outputsReachableThroughOneOperation(BuiltInDefinitionIds.BEEF_SIRLOIN));
     }
 
     @Test

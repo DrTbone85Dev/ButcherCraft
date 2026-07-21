@@ -1,11 +1,27 @@
 # Changelog
 
+## ButcherCraft v0.7.0 - Beef Fabrication Expansion
+
+### Core
+
+- Expanded the bundled beef fabrication catalog with 16 datapack-backed product definitions.
+- Added four Bandsaw transformations for hindquarter, short loin, round, and sirloin fabrication.
+- Added matching processing-operation definitions so the existing resolver and processing graph can discover the new flows.
+- Added development fixture items, item models, language entries, creative-tab entries, and temporary product-to-item mappings for the new products.
+
+### Stability
+
+- Preserved the existing Grinder and Bandsaw execution architecture.
+- Kept product and cut ids out of Bandsaw and generic workstation machine logic.
+- Kept content snapshot product JSON separate from the Minecraft product registry path to avoid schema collisions during world creation.
+- Added regression coverage for datapack loading, content snapshots, processing graph edges, Bandsaw resolution, ItemStack mapping, and ordered runtime outputs.
+
 ## ButcherCraft v0.6.9 - Datapack Product Loading
 
 ### Core
 
 - Added a stable serialized product-definition schema and canonical serializer/deserializer.
-- Added datapack JSON loading for product definitions under `data/<namespace>/butchercraft/product`.
+- Added datapack JSON loading for product definitions under `data/<namespace>/butchercraft/content/product`.
 - Moved the current Grinder and Bandsaw proof product definitions into bundled datapack resources.
 - Added atomic content snapshot activation so product and transformation registries reload together.
 

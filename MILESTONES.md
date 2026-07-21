@@ -4,6 +4,49 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.7.0: Beef Fabrication Expansion
+
+Goal: add the first substantial multi-stage beef fabrication content chain using the existing datapack product, transformation, processing-definition, workstation, and atomic transaction architecture.
+
+Included work:
+
+- Sixteen additional bundled product definitions for Beef Hindquarter, Beef Round, Beef Sirloin, Beef Short Loin, Beef Flank, T-Bone Steak, Porterhouse Steak, Beef Strip Loin, Beef Tenderloin, Top Round, Bottom Round, Eye of Round, Sirloin Tip, Top Sirloin, Sirloin Steak, and Tri-Tip.
+- Four bundled Bandsaw transformation definitions: `break_beef_hindquarter`, `cut_beef_short_loin`, `cut_beef_round`, and `cut_beef_sirloin`.
+- Matching processing-operation definitions so the existing operation resolver can discover the new flows through `butchercraft:bandsaw`.
+- Development fixture items, language entries, generated placeholder item models, creative-tab entries, and controlled product-to-item mappings for the new products.
+- Regression tests for product loading, transformation loading, atomic content snapshots, graph edges, resolver behavior, runtime output order and quantities, and fixture item mappings.
+- Documentation in `docs/BEEF_FABRICATION_EXPANSION.md`.
+
+Excluded work:
+
+- Transformation engine, registry, transaction, reload, workstation, menu, or screen redesign.
+- Datapack-driven Minecraft item registration or a general product item factory.
+- Full carcass fabrication, recipe-selection UI, dynamic cut catalogs, spoilage, quality expansion, packaging states, storage rules, employees, commerce, or MCDA behavior.
+- Migration of smoker, packaging, cooler, or any other workstation.
+
+Acceptance criteria:
+
+- Product and transformation datapack resources load in deterministic order.
+- The active content snapshot validates all new transformation product references against the product registry.
+- The Bandsaw can resolve and complete the new beef fabrication operations through the existing capability-based path.
+- Output ItemStacks are inserted in transformation order and preserve exact product ids, states, quantities, and no-duplication behavior.
+- Grinder behavior and the existing forequarter Bandsaw proof remain compatible.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Recommended before upload: place the Bandsaw, process Beef Hindquarter, Beef Short Loin, Beef Round, and Beef Sirloin test products, then confirm ordered outputs and no partial-output behavior when slots are obstructed.
+
+Rollback considerations:
+
+- The v0.7.0 content is additive. Removing the new product and transformation resources, fixture items, and mappings should restore the v0.6.9 proof catalog without changing workstation machine behavior.
+
 ## Milestone 0.6.9: Datapack Product Loading And Content Snapshots
 
 Goal: load product definitions from datapack JSON and activate product and transformation registries as one validated content snapshot.
@@ -11,7 +54,7 @@ Goal: load product definitions from datapack JSON and activate product and trans
 Included work:
 
 - Stable serialized product-definition schema with canonical serializer and deserializer contracts.
-- Product JSON parser for `data/<namespace>/butchercraft/product/*.json`.
+- Product JSON parser for `data/<namespace>/butchercraft/content/product/*.json`.
 - Immutable candidate `ProductRegistry` assembly from product datapack content.
 - Product validation for duplicate ids, missing ids or display names, unsupported schema versions, unknown categories, unknown units, malformed tags, malformed metadata, and malformed JSON.
 - Candidate transformation loading after product loading succeeds.
