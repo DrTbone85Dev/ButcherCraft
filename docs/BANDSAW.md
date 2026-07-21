@@ -1,12 +1,12 @@
 # ButcherCraft Bandsaw
 
-Status: Milestone 2E industrial machine and multi-output fabrication proof
+Status: Milestone 2E industrial machine proof with v0.6.7 atomic transformation execution
 
 ## Purpose
 
 The Bandsaw is the first permanent fabrication machine built on the generic workstation framework. It proves that one input operation can create an ordered collection of output products without putting product, species, or cut-list logic into machine behavior.
 
-The Bandsaw supplies only the `butchercraft:bandsaw` workstation capability. Product choice, output order, yield, quality adjustment, and compatibility still come from datapack-backed product, species, processing-profile, and processing-operation definitions.
+The Bandsaw supplies only the `butchercraft:bandsaw` workstation capability. Product choice, output order, yield, quality adjustment, and compatibility still come from definitions rather than Bandsaw code. Operation selection continues to come from datapack-backed product, species, processing-profile, and processing-operation definitions. Completion is additionally validated against the built-in transformation registry entry for the resolved operation id.
 
 ## Structure
 
@@ -55,12 +55,13 @@ The ratios intentionally sum to 95%, leaving 5% process loss. Rounding is determ
 - `BandsawBlock`, `BandsawBlockEntity`, `BandsawMenu`, and `BandsawScreen` must stay free of beef-specific output logic.
 - `BandsawUpperBlock` only manages the upper-half forwarding and paired-block lifecycle.
 - `WorkstationOperationResolver`, `ProcessingGraph`, and loaded definitions choose the operation.
-- `WorkstationProcessingController` commits the engine transaction once and fills the ordered output slots.
+- `WorkstationProcessingController` validates completion through the atomic transformation strategy, commits the engine transaction once, and fills the ordered output slots.
+- `WorkstationInventoryMaterialStore` adapts ItemStack input and output slots into pure material stores for transaction validation.
 - Product output items still use the temporary development fixture mapping until a real product item factory exists.
 
 ## Verification Notes
 
-Automated tests cover registration, paired-block placement and removal behavior, upper-half forwarding, resolver compatibility, ordered output quantities, output-slot filling, generated assets, and definition JSON.
+Automated tests cover registration, paired-block placement and removal behavior, upper-half forwarding, resolver compatibility, ordered output quantities, output-slot filling, generated assets, definition JSON, missing transformation definitions, missing output item mappings, and inventory material-store bridge capacity checks.
 
 Manual verification should place the Bandsaw, confirm the upper half is placed and removed with it, insert Beef Forequarter Test Product, and confirm the eight ordered outputs, including Packer Brisket, appear after processing.
 

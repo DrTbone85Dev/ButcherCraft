@@ -434,7 +434,7 @@ Milestone 2D extends built-in generated definitions with pork and bison red-meat
 
 Milestone 2E extends operation definitions and the pure engine from one output to ordered output collections. It adds generated definitions and placeholder assets for the two-block Bandsaw and the Beef Forequarter fabrication proof.
 
-Version 0.6.1 adds a strategy bridge between the workstation framework and the pure transformation engine. The Grinder uses transformation execution after operation resolution and before legacy transaction commit. Bandsaw and other workstations remain on the legacy execution strategy until they are deliberately migrated.
+Version 0.6.1 adds a strategy bridge between the workstation framework and the pure transformation engine. The Grinder uses transformation execution after operation resolution and before legacy transaction commit. At that point, the Bandsaw and other workstations remained on the legacy execution strategy until deliberate migration.
 
 Version 0.6.2 adds an immutable pure Java transformation registry. The Grinder transformation strategy looks up the resolved operation id in that registry before evaluation and execution. Built-in Grinder transformations are registered in Java until datapack transformation loading is deliberately added.
 
@@ -444,7 +444,9 @@ Version 0.6.4 adds `com.butchercraft.product.definition` as a pure Java product 
 
 Version 0.6.5 adds `com.butchercraft.transformation.serialization` as a pure Java transformation serialization contract. It freezes stable external field names for the canonical `TransformationDefinition` schema, supports full field round trips through canonical serialized records, introduces explicit schema-version handling, and leaves datapack loading, resource reload listeners, JSON discovery, and implemented migrations to a later milestone.
 
-Version 0.6.6 adds pure Java atomic multi-output transformation transactions. `TransformationMaterialStore` models bounded material quantities, `TransformationTransaction` stages and validates all input extraction and ordered output insertion before commit, and snapshot rollback prevents partial material changes if a commit-time insertion fails. This remains separate from Minecraft inventories and does not migrate the Bandsaw.
+Version 0.6.6 adds pure Java atomic multi-output transformation transactions. `TransformationMaterialStore` models bounded material quantities, `TransformationTransaction` stages and validates all input extraction and ordered output insertion before commit, and snapshot rollback prevents partial material changes if a commit-time insertion fails.
+
+Version 0.6.7 migrates only the Bandsaw to the atomic transformation execution strategy. The Bandsaw still resolves operations through the existing processing graph, but the resolved operation id must exist in the immutable transformation registry and pass transaction validation through Minecraft-facing material-store adapters before the controller creates output ItemStacks. Grinder behavior remains on its existing transformation strategy, and un-migrated workstations remain on the legacy strategy.
 
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 

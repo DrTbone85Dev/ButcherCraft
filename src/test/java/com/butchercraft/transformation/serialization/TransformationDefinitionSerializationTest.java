@@ -102,10 +102,10 @@ class TransformationDefinitionSerializationTest {
     }
 
     @Test
-    void builtInGrinderTransformationsRoundTripThroughCanonicalSerialization() {
+    void builtInTransformationsRoundTripThroughCanonicalSerialization() {
         List<TransformationDefinition> definitions = BuiltInTransformationRegistry.builtInRegistry().stream().toList();
 
-        assertEquals(3, definitions.size());
+        assertEquals(4, definitions.size());
         assertEquals(definitions, definitions.stream()
                 .map(SERIALIZER::serialize)
                 .map(DESERIALIZER::deserialize)

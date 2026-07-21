@@ -33,12 +33,12 @@ class GrinderInteractionTest {
     }
 
     @Test
-    void onlyGrinderBlockEntityOptsIntoTransformationExecutionForNow() throws IOException {
+    void grinderAndBandsawOptIntoSeparateTransformationExecutionStrategies() throws IOException {
         String grinderSource = source("src/main/java/com/butchercraft/machine/grinder/GrinderBlockEntity.java");
         String bandsawSource = source("src/main/java/com/butchercraft/machine/bandsaw/BandsawBlockEntity.java");
 
         assertTrue(grinderSource.contains("WorkstationExecutionStrategy.transformation()"));
-        assertTrue(!bandsawSource.contains("WorkstationExecutionStrategy.transformation()"));
+        assertTrue(bandsawSource.contains("WorkstationExecutionStrategy.atomicTransformation()"));
     }
 
     @Test

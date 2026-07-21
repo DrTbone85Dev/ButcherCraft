@@ -1,6 +1,6 @@
 # ButcherCraft Product Definition System
 
-Status: v0.6.4 pure Java foundation
+Status: v0.6.7 pure Java foundation with current Grinder and Bandsaw proof products
 
 ## Purpose
 
@@ -49,9 +49,9 @@ Metadata follows the same philosophy as transformation metadata: typed keys, sim
 
 Registration and query streams preserve insertion order. Duplicate product ids are rejected during building.
 
-## Built-In Grinder Products
+## Built-In Products
 
-Version 0.6.4 registers only the products currently used by the Grinder transformation proof:
+Version 0.6.4 registers the products used by the Grinder transformation proof:
 
 ```text
 butchercraft:beef_trim
@@ -62,7 +62,20 @@ butchercraft:bison_trim
 butchercraft:ground_bison
 ```
 
-All use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag.
+Version 0.6.7 adds the minimum current Bandsaw proof products:
+
+```text
+butchercraft:beef_forequarter
+butchercraft:beef_chuck
+butchercraft:beef_rib
+butchercraft:beef_packer_brisket
+butchercraft:beef_plate
+butchercraft:beef_shank
+butchercraft:beef_fat
+butchercraft:beef_bone
+```
+
+All use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
 
 ## Transformation Validation
 
