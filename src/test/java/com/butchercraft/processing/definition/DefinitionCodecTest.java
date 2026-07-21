@@ -23,14 +23,21 @@ class DefinitionCodecTest {
     @Test
     void productDefinitionRoundTrips() {
         assertRoundTrip(ProductDefinition.CODEC, BuiltInProcessingDefinitions.beefTrimProduct());
+        assertRoundTrip(ProductDefinition.CODEC, BuiltInProcessingDefinitions.retailGroundBeefProduct());
+        assertEquals(BuiltInDefinitionIds.RETAIL_PACKAGE,
+                BuiltInProcessingDefinitions.retailGroundBeefProduct().packaging().orElseThrow().definition());
+        assertEquals(BuiltInDefinitionIds.GROUND_BEEF,
+                BuiltInProcessingDefinitions.retailGroundBeefProduct().packaging().orElseThrow().sourceProduct());
     }
 
     @Test
     void operationDefinitionRoundTrips() {
         assertRoundTrip(ProcessingOperationDefinition.CODEC, BuiltInProcessingDefinitions.grindBeefOperation());
         assertRoundTrip(ProcessingOperationDefinition.CODEC, BuiltInProcessingDefinitions.breakBeefForequarterOperation());
+        assertRoundTrip(ProcessingOperationDefinition.CODEC, BuiltInProcessingDefinitions.packageRetailOperation());
         assertEquals(1, BuiltInProcessingDefinitions.grindBeefOperation().outputs().size());
         assertEquals(8, BuiltInProcessingDefinitions.breakBeefForequarterOperation().outputs().size());
+        assertEquals(1, BuiltInProcessingDefinitions.packageRetailOperation().outputs().size());
     }
 
     @Test

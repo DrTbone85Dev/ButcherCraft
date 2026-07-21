@@ -7,7 +7,7 @@ import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationCapability;
-import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
+import com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlockEntity;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -69,7 +69,7 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
             MenuType<?> menuType,
             int containerId,
             Inventory playerInventory,
-            AbstractProcessingWorkstationBlockEntity blockEntity,
+            AbstractInventoryWorkstationBlockEntity blockEntity,
             Block validBlock
     ) {
         this(menuType, containerId, playerInventory, blockEntity.inventory(), blockEntity.menuData(), ContainerLevelAccess.create(
@@ -97,12 +97,13 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
         this.playerInventoryEnd = playerInventoryStart + 27;
         this.hotbarEnd = playerInventoryEnd + 9;
 
-        addSlot(new SlotItemHandler(inventory, inventory.firstInputSlot(), 26, 35));
+        for (int inputIndex = 0; inputIndex < inventory.inputSlotCount(); inputIndex++) {
+            int slot = inventory.firstInputSlot() + inputIndex;
+            addSlot(new SlotItemHandler(inventory, slot, workstationSlotX(slot), workstationSlotY(slot)));
+        }
         for (int outputIndex = 0; outputIndex < inventory.outputSlotCount(); outputIndex++) {
-            int column = outputIndex % 4;
-            int row = outputIndex / 4;
             int slot = inventory.firstOutputSlot() + outputIndex;
-            addSlot(new OutputSlot(inventory, slot, 86 + column * 18, 26 + row * 18));
+            addSlot(new OutputSlot(inventory, slot, workstationSlotX(slot), workstationSlotY(slot)));
         }
         addPlayerInventory(playerInventory);
         addDataSlots(data);
@@ -118,6 +119,43 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
 
     public int outputSlotCount() {
         return inventory.outputSlotCount();
+    }
+
+    public int inputSlotCount() {
+        return inventory.inputSlotCount();
+    }
+
+    public int firstOutputSlot() {
+        return inventory.firstOutputSlot();
+    }
+
+    public int workstationSlotX(int slot) {
+        if (inventory.inputSlotCount() == 3 && inventory.outputSlotCount() == 1) {
+            if (inventory.isInputSlot(slot)) {
+                return 32 + slot * 30;
+            }
+            return 62;
+        }
+        if (inventory.isInputSlot(slot)) {
+            return 26;
+        }
+
+        int outputIndex = slot - inventory.firstOutputSlot();
+        int column = outputIndex % 4;
+        return 86 + column * 18;
+    }
+
+    public int workstationSlotY(int slot) {
+        if (inventory.inputSlotCount() == 3 && inventory.outputSlotCount() == 1) {
+            return inventory.isInputSlot(slot) ? 25 : 55;
+        }
+        if (inventory.isInputSlot(slot)) {
+            return 35;
+        }
+
+        int outputIndex = slot - inventory.firstOutputSlot();
+        int row = outputIndex / 4;
+        return 26 + row * 18;
     }
 
     public WorkstationState workstationState() {

@@ -48,8 +48,8 @@ public final class WorkstationInventory extends ItemStackHandler {
     }
 
     private static int totalSlotCount(int inputSlotCount, int outputSlotCount) {
-        if (inputSlotCount != 1) {
-            throw new IllegalArgumentException("Workstation inventories currently support exactly one input slot");
+        if (inputSlotCount <= 0) {
+            throw new IllegalArgumentException("Workstation inventories must support at least one input slot");
         }
         if (outputSlotCount <= 0) {
             throw new IllegalArgumentException("Workstation inventories must support at least one output slot");
@@ -109,6 +109,14 @@ public final class WorkstationInventory extends ItemStackHandler {
         return getStackInSlot(firstInputSlot);
     }
 
+    public List<ItemStack> inputs() {
+        List<ItemStack> inputs = new ArrayList<>();
+        for (int slot = firstInputSlot; slot < firstOutputSlot; slot++) {
+            inputs.add(getStackInSlot(slot));
+        }
+        return List.copyOf(inputs);
+    }
+
     public ItemStack output() {
         return getStackInSlot(firstOutputSlot);
     }
@@ -132,6 +140,13 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     public void setInputInternal(ItemStack stack) {
         setStackMuted(firstInputSlot, stack);
+    }
+
+    public void setInputInternal(int inputIndex, ItemStack stack) {
+        if (inputIndex < 0 || inputIndex >= inputSlotCount) {
+            throw new IllegalArgumentException("Input index is outside workstation inventory range");
+        }
+        setStackMuted(firstInputSlot + inputIndex, stack);
     }
 
     public void setOutputInternal(ItemStack stack) {
@@ -159,8 +174,32 @@ public final class WorkstationInventory extends ItemStackHandler {
         setStackMuted(firstInputSlot, ItemStack.EMPTY);
     }
 
+    public void clearInputsInternal() {
+        suppressChangeListener = true;
+        try {
+            for (int slot = firstInputSlot; slot < firstOutputSlot; slot++) {
+                setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
+    }
+
     public void clearOutputsInternal() {
         setOutputsInternal(List.of());
+    }
+
+    public void clearAllInternal() {
+        suppressChangeListener = true;
+        try {
+            for (int slot = 0; slot < totalSlotCount; slot++) {
+                setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
     }
 
     @Override

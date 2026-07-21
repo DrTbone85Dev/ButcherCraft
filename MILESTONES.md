@@ -4,6 +4,57 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.8.0: Project Meat Counter - Packaging Foundation
+
+Goal: add the Packaging Table as a permanent workstation foundation and establish a data-only Retail Product Framework without implementing packaging recipes or product mutation.
+
+Included work:
+
+- `butchercraft:packaging_table` block, block item, block entity, menu type, client screen, creative-tab entry, language entries, loot table, and placeholder generated assets.
+- Inventory-only workstation base for station foundations that need persisted slots and menu synchronization without processing-controller behavior.
+- Packaging Table inventory layout with Meat, Tray, Wrap, and Result slots.
+- Server-owned inventory persistence, menu opening, item-handler capability exposure, and block-break inventory recovery.
+- Data-driven `PackagingDefinition` loading from `data/<namespace>/butchercraft/content/packaging`.
+- Atomic content snapshot activation for product, packaging, and transformation registries.
+- Optional product packaging metadata for packaged retail products.
+- Built-in `butchercraft:retail_package` packaging definition and `butchercraft:retail_ground_beef` product definition.
+- Graph-only `butchercraft:package_retail` processing operation using `butchercraft:packaging`.
+- Automated coverage for registration, menu wiring, inventory layout, serialization, generated data, packaging definition loading, content-snapshot compatibility, and product metadata validation.
+- Documentation in `docs/PACKAGING_TABLE.md`.
+- Documentation in `docs/RETAIL_PRODUCT_FRAMEWORK.md`.
+
+Excluded work:
+
+- Packaging recipes, packaging execution, packaging supply consumption, product transformations, labels, quality changes, order fulfillment, employees, commerce, storage rules, sounds, animations, final artwork, or dynamic product item creation.
+- Migration of Grinder, Bandsaw, smoker, coolers, or any other workstation behavior.
+
+Acceptance criteria:
+
+- The Packaging Table is visible in the ButcherCraft creative tab, can be placed, and opens its placeholder GUI.
+- All four workstation slots persist through save/load and drop safely when the block is removed.
+- The table exposes item-handler inventory capability while remaining outside the processing resolver, evaluator, executor, and transformation registry paths.
+- Packaging definition datapacks load deterministically and malformed definitions produce structured validation errors.
+- Product, packaging, and transformation registries activate atomically.
+- `package_retail` appears in the processing graph but is not executed by the Packaging Table.
+- Existing Grinder and Bandsaw behavior and datapack reload compatibility remain unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runClient`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Recommended before upload: launch a client, create or load a development world, find the Packaging Table in the creative tab, place it, open the GUI, move items through Meat, Tray, Wrap, and Result slot behavior, and confirm existing Grinder and Bandsaw test flows still work.
+
+Rollback considerations:
+
+- The v0.8.0 feature is additive. Removing the Packaging Table registrations, assets, menu/screen, retail packaging definitions, retail product definition, graph-only `package_retail` operation, tests, and docs should restore the v0.7.0 feature surface without changing Grinder or Bandsaw behavior.
+
 ## Milestone 0.7.0: Beef Fabrication Expansion
 
 Goal: add the first substantial multi-stage beef fabrication content chain using the existing datapack product, transformation, processing-definition, workstation, and atomic transaction architecture.

@@ -1,6 +1,8 @@
 package com.butchercraft.content;
 
 import com.butchercraft.engine.EngineId;
+import com.butchercraft.packaging.datapack.PackagingDatapackErrorCode;
+import com.butchercraft.packaging.datapack.PackagingDatapackLoaderTest;
 import com.butchercraft.product.datapack.ProductDatapackErrorCode;
 import com.butchercraft.product.datapack.ProductDatapackLoaderTest;
 import com.butchercraft.product.definition.BuiltInProductRegistry;
@@ -34,13 +36,16 @@ class ContentSnapshotServiceTest {
 
         ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(
                 ContentSnapshotService.bundledProductResources(),
+                ContentSnapshotService.bundledPackagingResources(),
                 ContentSnapshotService.bundledTransformationResources()
         );
 
         assertTrue(result.succeeded(), result::describeErrors);
-        assertEquals(30, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(31, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(1, ContentSnapshotService.currentPackagingRegistry().size());
         assertEquals(8, ContentSnapshotService.currentTransformationRegistry().size());
         assertEquals(previous.products().stream().toList(), ContentSnapshotService.currentProductRegistry().stream().toList());
+        assertEquals(previous.packaging().stream().toList(), ContentSnapshotService.currentPackagingRegistry().stream().toList());
         assertEquals(previous.transformations().stream().toList(),
                 ContentSnapshotService.currentTransformationRegistry().stream().toList());
     }
@@ -71,9 +76,55 @@ class ContentSnapshotServiceTest {
 
         assertTrue(result.succeeded(), result::describeErrors);
         assertEquals(2, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(1, ContentSnapshotService.currentPackagingRegistry().size());
         assertEquals(1, ContentSnapshotService.currentTransformationRegistry().size());
         assertTrue(ContentSnapshotService.currentTransformationRegistry()
                 .contains(TransformationId.of("butchercraft:test_transform")));
+    }
+
+    @Test
+    void productPackagingMetadataCanReferenceCandidatePackagingAndProductFromSameReload() {
+        ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(
+                ProductDatapackLoaderTest.resources(
+                        Map.entry("ground", ProductDatapackLoaderTest.productWithTag(
+                                "butchercraft:ground_beef",
+                                "Ground Beef",
+                                "butchercraft:beef",
+                                "gram",
+                                "butchercraft:trait/ground"
+                        )),
+                        Map.entry("retail", ProductDatapackLoaderTest.packagedProduct(
+                                "butchercraft:retail_ground_beef",
+                                "Retail Ground Beef",
+                                "butchercraft:beef",
+                                "gram",
+                                "butchercraft:retail_package",
+                                "butchercraft:ground_beef"
+                        ))
+                ),
+                PackagingDatapackLoaderTest.resources(Map.entry(
+                        "retail_package",
+                        PackagingDatapackLoaderTest.packaging(
+                                "butchercraft:retail_package",
+                                "Retail Package",
+                                "retail",
+                                "gram"
+                        )
+                )),
+                Map.of()
+        );
+
+        assertTrue(result.succeeded(), result::describeErrors);
+        assertEquals(2, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(1, ContentSnapshotService.currentPackagingRegistry().size());
+        assertEquals(0, ContentSnapshotService.currentTransformationRegistry().size());
+        assertEquals("butchercraft:ground_beef", ContentSnapshotService.currentProductRegistry()
+                .find(EngineId.of("butchercraft:retail_ground_beef"))
+                .orElseThrow()
+                .packagingMetadata()
+                .orElseThrow()
+                .sourceProductId()
+                .value());
     }
 
     @Test
@@ -99,6 +150,65 @@ class ContentSnapshotServiceTest {
 
         assertFalse(result.succeeded());
         assertEquals(ProductDatapackErrorCode.UNKNOWN_CATEGORY, result.productErrors().getFirst().code());
+        assertTrue(result.packagingErrors().isEmpty());
+        assertTrue(result.transformationErrors().isEmpty());
+        assertSame(previous, ContentSnapshotService.currentSnapshot());
+    }
+
+    @Test
+    void invalidPackagingLeavesAllActiveRegistriesUnchanged() {
+        ContentSnapshot previous = ContentSnapshotService.currentSnapshot();
+
+        ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(
+                ContentSnapshotService.bundledProductResources(),
+                PackagingDatapackLoaderTest.resources(Map.entry(
+                        "bad_package",
+                        PackagingDatapackLoaderTest.packaging(
+                                "butchercraft:retail_package",
+                                "Retail Package",
+                                "retail",
+                                "kilogram"
+                        )
+                )),
+                ContentSnapshotService.bundledTransformationResources()
+        );
+
+        assertFalse(result.succeeded());
+        assertTrue(result.productErrors().isEmpty());
+        assertEquals(PackagingDatapackErrorCode.UNKNOWN_QUANTITY_UNIT, result.packagingErrors().getFirst().code());
+        assertTrue(result.transformationErrors().isEmpty());
+        assertSame(previous, ContentSnapshotService.currentSnapshot());
+    }
+
+    @Test
+    void invalidProductPackagingMetadataLeavesAllActiveRegistriesUnchanged() {
+        ContentSnapshot previous = ContentSnapshotService.currentSnapshot();
+
+        ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(
+                ProductDatapackLoaderTest.resources(
+                        Map.entry("ground", ProductDatapackLoaderTest.product(
+                                "butchercraft:ground_beef",
+                                "Ground Beef",
+                                "butchercraft:beef",
+                                "gram"
+                        )),
+                        Map.entry("retail", ProductDatapackLoaderTest.packagedProduct(
+                                "butchercraft:retail_ground_beef",
+                                "Retail Ground Beef",
+                                "butchercraft:beef",
+                                "gram",
+                                "butchercraft:missing_package",
+                                "butchercraft:ground_beef"
+                        ))
+                ),
+                Map.of(),
+                Map.of()
+        );
+
+        assertFalse(result.succeeded());
+        assertEquals(ProductDatapackErrorCode.UNKNOWN_PACKAGING_DEFINITION,
+                result.productErrors().getFirst().code());
+        assertTrue(result.packagingErrors().isEmpty());
         assertTrue(result.transformationErrors().isEmpty());
         assertSame(previous, ContentSnapshotService.currentSnapshot());
     }
@@ -131,6 +241,7 @@ class ContentSnapshotServiceTest {
 
         assertFalse(result.succeeded());
         assertTrue(result.productErrors().isEmpty());
+        assertTrue(result.packagingErrors().isEmpty());
         assertEquals(TransformationDatapackErrorCode.UNKNOWN_PRODUCT, result.transformationErrors().getFirst().code());
         assertSame(previous, ContentSnapshotService.currentSnapshot());
     }
@@ -140,6 +251,7 @@ class ContentSnapshotServiceTest {
         ContentSnapshot previous = ContentSnapshotService.currentSnapshot();
         LinkedHashMap<String, JsonElement> productsWithoutGroundBeef = new LinkedHashMap<>(ContentSnapshotService.bundledProductResources());
         productsWithoutGroundBeef.remove("data/butchercraft/butchercraft/content/product/ground_beef.json");
+        productsWithoutGroundBeef.remove("data/butchercraft/butchercraft/content/product/retail_ground_beef.json");
 
         ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(
                 productsWithoutGroundBeef,
@@ -148,6 +260,7 @@ class ContentSnapshotServiceTest {
 
         assertFalse(result.succeeded());
         assertTrue(result.productErrors().isEmpty());
+        assertTrue(result.packagingErrors().isEmpty());
         assertEquals(TransformationDatapackErrorCode.UNKNOWN_PRODUCT, result.transformationErrors().getFirst().code());
         assertSame(previous, ContentSnapshotService.currentSnapshot());
     }
@@ -164,6 +277,7 @@ class ContentSnapshotServiceTest {
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_short_loin")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_round")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_sirloin")));
+        assertTrue(snapshot.packaging().contains(EngineId.of("butchercraft:retail_package")));
         assertEquals(8, snapshot.transformations()
                 .find(TransformationId.of("butchercraft:break_beef_forequarter"))
                 .orElseThrow()
@@ -177,6 +291,7 @@ class ContentSnapshotServiceTest {
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_forequarter")));
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_hindquarter")));
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:tri_tip")));
+        assertTrue(snapshot.products().contains(EngineId.of("butchercraft:retail_ground_beef")));
     }
 
     @Test
@@ -190,7 +305,7 @@ class ContentSnapshotServiceTest {
                     "Missing bundled product from content snapshot: " + fileName
             );
         }
-        assertEquals(30, snapshot.products().size());
+        assertEquals(31, snapshot.products().size());
     }
 
     @Test

@@ -20,6 +20,7 @@ ButcherCraft Core responsibilities:
 - One manual processing station.
 - One grinder.
 - One packaging station.
+- Version 0.8.0 provides the Packaging Table block and inventory foundation only; packaged-product gameplay remains future core work.
 - One simple refrigerated storage system.
 - One customer order.
 - One basic employee job.

@@ -52,6 +52,7 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.TRI_TIP_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GRINDER.get());
                         output.accept(ModItems.BANDSAW.get());
+                        output.accept(ModItems.PACKAGING_TABLE.get());
                         output.accept(ModItems.DEVELOPMENT_PROCESSING_WORKSTATION.get());
                     })
                     .build());

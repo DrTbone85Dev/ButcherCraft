@@ -80,6 +80,8 @@ class ProcessingDefinitionResolverTest {
         DefinitionResolution<ProcessingOperation> engineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BEEF);
         DefinitionResolution<ProcessingOperation> porkEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_PORK);
         DefinitionResolution<ProcessingOperation> bisonEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BISON);
+        DefinitionResolution<ProcessingOperation> packageRetailEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.PACKAGE_RETAIL);
         DefinitionResolution<ProcessingOperation> bandsawEngineOperation =
                 resolver.toEngineOperation(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER);
         DefinitionResolution<ProcessingOperation> hindquarterEngineOperation =
@@ -98,6 +100,10 @@ class ProcessingDefinitionResolverTest {
         assertEquals("butchercraft:grind_pork", porkEngineOperation.orThrow().id().value());
         assertTrue(bisonEngineOperation.succeeded());
         assertEquals("butchercraft:grind_bison", bisonEngineOperation.orThrow().id().value());
+        assertTrue(packageRetailEngineOperation.succeeded(), packageRetailEngineOperation.report().issues().toString());
+        assertEquals("butchercraft:package_retail", packageRetailEngineOperation.orThrow().id().value());
+        assertEquals("butchercraft:retail_ground_beef",
+                packageRetailEngineOperation.orThrow().outputs().getFirst().productType().value());
         assertTrue(bandsawEngineOperation.succeeded(), bandsawEngineOperation.report().issues().toString());
         assertEquals(8, bandsawEngineOperation.orThrow().outputs().size());
         assertTrue(hindquarterEngineOperation.succeeded(), hindquarterEngineOperation.report().issues().toString());
@@ -108,6 +114,19 @@ class ProcessingDefinitionResolverTest {
         assertEquals(7, roundEngineOperation.orThrow().outputs().size());
         assertTrue(sirloinEngineOperation.succeeded(), sirloinEngineOperation.report().issues().toString());
         assertEquals(6, sirloinEngineOperation.orThrow().outputs().size());
+    }
+
+    @Test
+    void processingGraphIncludesPackageRetailOperationWithoutPackagingTableExecution() {
+        ProcessingGraph graph = ProcessingGraph.fromDefinitions(BuiltInProcessingDefinitions.builtInView());
+
+        assertFalse(graph.validationReport().hasErrors(), graph.validationReport().issues().toString());
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.GROUND_BEEF, BuiltInDefinitionIds.RETAIL_GROUND_BEEF));
+        assertEquals(List.of(BuiltInDefinitionIds.PACKAGE_RETAIL),
+                graph.operationsAvailableFor(BuiltInDefinitionIds.GROUND_BEEF)
+                        .stream()
+                        .map(ProcessingGraphEdge::operationId)
+                        .toList());
     }
 
     @Test

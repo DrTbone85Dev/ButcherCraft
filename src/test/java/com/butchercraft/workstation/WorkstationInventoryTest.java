@@ -2,6 +2,7 @@ package com.butchercraft.workstation;
 
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
+import com.butchercraft.machine.packaging.PackagingTableWorkstation;
 import com.butchercraft.registration.ModItems;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -23,6 +24,7 @@ class WorkstationInventoryTest {
         WorkstationInventory development = new WorkstationInventory(DevelopmentWorkstationFixtures.capability(), () -> {});
         WorkstationInventory grinder = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
         WorkstationInventory bandsaw = new WorkstationInventory(BandsawWorkstation.capability(), () -> {});
+        WorkstationInventory packagingTable = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
 
         assertEquals(2, development.totalSlotCount());
         assertEquals(2, development.getSlots());
@@ -35,12 +37,18 @@ class WorkstationInventoryTest {
         assertEquals(9, bandsaw.totalSlotCount());
         assertEquals(9, bandsaw.getSlots());
         assertEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8), bandsaw.outputSlotRange());
+
+        assertEquals(4, packagingTable.totalSlotCount());
+        assertEquals(4, packagingTable.getSlots());
+        assertEquals(3, packagingTable.inputSlotCount());
+        assertEquals(List.of(3), packagingTable.outputSlotRange());
     }
 
     @Test
     void slotClassificationUsesConfiguredRanges() {
         WorkstationInventory grinder = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
         WorkstationInventory bandsaw = new WorkstationInventory(BandsawWorkstation.capability(), () -> {});
+        WorkstationInventory packagingTable = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
 
         assertTrue(grinder.isInputSlot(0));
         assertTrue(grinder.isOutputSlot(1));
@@ -51,6 +59,12 @@ class WorkstationInventoryTest {
             assertTrue(bandsaw.isOutputSlot(slot));
         }
         assertFalse(bandsaw.isOutputSlot(9));
+
+        assertTrue(packagingTable.isInputSlot(0));
+        assertTrue(packagingTable.isInputSlot(1));
+        assertTrue(packagingTable.isInputSlot(2));
+        assertTrue(packagingTable.isOutputSlot(3));
+        assertFalse(packagingTable.isOutputSlot(4));
     }
 
     @Test

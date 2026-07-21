@@ -3,6 +3,7 @@ package com.butchercraft.product.datapack;
 import com.butchercraft.product.serialization.ProductSchemaVersion;
 import com.butchercraft.product.serialization.ProductSerializedFieldNames;
 import com.butchercraft.product.serialization.SerializedProductDefinition;
+import com.butchercraft.product.serialization.SerializedProductPackagingMetadata;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -33,9 +34,28 @@ public final class ProductJsonDefinitionParser {
                         ProductDatapackErrorCode.UNKNOWN_QUANTITY_UNIT),
                 tags(requiredArray(object, ProductSerializedFieldNames.TAGS, "root",
                         ProductDatapackErrorCode.MALFORMED_TAGS)),
+                packaging(optionalObject(object, ProductSerializedFieldNames.PACKAGING, "root",
+                        ProductDatapackErrorCode.MALFORMED_PACKAGING_METADATA)),
                 metadata(optionalObject(object, ProductSerializedFieldNames.METADATA, "root",
                         ProductDatapackErrorCode.MALFORMED_METADATA))
         );
+    }
+
+    private static Optional<SerializedProductPackagingMetadata> packaging(Optional<JsonObject> object) {
+        return object.map(jsonObject -> new SerializedProductPackagingMetadata(
+                requiredString(
+                        jsonObject,
+                        ProductSerializedFieldNames.PACKAGING_DEFINITION,
+                        ProductSerializedFieldNames.PACKAGING,
+                        ProductDatapackErrorCode.MALFORMED_PACKAGING_METADATA
+                ),
+                requiredString(
+                        jsonObject,
+                        ProductSerializedFieldNames.PACKAGING_SOURCE_PRODUCT,
+                        ProductSerializedFieldNames.PACKAGING,
+                        ProductDatapackErrorCode.MALFORMED_PACKAGING_METADATA
+                )
+        ));
     }
 
     private static List<String> tags(JsonArray array) {

@@ -32,11 +32,12 @@ final class ButcherCraftLootTableProvider extends LootTableProvider {
         protected void generate() {
             dropSelf(ModBlocks.GRINDER.get());
             dropSelf(ModBlocks.BANDSAW.get());
+            dropSelf(ModBlocks.PACKAGING_TABLE.get());
         }
 
         @Override
         protected Iterable<Block> getKnownBlocks() {
-            return List.of(ModBlocks.GRINDER.get(), ModBlocks.BANDSAW.get());
+            return List.of(ModBlocks.GRINDER.get(), ModBlocks.BANDSAW.get(), ModBlocks.PACKAGING_TABLE.get());
         }
     }
 }

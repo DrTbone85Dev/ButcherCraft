@@ -3,6 +3,7 @@ package com.butchercraft.registration;
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawBlockEntity;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
+import com.butchercraft.machine.packaging.PackagingTableBlockEntity;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -38,6 +39,15 @@ public final class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             BandsawBlockEntity::new,
                             ModBlocks.BANDSAW.get()
+                    ).build(null)
+            );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PackagingTableBlockEntity>>
+            PACKAGING_TABLE = BLOCK_ENTITY_TYPES.register(
+                    "packaging_table",
+                    () -> BlockEntityType.Builder.of(
+                            PackagingTableBlockEntity::new,
+                            ModBlocks.PACKAGING_TABLE.get()
                     ).build(null)
             );
 

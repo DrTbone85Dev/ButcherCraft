@@ -80,7 +80,7 @@ INVALID_CONTEXT
 
 The `com.butchercraft.transformation.serialization` package defines the stable external schema contract for serialized transformation definitions. It includes serializer and deserializer interfaces, canonical serialized records, frozen field-name constants, a schema-version abstraction, and a future migration contract. This layer remains pure Java.
 
-The `com.butchercraft.transformation.datapack` package parses JSON resources into the serialized schema, validates references against a supplied product registry, and assembles immutable transformation registries. Minecraft reload listener code lives outside the pure transformation package. Version 0.6.9 coordinates this through `ContentSnapshotService`, which loads products first and then transformations against the candidate product registry.
+The `com.butchercraft.transformation.datapack` package parses JSON resources into the serialized schema, validates references against a supplied product registry, and assembles immutable transformation registries. Minecraft reload listener code lives outside the pure transformation package. Version 0.6.9 coordinates this through `ContentSnapshotService`, which loads products first and then transformations against the candidate product registry. Version 0.8.0 Sprint 2 inserts packaging registry validation between product loading and transformation loading without changing transformation evaluation or execution.
 
 `ProcessingOperationTransformationAdapter` converts an existing `ProcessingOperation` and concrete input amount into a compatible `TransformationDefinition`. This remains available for compatibility tests and future migration work, but live Grinder and Bandsaw transformation execution now query the transformation registry by resolved operation id.
 
@@ -130,7 +130,7 @@ The v0.7.0 content slice intentionally does not add:
 - Optional ingredients, tags, substitutes, catalysts, random outputs, or recipe-selection UI.
 - Public expansion APIs.
 
-Version 0.6.8 moves the built-in Grinder and Bandsaw transformation definitions into bundled datapack JSON resources. Version 0.6.9 moves the current product definitions into bundled datapack JSON resources and introduces an active content snapshot so product and transformation registries swap together only after successful validation. Version 0.7.0 adds a bounded beef fabrication catalog; full carcass fabrication and recipe-selection UI remain out of scope.
+Version 0.6.8 moves the built-in Grinder and Bandsaw transformation definitions into bundled datapack JSON resources. Version 0.6.9 moves the current product definitions into bundled datapack JSON resources and introduces an active content snapshot so product and transformation registries swap together only after successful validation. Version 0.7.0 adds a bounded beef fabrication catalog; full carcass fabrication and recipe-selection UI remain out of scope. Version 0.8.0 Sprint 2 extends the active content snapshot with packaging definitions while keeping the transformation engine unchanged.
 
 ## Next Proposed Slice
 

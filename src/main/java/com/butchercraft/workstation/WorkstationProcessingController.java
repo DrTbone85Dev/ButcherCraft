@@ -58,6 +58,9 @@ public final class WorkstationProcessingController {
     ) {
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.capability = Objects.requireNonNull(capability, "capability");
+        if (capability.inputSlots() != 1 || inventory.inputSlotCount() != 1) {
+            throw new IllegalArgumentException("Processing workstations currently support exactly one input slot");
+        }
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
         this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");

@@ -22,6 +22,7 @@ class ProductDatapackResourceTest {
     private static final List<String> EXPECTED_BUNDLED_PRODUCT_IDS = List.of(
             "butchercraft:beef_trim",
             "butchercraft:ground_beef",
+            "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",
             "butchercraft:bison_trim",
@@ -92,10 +93,16 @@ class ProductDatapackResourceTest {
     void builtInRegistryIsLoadedFromProductDatapackResources() {
         ProductRegistry registry = BuiltInProductRegistry.builtInRegistry();
 
-        assertEquals(30, registry.size());
+        assertEquals(31, registry.size());
         assertEquals(EXPECTED_BUNDLED_PRODUCT_IDS, registry.stream()
                         .map(definition -> definition.id().value())
                         .toList());
+        var retail = registry.find(BuiltInProductRegistry.RETAIL_GROUND_BEEF).orElseThrow();
+        assertEquals(BuiltInProductRegistry.TAG_RETAIL_PACKAGED, retail.tags().stream().findFirst().orElseThrow());
+        assertEquals("butchercraft:retail_package",
+                retail.packagingMetadata().orElseThrow().packagingDefinitionId().value());
+        assertEquals("butchercraft:ground_beef",
+                retail.packagingMetadata().orElseThrow().sourceProductId().value());
     }
 
     @Test

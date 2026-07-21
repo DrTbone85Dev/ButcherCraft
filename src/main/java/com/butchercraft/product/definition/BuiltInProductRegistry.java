@@ -13,6 +13,7 @@ public final class BuiltInProductRegistry {
     public static final List<String> BUILT_IN_RESOURCE_PATHS = List.of(
             "data/butchercraft/butchercraft/content/product/beef_trim.json",
             "data/butchercraft/butchercraft/content/product/ground_beef.json",
+            "data/butchercraft/butchercraft/content/product/retail_ground_beef.json",
             "data/butchercraft/butchercraft/content/product/pork_trim.json",
             "data/butchercraft/butchercraft/content/product/ground_pork.json",
             "data/butchercraft/butchercraft/content/product/bison_trim.json",
@@ -45,6 +46,7 @@ public final class BuiltInProductRegistry {
 
     public static final EngineId BEEF_TRIM = EngineId.of("butchercraft:beef_trim");
     public static final EngineId GROUND_BEEF = EngineId.of("butchercraft:ground_beef");
+    public static final EngineId RETAIL_GROUND_BEEF = EngineId.of("butchercraft:retail_ground_beef");
     public static final EngineId PORK_TRIM = EngineId.of("butchercraft:pork_trim");
     public static final EngineId GROUND_PORK = EngineId.of("butchercraft:ground_pork");
     public static final EngineId BISON_TRIM = EngineId.of("butchercraft:bison_trim");
@@ -87,6 +89,7 @@ public final class BuiltInProductRegistry {
     public static final EngineId TAG_STEAK = EngineId.of("butchercraft:trait/steak");
     public static final EngineId TAG_FAT = EngineId.of("butchercraft:trait/fat");
     public static final EngineId TAG_BONE = EngineId.of("butchercraft:trait/bone");
+    public static final EngineId TAG_RETAIL_PACKAGED = EngineId.of("butchercraft:trait/retail_packaged");
     public static final EngineId METADATA_SOURCE = EngineId.of("butchercraft:schema/source");
 
     private BuiltInProductRegistry() {

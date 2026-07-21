@@ -4,6 +4,7 @@ public final class ModClientRegistrationStatus {
     private static volatile boolean developmentWorkstationScreenRegistered;
     private static volatile boolean grinderScreenRegistered;
     private static volatile boolean bandsawScreenRegistered;
+    private static volatile boolean packagingTableScreenRegistered;
 
     private ModClientRegistrationStatus() {
     }
@@ -30,5 +31,13 @@ public final class ModClientRegistrationStatus {
 
     public static boolean bandsawScreenRegistered() {
         return bandsawScreenRegistered;
+    }
+
+    public static void markPackagingTableScreenRegistered() {
+        packagingTableScreenRegistered = true;
+    }
+
+    public static boolean packagingTableScreenRegistered() {
+        return packagingTableScreenRegistered;
     }
 }

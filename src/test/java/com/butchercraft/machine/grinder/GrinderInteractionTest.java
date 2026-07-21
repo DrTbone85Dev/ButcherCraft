@@ -23,7 +23,7 @@ class GrinderInteractionTest {
 
     @Test
     void grinderBlockEntityProvidesGrinderMenu() throws IOException {
-        String baseSource = source("src/main/java/com/butchercraft/workstation/block/AbstractProcessingWorkstationBlockEntity.java");
+        String baseSource = source("src/main/java/com/butchercraft/workstation/block/AbstractInventoryWorkstationBlockEntity.java");
         String source = source("src/main/java/com/butchercraft/machine/grinder/GrinderBlockEntity.java");
 
         assertTrue(baseSource.contains("implements MenuProvider"));
@@ -62,7 +62,8 @@ class GrinderInteractionTest {
         assertTrue(source.contains("addDataSlots(data)"));
         assertTrue(source.contains("progressPercent()"));
         assertTrue(source.contains("statusComponent()"));
-        assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, inventory.firstInputSlot()"));
+        assertTrue(source.contains("for (int inputIndex = 0; inputIndex < inventory.inputSlotCount(); inputIndex++)"));
+        assertTrue(source.contains("addSlot(new SlotItemHandler(inventory, slot, workstationSlotX(slot), workstationSlotY(slot)))"));
         assertTrue(source.contains("addSlot(new OutputSlot(inventory"));
         assertTrue(source.contains("for (int outputIndex = 0; outputIndex < inventory.outputSlotCount(); outputIndex++)"));
         assertTrue(source.contains("public boolean mayPlace(ItemStack stack)"));

@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.8.0 - Project Meat Counter
+
+### Core
+
+- Added the Packaging Table workstation foundation as a placeable block with a block item, block entity, menu, client screen, creative-tab entry, language entries, loot table, and placeholder assets.
+- Added a shared inventory-only workstation block entity base so non-processing station foundations can persist, synchronize, expose inventory capability, and drop contents without joining the processing controller path.
+- Generalized workstation inventory and menu layout support for multi-input station foundations while preserving existing Grinder, Bandsaw, and Development Processing Workstation behavior.
+- Added the Retail Product Framework with datapack-backed packaging definitions, optional product packaging metadata, and atomic content snapshot integration.
+- Added data-only `butchercraft:retail_package`, `butchercraft:retail_ground_beef`, and the graph-only `butchercraft:package_retail` processing operation.
+
+### Stability
+
+- Kept packaging recipes, transformations, product mutation, employee behavior, order integration, and gameplay packaging logic out of scope.
+- Preserved existing Grinder, Bandsaw, and Packaging Table gameplay behavior while extending datapack loading to product, packaging, and transformation snapshots.
+- Added regression coverage for Packaging Table registration, lifecycle, inventory persistence, menu layout, generated data, packaging definition loading, product metadata validation, serialization, and content-loading compatibility.
+
 ## ButcherCraft v0.7.0 - Beef Fabrication Expansion
 
 ### Core

@@ -3,6 +3,7 @@ package com.butchercraft.workstation;
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModItems;
+import com.butchercraft.machine.packaging.PackagingTableWorkstation;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
@@ -12,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WorkstationProcessingControllerTest {
@@ -146,6 +148,22 @@ class WorkstationProcessingControllerTest {
         assertEquals(WorkstationFailureCode.INVALID_WORKSTATION_STATE, restored.controller.lastFailure().orElseThrow().code());
         assertFalse(restored.inventory.input().isEmpty());
         assertTrue(restored.inventory.output().isEmpty());
+    }
+
+    @Test
+    void processingControllerRejectsMultiInputInventoryLayouts() {
+        WorkstationInventory inventory = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
+
+        assertThrows(IllegalArgumentException.class, () -> new WorkstationProcessingController(
+                inventory,
+                PackagingTableWorkstation.capability(),
+                (registryAccess, capability, stack) -> WorkstationOperationResolution.failure(WorkstationFailure.of(
+                        WorkstationFailureCode.NO_COMPATIBLE_OPERATION,
+                        "No packaging operation exists"
+                )),
+                DevelopmentProductItemMappings.fixtureMapping(),
+                () -> {}
+        ));
     }
 
     private record Harness(

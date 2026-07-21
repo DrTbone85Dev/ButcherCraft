@@ -22,6 +22,7 @@ public final class ProductRegistryService {
     public static void replaceRegistry(ProductRegistry registry) {
         ContentSnapshotService.replaceSnapshot(new ContentSnapshot(
                 Objects.requireNonNull(registry, "registry"),
+                ContentSnapshotService.currentPackagingRegistry(),
                 ContentSnapshotService.currentTransformationRegistry()
         ));
     }

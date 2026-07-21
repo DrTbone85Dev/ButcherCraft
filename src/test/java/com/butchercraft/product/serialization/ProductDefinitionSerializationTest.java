@@ -4,6 +4,7 @@ import com.butchercraft.engine.EngineId;
 import com.butchercraft.engine.product.ProductCategory;
 import com.butchercraft.engine.quantity.QuantityUnit;
 import com.butchercraft.product.definition.ProductDefinition;
+import com.butchercraft.product.definition.ProductPackagingMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -37,7 +38,32 @@ class ProductDefinitionSerializationTest {
         assertEquals("butchercraft:beef", serialized.category());
         assertEquals("gram", serialized.defaultQuantityUnit());
         assertEquals(List.of("butchercraft:trait/trim"), serialized.tags());
+        assertEquals(java.util.Optional.empty(), serialized.packaging());
         assertEquals(Map.of("butchercraft:schema/source", "test"), serialized.metadata());
+    }
+
+    @Test
+    void canonicalProductDefinitionRoundTripsPackagingMetadata() {
+        ProductDefinition definition = ProductDefinition.builder()
+                .id("butchercraft:retail_ground_beef")
+                .displayName("Retail Ground Beef")
+                .schemaVersion(ProductDefinition.CURRENT_SCHEMA_VERSION)
+                .category(ProductCategory.fromId(EngineId.of("butchercraft:beef")))
+                .defaultQuantityUnit(QuantityUnit.GRAM)
+                .tag("butchercraft:trait/retail_packaged")
+                .packagingMetadata(new ProductPackagingMetadata(
+                        EngineId.of("butchercraft:retail_package"),
+                        EngineId.of("butchercraft:ground_beef")
+                ))
+                .metadata("butchercraft:schema/source", "test")
+                .build();
+
+        SerializedProductDefinition serialized = new CanonicalProductDefinitionSerializer().serialize(definition);
+        ProductDefinition deserialized = new CanonicalProductDefinitionDeserializer().deserialize(serialized);
+
+        assertEquals(definition, deserialized);
+        assertEquals("butchercraft:retail_package", serialized.packaging().orElseThrow().definition());
+        assertEquals("butchercraft:ground_beef", serialized.packaging().orElseThrow().sourceProduct());
     }
 
     @Test
@@ -57,6 +83,7 @@ class ProductDefinitionSerializationTest {
         assertEquals("butchercraft:beef", serialized.category());
         assertEquals("gram", serialized.defaultQuantityUnit());
         assertEquals(List.of("butchercraft:trait/trim"), serialized.tags());
+        assertEquals(java.util.Optional.empty(), serialized.packaging());
         assertEquals(Map.of("butchercraft:schema/source", "test"), serialized.metadata());
         assertThrows(UnsupportedOperationException.class, () -> serialized.tags().clear());
         assertThrows(UnsupportedOperationException.class, () -> serialized.metadata().clear());

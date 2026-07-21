@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:retail_ground_beef",
+  "display_name": "Retail Ground Beef",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/retail_packaged"
+  ],
+  "packaging": {
+    "definition": "butchercraft:retail_package",
+    "source_product": "butchercraft:ground_beef"
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

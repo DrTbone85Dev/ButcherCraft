@@ -1,0 +1,19 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.retail_ground_beef",
+  "edible": true,
+  "graph_input": false,
+  "graph_output": true,
+  "packaging": {
+    "definition": "butchercraft:retail_package",
+    "source_product": "butchercraft:ground_beef"
+  },
+  "processing_state": "butchercraft:retail_packaged",
+  "product_category": "butchercraft:beef",
+  "quantity_unit": "gram",
+  "species": "butchercraft:beef",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/retail_packaged"
+  ]
+}

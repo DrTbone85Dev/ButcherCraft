@@ -22,6 +22,7 @@ public final class TransformationRegistryService {
     public static void replaceRegistry(TransformationRegistry registry) {
         ContentSnapshotService.replaceSnapshot(new ContentSnapshot(
                 ContentSnapshotService.currentProductRegistry(),
+                ContentSnapshotService.currentPackagingRegistry(),
                 Objects.requireNonNull(registry, "registry")
         ));
     }

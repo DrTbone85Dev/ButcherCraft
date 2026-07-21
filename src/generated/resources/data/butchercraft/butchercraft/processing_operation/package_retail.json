@@ -1,0 +1,31 @@
+{
+  "base_duration_milliseconds": 3000,
+  "display_name_key": "definition.butchercraft.processing_operation.package_retail",
+  "input_product": "butchercraft:ground_beef",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 100,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/packaging",
+  "outputs": [
+    {
+      "allow_zero": false,
+      "product": "butchercraft:retail_ground_beef",
+      "quality_adjustment": 0,
+      "quantity_unit": "gram",
+      "state": "butchercraft:retail_packaged",
+      "yield": {
+        "denominator": 1,
+        "numerator": 1
+      }
+    }
+  ],
+  "required_input_processing_state": "butchercraft:ground",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "workstation_capability": "butchercraft:packaging",
+  "zero_output_policy": "forbid"
+}

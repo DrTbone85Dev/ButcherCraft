@@ -2,10 +2,12 @@ package com.butchercraft.product.serialization;
 
 import com.butchercraft.engine.EngineId;
 import com.butchercraft.product.definition.ProductDefinition;
+import com.butchercraft.product.definition.ProductPackagingMetadata;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Canonical serializer for the stable product definition schema contract.
@@ -24,8 +26,18 @@ public final class CanonicalProductDefinitionSerializer
                 definition.tags().stream()
                         .map(EngineId::value)
                         .toList(),
+                packaging(definition.packagingMetadata()),
                 metadata(definition.metadata())
         );
+    }
+
+    private static Optional<SerializedProductPackagingMetadata> packaging(
+            Optional<ProductPackagingMetadata> packagingMetadata
+    ) {
+        return packagingMetadata.map(metadata -> new SerializedProductPackagingMetadata(
+                metadata.packagingDefinitionId().value(),
+                metadata.sourceProductId().value()
+        ));
     }
 
     private static Map<String, String> metadata(Map<EngineId, String> metadata) {

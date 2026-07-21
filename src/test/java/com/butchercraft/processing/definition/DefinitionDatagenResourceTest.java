@@ -25,6 +25,7 @@ class DefinitionDatagenResourceTest {
             new ExpectedTranslation("definition.butchercraft.processing_profile.red_meat", "Red Meat"),
             new ExpectedTranslation("definition.butchercraft.product.beef_trim", "Beef Trim"),
             new ExpectedTranslation("definition.butchercraft.product.ground_beef", "Ground Beef"),
+            new ExpectedTranslation("definition.butchercraft.product.retail_ground_beef", "Retail Ground Beef"),
             new ExpectedTranslation("definition.butchercraft.product.pork_trim", "Pork Trim"),
             new ExpectedTranslation("definition.butchercraft.product.ground_pork", "Ground Pork"),
             new ExpectedTranslation("definition.butchercraft.product.bison_trim", "Bison Trim"),
@@ -60,7 +61,8 @@ class DefinitionDatagenResourceTest {
             new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_hindquarter", "Break Beef Hindquarter"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_short_loin", "Cut Beef Short Loin"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_round", "Cut Beef Round"),
-            new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_sirloin", "Cut Beef Sirloin")
+            new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_sirloin", "Cut Beef Sirloin"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.package_retail", "Package Retail")
     );
 
     @Test
@@ -71,6 +73,7 @@ class DefinitionDatagenResourceTest {
         assertTrue(Files.isRegularFile(path("processing_profile/red_meat.json")));
         assertTrue(Files.isRegularFile(path("product/beef_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_beef.json")));
+        assertTrue(Files.isRegularFile(path("product/retail_ground_beef.json")));
         assertTrue(Files.isRegularFile(path("product/pork_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_pork.json")));
         assertTrue(Files.isRegularFile(path("product/bison_trim.json")));
@@ -108,6 +111,7 @@ class DefinitionDatagenResourceTest {
         assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_short_loin.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_round.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_sirloin.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/package_retail.json")));
     }
 
     @Test
@@ -118,6 +122,7 @@ class DefinitionDatagenResourceTest {
         assertDecodes(ProcessingProfileDefinition.CODEC, path("processing_profile/red_meat.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_beef.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/retail_ground_beef.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/pork_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_pork.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/bison_trim.json"));
@@ -154,6 +159,18 @@ class DefinitionDatagenResourceTest {
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_short_loin.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_round.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_sirloin.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/package_retail.json"));
+    }
+
+    @Test
+    void generatedRetailProductRegistryJsonCanDeclarePackagingMetadata() throws IOException {
+        JsonObject retailGroundBeef = JsonParser.parseString(Files.readString(path("product/retail_ground_beef.json")))
+                .getAsJsonObject();
+
+        assertTrue(retailGroundBeef.has("packaging"));
+        JsonObject packaging = retailGroundBeef.getAsJsonObject("packaging");
+        assertEquals("butchercraft:retail_package", packaging.get("definition").getAsString());
+        assertEquals("butchercraft:ground_beef", packaging.get("source_product").getAsString());
     }
 
     @Test

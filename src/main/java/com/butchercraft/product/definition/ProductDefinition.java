@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -21,9 +22,22 @@ public record ProductDefinition(
         ProductCategory category,
         QuantityUnit defaultQuantityUnit,
         Set<EngineId> tags,
+        Optional<ProductPackagingMetadata> packagingMetadata,
         Map<EngineId, String> metadata
 ) {
     public static final int CURRENT_SCHEMA_VERSION = 1;
+
+    public ProductDefinition(
+            EngineId id,
+            String displayName,
+            int schemaVersion,
+            ProductCategory category,
+            QuantityUnit defaultQuantityUnit,
+            Set<EngineId> tags,
+            Map<EngineId, String> metadata
+    ) {
+        this(id, displayName, schemaVersion, category, defaultQuantityUnit, tags, Optional.empty(), metadata);
+    }
 
     public ProductDefinition {
         Objects.requireNonNull(id, "id");
@@ -37,6 +51,7 @@ public record ProductDefinition(
         Objects.requireNonNull(category, "category");
         Objects.requireNonNull(defaultQuantityUnit, "defaultQuantityUnit");
         tags = copyTags(tags);
+        packagingMetadata = Objects.requireNonNull(packagingMetadata, "packagingMetadata");
         metadata = copyMetadata(metadata);
     }
 
@@ -76,6 +91,7 @@ public record ProductDefinition(
         private ProductCategory category;
         private QuantityUnit defaultQuantityUnit;
         private final Set<EngineId> tags = new LinkedHashSet<>();
+        private Optional<ProductPackagingMetadata> packagingMetadata = Optional.empty();
         private final Map<EngineId, String> metadata = new LinkedHashMap<>();
 
         private Builder() {
@@ -132,6 +148,21 @@ public record ProductDefinition(
             return this;
         }
 
+        public Builder packagingMetadata(ProductPackagingMetadata packagingMetadata) {
+            this.packagingMetadata = Optional.of(Objects.requireNonNull(packagingMetadata, "packagingMetadata"));
+            return this;
+        }
+
+        public Builder packagingMetadata(Optional<ProductPackagingMetadata> packagingMetadata) {
+            this.packagingMetadata = Objects.requireNonNull(packagingMetadata, "packagingMetadata");
+            return this;
+        }
+
+        public Builder noPackagingMetadata() {
+            this.packagingMetadata = Optional.empty();
+            return this;
+        }
+
         public Builder metadata(EngineId key, String value) {
             metadata.put(Objects.requireNonNull(key, "key"), Objects.requireNonNull(value, "value"));
             return this;
@@ -159,6 +190,7 @@ public record ProductDefinition(
                     category,
                     defaultQuantityUnit,
                     tags,
+                    packagingMetadata,
                     metadata
             );
         }
