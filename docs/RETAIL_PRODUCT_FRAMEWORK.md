@@ -1,6 +1,6 @@
 # ButcherCraft Retail Product Framework
 
-Status: v0.8.0 Sprint D packaging gameplay foundation
+Status: v0.8.0 Sprint E packaging gameplay and asset framework foundation
 
 ## Purpose
 
@@ -17,6 +17,7 @@ This sprint adds:
 - Six registered packaging supply items documented in `docs/PACKAGING_SUPPLIES.md`.
 - Stack-level packaging metadata on packaged product ItemStacks.
 - Packaging Table execution that validates required supplies from `PackagingDefinition` and consumes them only after successful completion.
+- Stable packaging presentation asset paths documented in `docs/ASSET_MANIFEST.md` and `docs/ASSET_SPECIFICATIONS.md`.
 
 It does not add packaging recipes, labels, weights, freshness, spoilage, dynamic textures, overlays, business logic, custom sounds, or animations.
 
@@ -102,6 +103,8 @@ butchercraft:retail_ground_beef
 ```
 
 It references `butchercraft:retail_package` and `butchercraft:ground_beef`, uses the beef category, uses grams, and carries the `butchercraft:trait/retail_packaged` tag. At runtime, the packaged ItemStack also stores stack-level packaging metadata with the packaging definition id, packaging format id, and source product id.
+
+The development item fixture `butchercraft:retail_ground_beef_test` uses the stable texture resource `butchercraft:item/packaging/retail_ground_beef`. The current PNG is a placeholder and must not be treated as final retail product art.
 
 ## Atomic Reload
 

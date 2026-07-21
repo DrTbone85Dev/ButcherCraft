@@ -58,11 +58,14 @@ abstract class AbstractProcessingWorkstationScreen<T extends ProcessingWorkstati
     }
 
     protected void renderProgress(GuiGraphics guiGraphics, int x, int y) {
-        int width = 20;
+        renderProgress(guiGraphics, x, y, 20, 6);
+    }
+
+    protected void renderProgress(GuiGraphics guiGraphics, int x, int y, int width, int height) {
         int fillWidth = width * menu.progressPercent() / 100;
-        guiGraphics.fill(x, y, x + width, y + 6, PROGRESS_BACKGROUND_COLOR);
+        guiGraphics.fill(x, y, x + width, y + height, PROGRESS_BACKGROUND_COLOR);
         if (fillWidth > 0) {
-            guiGraphics.fill(x, y, x + fillWidth, y + 6, PROGRESS_FILL_COLOR);
+            guiGraphics.fill(x, y, x + fillWidth, y + height, PROGRESS_FILL_COLOR);
         }
     }
 

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "butchercraft:item/development_test_item"
+    "layer0": "butchercraft:item/packaging/retail_ground_beef"
   }
 }

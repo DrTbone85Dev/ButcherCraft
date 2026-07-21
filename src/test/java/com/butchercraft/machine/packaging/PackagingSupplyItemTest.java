@@ -8,8 +8,11 @@ import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
 import org.junit.jupiter.api.Test;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,20 +76,28 @@ class PackagingSupplyItemTest {
     }
 
     @Test
-    void packagingSupplyItemsHaveGeneratedModelsAndPlaceholderTexture() throws IOException {
-        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
-                "src/main/resources/assets/butchercraft/textures/item/packaging_supply_placeholder.png"
-        )));
-
+    void packagingSupplyItemsHaveGeneratedModelsAndStableTextureTargets() throws IOException {
         for (SupplyItem item : SUPPLY_ITEMS) {
+            Path texture = TestProjectPaths.projectPath(
+                    "src/main/resources/assets/butchercraft/textures/item/packaging/" + item.id() + ".png"
+            );
+            assertTextureDimensions(texture, 16, 16);
+
             var model = JsonParser.parseString(Files.readString(TestProjectPaths.projectPath(
                     "src/generated/resources/assets/butchercraft/models/item/" + item.id() + ".json"
             ))).getAsJsonObject();
 
             assertEquals("minecraft:item/generated", model.get("parent").getAsString());
-            assertEquals("butchercraft:item/packaging_supply_placeholder",
+            assertEquals("butchercraft:item/packaging/" + item.id(),
                     model.getAsJsonObject("textures").get("layer0").getAsString());
         }
+    }
+
+    private static void assertTextureDimensions(Path texture, int expectedWidth, int expectedHeight) throws IOException {
+        assertTrue(Files.isRegularFile(texture), "Expected texture at " + texture);
+        BufferedImage image = ImageIO.read(texture.toFile());
+        assertEquals(expectedWidth, image.getWidth(), "Unexpected width for " + texture);
+        assertEquals(expectedHeight, image.getHeight(), "Unexpected height for " + texture);
     }
 
     private record SupplyItem(String id, String displayName, DeferredItem<? extends Item> registration) {

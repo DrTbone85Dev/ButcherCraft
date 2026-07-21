@@ -18,6 +18,9 @@ class PackagingTableDatagenTest {
         assertTrue(blockStates.contains("horizontalBlock(ModBlocks.PACKAGING_TABLE.get(), packagingTableModel)"));
         assertTrue(blockStates.contains("simpleBlockItem(ModBlocks.PACKAGING_TABLE.get(), packagingTableModel)"));
         assertTrue(blockStates.contains("models().getBuilder(\"packaging_table\")"));
+        assertTrue(blockStates.contains("PACKAGING_TABLE_SURFACE_TEXTURE"));
+        assertTrue(blockStates.contains("PACKAGING_TABLE_FRAME_TEXTURE"));
+        assertTrue(blockStates.contains("PACKAGING_TABLE_ROLL_TEXTURE"));
         assertTrue(lootTables.contains("dropSelf(ModBlocks.PACKAGING_TABLE.get())"));
         assertTrue(language.contains("Packaging Table"));
         assertTrue(language.contains("container.butchercraft.packaging_table.slot.meat"));

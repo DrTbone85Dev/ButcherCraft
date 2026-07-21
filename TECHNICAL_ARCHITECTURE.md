@@ -1,9 +1,9 @@
 # ButcherCraft Technical Architecture
 
-Status: proposed planning document  
+Status: canonical project architecture document
 Target: Minecraft 1.21.1, NeoForge, Java 21
 
-This document proposes an architecture before gameplay implementation begins. It assumes a new NeoForge MDK-style Java project because the current workspace does not yet contain mod source, Gradle files, or existing conventions.
+This document records ButcherCraft's current architecture, planned system boundaries, and accepted technical constraints. Supporting design documents may expand individual systems, but this root file is the canonical Technical Architecture document.
 
 ## Version-Specific Ground Rules
 
@@ -26,6 +26,42 @@ This document proposes an architecture before gameplay implementation begins. It
 - Approved asset namespace: `butchercraft`.
 
 These identity values are approved owner decisions and should be treated as stable before source generation.
+
+## Asset Resource Contracts
+
+ButcherCraft uses standard Minecraft resource-pack locations for all current visual assets. Generated workstation and item models live under `assets/butchercraft/models`, generated blockstates live under `assets/butchercraft/blockstates`, and hand-authored PNG textures live under `assets/butchercraft/textures`.
+
+Asset ownership is split by responsibility:
+
+- Data generation owns active workstation blockstates, generated block models, generated item models, loot tables, and generated language resources.
+- Hand-authored resources own PNG textures and legacy development fixture models.
+- Final artwork must replace existing texture files or override standard Minecraft model/resource locations through a resource pack. Gameplay code must not change solely to adopt final textures.
+
+The v0.8.0E asset framework establishes stable packaging replacement paths:
+
+- Packaging supplies and Retail Ground Beef use `assets/butchercraft/textures/item/packaging/*.png`.
+- Packaging Table workstation textures use `assets/butchercraft/textures/block/workstation/*.png`.
+- Packaging Table GUI artwork uses `assets/butchercraft/textures/gui/packaging_table.png`.
+- Development-only product fixtures may continue to use `assets/butchercraft/textures/item/development_test_item.png` until a future product item factory and final product art pass are scheduled.
+
+Canonical current asset paths:
+
+| Asset class | Canonical path |
+| --- | --- |
+| Packaging item textures | `assets/butchercraft/textures/item/packaging/*.png` |
+| Workstation textures | `assets/butchercraft/textures/block/workstation/*.png` |
+| GUI textures | `assets/butchercraft/textures/gui/*.png` |
+| Generated item models | `assets/butchercraft/models/item/*.json` |
+| Generated block models | `assets/butchercraft/models/block/*.json` |
+| Generated blockstates | `assets/butchercraft/blockstates/*.json` |
+
+Gameplay architecture must not change merely to accommodate artwork. Final textures should replace existing resource-pack paths or override standard model paths without modifying registries, datapacks, workstation execution, or product serialization.
+
+Packaging supplies and Retail Ground Beef use unique texture paths even while their current contents are placeholders. This gives artists stable replacement targets without requiring code changes, datapack changes, item remapping, or custom renderers.
+
+The Packaging Table GUI uses `butchercraft:textures/gui/packaging_table.png` with bounds documented in `docs/PACKAGING_TABLE_GUI_SPEC.md`. Slot and progress overlays remain code-rendered because they are functional UI elements, not final background artwork.
+
+The v0.8.0E presentation foundation does not introduce final textures, dynamic rendering, block entity renderers, animations, connected textures, emissive textures, generated AI art, item recipes, new product content, or gameplay balance changes.
 
 ## Main Java Packages and Owners
 
@@ -463,6 +499,8 @@ Version 0.8.0 Sprint 2 adds the Retail Product Framework. `PackagingDefinition` 
 Version 0.8.0 Sprint C adds Packaging Supplies as fixed Minecraft item registrations and extends `PackagingDefinition` with optional immutable required supply item ids. Built-in packaging definitions now prove `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats. Supply ids validate during packaging datapack loading through the content snapshot, but datapacks do not dynamically register supply items.
 
 Version 0.8.0 Sprint D connects the Packaging Table to the shared processing controller. `PackagingTableExecutionStrategy` validates output product packaging metadata and required supply stacks through the active packaging registry, then `WorkstationInventoryCommitPlan` consumes product input, consumes supplies, and inserts output atomically. The table still does not use transformation definitions, packaging recipes, labels, freshness, spoilage, business logic, or a dynamic product item factory.
+
+Version 0.8.0E establishes the asset framework and presentation foundation. Packaging supply items, the Retail Ground Beef test product, the Packaging Table block model, and the Packaging Table GUI now have stable placeholder-backed resource paths for future final art replacement without gameplay, registry, datapack, or workstation behavior changes.
 
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
