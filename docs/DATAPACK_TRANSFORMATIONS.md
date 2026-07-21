@@ -76,7 +76,7 @@ The JSON field names match the stable external serialization contract:
 3. `CanonicalTransformationDefinitionDeserializer` creates immutable `TransformationDefinition` instances.
 4. `TransformationDatapackLoader` validates duplicate ids, product references, capabilities, schema versions, and domain construction rules against the candidate product registry from the same reload.
 5. A new immutable `TransformationRegistry` is built in resource order.
-6. `ContentSnapshotService` swaps the active product and transformation registries together only when loading succeeds.
+6. `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only when loading succeeds.
 
 The pure transformation model does not import Minecraft or NeoForge classes. The reload listener is the Minecraft-facing bridge.
 

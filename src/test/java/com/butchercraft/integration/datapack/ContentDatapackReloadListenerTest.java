@@ -34,6 +34,7 @@ class ContentDatapackReloadListenerTest {
                 "butchercraft:test_output",
                 "Test Output"
         )));
+        resources.put(id("content/packaging/retail_package"), JsonParser.parseString(serializedPackagingJson()));
         resources.put(id("transformation/test_transform"), JsonParser.parseString(serializedTransformationJson(
                 "butchercraft:test_transform",
                 "butchercraft:test_input",
@@ -43,6 +44,7 @@ class ContentDatapackReloadListenerTest {
         new ContentDatapackReloadListener().apply(resources, null, null);
 
         assertEquals(2, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(1, ContentSnapshotService.currentPackagingRegistry().size());
         assertEquals(1, ContentSnapshotService.currentTransformationRegistry().size());
         assertTrue(ContentSnapshotService.currentProductRegistry().contains(EngineId.of("butchercraft:test_input")));
         assertTrue(ContentSnapshotService.currentProductRegistry().contains(EngineId.of("butchercraft:test_output")));
@@ -125,5 +127,26 @@ class ContentDatapackReloadListenerTest {
                 }
                 """.formatted(id, BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING.value(),
                 inputProduct, outputProduct);
+    }
+
+    private static String serializedPackagingJson() {
+        return """
+                {
+                  "schema_version": 1,
+                  "id": "butchercraft:retail_package",
+                  "display_name": "Retail Package",
+                  "format": "retail",
+                  "default_quantity_unit": "gram",
+                  "compatible_categories": [
+                    "butchercraft:beef"
+                  ],
+                  "compatible_tags": [
+                    "butchercraft:trait/test"
+                  ],
+                  "metadata": {
+                    "butchercraft:schema/source": "test"
+                  }
+                }
+                """;
     }
 }

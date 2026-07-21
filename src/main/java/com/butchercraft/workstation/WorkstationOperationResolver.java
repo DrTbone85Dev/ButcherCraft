@@ -7,6 +7,7 @@ import com.butchercraft.processing.definition.DefinitionResolution;
 import com.butchercraft.processing.definition.DefinitionValidationIssue;
 import com.butchercraft.processing.definition.ProcessingDefinitionResolver;
 import com.butchercraft.processing.definition.ProcessingGraph;
+import com.butchercraft.processing.definition.ProductDefinition;
 import com.butchercraft.processing.definition.ProductStackDefinitionValidator;
 import com.butchercraft.processing.definition.ResolvedProcessingOperationDefinition;
 import com.butchercraft.product.component.ProductStackData;
@@ -87,6 +88,7 @@ public final class WorkstationOperationResolver implements WorkstationOperationL
                     issue.explanation()
             ));
         }
+        var inputDefinition = definitions.products().get(productId);
 
         ProductDataResult<Product> productResult = ProductStackAdapter.toProduct(data);
         if (!productResult.succeeded()) {
@@ -178,9 +180,14 @@ public final class WorkstationOperationResolver implements WorkstationOperationL
         }
 
         if (compatible.isEmpty()) {
-            return WorkstationOperationResolution.failure(lastRejection == null
-                    ? WorkstationFailure.of(WorkstationFailureCode.NO_COMPATIBLE_OPERATION, productId, "No operation starts from this product")
-                    : lastRejection);
+            if (lastRejection == null || shouldReportNoCompatibleOperation(inputDefinition, lastRejection)) {
+                return WorkstationOperationResolution.failure(WorkstationFailure.of(
+                        WorkstationFailureCode.NO_COMPATIBLE_OPERATION,
+                        productId,
+                        "No compatible operation starts from this product for this workstation"
+                ));
+            }
+            return WorkstationOperationResolution.failure(lastRejection);
         }
         if (compatible.size() > 1) {
             return WorkstationOperationResolution.multiple(compatible.stream()
@@ -189,6 +196,14 @@ public final class WorkstationOperationResolver implements WorkstationOperationL
                     .toList());
         }
         return WorkstationOperationResolution.success(compatible.getFirst());
+    }
+
+    private static boolean shouldReportNoCompatibleOperation(
+            ProductDefinition inputDefinition,
+            WorkstationFailure lastRejection
+    ) {
+        return lastRejection.code() == WorkstationFailureCode.OPERATION_CAPABILITY_MISMATCH
+                && !inputDefinition.graphInput();
     }
 
     private static boolean supportsOperation(

@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Pure Java serialized representation of the external product definition schema.
@@ -16,8 +17,21 @@ public record SerializedProductDefinition(
         String category,
         String defaultQuantityUnit,
         List<String> tags,
+        Optional<SerializedProductPackagingMetadata> packaging,
         Map<String, String> metadata
 ) {
+    public SerializedProductDefinition(
+            ProductSchemaVersion schemaVersion,
+            String id,
+            String displayName,
+            String category,
+            String defaultQuantityUnit,
+            List<String> tags,
+            Map<String, String> metadata
+    ) {
+        this(schemaVersion, id, displayName, category, defaultQuantityUnit, tags, Optional.empty(), metadata);
+    }
+
     public SerializedProductDefinition {
         Objects.requireNonNull(schemaVersion, "schemaVersion");
         id = Objects.requireNonNull(id, "id").strip();
@@ -37,6 +51,7 @@ public record SerializedProductDefinition(
             throw new IllegalArgumentException("Serialized product default quantity unit cannot be blank");
         }
         tags = copyTags(tags);
+        packaging = Objects.requireNonNull(packaging, "packaging");
         metadata = copyMetadata(metadata);
     }
 

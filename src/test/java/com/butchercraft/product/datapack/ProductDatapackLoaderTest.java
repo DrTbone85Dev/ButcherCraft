@@ -18,6 +18,7 @@ public class ProductDatapackLoaderTest {
     private static final List<String> EXPECTED_BUNDLED_PRODUCT_IDS = List.of(
             "butchercraft:beef_trim",
             "butchercraft:ground_beef",
+            "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",
             "butchercraft:bison_trim",
@@ -60,6 +61,31 @@ public class ProductDatapackLoaderTest {
                 result.registry().orElseThrow().stream()
                         .map(definition -> definition.id().value())
                         .toList());
+    }
+
+    @Test
+    void packagingMetadataLoadsWhenPresentAndExistingProductsCanOmitIt() {
+        ProductDatapackLoadResult result = loader().load(resources(
+                Map.entry("ground", product("butchercraft:ground_beef", "Ground Beef", "butchercraft:beef", "gram")),
+                Map.entry("retail", packagedProduct(
+                        "butchercraft:retail_ground_beef",
+                        "Retail Ground Beef",
+                        "butchercraft:beef",
+                        "gram",
+                        "butchercraft:retail_package",
+                        "butchercraft:ground_beef"
+                ))
+        ));
+
+        assertTrue(result.succeeded(), result::describeErrors);
+        var products = result.registry().orElseThrow();
+        assertTrue(products.find(BuiltInProductRegistry.GROUND_BEEF).orElseThrow().packagingMetadata().isEmpty());
+        var metadata = products.find(BuiltInProductRegistry.RETAIL_GROUND_BEEF)
+                .orElseThrow()
+                .packagingMetadata()
+                .orElseThrow();
+        assertEquals("butchercraft:retail_package", metadata.packagingDefinitionId().value());
+        assertEquals("butchercraft:ground_beef", metadata.sourceProductId().value());
     }
 
     @Test
@@ -146,6 +172,31 @@ public class ProductDatapackLoaderTest {
         assertEquals(ProductDatapackErrorCode.MALFORMED_METADATA, malformedMetadata.errors().getFirst().code());
     }
 
+    @Test
+    void malformedPackagingMetadataIsRejected() {
+        ProductDatapackLoadResult malformedPackagingObject = loader().load(resources(Map.entry(
+                "packaging",
+                product("butchercraft:retail_ground_beef", "Retail Ground Beef", "butchercraft:beef", "gram")
+                        .replace("\"metadata\"", "\"packaging\": true,\n  \"metadata\"")
+        )));
+        ProductDatapackLoadResult malformedPackagingId = loader().load(resources(Map.entry(
+                "packaging_id",
+                packagedProduct(
+                        "butchercraft:retail_ground_beef",
+                        "Retail Ground Beef",
+                        "butchercraft:beef",
+                        "gram",
+                        "ButcherCraft:Retail Package",
+                        "butchercraft:ground_beef"
+                )
+        )));
+
+        assertEquals(ProductDatapackErrorCode.MALFORMED_PACKAGING_METADATA,
+                malformedPackagingObject.errors().getFirst().code());
+        assertEquals(ProductDatapackErrorCode.MALFORMED_PACKAGING_METADATA,
+                malformedPackagingId.errors().getFirst().code());
+    }
+
     public static ProductDatapackLoader loader() {
         return new ProductDatapackLoader(ContentSnapshotService.knownProductCategories());
     }
@@ -160,6 +211,10 @@ public class ProductDatapackLoaderTest {
     }
 
     public static String product(String id, String displayName, String category, String unit) {
+        return productWithTag(id, displayName, category, unit, "butchercraft:trait/trim");
+    }
+
+    public static String productWithTag(String id, String displayName, String category, String unit, String tag) {
         return """
                 {
                   "schema_version": 1,
@@ -168,12 +223,41 @@ public class ProductDatapackLoaderTest {
                   "category": "%s",
                   "default_quantity_unit": "%s",
                   "tags": [
-                    "butchercraft:trait/trim"
+                    "%s"
                   ],
                   "metadata": {
                     "butchercraft:schema/source": "built_in"
                   }
                 }
-                """.formatted(id, displayName, category, unit);
+                """.formatted(id, displayName, category, unit, tag);
+    }
+
+    public static String packagedProduct(
+            String id,
+            String displayName,
+            String category,
+            String unit,
+            String packagingDefinition,
+            String sourceProduct
+    ) {
+        return """
+                {
+                  "schema_version": 1,
+                  "id": "%s",
+                  "display_name": "%s",
+                  "category": "%s",
+                  "default_quantity_unit": "%s",
+                  "tags": [
+                    "butchercraft:trait/retail_packaged"
+                  ],
+                  "packaging": {
+                    "definition": "%s",
+                    "source_product": "%s"
+                  },
+                  "metadata": {
+                    "butchercraft:schema/source": "built_in"
+                  }
+                }
+                """.formatted(id, displayName, category, unit, packagingDefinition, sourceProduct);
     }
 }

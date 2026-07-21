@@ -26,6 +26,10 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.BANDSAW.get(), bandsawModel);
         simpleBlockItem(ModBlocks.BANDSAW.get(), bandsawModel);
         horizontalBlock(ModBlocks.BANDSAW_UPPER.get(), bandsawUpperModel());
+
+        ModelFile packagingTableModel = packagingTableModel();
+        horizontalBlock(ModBlocks.PACKAGING_TABLE.get(), packagingTableModel);
+        simpleBlockItem(ModBlocks.PACKAGING_TABLE.get(), packagingTableModel);
     }
 
     @Override
@@ -55,5 +59,14 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
                 .element().from(2, 0, 2).to(14, 13, 14).cube("#all").end()
                 .element().from(5, 1, 0).to(11, 12, 2).cube("#all").end()
                 .element().from(3, 13, 3).to(13, 16, 13).cube("#all").end();
+    }
+
+    private ModelFile packagingTableModel() {
+        return models().getBuilder("packaging_table")
+                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE)
+                .element().from(0, 0, 0).to(16, 10, 16).cube("#all").end()
+                .element().from(2, 10, 2).to(14, 12, 14).cube("#all").end()
+                .element().from(3, 12, 3).to(13, 13, 13).cube("#all").end()
+                .element().from(1, 10, 0).to(15, 11, 2).cube("#all").end();
     }
 }

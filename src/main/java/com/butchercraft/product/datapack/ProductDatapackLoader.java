@@ -64,6 +64,7 @@ public final class ProductDatapackLoader {
             validateQuantityUnit(source, serialized, errors);
             validateTags(source, serialized, errors);
             validateMetadata(source, serialized, errors);
+            validatePackagingMetadata(source, serialized, errors);
             if (hasDefinitionBlockingError(source, errors)) {
                 continue;
             }
@@ -191,6 +192,26 @@ public final class ProductDatapackLoader {
                 ));
             }
         }
+    }
+
+    private static void validatePackagingMetadata(
+            String source,
+            SerializedProductDefinition serialized,
+            List<ProductDatapackValidationError> errors
+    ) {
+        serialized.packaging().ifPresent(packaging -> {
+            try {
+                EngineId.of(packaging.definition());
+                EngineId.of(packaging.sourceProduct());
+            } catch (RuntimeException exception) {
+                errors.add(ProductDatapackValidationError.of(
+                        source,
+                        serialized.id(),
+                        ProductDatapackErrorCode.MALFORMED_PACKAGING_METADATA,
+                        exception.getMessage()
+                ));
+            }
+        });
     }
 
     private static boolean hasDefinitionBlockingError(String source, List<ProductDatapackValidationError> errors) {

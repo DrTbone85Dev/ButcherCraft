@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +34,7 @@ class ProductDefinitionTest {
         assertEquals(QuantityUnit.GRAM, definition.defaultQuantityUnit());
         assertEquals(List.of(TAG_TRIM), definition.tags().stream().toList());
         assertTrue(definition.hasTag(TAG_TRIM));
+        assertTrue(definition.packagingMetadata().isEmpty());
         assertEquals("built_in", definition.metadata().get(METADATA_SOURCE));
     }
 
@@ -103,6 +105,37 @@ class ProductDefinitionTest {
         assertEquals(Map.of(METADATA_SOURCE, "built_in"), definition.metadata());
         assertThrows(UnsupportedOperationException.class, () -> definition.tags().clear());
         assertThrows(UnsupportedOperationException.class, () -> definition.metadata().put(METADATA_SOURCE, "changed"));
+    }
+
+    @Test
+    void optionalPackagingMetadataIsValidatedAndIncludedInEquality() {
+        ProductPackagingMetadata packagingMetadata = new ProductPackagingMetadata(
+                EngineId.of("butchercraft:retail_package"),
+                EngineId.of("butchercraft:ground_beef")
+        );
+
+        ProductDefinition packaged = validBuilder()
+                .id("butchercraft:retail_ground_beef")
+                .displayName("Retail Ground Beef")
+                .tag("butchercraft:trait/retail_packaged")
+                .packagingMetadata(packagingMetadata)
+                .build();
+        ProductDefinition same = validBuilder()
+                .id("butchercraft:retail_ground_beef")
+                .displayName("Retail Ground Beef")
+                .tag("butchercraft:trait/retail_packaged")
+                .packagingMetadata(Optional.of(packagingMetadata))
+                .build();
+        ProductDefinition withoutPackaging = validBuilder()
+                .id("butchercraft:retail_ground_beef")
+                .displayName("Retail Ground Beef")
+                .tag("butchercraft:trait/retail_packaged")
+                .build();
+
+        assertEquals(packagingMetadata, packaged.packagingMetadata().orElseThrow());
+        assertEquals(packaged, same);
+        assertNotEquals(packaged, withoutPackaging);
+        assertThrows(NullPointerException.class, () -> validBuilder().packagingMetadata((ProductPackagingMetadata) null));
     }
 
     @Test

@@ -48,12 +48,18 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModBlocks.GRINDER.get(), "Grinder");
         add(ModBlocks.BANDSAW.get(), "Industrial Bandsaw");
         add(ModBlocks.BANDSAW_UPPER.get(), "Industrial Bandsaw");
+        add(ModBlocks.PACKAGING_TABLE.get(), "Packaging Table");
         add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
         add("container.butchercraft.grinder", "Grinder");
         add("container.butchercraft.bandsaw", "Industrial Bandsaw");
+        add("container.butchercraft.packaging_table", "Packaging Table");
+        add("container.butchercraft.packaging_table.slot.meat", "Meat");
+        add("container.butchercraft.packaging_table.slot.tray", "Tray");
+        add("container.butchercraft.packaging_table.slot.wrap", "Wrap");
+        add("container.butchercraft.packaging_table.slot.result", "Result");
         add("container.butchercraft.development_processing_workstation", "Development Processing Workstation");
         add("commands.butchercraft.info.title", "ButcherCraft");
-        add("commands.butchercraft.info.version", "Version %s - Early Development / Beef Fabrication Expansion");
+        add("commands.butchercraft.info.version", "Version %s - Early Development / Project Meat Counter");
         add("commands.butchercraft.info.status", "Processing, inventory, employee, and business simulation systems are under active development.");
         add("commands.butchercraft.diagnostic", "ButcherCraft Diagnostic");
         add("definition.butchercraft.species.beef", "Beef");
@@ -62,6 +68,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("definition.butchercraft.processing_profile.red_meat", "Red Meat");
         add("definition.butchercraft.product.beef_trim", "Beef Trim");
         add("definition.butchercraft.product.ground_beef", "Ground Beef");
+        add("definition.butchercraft.product.retail_ground_beef", "Retail Ground Beef");
         add("definition.butchercraft.product.pork_trim", "Pork Trim");
         add("definition.butchercraft.product.ground_pork", "Ground Pork");
         add("definition.butchercraft.product.bison_trim", "Bison Trim");
@@ -98,6 +105,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("definition.butchercraft.processing_operation.cut_beef_short_loin", "Cut Beef Short Loin");
         add("definition.butchercraft.processing_operation.cut_beef_round", "Cut Beef Round");
         add("definition.butchercraft.processing_operation.cut_beef_sirloin", "Cut Beef Sirloin");
+        add("definition.butchercraft.processing_operation.package_retail", "Package Retail");
         add("tooltip.butchercraft.product_data.product", "Product: %s");
         add("tooltip.butchercraft.product_data.source", "Source: %s");
         add("tooltip.butchercraft.product_data.state", "State: %s");

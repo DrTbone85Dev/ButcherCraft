@@ -15,12 +15,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Minecraft datapack reload bridge for product and transformation definitions.
+ * Minecraft datapack reload bridge for product, packaging, and transformation definitions.
  */
 public final class ContentDatapackReloadListener extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new Gson();
     private static final String ROOT_DIRECTORY = "butchercraft";
     private static final String PRODUCT_PREFIX = "content/product/";
+    private static final String PACKAGING_PREFIX = "content/packaging/";
     private static final String TRANSFORMATION_PREFIX = "transformation/";
 
     public ContentDatapackReloadListener() {
@@ -34,13 +35,21 @@ public final class ContentDatapackReloadListener extends SimpleJsonResourceReloa
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
         LinkedHashMap<String, JsonElement> productResources = new LinkedHashMap<>();
+        LinkedHashMap<String, JsonElement> packagingResources = new LinkedHashMap<>();
         LinkedHashMap<String, JsonElement> transformationResources = new LinkedHashMap<>();
 
         resources.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> route(entry.getKey(), entry.getValue(), productResources, transformationResources));
+                .forEach(entry -> route(
+                        entry.getKey(),
+                        entry.getValue(),
+                        productResources,
+                        packagingResources,
+                        transformationResources
+                ));
 
-        ContentSnapshotLoadResult result = ContentSnapshotService.replaceFromDatapack(productResources, transformationResources);
+        ContentSnapshotLoadResult result =
+                ContentSnapshotService.replaceFromDatapack(productResources, packagingResources, transformationResources);
         if (!result.succeeded()) {
             String message = "Unable to load ButcherCraft content datapack resources:"
                     + System.lineSeparator()
@@ -50,8 +59,9 @@ public final class ContentDatapackReloadListener extends SimpleJsonResourceReloa
         }
         var snapshot = result.snapshot().orElseThrow();
         ButcherCraft.LOGGER.info(
-                "Loaded {} ButcherCraft product definitions and {} transformation definitions.",
+                "Loaded {} ButcherCraft product definitions, {} packaging definitions, and {} transformation definitions.",
                 snapshot.products().size(),
+                snapshot.packaging().size(),
                 snapshot.transformations().size()
         );
     }
@@ -60,11 +70,16 @@ public final class ContentDatapackReloadListener extends SimpleJsonResourceReloa
             ResourceLocation id,
             JsonElement json,
             Map<String, JsonElement> productResources,
+            Map<String, JsonElement> packagingResources,
             Map<String, JsonElement> transformationResources
     ) {
         String path = id.getPath();
         if (path.startsWith(PRODUCT_PREFIX)) {
             productResources.put(id.toString(), json);
+        } else if (path.startsWith(PACKAGING_PREFIX)) {
+            packagingResources.put(id.toString(), json);
+        } else if (path.startsWith(ROOT_DIRECTORY + "/" + PACKAGING_PREFIX)) {
+            packagingResources.put(id.toString(), json);
         } else if (path.startsWith(TRANSFORMATION_PREFIX)) {
             transformationResources.put(id.toString(), json);
         } else if (path.startsWith(ROOT_DIRECTORY + "/" + TRANSFORMATION_PREFIX)) {

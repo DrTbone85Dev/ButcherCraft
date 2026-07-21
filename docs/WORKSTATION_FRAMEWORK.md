@@ -1,12 +1,12 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, with v0.7.0 datapack-backed beef fabrication content
+Status: Milestones 2B through 2E workstation framework, with v0.8.0 Packaging Table foundation
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table as an inventory-only workstation foundation, and Sprint 2 adds retail product data without packaging execution.
 
-This is not final artwork, not a player recipe-selection system, and not a complete product item factory.
+This is not final artwork, not a player recipe-selection system, not a packaging gameplay system, and not a complete product item factory.
 
 ## Responsibility Boundaries
 
@@ -15,7 +15,8 @@ This is not final artwork, not a player recipe-selection system, and not a compl
 - `com.butchercraft.product.integration.ProductStackAdapter` owns ItemStack/product conversion.
 - `com.butchercraft.workstation` owns workstation capability, state, failure, inventory, operation resolution, duration conversion, and execution orchestration.
 - `com.butchercraft.transformation` owns pure Java transformation evaluation and execution. Minecraft-facing workstations adapt their advertised capabilities into this pure model only at the integration boundary.
-- `ProcessingWorkstationBlockEntity` owns local persistence, server ticking, menu creation, and block-break recovery.
+- `AbstractInventoryWorkstationBlockEntity` owns shared inventory persistence, menu creation, item-handler inventory ownership, update tags, and block-break recovery for workstation foundations.
+- `AbstractProcessingWorkstationBlockEntity` adds processing controller state, server ticking, operation resolution, and completion behavior for machines that execute processing.
 - `ProcessingWorkstationMenu` and its client screens are temporary views. They do not own inventory or processing state.
 
 ## State Machine
@@ -49,10 +50,11 @@ Minimum failure codes from the milestone are represented, with one additional ex
 | Development Processing Workstation | 1 | 1 | 2 |
 | Grinder | 1 | 1 | 2 |
 | Bandsaw | 1 | 8 | 9 |
+| Packaging Table | 3 | 1 | 4 |
 
-Slot `0` is the input for current machines. Output slots start at the configured first output slot, currently slot `1`.
+Slot `0` is the first input for current machines. Output slots start at the configured first output slot, which is slot `1` for current one-input machines and slot `3` for the Packaging Table.
 
-Input accepts product-bearing stacks only. Output rejects insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion. Automation uses the same item-handler rules.
+Processing machine inputs accept product-bearing stacks only. The Packaging Table foundation accepts non-empty placeholder inputs until packaging rules define stricter semantics. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion for processing machines and always allowed for the Packaging Table foundation. Automation uses the same item-handler rules.
 
 ## Operation Resolution
 
@@ -69,8 +71,9 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 - The default legacy strategy preserves the existing processing transaction path.
 - The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
-- `ContentSnapshotService` swaps the active product and transformation registries together only after datapack content validation succeeds.
-- Development workstation and any future un-migrated workstations remain on the legacy strategy until explicitly migrated.
+- `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds.
+- Development workstation and any future un-migrated processing workstations remain on the legacy strategy until explicitly migrated.
+- The Packaging Table does not create a `WorkstationProcessingController` and has no execution strategy in v0.8.0.
 
 The current workstation controller still owns Minecraft inventory reservation, ItemStack creation, output slot checks, and block-entity persistence.
 
@@ -101,7 +104,7 @@ Durations must be positive and fit in an `int` tick count. Therefore `3000` mill
 
 ## Persistence and Recovery
 
-The block entity persists:
+Processing block entities persist:
 
 - Workstation inventory.
 - Workstation state.
@@ -113,7 +116,9 @@ The block entity persists:
 
 Recovery policy: input remains visibly reserved in the input slot. If active saved state is malformed, processing stops in `ERROR` and recoverable inventory remains instead of being deleted. Completed output is never recreated if the output already exists.
 
-Inventory load keeps the machine's configured slot count. Extra saved slots are ignored, and missing saved slots remain empty, so older two-slot Grinder/development workstation saves and nine-slot Bandsaw saves keep their intended layouts.
+Inventory-only workstations persist only their inventory. The Packaging Table uses this path in v0.8.0.
+
+Inventory load keeps the machine's configured slot count. Extra saved slots are ignored, and missing saved slots remain empty, so older two-slot Grinder/development workstation saves, nine-slot Bandsaw saves, and four-slot Packaging Table saves keep their intended layouts.
 
 ## Synchronization
 
@@ -184,14 +189,26 @@ butchercraft:bandsaw_upper
 
 The lower block owns the block entity, inventory, ticker, menu, persistence, and recovery drops. The upper block forwards interaction and removes the paired machine without owning inventory. The Bandsaw uses `butchercraft:bandsaw` and can fill up to eight ordered output slots from one committed operation.
 
+## Packaging Table
+
+Permanent foundation block:
+
+```text
+butchercraft:packaging_table
+```
+
+The block appears in the ButcherCraft creative tab, opens a placeholder inventory menu and client screen, persists Meat, Tray, Wrap, and Result slots, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:packaging`. Sprint 2 adds a `package_retail` processing-operation definition for the graph, but the table still has no controller or execution strategy.
+
+The Packaging Table is documented in `docs/PACKAGING_TABLE.md`.
+
 ## Future Extension Points
 
 - Additional machines can define separate `WorkstationCapability` values.
-- Capabilities declare how many output slots a machine can expose.
+- Capabilities declare how many input and output slots a machine can expose.
 - Future poultry-specific restrictions should be capability/profile data, not Java species switches.
 - Cleanliness, maintenance, equipment condition, and employee operation currently use centralized prototype context values and can be replaced by real snapshots later.
 - Operation selection UI is deferred until multiple compatible operations are real gameplay.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, employees, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, sounds, animations, complex rendering, recipe-selection UI, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, employees, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, sounds, animations, complex rendering, recipe-selection UI, packaging recipes, packaging execution, labels, or public expansion API guarantees.

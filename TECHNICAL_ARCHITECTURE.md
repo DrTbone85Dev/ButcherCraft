@@ -36,6 +36,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
 | `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, operation, context, validation, evaluation, result, and transaction domain rules. |
 | `com.butchercraft.transformation` | Minecraft-independent generic material-transformation ids, material amounts, definitions, contexts, evaluations, evaluators, and compatibility adapters. |
+| `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, serialization, datapack validation, and registry access. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
 | `com.butchercraft.api` | Documented public API intended for expansion mods. |
@@ -63,7 +64,7 @@ Every major system has a proposed technical owner in package form:
 
 Expansion mods should depend on the core mod and its documented `api` package, not on internal implementation packages.
 
-Minecraft integration packages may depend on `com.butchercraft.engine` and `com.butchercraft.transformation`. Engine and transformation packages must not import Minecraft or NeoForge classes.
+Minecraft integration packages may depend on `com.butchercraft.engine`, `com.butchercraft.product.definition`, `com.butchercraft.packaging`, and `com.butchercraft.transformation`. Engine, product-definition, packaging, and transformation packages must not import Minecraft or NeoForge classes.
 
 ## Pre-Implementation Boundary Decisions
 
@@ -84,6 +85,7 @@ Required boundaries:
 - Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
 - The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Beef, pork, and bison grinding flows are selected through product/species/profile/operation definitions, not Grinder code branches.
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
+- The Packaging Table foundation owns only workstation inventory, persistence, menu synchronization, and item-handler exposure. Packaging recipes, product mutation, order fulfillment, and transformation execution remain unscheduled future work.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
@@ -450,9 +452,13 @@ Version 0.6.7 migrates only the Bandsaw to the atomic transformation execution s
 
 Version 0.6.8 loads transformation definitions from datapack JSON resources under `data/<namespace>/butchercraft/transformation`. The loader maps JSON onto the canonical serialized transformation records, reuses the canonical deserializer, validates product and capability references, and swaps the active immutable registry only after a successful reload. The evaluator, executor, transaction engine, and workstation behavior remain unchanged.
 
-Version 0.6.9 loads product definitions from content snapshot JSON resources under `data/<namespace>/butchercraft/content/product` and assembles product and transformation registries as a single immutable content snapshot. That path is deliberately separate from the Minecraft datapack registry path `data/<namespace>/butchercraft/product`, which remains owned by the richer processing product codec. Product loading must succeed before transformation loading starts, and transformation references validate against the candidate product registry from the same reload. Snapshot activation is atomic: failed product or transformation content preserves both previously active registries.
+Version 0.6.9 loads product definitions from content snapshot JSON resources under `data/<namespace>/butchercraft/content/product` and assembles product and transformation registries as a single immutable content snapshot. That path is deliberately separate from the Minecraft datapack registry path `data/<namespace>/butchercraft/product`, which remains owned by the richer processing product codec. Product loading must succeed before transformation loading starts, and transformation references validate against the candidate product registry from the same reload.
 
 Version 0.7.0 expands the bundled beef fabrication catalog through the existing product datapack, transformation datapack, processing-operation, resolver, Bandsaw capability, and atomic transaction paths. It does not add product-specific Bandsaw code or a dynamic product item factory.
+
+Version 0.8.0 adds the Packaging Table workstation foundation. The table registers a placeable block, item, block entity, menu, client screen, creative-tab entry, generated assets, and a three-input, one-result placeholder inventory. It uses a shared inventory-only workstation block entity base and deliberately does not execute packaging operations, transformations, product-item mappings, or gameplay packaging behavior.
+
+Version 0.8.0 Sprint 2 adds the Retail Product Framework. `PackagingDefinition` is a pure Java schema and datapack-backed immutable registry under `data/<namespace>/butchercraft/content/packaging`. `ProductDefinition` gains optional packaging metadata linking packaged products to a packaging definition id and source product id. `ContentSnapshotService` now activates product, packaging, and transformation registries together only after candidate products, candidate packaging, product packaging metadata, and candidate transformations validate. The built-in proof adds `butchercraft:retail_package`, `butchercraft:retail_ground_beef`, and a graph-only `butchercraft:package_retail` processing operation. The Packaging Table still has no processing controller, no transformation definition, and no packaging execution path.
 
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 

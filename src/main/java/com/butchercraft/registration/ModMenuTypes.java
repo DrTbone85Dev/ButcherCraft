@@ -3,6 +3,7 @@ package com.butchercraft.registration;
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawMenu;
 import com.butchercraft.machine.grinder.GrinderMenu;
+import com.butchercraft.machine.packaging.PackagingTableMenu;
 import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -31,6 +32,12 @@ public final class ModMenuTypes {
             BANDSAW = MENU_TYPES.register(
                     "bandsaw",
                     () -> IMenuTypeExtension.create(BandsawMenu::new)
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PackagingTableMenu>>
+            PACKAGING_TABLE = MENU_TYPES.register(
+                    "packaging_table",
+                    () -> IMenuTypeExtension.create(PackagingTableMenu::new)
             );
 
     private ModMenuTypes() {

@@ -52,7 +52,7 @@ class ButcherCraftInfoCommandTest {
 
         assertEquals("ButcherCraft", language.get("commands.butchercraft.info.title").getAsString());
         assertEquals(
-                "Version %s - Early Development / Beef Fabrication Expansion",
+                "Version %s - Early Development / Project Meat Counter",
                 language.get("commands.butchercraft.info.version").getAsString()
         );
         assertEquals(

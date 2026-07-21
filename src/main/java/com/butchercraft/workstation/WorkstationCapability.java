@@ -26,8 +26,8 @@ public record WorkstationCapability(
         if (maxInputQuantity <= 0) {
             throw new IllegalArgumentException("Maximum input quantity must be positive");
         }
-        if (inputSlots != 1) {
-            throw new IllegalArgumentException("Milestone 2B workstations support exactly one input slot");
+        if (inputSlots <= 0) {
+            throw new IllegalArgumentException("Workstations must support at least one input slot");
         }
         if (outputSlots <= 0) {
             throw new IllegalArgumentException("Workstations must support at least one output slot");

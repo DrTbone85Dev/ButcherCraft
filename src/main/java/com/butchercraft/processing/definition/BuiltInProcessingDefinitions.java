@@ -23,6 +23,7 @@ public final class BuiltInProcessingDefinitions {
                 Map.ofEntries(
                         Map.entry(BuiltInDefinitionIds.BEEF_TRIM, beefTrimProduct()),
                         Map.entry(BuiltInDefinitionIds.GROUND_BEEF, groundBeefProduct()),
+                        Map.entry(BuiltInDefinitionIds.RETAIL_GROUND_BEEF, retailGroundBeefProduct()),
                         Map.entry(BuiltInDefinitionIds.PORK_TRIM, porkTrimProduct()),
                         Map.entry(BuiltInDefinitionIds.GROUND_PORK, groundPorkProduct()),
                         Map.entry(BuiltInDefinitionIds.BISON_TRIM, bisonTrimProduct()),
@@ -60,7 +61,8 @@ public final class BuiltInProcessingDefinitions {
                         Map.entry(BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER, breakBeefHindquarterOperation()),
                         Map.entry(BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN, cutBeefShortLoinOperation()),
                         Map.entry(BuiltInDefinitionIds.CUT_BEEF_ROUND, cutBeefRoundOperation()),
-                        Map.entry(BuiltInDefinitionIds.CUT_BEEF_SIRLOIN, cutBeefSirloinOperation())
+                        Map.entry(BuiltInDefinitionIds.CUT_BEEF_SIRLOIN, cutBeefSirloinOperation()),
+                        Map.entry(BuiltInDefinitionIds.PACKAGE_RETAIL, packageRetailOperation())
                 )
         );
     }
@@ -78,6 +80,7 @@ public final class BuiltInProcessingDefinitions {
     public static void bootstrapProducts(BootstrapContext<ProductDefinition> context) {
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_TRIM), beefTrimProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_BEEF), groundBeefProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.RETAIL_GROUND_BEEF), retailGroundBeefProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.PORK_TRIM), porkTrimProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_PORK), groundPorkProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BISON_TRIM), bisonTrimProduct());
@@ -217,6 +220,7 @@ public final class BuiltInProcessingDefinitions {
                 key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.CUT_BEEF_SIRLOIN),
                 cutBeefSirloinOperation()
         );
+        context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.PACKAGE_RETAIL), packageRetailOperation());
     }
 
     public static SpeciesDefinition beefSpecies() {
@@ -248,12 +252,14 @@ public final class BuiltInProcessingDefinitions {
                 BuiltInDefinitionIds.PROFILE_CATEGORY_RED_MEAT,
                 List.of(
                         BuiltInDefinitionIds.OPERATION_CATEGORY_GRINDING,
-                        BuiltInDefinitionIds.OPERATION_CATEGORY_FABRICATION
+                        BuiltInDefinitionIds.OPERATION_CATEGORY_FABRICATION,
+                        BuiltInDefinitionIds.OPERATION_CATEGORY_PACKAGING
                 ),
                 List.of(
                         BuiltInDefinitionIds.WORKFLOW_STAGE_PRIMARY_PROCESSING,
                         BuiltInDefinitionIds.WORKFLOW_STAGE_SIZE_REDUCTION,
-                        BuiltInDefinitionIds.WORKFLOW_STAGE_FABRICATION
+                        BuiltInDefinitionIds.WORKFLOW_STAGE_FABRICATION,
+                        BuiltInDefinitionIds.WORKFLOW_STAGE_RETAIL_PACKAGING
                 ),
                 List.of(),
                 false
@@ -266,6 +272,26 @@ public final class BuiltInProcessingDefinitions {
 
     public static ProductDefinition groundBeefProduct() {
         return groundProduct("definition.butchercraft.product.ground_beef", BuiltInDefinitionIds.BEEF);
+    }
+
+    public static ProductDefinition retailGroundBeefProduct() {
+        return new ProductDefinition(
+                "definition.butchercraft.product.retail_ground_beef",
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.id("retail_packaged"),
+                "gram",
+                true,
+                BoneState.BONELESS,
+                true,
+                List.of(BuiltInDefinitionIds.id("trait/retail_packaged")),
+                java.util.Optional.of(new ProductPackagingMetadataDefinition(
+                        BuiltInDefinitionIds.RETAIL_PACKAGE,
+                        BuiltInDefinitionIds.GROUND_BEEF
+                )),
+                false,
+                true
+        );
     }
 
     public static ProductDefinition porkTrimProduct() {
@@ -568,6 +594,33 @@ public final class BuiltInProcessingDefinitions {
                         outputQuantity(BuiltInDefinitionIds.BEEF_FAT, BuiltInDefinitionIds.id("fat"), 1_000, 15_000),
                         outputQuantity(BuiltInDefinitionIds.BEEF_BONE, BuiltInDefinitionIds.id("bone"), 1_000, 15_000)
                 )
+        );
+    }
+
+    public static ProcessingOperationDefinition packageRetailOperation() {
+        return new ProcessingOperationDefinition(
+                "definition.butchercraft.processing_operation.package_retail",
+                BuiltInDefinitionIds.OPERATION_CATEGORY_PACKAGING,
+                List.of(BuiltInDefinitionIds.RED_MEAT),
+                BuiltInDefinitionIds.GROUND_BEEF,
+                BuiltInDefinitionIds.id("ground"),
+                3_000,
+                new QuantityDefinition(100, "gram"),
+                600,
+                500,
+                ZeroOutputPolicy.FORBID,
+                List.of(new ProcessingOutputDefinition(
+                        BuiltInDefinitionIds.RETAIL_GROUND_BEEF,
+                        BuiltInDefinitionIds.id("retail_packaged"),
+                        new YieldDefinition(1, 1),
+                        0,
+                        "gram",
+                        false
+                )),
+                List.of(),
+                java.util.Optional.of(BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PACKAGING),
+                false,
+                false
         );
     }
 

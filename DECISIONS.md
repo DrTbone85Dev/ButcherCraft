@@ -322,7 +322,7 @@ Rationale: the architecture review identified product state, quality, and item-m
 Consequences:
 
 - Minecraft integration may depend on the engine, but the engine must not depend on Minecraft integration.
-- The previous grinder and packaging station scope formerly listed as Milestone 1B is deferred until the owner schedules a later visible station milestone.
+- The previous grinder and packaging station scope formerly listed as Milestone 1B is split across later visible station milestones. Packaging gameplay remains deferred after the v0.8.0 table foundation.
 - Quality score boundaries are fixed for the engine as Poor 0-199, Fair 200-399, Good 400-699, Excellent 700-899, and Premium 900-1000.
 - Quantity uses exact `long` amounts with explicit units; no silent conversion or rounded yield is allowed in the engine.
 - Processing transactions must prepare output before commit and prevent double output.
@@ -615,12 +615,12 @@ Rationale: future serialization needs product ids to resolve against authoritati
 
 Consequences:
 
-- `ProductDefinition` contains id, display name, schema version, typed category, default quantity unit, tags, and typed metadata.
+- `ProductDefinition` contains id, display name, schema version, typed category, default quantity unit, tags, optional packaging metadata, and typed metadata.
 - `ProductRegistry` preserves insertion order and supports id, category, and tag lookup.
-- Built-in product definitions are limited to the six current Grinder products.
+- Built-in product definitions began with the six current Grinder products and now also include bounded Bandsaw and retail proof products.
 - `TransformationProductReferenceValidator` checks missing product ids and quantity-unit mismatches after construction.
 - Product definition code must remain free of Minecraft and NeoForge imports.
-- Serialization, datapack loading, product-to-item mapping, spoilage, packaging, storage rules, and broader product catalogs remain out of scope.
+- Product-to-item mapping, spoilage, packaging execution, storage rules, and broader product catalogs remain out of scope unless a later milestone explicitly schedules them.
 
 ## DEC-0043: Transformation Serialization Is A Pure Schema Contract
 
@@ -692,16 +692,16 @@ Consequences:
 
 Status: Accepted
 
-Decision: version 0.6.9 moves the current built-in product definitions into content snapshot JSON resources under `data/<namespace>/butchercraft/content/product` and introduces a reload-safe content snapshot containing both the immutable `ProductRegistry` and immutable `TransformationRegistry`. The path remains separate from the existing Minecraft datapack registry path `data/<namespace>/butchercraft/product`, which is decoded by the richer processing product schema. Product content is validated first; transformations then validate their product references against that candidate product registry. The active snapshot is replaced only when both registries load successfully.
+Decision: version 0.6.9 moves the current built-in product definitions into content snapshot JSON resources under `data/<namespace>/butchercraft/content/product` and introduces a reload-safe content snapshot containing the immutable `ProductRegistry` and immutable `TransformationRegistry`. Version 0.8.0 Sprint 2 extends that snapshot with the immutable `PackagingRegistry`. The product path remains separate from the existing Minecraft datapack registry path `data/<namespace>/butchercraft/product`, which is decoded by the richer processing product schema. Product content is validated first; packaging content and product packaging metadata validate next; transformations then validate their product references against that candidate product registry. The active snapshot is replaced only when every candidate registry loads successfully.
 
 Rationale: transformations reference product ids, so reloading those registries separately can briefly expose mismatched content or incorrectly validate against stale products. A single content snapshot keeps the data boundary deterministic while preserving pure Java product and transformation domains.
 
 Consequences:
 
-- Product definitions have a canonical serialized schema with stable field names for id, display name, schema version, category, default quantity unit, tags, and metadata.
+- Product definitions have a canonical serialized schema with stable field names for id, display name, schema version, category, default quantity unit, tags, optional packaging metadata, and metadata.
 - Bundled Grinder and Bandsaw proof products now live as datapack JSON resources.
-- `ProductRegistryService` and `TransformationRegistryService` are compatibility facades over the active content snapshot.
-- Failed product reloads prevent transformation loading. Failed transformation reloads reject the full snapshot.
+- `ProductRegistryService`, `PackagingRegistryService`, and `TransformationRegistryService` are compatibility facades over the active content snapshot.
+- Failed product reloads prevent packaging and transformation loading. Failed packaging reloads or invalid product packaging metadata prevent transformation loading. Failed transformation reloads reject the full snapshot.
 - Product-to-ItemStack mappings remain Java-controlled development fixtures; datapacks do not dynamically register Minecraft items.
 - Expanded fabrication, schema migrations, datapack-driven category catalogs, product-to-item factories, and public expansion APIs remain out of scope.
 
@@ -720,6 +720,38 @@ Consequences:
 - Matching processing-operation definitions are required so the existing processing graph and operation resolver can discover the new transformations by input product and capability.
 - Product-to-ItemStack output remains a controlled Java development fixture mapping until a real product item creation system is scheduled.
 - Full carcass fabrication, recipe selection, balancing, dynamic product items, other workstation migrations, and public expansion APIs remain out of scope.
+
+## DEC-0049: Packaging Table Foundation Is Inventory-Only Until Packaging Gameplay Is Scheduled
+
+Status: Accepted
+
+Decision: version 0.8.0 adds `butchercraft:packaging_table` as a permanent workstation foundation with persisted inventory, a placeholder menu and screen, creative-tab visibility, item-handler capability exposure, and block-break recovery, but no packaging execution, transformations, product mutation, labels, order fulfillment, or employee behavior.
+
+Rationale: Project Meat Counter needs the player-facing station surface before packaging rules are designed. Keeping the block entity outside the processing controller path avoids hardcoding premature product, tray, wrap, or package semantics into generic workstation logic.
+
+Consequences:
+
+- `AbstractInventoryWorkstationBlockEntity` owns shared inventory persistence and menu-provider behavior for workstation foundations that do not execute processing.
+- The Packaging Table advertises `butchercraft:packaging` and a three-input, one-result layout. Sprint 2 adds a graph-only processing operation for that capability, but the table still has no controller or execution strategy.
+- Existing Grinder and Bandsaw processing paths remain unchanged.
+- Future packaging gameplay must add data-driven definitions and transaction rules deliberately rather than reusing placeholder slot names as hidden logic.
+
+## DEC-0050: Retail Product Framework Is Data-Only Until Packaging Execution Is Scheduled
+
+Status: Accepted
+
+Decision: version 0.8.0 Sprint 2 adds a pure Java `PackagingDefinition` schema, canonical serialization records, datapack loader, immutable `PackagingRegistry`, and `PackagingRegistryService`. It also adds optional packaging metadata to canonical product definitions, validates that metadata against candidate product and packaging registries, and activates product, packaging, and transformation registries as one `ContentSnapshot`.
+
+Rationale: packaged retail products need stable data contracts before recipe execution, supply consumption, labels, freshness, spoilage, or business systems can safely depend on them. Keeping the framework data-only prevents the Packaging Table placeholder slots from becoming hidden gameplay logic.
+
+Consequences:
+
+- Packaging resources load from `data/<namespace>/butchercraft/content/packaging`.
+- `butchercraft:retail_package` is the first built-in packaging definition.
+- `butchercraft:retail_ground_beef` is the first built-in packaged retail product and references `butchercraft:ground_beef` as its source product.
+- `butchercraft:package_retail` is registered as a processing-operation definition so the graph can represent retail packaging, but it is not backed by a transformation definition or Packaging Table execution.
+- Existing products without packaging metadata remain valid.
+- Packaging recipes, supply consumption, labels, weights, freshness, spoilage, dynamic textures, overlay rendering, business logic, GUI changes, sounds, animations, and item factory behavior remain out of scope.
 
 ## Decisions Needing Owner Approval
 

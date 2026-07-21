@@ -41,6 +41,15 @@ class WorkstationRemovalLifecycleTest {
         assertTrue(upper.contains("super.onRemove(state, level, pos, newState, movedByPiston);"));
     }
 
+    @Test
+    void packagingTableRemovalDropsInventoryAndStillReachesSuperclassRemoval() throws IOException {
+        String source = source("src/main/java/com/butchercraft/machine/packaging/PackagingTableBlock.java");
+
+        assertTrue(source.contains("blockEntity.dropContents(level, pos)"));
+        assertTrue(source.contains("finally"));
+        assertTrue(source.contains("super.onRemove(state, level, pos, newState, movedByPiston);"));
+    }
+
     private static String source(String relativePath) throws IOException {
         return Files.readString(TestProjectPaths.projectPath(relativePath));
     }

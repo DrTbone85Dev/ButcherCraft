@@ -4,6 +4,7 @@ import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawBlock;
 import com.butchercraft.machine.bandsaw.BandsawUpperBlock;
 import com.butchercraft.machine.grinder.GrinderBlock;
+import com.butchercraft.machine.packaging.PackagingTableBlock;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -49,6 +50,15 @@ public final class ModBlocks {
                             .strength(3.0F)
                             .sound(SoundType.METAL)
                             .noOcclusion()
+            );
+
+    public static final DeferredBlock<PackagingTableBlock> PACKAGING_TABLE =
+            BLOCKS.registerBlock(
+                    "packaging_table",
+                    PackagingTableBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(2.0F)
+                            .sound(SoundType.WOOD)
             );
 
     private ModBlocks() {

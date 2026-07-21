@@ -1,12 +1,12 @@
 # ButcherCraft Product Definition System
 
-Status: v0.7.0 datapack-backed product registry foundation
+Status: v0.8.0 Sprint 2 retail product registry foundation
 
 ## Purpose
 
 The Product Definition System gives stable product ids an authoritative pure Java source of descriptive data. It is separate from Minecraft ItemStack product snapshots, existing datapack-backed processing product definitions, and temporary development item mappings.
 
-This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path.
+This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof without adding packaging execution.
 
 ## Package
 
@@ -37,11 +37,19 @@ These packages also remain free of Minecraft and NeoForge imports. Minecraft rel
 - Typed `ProductCategory`.
 - Default `QuantityUnit`.
 - Immutable tags keyed by `EngineId`.
+- Optional `ProductPackagingMetadata`.
 - Immutable metadata keyed by `EngineId`.
 
 The builder is the preferred construction API. Construction rejects incomplete definitions, blank display names, invalid schema versions, null tags, null metadata, and blank metadata values.
 
 Metadata follows the same philosophy as transformation metadata: typed keys, simple string values, immutable storage, and no unrestricted object payloads.
+
+`ProductPackagingMetadata` stores two stable ids:
+
+- `packagingDefinitionId`
+- `sourceProductId`
+
+This metadata is descriptive only. It does not define recipes, supply consumption, labels, weights, freshness, spoilage, or workstation execution.
 
 ## Product Registry
 
@@ -68,6 +76,7 @@ Version 0.6.9 adds the canonical serialized product representation:
 - `category`
 - `default_quantity_unit`
 - `tags`
+- optional `packaging`
 - `metadata`
 
 The JSON form is documented in `docs/DATAPACK_PRODUCTS.md`.
@@ -123,6 +132,14 @@ butchercraft:tri_tip
 
 These remain descriptive product definitions only. Java development fixture items and mappings are still separate Minecraft-facing bridge data.
 
+Version 0.8.0 Sprint 2 adds the retail packaged-product proof:
+
+```text
+butchercraft:retail_ground_beef
+```
+
+This product references `butchercraft:retail_package` through optional packaging metadata and uses `butchercraft:ground_beef` as its source product. No Minecraft item mapping is added for this retail product in this sprint.
+
 ## Transformation Validation
 
 Transformation definitions continue to reference product ids through `EngineId` values. They do not embed `ProductDefinition` instances and do not require a `ProductRegistry` during construction.
@@ -131,17 +148,18 @@ Transformation definitions continue to reference product ids through `EngineId` 
 
 This separation allows future serialization to decode transformation definitions before all registries are assembled, then validate references once registries are available.
 
-Version 0.6.8 uses this registry to reject transformation datapack resources that reference unknown products. Version 0.6.9 validates those transformation references against the candidate product registry assembled during the same reload, then activates product and transformation registries together.
+Version 0.6.8 uses this registry to reject transformation datapack resources that reference unknown products. Version 0.6.9 validates those transformation references against the candidate product registry assembled during the same reload, then activates product and transformation registries together. Version 0.8.0 Sprint 2 validates optional product packaging metadata after candidate product and packaging registries load, before transformations are accepted.
 
 ## Out Of Scope
 
-This slice does not add codecs tied to Minecraft registries, product-to-item mapping, spoilage, quality expansion, packaging states, storage rules, recipe selection, or other workstation migrations.
+This slice does not add codecs tied to Minecraft registries, product-to-item mapping, spoilage, quality expansion, storage rules, recipe selection, packaging execution, or other workstation migrations.
 
 ## Remaining Work
 
-After v0.7.0, product definitions have a pure Java serialization contract, datapack loading path, and bounded beef fabrication proof catalog. The project still needs:
+After v0.8.0 Sprint 2, product definitions have a pure Java serialization contract, datapack loading path, bounded beef fabrication proof catalog, and optional retail packaging metadata. The project still needs:
 
 - Metadata key policy.
 - Schema migration rules.
 - Datapack-driven category catalogs or category validation ownership.
 - A clear relationship between pure product definitions and existing datapack-backed processing product definitions.
+- Packaging recipes and workstation execution rules.

@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public record ProductDefinition(
         String displayNameKey,
@@ -18,6 +19,7 @@ public record ProductDefinition(
         BoneState boneState,
         boolean spoilageEligible,
         List<ResourceLocation> traits,
+        Optional<ProductPackagingMetadataDefinition> packaging,
         boolean graphInput,
         boolean graphOutput
 ) {
@@ -31,6 +33,7 @@ public record ProductDefinition(
             BoneState.CODEC.fieldOf("bone_state").forGetter(Raw::boneState),
             Codec.BOOL.fieldOf("spoilage_eligible").forGetter(Raw::spoilageEligible),
             DefinitionCodecs.markerList("traits").optionalFieldOf("traits", List.of()).forGetter(Raw::traits),
+            ProductPackagingMetadataDefinition.CODEC.optionalFieldOf("packaging").forGetter(Raw::packaging),
             Codec.BOOL.fieldOf("graph_input").forGetter(Raw::graphInput),
             Codec.BOOL.fieldOf("graph_output").forGetter(Raw::graphOutput)
     ).apply(instance, Raw::new));
@@ -54,6 +57,36 @@ public record ProductDefinition(
         if (traits.size() > DefinitionCodecs.MAX_MARKERS) {
             throw new IllegalArgumentException("Product traits are bounded to " + DefinitionCodecs.MAX_MARKERS);
         }
+        packaging = Objects.requireNonNull(packaging, "packaging");
+    }
+
+    public ProductDefinition(
+            String displayNameKey,
+            ResourceLocation species,
+            ResourceLocation productCategory,
+            ResourceLocation processingState,
+            String quantityUnit,
+            boolean edible,
+            BoneState boneState,
+            boolean spoilageEligible,
+            List<ResourceLocation> traits,
+            boolean graphInput,
+            boolean graphOutput
+    ) {
+        this(
+                displayNameKey,
+                species,
+                productCategory,
+                processingState,
+                quantityUnit,
+                edible,
+                boneState,
+                spoilageEligible,
+                traits,
+                Optional.empty(),
+                graphInput,
+                graphOutput
+        );
     }
 
     private static DataResult<ProductDefinition> fromRaw(Raw raw) {
@@ -68,6 +101,7 @@ public record ProductDefinition(
                     raw.boneState,
                     raw.spoilageEligible,
                     raw.traits,
+                    raw.packaging,
                     raw.graphInput,
                     raw.graphOutput
             ));
@@ -87,6 +121,7 @@ public record ProductDefinition(
                 boneState,
                 spoilageEligible,
                 traits,
+                packaging,
                 graphInput,
                 graphOutput
         );
@@ -102,6 +137,7 @@ public record ProductDefinition(
             BoneState boneState,
             boolean spoilageEligible,
             List<ResourceLocation> traits,
+            Optional<ProductPackagingMetadataDefinition> packaging,
             boolean graphInput,
             boolean graphOutput
     ) {

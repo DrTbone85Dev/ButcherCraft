@@ -1,9 +1,14 @@
 package com.butchercraft.content;
 
 import com.butchercraft.engine.EngineId;
+import com.butchercraft.packaging.datapack.PackagingDatapackLoadResult;
+import com.butchercraft.packaging.datapack.PackagingDatapackLoader;
+import com.butchercraft.packaging.definition.BuiltInPackagingRegistry;
+import com.butchercraft.packaging.definition.PackagingRegistry;
 import com.butchercraft.product.datapack.ProductDatapackLoadResult;
 import com.butchercraft.product.datapack.ProductDatapackLoader;
 import com.butchercraft.product.definition.BuiltInProductRegistry;
+import com.butchercraft.product.definition.ProductPackagingMetadataValidator;
 import com.butchercraft.product.definition.ProductRegistry;
 import com.butchercraft.transformation.BuiltInTransformationRegistry;
 import com.butchercraft.transformation.TransformationRegistry;
@@ -22,7 +27,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Reload-safe holder for the active product and transformation registries.
+ * Reload-safe holder for the active product, packaging, and transformation registries.
  */
 public final class ContentSnapshotService {
     private static final AtomicReference<ContentSnapshot> CURRENT =
@@ -39,6 +44,10 @@ public final class ContentSnapshotService {
         return currentSnapshot().products();
     }
 
+    public static PackagingRegistry currentPackagingRegistry() {
+        return currentSnapshot().packaging();
+    }
+
     public static TransformationRegistry currentTransformationRegistry() {
         return currentSnapshot().transformations();
     }
@@ -53,21 +62,45 @@ public final class ContentSnapshotService {
     ) {
         Objects.requireNonNull(productResources, "productResources");
         Objects.requireNonNull(transformationResources, "transformationResources");
+        return load(productResources, bundledPackagingResources(), transformationResources);
+    }
+
+    public static ContentSnapshotLoadResult load(
+            Map<String, JsonElement> productResources,
+            Map<String, JsonElement> packagingResources,
+            Map<String, JsonElement> transformationResources
+    ) {
+        Objects.requireNonNull(productResources, "productResources");
+        Objects.requireNonNull(packagingResources, "packagingResources");
+        Objects.requireNonNull(transformationResources, "transformationResources");
 
         ProductDatapackLoadResult productResult = newProductLoader().load(productResources);
         if (!productResult.succeeded()) {
-            return ContentSnapshotLoadResult.failure(productResult.errors(), java.util.List.of());
+            return ContentSnapshotLoadResult.failure(productResult.errors(), java.util.List.of(), java.util.List.of());
         }
 
         ProductRegistry candidateProducts = productResult.registry().orElseThrow();
+        PackagingDatapackLoadResult packagingResult = newPackagingLoader().load(packagingResources);
+        if (!packagingResult.succeeded()) {
+            return ContentSnapshotLoadResult.failure(java.util.List.of(), packagingResult.errors(), java.util.List.of());
+        }
+
+        PackagingRegistry candidatePackaging = packagingResult.registry().orElseThrow();
+        var packagingMetadataErrors =
+                ProductPackagingMetadataValidator.validate(candidateProducts, candidatePackaging);
+        if (!packagingMetadataErrors.isEmpty()) {
+            return ContentSnapshotLoadResult.failure(packagingMetadataErrors, java.util.List.of(), java.util.List.of());
+        }
+
         TransformationDatapackLoadResult transformationResult =
                 new TransformationDatapackLoader(candidateProducts, knownCapabilities()).load(transformationResources);
         if (!transformationResult.succeeded()) {
-            return ContentSnapshotLoadResult.failure(java.util.List.of(), transformationResult.errors());
+            return ContentSnapshotLoadResult.failure(java.util.List.of(), java.util.List.of(), transformationResult.errors());
         }
 
         return ContentSnapshotLoadResult.success(new ContentSnapshot(
                 candidateProducts,
+                candidatePackaging,
                 transformationResult.registry().orElseThrow()
         ));
     }
@@ -81,12 +114,26 @@ public final class ContentSnapshotService {
         return result;
     }
 
+    public static ContentSnapshotLoadResult replaceFromDatapack(
+            Map<String, JsonElement> productResources,
+            Map<String, JsonElement> packagingResources,
+            Map<String, JsonElement> transformationResources
+    ) {
+        ContentSnapshotLoadResult result = load(productResources, packagingResources, transformationResources);
+        result.snapshot().ifPresent(ContentSnapshotService::replaceSnapshot);
+        return result;
+    }
+
     public static void resetToBundledSnapshot() {
         replaceSnapshot(loadBundledSnapshot());
     }
 
     public static ContentSnapshot loadBundledSnapshot() {
-        ContentSnapshotLoadResult result = load(bundledProductResources(), bundledTransformationResources());
+        ContentSnapshotLoadResult result = load(
+                bundledProductResources(),
+                bundledPackagingResources(),
+                bundledTransformationResources()
+        );
         if (!result.succeeded()) {
             throw new IllegalStateException("Built-in ButcherCraft datapack resources are invalid:"
                     + System.lineSeparator()
@@ -118,8 +165,22 @@ public final class ContentSnapshotService {
         return result.registry().orElseThrow();
     }
 
+    public static PackagingRegistry loadBundledPackagingRegistry() {
+        PackagingDatapackLoadResult result = newPackagingLoader().load(bundledPackagingResources());
+        if (!result.succeeded()) {
+            throw new IllegalStateException("Built-in packaging datapack resources are invalid:"
+                    + System.lineSeparator()
+                    + result.describeErrors());
+        }
+        return result.registry().orElseThrow();
+    }
+
     public static Map<String, JsonElement> bundledProductResources() {
         return bundledResources(BuiltInProductRegistry.BUILT_IN_RESOURCE_PATHS);
+    }
+
+    public static Map<String, JsonElement> bundledPackagingResources() {
+        return bundledResources(BuiltInPackagingRegistry.BUILT_IN_RESOURCE_PATHS);
     }
 
     public static Map<String, JsonElement> bundledTransformationResources() {
@@ -128,6 +189,10 @@ public final class ContentSnapshotService {
 
     public static ProductDatapackLoader newProductLoader() {
         return new ProductDatapackLoader(knownProductCategories());
+    }
+
+    public static PackagingDatapackLoader newPackagingLoader() {
+        return new PackagingDatapackLoader(knownProductCategories());
     }
 
     public static Set<EngineId> knownProductCategories() {

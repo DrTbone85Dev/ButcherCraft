@@ -5,7 +5,6 @@ import com.butchercraft.workstation.DevelopmentProductItemMapping;
 import com.butchercraft.workstation.WorkstationCapability;
 import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailure;
-import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
 import com.butchercraft.workstation.WorkstationProcessingController;
 import com.butchercraft.workstation.WorkstationState;
@@ -14,29 +13,18 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.Containers;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
 
-public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEntity implements MenuProvider {
-    private static final String INVENTORY_TAG = "Inventory";
+public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractInventoryWorkstationBlockEntity {
     private static final String CONTROLLER_TAG = "Controller";
 
-    private final WorkstationInventory inventory;
-    private final WorkstationCapability capability;
     private final WorkstationOperationLookup resolver;
     private final WorkstationProcessingController controller;
     private final ContainerData menuData = new ContainerData() {
@@ -82,25 +70,19 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
             DevelopmentProductItemMapping outputMapping,
             WorkstationExecutionStrategy executionStrategy
     ) {
-        super(type, pos, blockState);
-        this.capability = Objects.requireNonNull(capability, "capability");
+        super(type, pos, blockState, capability);
         this.resolver = Objects.requireNonNull(resolver, "resolver");
-        this.inventory = new WorkstationInventory(capability, this::onInventoryChanged);
         this.controller = new WorkstationProcessingController(
-                inventory,
+                inventory(),
                 capability,
                 resolver,
                 Objects.requireNonNull(outputMapping, "outputMapping"),
                 Objects.requireNonNull(executionStrategy, "executionStrategy"),
                 this::markChanged
         );
-        inventory.setInputLocked(controller::inputLocked);
-        inventory.setOutputExtractionAllowed(controller::outputExtractionAllowed);
-        inventory.setInputValidator(this::canAcceptInput);
-    }
-
-    public WorkstationInventory inventory() {
-        return inventory;
+        inventory().setInputLocked(controller::inputLocked);
+        inventory().setOutputExtractionAllowed(controller::outputExtractionAllowed);
+        inventory().setInputValidator(this::canAcceptInput);
     }
 
     public WorkstationState workstationState() {
@@ -115,10 +97,6 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
         return menuData;
     }
 
-    protected WorkstationCapability capability() {
-        return capability;
-    }
-
     public static <T extends AbstractProcessingWorkstationBlockEntity> void serverTick(
             Level level,
             BlockPos pos,
@@ -130,29 +108,14 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
         }
     }
 
-    public void dropContents(Level level, BlockPos pos) {
-        controller.cancelPreservingInput();
-        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), inventory.input());
-        for (ItemStack output : inventory.outputs()) {
-            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), output);
-        }
-        inventory.setInputInternal(ItemStack.EMPTY);
-        inventory.clearOutputsInternal();
-    }
-
-    @Nullable
     @Override
-    public final AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return createWorkstationMenu(containerId, playerInventory, player);
+    protected void beforeDropContents() {
+        controller.cancelPreservingInput();
     }
-
-    @Nullable
-    protected abstract AbstractContainerMenu createWorkstationMenu(int containerId, Inventory playerInventory, Player player);
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
         CompoundTag controllerTag = new CompoundTag();
         controller.saveAdditional(controllerTag, registries);
         tag.put(CONTROLLER_TAG, controllerTag);
@@ -161,23 +124,9 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        if (tag.contains(INVENTORY_TAG, Tag.TAG_COMPOUND)) {
-            inventory.deserializeNBT(registries, tag.getCompound(INVENTORY_TAG));
-        }
         if (tag.contains(CONTROLLER_TAG, Tag.TAG_COMPOUND)) {
             controller.loadAdditional(tag.getCompound(CONTROLLER_TAG), registries);
         }
-    }
-
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithoutMetadata(registries);
-    }
-
-    @Nullable
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     private boolean canAcceptInput(ItemStack stack) {
@@ -187,14 +136,15 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends BlockEnti
         if (level == null) {
             return true;
         }
-        return resolver.resolve(level.registryAccess(), capability, stack).succeeded();
+        return resolver.resolve(level.registryAccess(), capability(), stack).succeeded();
     }
 
     protected final void tickController(RegistryAccess registryAccess) {
         controller.serverTick(registryAccess);
     }
 
-    private void onInventoryChanged() {
+    @Override
+    protected void onInventoryChanged() {
         controller.onInventoryChanged();
     }
 

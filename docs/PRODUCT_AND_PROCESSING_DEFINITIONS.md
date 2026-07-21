@@ -43,7 +43,7 @@ src/generated/resources/data/butchercraft/butchercraft/processing_operation/brea
 
 `ProcessingProfileDefinition` stores display translation key, profile category, allowed operation categories, required broad workflow stages, bounded compatibility markers, and whether cross-profile operations are permitted by default.
 
-`ProductDefinition` stores display translation key, species reference, product category, processing state, allowed quantity unit, edible flag, bone state, spoilage eligibility, bounded traits, and graph input/output flags.
+`ProductDefinition` stores display translation key, species reference, product category, processing state, allowed quantity unit, edible flag, bone state, spoilage eligibility, bounded traits, optional packaging metadata, and graph input/output flags.
 
 `ProcessingOperationDefinition` stores display translation key, operation category, required processing profiles, input product reference, input state, ordered output definitions, base duration, minimum quantity, minimum cleanliness, minimum equipment condition, static modifiers, optional workstation capability, self-loop permission, and cross-species permission.
 
@@ -86,6 +86,8 @@ Warnings are reserved for non-corrupting design concerns such as graph cycles.
 `ProductDefinition` describes a loaded product type. `ProductStackData` describes one actual ItemStack snapshot.
 
 `ProductStackDefinitionValidator` compares stack data against loaded definitions without mutating the stack. It checks product existence, source/species compatibility, processing state, quantity unit, and quality bounds. Temperature, freshness, packaging, batch history, and order metadata remain deferred.
+
+Optional product packaging metadata links a retail product definition to a packaging definition id and a source product id. This is descriptive graph data only; it does not mutate ItemStacks or execute packaging.
 
 ## Built-In Red-Meat Examples
 
@@ -179,7 +181,23 @@ Prototype balance values:
 
 Multi-output allocation uses integer arithmetic and deterministic largest-remainder rounding. Ties are resolved by output order.
 
-Milestones 2B through 2E and version 0.7.0 consume these definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific or cut-specific branches; they supply only their workstation capabilities.
+Sprint 2 adds a graph-only retail packaging flow:
+
+```text
+butchercraft:ground_beef --butchercraft:package_retail--> butchercraft:retail_ground_beef
+```
+
+Prototype values:
+
+- Duration: `3000` milliseconds.
+- Yield: `1/1`.
+- Minimum input quantity: `100 gram`.
+- Workstation capability: `butchercraft:packaging`.
+- Zero output: forbidden.
+
+`butchercraft:retail_ground_beef` declares packaging metadata referencing `butchercraft:retail_package` and `butchercraft:ground_beef`. The Packaging Table does not execute this operation in Sprint 2.
+
+Milestones 2B through 2E and version 0.7.0 consume processing definitions through `WorkstationOperationResolver`. Sprint 2 adds `package_retail` to the graph, but no workstation consumes it yet. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific or cut-specific branches; they supply only their workstation capabilities.
 
 ## Canonical Butcher-Cut Terminology
 

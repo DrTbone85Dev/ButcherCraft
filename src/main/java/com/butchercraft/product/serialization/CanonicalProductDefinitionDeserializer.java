@@ -4,6 +4,7 @@ import com.butchercraft.engine.EngineId;
 import com.butchercraft.engine.product.ProductCategory;
 import com.butchercraft.engine.quantity.QuantityUnit;
 import com.butchercraft.product.definition.ProductDefinition;
+import com.butchercraft.product.definition.ProductPackagingMetadata;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -27,12 +28,22 @@ public final class CanonicalProductDefinitionDeserializer
                 .schemaVersion(serialized.schemaVersion().value())
                 .category(ProductCategory.fromId(EngineId.of(serialized.category())))
                 .defaultQuantityUnit(QuantityUnit.fromId(serialized.defaultQuantityUnit()))
+                .packagingMetadata(packaging(serialized.packaging()))
                 .metadata(metadata(serialized.metadata()));
 
         serialized.tags().stream()
                 .map(EngineId::of)
                 .forEach(builder::tag);
         return builder.build();
+    }
+
+    private static java.util.Optional<ProductPackagingMetadata> packaging(
+            java.util.Optional<SerializedProductPackagingMetadata> serialized
+    ) {
+        return serialized.map(metadata -> new ProductPackagingMetadata(
+                EngineId.of(metadata.definition()),
+                EngineId.of(metadata.sourceProduct())
+        ));
     }
 
     private static Map<EngineId, String> metadata(Map<String, String> metadata) {
