@@ -6,7 +6,11 @@ import java.util.Arrays;
  * Stable package-definition format category.
  */
 public enum PackagingFormat {
-    RETAIL("retail");
+    RETAIL("retail"),
+    TRAY_WRAP("tray_wrap"),
+    VACUUM("vacuum"),
+    BUTCHER_PAPER("butcher_paper"),
+    FREEZER_PAPER("freezer_paper");
 
     private final String id;
 

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:butcher_paper_package",
+  "display_name": "Butcher Paper Package",
+  "format": "butcher_paper",
+  "default_quantity_unit": "gram",
+  "required_supply_items": [
+    "butchercraft:butcher_paper_roll"
+  ],
+  "compatible_categories": [
+    "butchercraft:beef",
+    "butchercraft:pork",
+    "butchercraft:bison"
+  ],
+  "compatible_tags": [
+    "butchercraft:trait/ground"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

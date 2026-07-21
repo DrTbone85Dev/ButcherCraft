@@ -12,10 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProductDataAssetsTest {
     @Test
     void productLanguageEntriesExist() throws IOException {
-        String language = Files.readString(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/lang/en_us.json"));
+        String language = Files.readString(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/lang/en_us.json"));
 
         assertTrue(language.contains("\"item.butchercraft.beef_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_beef_test\""));
+        assertTrue(language.contains("\"item.butchercraft.retail_ground_beef_test\""));
         assertTrue(language.contains("\"item.butchercraft.pork_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_pork_test\""));
         assertTrue(language.contains("\"item.butchercraft.bison_trim_test\""));
@@ -45,6 +46,7 @@ class ProductDataAssetsTest {
         assertTrue(language.contains("\"item.butchercraft.sirloin_steak_test\""));
         assertTrue(language.contains("\"item.butchercraft.tri_tip_test\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.product\""));
+        assertTrue(language.contains("\"tooltip.butchercraft.product_data.packaging\""));
         assertTrue(language.contains("\"tooltip.butchercraft.product_data.quality_score\""));
     }
 
@@ -52,6 +54,7 @@ class ProductDataAssetsTest {
     void productItemModelsExistAndUsePlaceholderTexture() throws IOException {
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/beef_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_beef_test.json"));
+        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/retail_ground_beef_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/pork_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_pork_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/bison_trim_test.json"));

@@ -31,6 +31,9 @@ public final class PackagingJsonDefinitionParser {
                         PackagingDatapackErrorCode.UNKNOWN_FORMAT),
                 requiredString(object, PackagingSerializedFieldNames.DEFAULT_QUANTITY_UNIT, "root",
                         PackagingDatapackErrorCode.UNKNOWN_QUANTITY_UNIT),
+                strings(optionalArray(object, PackagingSerializedFieldNames.REQUIRED_SUPPLY_ITEMS, "root",
+                        PackagingDatapackErrorCode.MALFORMED_REQUIRED_SUPPLIES).orElseGet(JsonArray::new),
+                        "required_supply_items", PackagingDatapackErrorCode.MALFORMED_REQUIRED_SUPPLIES),
                 strings(requiredArray(object, PackagingSerializedFieldNames.COMPATIBLE_CATEGORIES, "root",
                         PackagingDatapackErrorCode.MALFORMED_CATEGORIES), "compatible_categories",
                         PackagingDatapackErrorCode.MALFORMED_CATEGORIES),
@@ -93,6 +96,22 @@ public final class PackagingJsonDefinitionParser {
             throw new PackagingDatapackParsingException(code, path + "." + field + " must be an object");
         }
         return Optional.of(value.getAsJsonObject());
+    }
+
+    private static Optional<JsonArray> optionalArray(
+            JsonObject object,
+            String field,
+            String path,
+            PackagingDatapackErrorCode code
+    ) {
+        JsonElement value = object.get(field);
+        if (value == null || value.isJsonNull()) {
+            return Optional.empty();
+        }
+        if (!value.isJsonArray()) {
+            throw new PackagingDatapackParsingException(code, path + "." + field + " must be an array");
+        }
+        return Optional.of(value.getAsJsonArray());
     }
 
     private static JsonArray requiredArray(

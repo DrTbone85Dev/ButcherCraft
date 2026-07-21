@@ -17,6 +17,7 @@ public final class DevelopmentProductItemMappings {
         return DevelopmentProductItemMapping.fromFixtureItems(
                 ModItems.BEEF_TRIM_TEST,
                 ModItems.GROUND_BEEF_TEST,
+                ModItems.RETAIL_GROUND_BEEF_TEST,
                 ModItems.PORK_TRIM_TEST,
                 ModItems.GROUND_PORK_TEST,
                 ModItems.BISON_TRIM_TEST,

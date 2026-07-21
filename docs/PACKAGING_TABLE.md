@@ -1,16 +1,16 @@
-# Packaging Table Foundation
+# Packaging Table
 
-Status: v0.8.0 Project Meat Counter workstation foundation
+Status: v0.8.0 Project Meat Counter workstation foundation with Sprint D packaging gameplay
 
 ## Purpose
 
-Version 0.8.0 adds the Packaging Table as a permanent ButcherCraft workstation shell. It exists so the project can validate registration, placement, menus, inventory persistence, client screen wiring, item-handler exposure, and block-break recovery before packaging gameplay is designed. Sprint 2 adds retail product data definitions alongside the table foundation, but the table itself remains inventory-only.
+Version 0.8.0 adds the Packaging Table as a permanent ButcherCraft workstation. It validates registration, placement, menus, inventory persistence, client screen wiring, item-handler exposure, and block-break recovery. Sprint 2 adds retail product data definitions, Sprint C adds physical packaging supply items, and Sprint D connects the table to the existing processing workstation framework for the first packaged retail flow.
 
-This foundation is intentionally not a packaging execution system. It does not consume inputs, create packaged outputs, apply labels, change quality, fulfill orders, run employees, or load packaging recipes.
+The table is a processing workstation, not a crafting table. It executes the existing `butchercraft:package_retail` processing operation through the workstation resolver and controller, uses `PackagingDefinition` data to validate and consume required supplies, and produces a packaged product stack. It still does not apply labels, freshness, spoilage, order fulfillment, employees, business logic, or dynamic rendering.
 
 ## Registered Content
 
-The foundation registers:
+The table registers:
 
 - Block: `butchercraft:packaging_table`
 - Block item: `butchercraft:packaging_table`
@@ -19,6 +19,8 @@ The foundation registers:
 - Client screen: `PackagingTableScreen`
 - Creative-tab entry in the ButcherCraft tab
 - Generated blockstate, block model, item model, loot table, and language entries
+- Related packaging supply items in the ButcherCraft creative tab: Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll
+- Development output fixture: `butchercraft:retail_ground_beef_test`
 
 Placeholder assets are abstract Minecraft-style development assets and are expected to be replaced later.
 
@@ -26,55 +28,61 @@ Placeholder assets are abstract Minecraft-style development assets and are expec
 
 The Packaging Table uses a workstation capability with three input slots and one result slot:
 
-| Slot | Label | Behavior in v0.8.0 |
+| Slot | Label | Behavior |
 | --- | --- | --- |
-| 0 | Meat | Accepts non-empty items through the placeholder inventory rules. |
-| 1 | Tray | Accepts non-empty items through the placeholder inventory rules. |
-| 2 | Wrap | Accepts non-empty items through the placeholder inventory rules. |
-| 3 | Result | Rejects manual insertion and is reserved for future packaging output. |
+| 0 | Meat | Accepts product-bearing stacks that resolve to a packaging operation. |
+| 1 | Tray | Accepts known packaging supply items. |
+| 2 | Wrap | Accepts known packaging supply items. |
+| 3 | Result | Rejects manual insertion and receives packaged output after processing. |
 
-The result slot has no producer in v0.8.0. The screen reserves visual space for future progress or status presentation without implementing progress behavior.
+The built-in flow uses Ground Beef Test Product, Foam Tray, and Plastic Wrap Roll to produce Retail Ground Beef Test Product. The supply slots are validated against the active packaging definition rather than hardcoded tray/wrap recipe logic.
 
 ## Architecture
 
-`PackagingTableBlockEntity` extends `AbstractInventoryWorkstationBlockEntity`, not `AbstractProcessingWorkstationBlockEntity`.
+`PackagingTableBlockEntity` extends `AbstractProcessingWorkstationBlockEntity` and uses:
 
-That split keeps the table out of:
+- `WorkstationOperationResolver` to select `butchercraft:package_retail` from the processing graph.
+- `WorkstationProcessingController` for progress, reservation, save/load, blocked state, and completion handling.
+- `PackagingTableExecutionStrategy` to validate packaging metadata, required supplies, and stack decoration.
+- `WorkstationInventoryCommitPlan` to consume input and supplies and insert output atomically.
 
-- `WorkstationOperationResolver`
-- `WorkstationProcessingController`
-- `TransformationEvaluator`
-- `TransformationExecutor`
-- `TransformationTransaction`
-- Product-to-ItemStack output mapping
+The Packaging Table does not use transformation definitions or the transformation executor. That is deliberate: the current `package_retail` content is a processing operation, and packaging supplies are validated by packaging definitions.
 
-The table still uses the shared `WorkstationInventory` and `ProcessingWorkstationMenu` layout infrastructure so future workstation foundations can reuse the same inventory and synchronization behavior.
+## Transaction Lifecycle
+
+1. Slot 0 product data resolves through the processing graph for the `butchercraft:packaging` capability.
+2. The selected operation output must declare product packaging metadata.
+3. The active `PackagingRegistry` must contain the referenced packaging definition.
+4. Required supply item ids from the packaging definition must be present in the auxiliary input slots.
+5. The output slot must be empty before processing starts.
+6. While processing, all input slots are reserved and cannot be extracted through the workstation inventory.
+7. On completion, the processing operation commits, the output stack is created, packaging metadata is written to the output stack, and product input plus required supplies are consumed through one commit plan.
+8. If validation, output creation, output insertion, or commit-time mutation fails, the input product and supplies remain recoverable and no output is duplicated.
 
 ## Persistence And Recovery
 
-The block entity persists all four slots under the shared workstation inventory tag. On block removal, all input and output slots are dropped once and then cleared through the workstation inventory.
+The block entity persists all four slots under the shared workstation inventory tag. Active processing state persists through the shared processing-controller tag, including all reserved input snapshots. On block removal, processing is cancelled safely, all recoverable input and output slots are dropped once, and the inventory is cleared.
 
 The inventory exposes the standard item-handler capability registered in `ModCapabilities`. The output slot rejects insertion, matching the existing workstation inventory contract.
 
 ## Retail Data Compatibility
 
-Sprint 2 adds a data-only retail product framework:
+The first packaging gameplay flow uses existing retail data:
 
-- `butchercraft:retail_package` under `data/butchercraft/butchercraft/content/packaging`.
+- `butchercraft:retail_package`, `butchercraft:vacuum_package`, `butchercraft:butcher_paper_package`, and `butchercraft:freezer_paper_package` under `data/butchercraft/butchercraft/content/packaging`.
 - `butchercraft:retail_ground_beef` under `data/butchercraft/butchercraft/content/product`.
 - `butchercraft:package_retail` under the generated processing-operation definitions.
 
-These definitions prove product and packaging data can load through the active content snapshot and processing graph. No packaging transformation JSON is added, and the Packaging Table does not create a `WorkstationProcessingController`.
+Packaging definitions may list required supply item ids. Sprint D consumes those supplies only after the packaging operation successfully completes.
 
 ## Explicit Exclusions
 
-The Packaging Table foundation does not implement:
+The Packaging Table does not implement:
 
 - Packaging recipes or transformations
-- Tray or wrap item semantics
 - Label generation
 - Order fulfillment
 - Employee operation
 - Quality, freshness, or temperature changes
-- Packaging execution or supply consumption
-- Final art, sounds, particles, or animations
+- Dynamic product labels, textures, overlays, or rendering
+- Final art, custom sounds, particles, or animations

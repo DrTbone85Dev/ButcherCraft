@@ -36,7 +36,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
 | `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, operation, context, validation, evaluation, result, and transaction domain rules. |
 | `com.butchercraft.transformation` | Minecraft-independent generic material-transformation ids, material amounts, definitions, contexts, evaluations, evaluators, and compatibility adapters. |
-| `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, serialization, datapack validation, and registry access. |
+| `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, supply-reference serialization, datapack validation, and registry access. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
 | `com.butchercraft.api` | Documented public API intended for expansion mods. |
@@ -85,7 +85,7 @@ Required boundaries:
 - Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
 - The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Beef, pork, and bison grinding flows are selected through product/species/profile/operation definitions, not Grinder code branches.
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
-- The Packaging Table foundation owns only workstation inventory, persistence, menu synchronization, and item-handler exposure. Packaging recipes, product mutation, order fulfillment, and transformation execution remain unscheduled future work.
+- The Packaging Table consumes the same workstation framework with only the `butchercraft:packaging` capability. Retail packaging output is selected through processing-operation and product packaging metadata, while supply requirements come from packaging definitions rather than table code branches.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
@@ -165,7 +165,7 @@ Product item stacks should use data components instead of ad hoc NBT.
 
 Milestone 1D implements the first concrete component:
 
-- `ProductStackData` registered as `butchercraft:product_data`: product type id, source category id, processing state id, exact quantity value, quantity unit id, and quality score.
+- `ProductStackData` registered as `butchercraft:product_data`: product type id, source category id, processing state id, exact quantity value, quantity unit id, quality score, and optional stack-level packaging metadata.
 
 This component is persistent, network synchronized, immutable, and validated. Invalid decoded data is rejected rather than replaced with defaults. Product-bearing stacks are max stack size `1` until quantity and stack-count merge rules are deliberately designed.
 
@@ -175,7 +175,7 @@ Proposed components:
 - `QualityComponent` or future extension of `ProductStackData`: current quality summary and optional trace of major quality contributors.
 - `FreshnessComponent`: freshness state, last evaluated game time, spoilage state.
 - `TemperatureComponent`: product temperature band or compact temperature value, last evaluated game time.
-- `PackagingComponent`: packaged/unpackaged state, package type, label/order metadata.
+- Future `PackagingComponent` or future extension of `ProductStackData`: label/order metadata once labels and commerce exist. The current `ProductStackData` packaging metadata stores only packaging definition id, packaging format id, and source product id.
 
 Guidelines:
 
@@ -456,9 +456,13 @@ Version 0.6.9 loads product definitions from content snapshot JSON resources und
 
 Version 0.7.0 expands the bundled beef fabrication catalog through the existing product datapack, transformation datapack, processing-operation, resolver, Bandsaw capability, and atomic transaction paths. It does not add product-specific Bandsaw code or a dynamic product item factory.
 
-Version 0.8.0 adds the Packaging Table workstation foundation. The table registers a placeable block, item, block entity, menu, client screen, creative-tab entry, generated assets, and a three-input, one-result placeholder inventory. It uses a shared inventory-only workstation block entity base and deliberately does not execute packaging operations, transformations, product-item mappings, or gameplay packaging behavior.
+Version 0.8.0 adds the Packaging Table workstation foundation. The table registers a placeable block, item, block entity, menu, client screen, creative-tab entry, generated assets, and a three-input, one-result inventory.
 
-Version 0.8.0 Sprint 2 adds the Retail Product Framework. `PackagingDefinition` is a pure Java schema and datapack-backed immutable registry under `data/<namespace>/butchercraft/content/packaging`. `ProductDefinition` gains optional packaging metadata linking packaged products to a packaging definition id and source product id. `ContentSnapshotService` now activates product, packaging, and transformation registries together only after candidate products, candidate packaging, product packaging metadata, and candidate transformations validate. The built-in proof adds `butchercraft:retail_package`, `butchercraft:retail_ground_beef`, and a graph-only `butchercraft:package_retail` processing operation. The Packaging Table still has no processing controller, no transformation definition, and no packaging execution path.
+Version 0.8.0 Sprint 2 adds the Retail Product Framework. `PackagingDefinition` is a pure Java schema and datapack-backed immutable registry under `data/<namespace>/butchercraft/content/packaging`. `ProductDefinition` gains optional packaging metadata linking packaged products to a packaging definition id and source product id. `ContentSnapshotService` now activates product, packaging, and transformation registries together only after candidate products, candidate packaging, product packaging metadata, and candidate transformations validate. The built-in proof adds `butchercraft:retail_package`, `butchercraft:retail_ground_beef`, and `butchercraft:package_retail`.
+
+Version 0.8.0 Sprint C adds Packaging Supplies as fixed Minecraft item registrations and extends `PackagingDefinition` with optional immutable required supply item ids. Built-in packaging definitions now prove `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats. Supply ids validate during packaging datapack loading through the content snapshot, but datapacks do not dynamically register supply items.
+
+Version 0.8.0 Sprint D connects the Packaging Table to the shared processing controller. `PackagingTableExecutionStrategy` validates output product packaging metadata and required supply stacks through the active packaging registry, then `WorkstationInventoryCommitPlan` consumes product input, consumes supplies, and inserts output atomically. The table still does not use transformation definitions, packaging recipes, labels, freshness, spoilage, business logic, or a dynamic product item factory.
 
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 

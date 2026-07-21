@@ -20,7 +20,10 @@ public enum WorkstationFailureCode {
     INVALID_WORKSTATION_STATE,
     REGISTRY_NOT_AVAILABLE,
     PROCESSING_VALIDATION_REJECTED,
-    RESULT_CREATION_FAILED;
+    RESULT_CREATION_FAILED,
+    MISSING_REQUIRED_SUPPLY,
+    INVALID_SUPPLY_ITEM,
+    PACKAGING_DEFINITION_MISSING;
 
     public String reasonCode() {
         return name().toLowerCase(java.util.Locale.ROOT);

@@ -82,7 +82,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
         );
         inventory().setInputLocked(controller::inputLocked);
         inventory().setOutputExtractionAllowed(controller::outputExtractionAllowed);
-        inventory().setInputValidator(this::canAcceptInput);
+        inventory().setInputSlotValidator(this::canAcceptInput);
     }
 
     public WorkstationState workstationState() {
@@ -129,7 +129,14 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
         }
     }
 
-    private boolean canAcceptInput(ItemStack stack) {
+    protected boolean canAcceptInput(int slot, ItemStack stack) {
+        if (slot != inventory().firstInputSlot()) {
+            return false;
+        }
+        return canAcceptPrimaryInput(stack);
+    }
+
+    protected final boolean canAcceptPrimaryInput(ItemStack stack) {
         if (stack.isEmpty() || !ProductStackAdapter.readProductData(stack).succeeded()) {
             return false;
         }

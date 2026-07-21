@@ -192,7 +192,7 @@ public final class ContentSnapshotService {
     }
 
     public static PackagingDatapackLoader newPackagingLoader() {
-        return new PackagingDatapackLoader(knownProductCategories());
+        return new PackagingDatapackLoader(knownProductCategories(), knownPackagingSupplyItems());
     }
 
     public static Set<EngineId> knownProductCategories() {
@@ -208,6 +208,10 @@ public final class ContentSnapshotService {
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING,
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW
         );
+    }
+
+    public static Set<EngineId> knownPackagingSupplyItems() {
+        return Set.copyOf(BuiltInPackagingRegistry.BUILT_IN_SUPPLY_ITEM_IDS);
     }
 
     private static Map<String, JsonElement> bundledResources(Iterable<String> resourcePaths) {

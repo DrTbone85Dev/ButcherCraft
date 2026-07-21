@@ -21,11 +21,35 @@ public record PackagingDefinition(
         int schemaVersion,
         PackagingFormat format,
         QuantityUnit defaultQuantityUnit,
+        Set<EngineId> requiredSupplyItems,
         Set<ProductCategory> compatibleCategories,
         Set<EngineId> compatibleTags,
         Map<EngineId, String> metadata
 ) {
     public static final int CURRENT_SCHEMA_VERSION = 1;
+
+    public PackagingDefinition(
+            EngineId id,
+            String displayName,
+            int schemaVersion,
+            PackagingFormat format,
+            QuantityUnit defaultQuantityUnit,
+            Set<ProductCategory> compatibleCategories,
+            Set<EngineId> compatibleTags,
+            Map<EngineId, String> metadata
+    ) {
+        this(
+                id,
+                displayName,
+                schemaVersion,
+                format,
+                defaultQuantityUnit,
+                Set.of(),
+                compatibleCategories,
+                compatibleTags,
+                metadata
+        );
+    }
 
     public PackagingDefinition {
         Objects.requireNonNull(id, "id");
@@ -38,6 +62,7 @@ public record PackagingDefinition(
         }
         Objects.requireNonNull(format, "format");
         Objects.requireNonNull(defaultQuantityUnit, "defaultQuantityUnit");
+        requiredSupplyItems = copySupplyItems(requiredSupplyItems);
         compatibleCategories = copyCategories(compatibleCategories);
         compatibleTags = copyTags(compatibleTags);
         if (compatibleCategories.isEmpty() && compatibleTags.isEmpty()) {
@@ -76,6 +101,14 @@ public record PackagingDefinition(
         return Collections.unmodifiableSet(copied);
     }
 
+    private static Set<EngineId> copySupplyItems(Set<EngineId> source) {
+        LinkedHashSet<EngineId> copied = new LinkedHashSet<>();
+        for (EngineId supplyItem : Objects.requireNonNull(source, "requiredSupplyItems")) {
+            copied.add(Objects.requireNonNull(supplyItem, "required supply item"));
+        }
+        return Collections.unmodifiableSet(copied);
+    }
+
     private static Set<EngineId> copyTags(Set<EngineId> source) {
         LinkedHashSet<EngineId> copied = new LinkedHashSet<>();
         for (EngineId tag : Objects.requireNonNull(source, "compatibleTags")) {
@@ -103,6 +136,7 @@ public record PackagingDefinition(
         private Integer schemaVersion;
         private PackagingFormat format;
         private QuantityUnit defaultQuantityUnit;
+        private final Set<EngineId> requiredSupplyItems = new LinkedHashSet<>();
         private final Set<ProductCategory> compatibleCategories = new LinkedHashSet<>();
         private final Set<EngineId> compatibleTags = new LinkedHashSet<>();
         private final Map<EngineId, String> metadata = new LinkedHashMap<>();
@@ -140,6 +174,20 @@ public record PackagingDefinition(
 
         public Builder defaultQuantityUnit(QuantityUnit defaultQuantityUnit) {
             this.defaultQuantityUnit = Objects.requireNonNull(defaultQuantityUnit, "defaultQuantityUnit");
+            return this;
+        }
+
+        public Builder requiredSupplyItem(EngineId supplyItemId) {
+            requiredSupplyItems.add(Objects.requireNonNull(supplyItemId, "supplyItemId"));
+            return this;
+        }
+
+        public Builder requiredSupplyItem(String supplyItemId) {
+            return requiredSupplyItem(EngineId.of(supplyItemId));
+        }
+
+        public Builder requiredSupplyItems(Set<EngineId> supplyItemIds) {
+            Objects.requireNonNull(supplyItemIds, "supplyItemIds").forEach(this::requiredSupplyItem);
             return this;
         }
 
@@ -191,6 +239,7 @@ public record PackagingDefinition(
                     schemaVersion,
                     format,
                     defaultQuantityUnit,
+                    requiredSupplyItems,
                     compatibleCategories,
                     compatibleTags,
                     metadata

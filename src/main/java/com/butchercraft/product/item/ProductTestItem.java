@@ -73,6 +73,19 @@ public final class ProductTestItem extends Item implements ProductDataCarrier {
         tooltip.add(Component.translatable("tooltip.butchercraft.product_data.state", data.processingStateId()).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.butchercraft.product_data.quantity", data.quantityValue(), data.quantityUnitId()).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.butchercraft.product_data.quality", product.quality().grade().displayName()).withStyle(ChatFormatting.GRAY));
+        data.packaging().ifPresent(packaging -> {
+            tooltip.add(Component.translatable(
+                    "tooltip.butchercraft.product_data.packaging",
+                    packaging.packagingDefinitionId(),
+                    packaging.packagingFormatId()
+            ).withStyle(ChatFormatting.GRAY));
+            if (flag.isAdvanced()) {
+                tooltip.add(Component.translatable(
+                        "tooltip.butchercraft.product_data.packaging_source",
+                        packaging.sourceProductId()
+                ).withStyle(ChatFormatting.DARK_GRAY));
+            }
+        });
         if (flag.isAdvanced()) {
             tooltip.add(Component.translatable("tooltip.butchercraft.product_data.quality_score", data.qualityScore()).withStyle(ChatFormatting.DARK_GRAY));
         }

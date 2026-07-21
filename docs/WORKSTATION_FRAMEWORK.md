@@ -1,12 +1,12 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, with v0.8.0 Packaging Table foundation
+Status: Milestones 2B through 2E workstation framework, with v0.8.0 Packaging Table gameplay
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table as an inventory-only workstation foundation, and Sprint 2 adds retail product data without packaging execution.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table foundation, Sprint 2 adds retail product data, Sprint C adds packaging supply items, and Sprint D connects the table to the shared processing controller for the first supply-consuming packaging flow.
 
-This is not final artwork, not a player recipe-selection system, not a packaging gameplay system, and not a complete product item factory.
+This is not final artwork, not a player recipe-selection system, not a label system, and not a complete product item factory.
 
 ## Responsibility Boundaries
 
@@ -54,7 +54,7 @@ Minimum failure codes from the milestone are represented, with one additional ex
 
 Slot `0` is the first input for current machines. Output slots start at the configured first output slot, which is slot `1` for current one-input machines and slot `3` for the Packaging Table.
 
-Processing machine inputs accept product-bearing stacks only. The Packaging Table foundation accepts non-empty placeholder inputs until packaging rules define stricter semantics. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion for processing machines and always allowed for the Packaging Table foundation. Automation uses the same item-handler rules.
+Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion for processing machines. Automation uses the same item-handler rules.
 
 ## Operation Resolution
 
@@ -71,9 +71,9 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 - The default legacy strategy preserves the existing processing transaction path.
 - The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
-- `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds.
+- `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
 - Development workstation and any future un-migrated processing workstations remain on the legacy strategy until explicitly migrated.
-- The Packaging Table does not create a `WorkstationProcessingController` and has no execution strategy in v0.8.0.
+- The Packaging Table uses a packaging execution strategy. It resolves `butchercraft:package_retail` through the processing graph, validates required supplies through the active packaging registry, decorates the output stack with packaging metadata, and consumes input plus supplies through the shared commit plan.
 
 The current workstation controller still owns Minecraft inventory reservation, ItemStack creation, output slot checks, and block-entity persistence.
 
@@ -87,8 +87,10 @@ On completion:
 2. Output slot obstruction is checked.
 3. The selected execution strategy prepares and commits the operation.
 4. Committed engine products are converted into ItemStacks through the temporary development mapping.
-5. Input is cleared and ordered outputs are inserted into output slots.
-6. State becomes `COMPLETE`.
+5. The execution strategy may decorate output stacks with workstation-specific metadata.
+6. `WorkstationInventoryCommitPlan` snapshots all inputs and outputs, clears the selected consumed input slots, and inserts ordered outputs.
+7. If commit-time inventory mutation fails, the input and output snapshots are restored.
+8. State becomes `COMPLETE`.
 
 The controller does not duplicate outputs after completion.
 
@@ -111,12 +113,12 @@ Processing block entities persist:
 - Selected operation id.
 - Elapsed and total ticks.
 - Last failure code.
-- Reserved input snapshot.
+- Reserved input snapshots for all input slots.
 - Completion-committed flag.
 
 Recovery policy: input remains visibly reserved in the input slot. If active saved state is malformed, processing stops in `ERROR` and recoverable inventory remains instead of being deleted. Completed output is never recreated if the output already exists.
 
-Inventory-only workstations persist only their inventory. The Packaging Table uses this path in v0.8.0.
+Inventory-only workstations persist only their inventory. The Packaging Table used this path for the v0.8.0 foundation, but Sprint D moves it to the processing block entity path so active packaging progress and reserved inputs persist.
 
 Inventory load keeps the machine's configured slot count. Extra saved slots are ignored, and missing saved slots remain empty, so older two-slot Grinder/development workstation saves, nine-slot Bandsaw saves, and four-slot Packaging Table saves keep their intended layouts.
 
@@ -197,7 +199,7 @@ Permanent foundation block:
 butchercraft:packaging_table
 ```
 
-The block appears in the ButcherCraft creative tab, opens a placeholder inventory menu and client screen, persists Meat, Tray, Wrap, and Result slots, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:packaging`. Sprint 2 adds a `package_retail` processing-operation definition for the graph, but the table still has no controller or execution strategy.
+The block appears in the ButcherCraft creative tab, opens a processing menu and client screen, persists Meat, Tray, Wrap, and Result slots, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:packaging`. Sprint 2 adds a `package_retail` processing-operation definition for the graph, Sprint C adds supply items that packaging definitions may reference, and Sprint D executes the first Ground Beef to Retail Ground Beef flow. Required supplies are consumed only after successful completion.
 
 The Packaging Table is documented in `docs/PACKAGING_TABLE.md`.
 
@@ -211,4 +213,4 @@ The Packaging Table is documented in `docs/PACKAGING_TABLE.md`.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, employees, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, sounds, animations, complex rendering, recipe-selection UI, packaging recipes, packaging execution, labels, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, employees, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, animations, complex rendering, recipe-selection UI, labels, or public expansion API guarantees.

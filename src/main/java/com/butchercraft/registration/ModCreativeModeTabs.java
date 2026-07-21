@@ -22,6 +22,7 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
                         output.accept(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+                        output.accept(ModItems.RETAIL_GROUND_BEEF_TEST.get().getDefaultInstance());
                         output.accept(ModItems.PORK_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_PORK_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BISON_TRIM_TEST.get().getDefaultInstance());
@@ -53,6 +54,12 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.GRINDER.get());
                         output.accept(ModItems.BANDSAW.get());
                         output.accept(ModItems.PACKAGING_TABLE.get());
+                        output.accept(ModItems.FOAM_TRAY.get());
+                        output.accept(ModItems.PLASTIC_WRAP_ROLL.get());
+                        output.accept(ModItems.VACUUM_BAG.get());
+                        output.accept(ModItems.BUTCHER_PAPER_ROLL.get());
+                        output.accept(ModItems.FREEZER_PAPER_ROLL.get());
+                        output.accept(ModItems.RETAIL_LABEL_ROLL.get());
                         output.accept(ModItems.DEVELOPMENT_PROCESSING_WORKSTATION.get());
                     })
                     .build());

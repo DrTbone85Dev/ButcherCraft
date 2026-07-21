@@ -2,8 +2,12 @@
   "schema_version": 1,
   "id": "butchercraft:retail_package",
   "display_name": "Retail Package",
-  "format": "retail",
+  "format": "tray_wrap",
   "default_quantity_unit": "gram",
+  "required_supply_items": [
+    "butchercraft:foam_tray",
+    "butchercraft:plastic_wrap_roll"
+  ],
   "compatible_categories": [
     "butchercraft:beef",
     "butchercraft:pork",

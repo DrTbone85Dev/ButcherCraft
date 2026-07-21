@@ -10,14 +10,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PackagingTableContentCompatibilityTest {
     @Test
-    void retailProductFrameworkDoesNotRegisterPackagingTransformations() {
+    void retailProductFrameworkKeepsPackagingDataSeparateFromTransformations() {
         assertFalse(BuiltInTransformationRegistry.BUILT_IN_RESOURCE_PATHS.stream().anyMatch(path -> path.contains("packag")));
-        assertEquals(1, BuiltInPackagingRegistry.BUILT_IN_RESOURCE_PATHS.size());
+        assertEquals(4, BuiltInPackagingRegistry.BUILT_IN_RESOURCE_PATHS.size());
         assertEquals("data/butchercraft/butchercraft/content/packaging/retail_package.json",
                 BuiltInPackagingRegistry.BUILT_IN_RESOURCE_PATHS.getFirst());
+        assertEquals("data/butchercraft/butchercraft/content/packaging/freezer_paper_package.json",
+                BuiltInPackagingRegistry.BUILT_IN_RESOURCE_PATHS.getLast());
         assertEquals("data/butchercraft/butchercraft/content/product/retail_ground_beef.json",
                 BuiltInProductRegistry.BUILT_IN_RESOURCE_PATHS.stream()
                         .filter(path -> path.endsWith("/retail_ground_beef.json"))
@@ -27,8 +30,11 @@ class PackagingTableContentCompatibilityTest {
         var snapshot = ContentSnapshotService.loadBundledSnapshot();
 
         assertEquals(31, snapshot.products().size());
-        assertEquals(1, snapshot.packaging().size());
+        assertEquals(4, snapshot.packaging().size());
         assertEquals(8, snapshot.transformations().size());
+        assertTrue(PackagingTableWorkstation.capability().supportsWorkstationCapability(
+                com.butchercraft.processing.definition.BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PACKAGING
+        ));
     }
 
     @Test
@@ -37,5 +43,7 @@ class PackagingTableContentCompatibilityTest {
         assertEquals(1, GrinderWorkstation.capability().outputSlots());
         assertEquals(1, BandsawWorkstation.capability().inputSlots());
         assertEquals(8, BandsawWorkstation.capability().outputSlots());
+        assertEquals(3, PackagingTableWorkstation.capability().inputSlots());
+        assertEquals(1, PackagingTableWorkstation.capability().outputSlots());
     }
 }

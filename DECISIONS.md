@@ -620,11 +620,11 @@ Consequences:
 - Built-in product definitions began with the six current Grinder products and now also include bounded Bandsaw and retail proof products.
 - `TransformationProductReferenceValidator` checks missing product ids and quantity-unit mismatches after construction.
 - Product definition code must remain free of Minecraft and NeoForge imports.
-- Product-to-item mapping, spoilage, packaging execution, storage rules, and broader product catalogs remain out of scope unless a later milestone explicitly schedules them.
+- Product-to-item mapping, spoilage, broader packaging execution beyond the first Packaging Table flow, storage rules, and broader product catalogs remain out of scope unless a later milestone explicitly schedules them.
 
 ## DEC-0043: Transformation Serialization Is A Pure Schema Contract
 
-Status: Accepted
+Status: Accepted; execution deferral superseded by DEC-0052
 
 Decision: version 0.6.5 introduces `com.butchercraft.transformation.serialization` as a pure Java serialization contract for `TransformationDefinition`. The canonical serialized representation freezes external field names for id, display name, schema version, required capability, inputs, outputs, duration, yield, and metadata.
 
@@ -640,7 +640,7 @@ Consequences:
 
 ## DEC-0044: Transformation Transactions Must Be Atomic Before Bandsaw Migration
 
-Status: Accepted
+Status: Accepted; execution deferral superseded by DEC-0052
 
 Decision: version 0.6.6 adds a pure Java in-memory transaction model to the transformation engine before migrating any multi-output workstation. `TransformationTransaction` validates all input extraction and output insertion against material stores before committing, and restores snapshots if a commit-time mutation fails after partial progress.
 
@@ -721,18 +721,18 @@ Consequences:
 - Product-to-ItemStack output remains a controlled Java development fixture mapping until a real product item creation system is scheduled.
 - Full carcass fabrication, recipe selection, balancing, dynamic product items, other workstation migrations, and public expansion APIs remain out of scope.
 
-## DEC-0049: Packaging Table Foundation Is Inventory-Only Until Packaging Gameplay Is Scheduled
+## DEC-0049: Packaging Table Foundation Was Initially Inventory-Only
 
-Status: Accepted
+Status: Accepted; execution deferral superseded by DEC-0052
 
-Decision: version 0.8.0 adds `butchercraft:packaging_table` as a permanent workstation foundation with persisted inventory, a placeholder menu and screen, creative-tab visibility, item-handler capability exposure, and block-break recovery, but no packaging execution, transformations, product mutation, labels, order fulfillment, or employee behavior.
+Decision: the initial version 0.8.0 Packaging Table milestone added `butchercraft:packaging_table` as a permanent workstation foundation with persisted inventory, a placeholder menu and screen, creative-tab visibility, item-handler capability exposure, and block-break recovery. That foundation intentionally deferred packaging execution, transformations, product mutation, labels, order fulfillment, and employee behavior until later scheduled work.
 
 Rationale: Project Meat Counter needs the player-facing station surface before packaging rules are designed. Keeping the block entity outside the processing controller path avoids hardcoding premature product, tray, wrap, or package semantics into generic workstation logic.
 
 Consequences:
 
 - `AbstractInventoryWorkstationBlockEntity` owns shared inventory persistence and menu-provider behavior for workstation foundations that do not execute processing.
-- The Packaging Table advertises `butchercraft:packaging` and a three-input, one-result layout. Sprint 2 adds a graph-only processing operation for that capability, but the table still has no controller or execution strategy.
+- The Packaging Table advertises `butchercraft:packaging` and a three-input, one-result layout. Sprint 2 originally added a graph-only processing operation for that capability; DEC-0052 now adds controller-backed execution for the first retail packaging flow.
 - Existing Grinder and Bandsaw processing paths remain unchanged.
 - Future packaging gameplay must add data-driven definitions and transaction rules deliberately rather than reusing placeholder slot names as hidden logic.
 
@@ -749,9 +749,43 @@ Consequences:
 - Packaging resources load from `data/<namespace>/butchercraft/content/packaging`.
 - `butchercraft:retail_package` is the first built-in packaging definition.
 - `butchercraft:retail_ground_beef` is the first built-in packaged retail product and references `butchercraft:ground_beef` as its source product.
-- `butchercraft:package_retail` is registered as a processing-operation definition so the graph can represent retail packaging, but it is not backed by a transformation definition or Packaging Table execution.
+- `butchercraft:package_retail` is registered as a processing-operation definition so the graph can represent retail packaging. Sprint D executes it on the Packaging Table without adding a transformation definition.
 - Existing products without packaging metadata remain valid.
 - Packaging recipes, supply consumption, labels, weights, freshness, spoilage, dynamic textures, overlay rendering, business logic, GUI changes, sounds, animations, and item factory behavior remain out of scope.
+
+## DEC-0051: Packaging Supplies Are Fixed Items Referenced By Data Only
+
+Status: Accepted; consumption deferral superseded by DEC-0052
+
+Decision: version 0.8.0 Sprint C adds Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll as fixed Minecraft item registrations. `PackagingDefinition` gains optional immutable required supply item ids, and packaging datapack loading validates those ids against the fixed built-in supply item set.
+
+Rationale: future packaging recipes need stable physical materials before supply consumption, labels, spoilage, or business rules are designed. Keeping supply ids in packaging definitions proves the data contract without making the Packaging Table consume items or execute packaging operations.
+
+Consequences:
+
+- Built-in packaging definitions now prove `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats.
+- Older packaging definitions without `required_supply_items` still load with an empty supply list.
+- Datapacks may reference known supply item ids but do not dynamically register supply items, models, textures, or creative-tab entries.
+- Malformed supply arrays and unknown supply ids fail packaging loading with structured validation errors and preserve the previously active content snapshot.
+- The Retail Label Roll is registered for future label systems but does not add labels to products in this sprint.
+- Packaging recipes, labels on products, dynamic rendering, weight, freshness, spoilage, custom sounds, animations, GUI redesign, and business logic remain out of scope.
+
+## DEC-0052: Packaging Table Executes Through Processing And A Shared Commit Plan
+
+Status: Accepted
+
+Decision: version 0.8.0 Sprint D connects only the Packaging Table to the existing processing workstation controller for `butchercraft:package_retail`. The table uses `PackagingTableExecutionStrategy` to validate output product packaging metadata, resolve the active `PackagingDefinition`, validate required supply items, create packaged output stack metadata, and select consumed input slots. `WorkstationInventoryCommitPlan` performs the Minecraft inventory mutation by snapshotting all inputs and outputs, consuming the selected product and supply slots, inserting output, and restoring snapshots if commit-time mutation fails.
+
+Rationale: packaging gameplay moves multiple input stacks and creates a product output, so it has the same duplication and inventory-loss risk as Grinder and Bandsaw processing. The Packaging Table needed to join the existing server-authoritative processing framework instead of adding a hidden recipe path or one-off table transaction.
+
+Consequences:
+
+- The Packaging Table advertises `butchercraft:packaging`, resolves operation selection through the processing graph, and remains outside transformation definitions and transformation execution.
+- Product selection comes from processing-operation definitions. Packaging definition ids and source products come from product packaging metadata. Required supplies and packaging format come from the active `PackagingRegistry`.
+- Slot-aware input validation lets slot `0` accept resolvable product stacks and auxiliary slots accept known packaging supply items.
+- Stack-level packaging metadata is stored on `ProductStackData` for packaged output stacks. Existing stacks without packaging metadata continue decoding with an empty packaging value.
+- The first supported flow is Ground Beef Test Product plus Foam Tray plus Plastic Wrap Roll into Retail Ground Beef Test Product.
+- Packaging recipes, labels, freshness, spoilage, dynamic rendering, business logic, employee operation, order fulfillment, and dynamic product item creation remain out of scope.
 
 ## Decisions Needing Owner Approval
 

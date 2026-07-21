@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 public final class WorkstationInventory extends ItemStackHandler {
@@ -26,7 +27,8 @@ public final class WorkstationInventory extends ItemStackHandler {
     private final Runnable changeListener;
     private BooleanSupplier inputLocked = () -> false;
     private BooleanSupplier outputExtractionAllowed = () -> false;
-    private Predicate<ItemStack> inputValidator = stack -> ProductStackAdapter.readProductData(stack).succeeded();
+    private BiPredicate<Integer, ItemStack> inputValidator =
+            (slot, stack) -> ProductStackAdapter.readProductData(stack).succeeded();
     private boolean suppressChangeListener;
 
     public WorkstationInventory(Runnable changeListener) {
@@ -94,6 +96,11 @@ public final class WorkstationInventory extends ItemStackHandler {
     }
 
     public void setInputValidator(Predicate<ItemStack> inputValidator) {
+        Objects.requireNonNull(inputValidator, "inputValidator");
+        this.inputValidator = (slot, stack) -> inputValidator.test(stack);
+    }
+
+    public void setInputSlotValidator(BiPredicate<Integer, ItemStack> inputValidator) {
         this.inputValidator = Objects.requireNonNull(inputValidator, "inputValidator");
     }
 
@@ -170,6 +177,22 @@ public final class WorkstationInventory extends ItemStackHandler {
         changeListener.run();
     }
 
+    public void setInputsInternal(List<ItemStack> stacks) {
+        List<ItemStack> copiedStacks = List.copyOf(Objects.requireNonNull(stacks, "stacks"));
+        if (copiedStacks.size() != inputSlotCount) {
+            throw new IllegalArgumentException("Input snapshot size must match workstation input slot count");
+        }
+        suppressChangeListener = true;
+        try {
+            for (int inputIndex = 0; inputIndex < inputSlotCount; inputIndex++) {
+                setStackInSlot(firstInputSlot + inputIndex, copiedStacks.get(inputIndex));
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
+    }
+
     public void clearInputInternal() {
         setStackMuted(firstInputSlot, ItemStack.EMPTY);
     }
@@ -178,6 +201,22 @@ public final class WorkstationInventory extends ItemStackHandler {
         suppressChangeListener = true;
         try {
             for (int slot = firstInputSlot; slot < firstOutputSlot; slot++) {
+                setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
+    }
+
+    public void clearInputSlotsInternal(List<Integer> slots) {
+        List<Integer> copiedSlots = List.copyOf(Objects.requireNonNull(slots, "slots"));
+        suppressChangeListener = true;
+        try {
+            for (int slot : copiedSlots) {
+                if (!isInputSlot(slot)) {
+                    throw new IllegalArgumentException("Only input slots can be cleared by an input commit plan");
+                }
                 setStackInSlot(slot, ItemStack.EMPTY);
             }
         } finally {
@@ -210,7 +249,7 @@ public final class WorkstationInventory extends ItemStackHandler {
         if (!isInputSlot(slot) || stack.isEmpty()) {
             return false;
         }
-        return inputValidator.test(stack);
+        return inputValidator.test(slot, stack);
     }
 
     @Override

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:vacuum_package",
+  "display_name": "Vacuum Package",
+  "format": "vacuum",
+  "default_quantity_unit": "gram",
+  "required_supply_items": [
+    "butchercraft:vacuum_bag"
+  ],
+  "compatible_categories": [
+    "butchercraft:beef",
+    "butchercraft:pork",
+    "butchercraft:bison"
+  ],
+  "compatible_tags": [
+    "butchercraft:trait/ground"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

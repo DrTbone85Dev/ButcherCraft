@@ -35,9 +35,74 @@ public class PackagingDatapackLoaderTest {
 
         assertTrue(result.succeeded(), result::describeErrors);
         assertEquals(BuiltInPackagingRegistry.BUILT_IN_RESOURCE_PATHS.size(), result.registry().orElseThrow().size());
-        assertEquals(List.of("butchercraft:retail_package"), result.registry().orElseThrow().stream()
+        assertEquals(List.of(
+                        "butchercraft:retail_package",
+                        "butchercraft:vacuum_package",
+                        "butchercraft:butcher_paper_package",
+                        "butchercraft:freezer_paper_package"
+                ), result.registry().orElseThrow().stream()
                 .map(definition -> definition.id().value())
                 .toList());
+        assertEquals(List.of("butchercraft:foam_tray", "butchercraft:plastic_wrap_roll"),
+                result.registry().orElseThrow()
+                        .find(BuiltInPackagingRegistry.RETAIL_PACKAGE)
+                        .orElseThrow()
+                        .requiredSupplyItems()
+                        .stream()
+                        .map(supply -> supply.value())
+                        .toList());
+    }
+
+    @Test
+    void supportedPackagingSupplyFormatsLoad() {
+        PackagingDatapackLoadResult result = loader().load(resources(
+                Map.entry("tray", packagingWithSupplies("butchercraft:tray", "Tray Wrap", "tray_wrap", "gram",
+                        "butchercraft:foam_tray", "butchercraft:plastic_wrap_roll")),
+                Map.entry("vacuum", packagingWithSupplies("butchercraft:vacuum", "Vacuum", "vacuum", "gram",
+                        "butchercraft:vacuum_bag")),
+                Map.entry("butcher_paper", packagingWithSupplies("butchercraft:butcher_paper", "Butcher Paper",
+                        "butcher_paper", "gram", "butchercraft:butcher_paper_roll")),
+                Map.entry("freezer_paper", packagingWithSupplies("butchercraft:freezer_paper", "Freezer Paper",
+                        "freezer_paper", "gram", "butchercraft:freezer_paper_roll"))
+        ));
+
+        assertTrue(result.succeeded(), result::describeErrors);
+        assertEquals(List.of("tray_wrap", "vacuum", "butcher_paper", "freezer_paper"),
+                result.registry().orElseThrow().stream()
+                        .map(definition -> definition.format().id())
+                        .toList());
+    }
+
+    @Test
+    void requiredSupplyReferencesAreLoadedAndValidated() {
+        PackagingDatapackLoadResult result = loader().load(resources(Map.entry(
+                "tray",
+                packagingWithSupplies("butchercraft:tray_package", "Tray Package", "tray_wrap", "gram",
+                        "butchercraft:foam_tray", "butchercraft:plastic_wrap_roll")
+        )));
+        PackagingDatapackLoadResult malformed = loader().load(resources(Map.entry(
+                "malformed_supply",
+                packagingWithSupplies("butchercraft:tray_package", "Tray Package", "tray_wrap", "gram",
+                        "butchercraft:foam_tray")
+                        .replace("\"butchercraft:foam_tray\"", "10")
+        )));
+        PackagingDatapackLoadResult unknown = loader().load(resources(Map.entry(
+                "unknown_supply",
+                packagingWithSupplies("butchercraft:tray_package", "Tray Package", "tray_wrap", "gram",
+                        "butchercraft:missing_supply")
+        )));
+
+        assertTrue(result.succeeded(), result::describeErrors);
+        assertEquals(List.of("butchercraft:foam_tray", "butchercraft:plastic_wrap_roll"),
+                result.registry().orElseThrow()
+                        .find(com.butchercraft.engine.EngineId.of("butchercraft:tray_package"))
+                        .orElseThrow()
+                        .requiredSupplyItems()
+                        .stream()
+                        .map(supply -> supply.value())
+                        .toList());
+        assertEquals(PackagingDatapackErrorCode.MALFORMED_REQUIRED_SUPPLIES, malformed.errors().getFirst().code());
+        assertEquals(PackagingDatapackErrorCode.UNKNOWN_SUPPLY_ITEM, unknown.errors().getFirst().code());
     }
 
     @Test
@@ -139,7 +204,7 @@ public class PackagingDatapackLoaderTest {
     }
 
     public static PackagingDatapackLoader loader() {
-        return new PackagingDatapackLoader(ContentSnapshotService.knownProductCategories());
+        return ContentSnapshotService.newPackagingLoader();
     }
 
     @SafeVarargs
@@ -170,6 +235,39 @@ public class PackagingDatapackLoaderTest {
                   }
                 }
                 """.formatted(id, displayName, format, unit);
+    }
+
+    public static String packagingWithSupplies(
+            String id,
+            String displayName,
+            String format,
+            String unit,
+            String... requiredSupplyItems
+    ) {
+        String supplies = java.util.Arrays.stream(requiredSupplyItems)
+                .map(supply -> "                    \"" + supply + "\"")
+                .collect(java.util.stream.Collectors.joining(",\n"));
+        return """
+                {
+                  "schema_version": 1,
+                  "id": "%s",
+                  "display_name": "%s",
+                  "format": "%s",
+                  "default_quantity_unit": "%s",
+                  "required_supply_items": [
+%s
+                  ],
+                  "compatible_categories": [
+                    "butchercraft:beef"
+                  ],
+                  "compatible_tags": [
+                    "butchercraft:trait/ground"
+                  ],
+                  "metadata": {
+                    "butchercraft:schema/source": "built_in"
+                  }
+                }
+                """.formatted(id, displayName, format, unit, supplies);
     }
 
     private static String packagingWithoutRules(String id, String displayName, String format, String unit) {

@@ -15,6 +15,8 @@ import java.util.Objects;
 final class ButcherCraftItemModelProvider extends ItemModelProvider {
     private static final ResourceLocation DEVELOPMENT_PLACEHOLDER_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/development_test_item");
+    private static final ResourceLocation PACKAGING_SUPPLY_PLACEHOLDER_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/packaging_supply_placeholder");
 
     ButcherCraftItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, ButcherCraft.MOD_ID, existingFileHelper);
@@ -25,6 +27,7 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.DEVELOPMENT_TEST_ITEM.get());
         placeholderProductItem(ModItems.BEEF_TRIM_TEST.get());
         placeholderProductItem(ModItems.GROUND_BEEF_TEST.get());
+        placeholderProductItem(ModItems.RETAIL_GROUND_BEEF_TEST.get());
         placeholderProductItem(ModItems.PORK_TRIM_TEST.get());
         placeholderProductItem(ModItems.GROUND_PORK_TEST.get());
         placeholderProductItem(ModItems.BISON_TRIM_TEST.get());
@@ -53,6 +56,12 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         placeholderProductItem(ModItems.TOP_SIRLOIN_TEST.get());
         placeholderProductItem(ModItems.SIRLOIN_STEAK_TEST.get());
         placeholderProductItem(ModItems.TRI_TIP_TEST.get());
+        placeholderSupplyItem(ModItems.FOAM_TRAY.get());
+        placeholderSupplyItem(ModItems.PLASTIC_WRAP_ROLL.get());
+        placeholderSupplyItem(ModItems.VACUUM_BAG.get());
+        placeholderSupplyItem(ModItems.BUTCHER_PAPER_ROLL.get());
+        placeholderSupplyItem(ModItems.FREEZER_PAPER_ROLL.get());
+        placeholderSupplyItem(ModItems.RETAIL_LABEL_ROLL.get());
     }
 
     private void placeholderProductItem(Item item) {
@@ -60,5 +69,12 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         getBuilder(itemId.toString())
                 .parent(new ModelFile.UncheckedModelFile("item/generated"))
                 .texture("layer0", DEVELOPMENT_PLACEHOLDER_TEXTURE);
+    }
+
+    private void placeholderSupplyItem(Item item) {
+        ResourceLocation itemId = Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(item));
+        getBuilder(itemId.toString())
+                .parent(new ModelFile.UncheckedModelFile("item/generated"))
+                .texture("layer0", PACKAGING_SUPPLY_PLACEHOLDER_TEXTURE);
     }
 }

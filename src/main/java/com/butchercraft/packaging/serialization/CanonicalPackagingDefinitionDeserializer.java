@@ -29,6 +29,9 @@ public final class CanonicalPackagingDefinitionDeserializer
                 .defaultQuantityUnit(QuantityUnit.fromId(serialized.defaultQuantityUnit()))
                 .metadata(metadata(serialized.metadata()));
 
+        serialized.requiredSupplyItems().stream()
+                .map(EngineId::of)
+                .forEach(builder::requiredSupplyItem);
         serialized.compatibleCategories().stream()
                 .map(EngineId::of)
                 .forEach(builder::compatibleCategory);
