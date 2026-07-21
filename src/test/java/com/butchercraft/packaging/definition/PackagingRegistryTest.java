@@ -82,9 +82,20 @@ class PackagingRegistryTest {
     void builtInRegistryContainsRetailPackage() {
         PackagingRegistry registry = BuiltInPackagingRegistry.builtInRegistry();
 
-        assertEquals(1, registry.size());
+        assertEquals(4, registry.size());
         assertTrue(registry.contains(BuiltInPackagingRegistry.RETAIL_PACKAGE));
-        assertEquals(List.of("butchercraft:retail_package"), registry.stream()
+        assertTrue(registry.contains(BuiltInPackagingRegistry.VACUUM_PACKAGE));
+        assertTrue(registry.contains(BuiltInPackagingRegistry.BUTCHER_PAPER_PACKAGE));
+        assertTrue(registry.contains(BuiltInPackagingRegistry.FREEZER_PAPER_PACKAGE));
+        assertEquals(List.of(
+                        "butchercraft:retail_package",
+                        "butchercraft:vacuum_package",
+                        "butchercraft:butcher_paper_package",
+                        "butchercraft:freezer_paper_package"
+                ), registry.stream()
+                .map(definition -> definition.id().value())
+                .toList());
+        assertEquals(List.of("butchercraft:retail_package"), registry.findByFormat(PackagingFormat.TRAY_WRAP)
                 .map(definition -> definition.id().value())
                 .toList());
     }

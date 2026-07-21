@@ -42,7 +42,7 @@ class ContentSnapshotServiceTest {
 
         assertTrue(result.succeeded(), result::describeErrors);
         assertEquals(31, ContentSnapshotService.currentProductRegistry().size());
-        assertEquals(1, ContentSnapshotService.currentPackagingRegistry().size());
+        assertEquals(4, ContentSnapshotService.currentPackagingRegistry().size());
         assertEquals(8, ContentSnapshotService.currentTransformationRegistry().size());
         assertEquals(previous.products().stream().toList(), ContentSnapshotService.currentProductRegistry().stream().toList());
         assertEquals(previous.packaging().stream().toList(), ContentSnapshotService.currentPackagingRegistry().stream().toList());
@@ -76,7 +76,7 @@ class ContentSnapshotServiceTest {
 
         assertTrue(result.succeeded(), result::describeErrors);
         assertEquals(2, ContentSnapshotService.currentProductRegistry().size());
-        assertEquals(1, ContentSnapshotService.currentPackagingRegistry().size());
+        assertEquals(4, ContentSnapshotService.currentPackagingRegistry().size());
         assertEquals(1, ContentSnapshotService.currentTransformationRegistry().size());
         assertTrue(ContentSnapshotService.currentTransformationRegistry()
                 .contains(TransformationId.of("butchercraft:test_transform")));
@@ -278,6 +278,9 @@ class ContentSnapshotServiceTest {
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_round")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_sirloin")));
         assertTrue(snapshot.packaging().contains(EngineId.of("butchercraft:retail_package")));
+        assertTrue(snapshot.packaging().contains(EngineId.of("butchercraft:vacuum_package")));
+        assertTrue(snapshot.packaging().contains(EngineId.of("butchercraft:butcher_paper_package")));
+        assertTrue(snapshot.packaging().contains(EngineId.of("butchercraft:freezer_paper_package")));
         assertEquals(8, snapshot.transformations()
                 .find(TransformationId.of("butchercraft:break_beef_forequarter"))
                 .orElseThrow()

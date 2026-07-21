@@ -25,6 +25,7 @@ class PackagingDefinitionTest {
     private static final EngineId TAG_GROUND = EngineId.of("butchercraft:trait/ground");
     private static final EngineId TAG_TRIM = EngineId.of("butchercraft:trait/trim");
     private static final EngineId METADATA_SOURCE = EngineId.of("butchercraft:schema/source");
+    private static final EngineId FOAM_TRAY = EngineId.of("butchercraft:foam_tray");
 
     @Test
     void builderCreatesCompleteImmutablePackagingDefinition() {
@@ -33,8 +34,9 @@ class PackagingDefinitionTest {
         assertEquals(RETAIL_PACKAGE, definition.id());
         assertEquals("Retail Package", definition.displayName());
         assertEquals(PackagingDefinition.CURRENT_SCHEMA_VERSION, definition.schemaVersion());
-        assertEquals(PackagingFormat.RETAIL, definition.format());
+        assertEquals(PackagingFormat.TRAY_WRAP, definition.format());
         assertEquals(QuantityUnit.GRAM, definition.defaultQuantityUnit());
+        assertEquals(List.of(FOAM_TRAY), definition.requiredSupplyItems().stream().toList());
         assertEquals(List.of(BEEF), definition.compatibleCategories().stream().toList());
         assertEquals(List.of(TAG_GROUND), definition.compatibleTags().stream().toList());
         assertEquals("built_in", definition.metadata().get(METADATA_SOURCE));
@@ -48,7 +50,7 @@ class PackagingDefinitionTest {
         assertThrows(IllegalStateException.class, () -> PackagingDefinition.builder()
                 .displayName("Retail Package")
                 .schemaVersion(PackagingDefinition.CURRENT_SCHEMA_VERSION)
-                .format(PackagingFormat.RETAIL)
+                .format(PackagingFormat.TRAY_WRAP)
                 .defaultQuantityUnit(QuantityUnit.GRAM)
                 .compatibleCategory(BEEF)
                 .build());
@@ -59,9 +61,10 @@ class PackagingDefinitionTest {
                 .id(RETAIL_PACKAGE)
                 .displayName("Retail Package")
                 .schemaVersion(PackagingDefinition.CURRENT_SCHEMA_VERSION)
-                .format(PackagingFormat.RETAIL)
+                .format(PackagingFormat.TRAY_WRAP)
                 .defaultQuantityUnit(QuantityUnit.GRAM)
                 .build());
+        assertThrows(NullPointerException.class, () -> validBuilder().requiredSupplyItem((EngineId) null));
         assertThrows(NullPointerException.class, () -> validBuilder().compatibleTag((EngineId) null));
     }
 
@@ -71,6 +74,8 @@ class PackagingDefinitionTest {
         categories.add(BEEF);
         Set<EngineId> tags = new LinkedHashSet<>();
         tags.add(TAG_GROUND);
+        Set<EngineId> supplyItems = new LinkedHashSet<>();
+        supplyItems.add(FOAM_TRAY);
         Map<EngineId, String> metadata = new LinkedHashMap<>();
         metadata.put(METADATA_SOURCE, " built_in ");
 
@@ -78,23 +83,44 @@ class PackagingDefinitionTest {
                 RETAIL_PACKAGE,
                 " Retail Package ",
                 PackagingDefinition.CURRENT_SCHEMA_VERSION,
-                PackagingFormat.RETAIL,
+                PackagingFormat.TRAY_WRAP,
                 QuantityUnit.GRAM,
+                supplyItems,
                 categories,
                 tags,
                 metadata
         );
         categories.clear();
         tags.clear();
+        supplyItems.clear();
         metadata.put(EngineId.of("butchercraft:schema/changed"), "changed");
 
         assertEquals("Retail Package", definition.displayName());
+        assertEquals(List.of(FOAM_TRAY), definition.requiredSupplyItems().stream().toList());
         assertEquals(List.of(BEEF), definition.compatibleCategories().stream().toList());
         assertEquals(List.of(TAG_GROUND), definition.compatibleTags().stream().toList());
         assertEquals(Map.of(METADATA_SOURCE, "built_in"), definition.metadata());
+        assertThrows(UnsupportedOperationException.class, () -> definition.requiredSupplyItems().clear());
         assertThrows(UnsupportedOperationException.class, () -> definition.compatibleCategories().clear());
         assertThrows(UnsupportedOperationException.class, () -> definition.compatibleTags().clear());
         assertThrows(UnsupportedOperationException.class, () -> definition.metadata().clear());
+    }
+
+    @Test
+    void legacyConstructorCreatesDefinitionWithoutRequiredSupplyItems() {
+        PackagingDefinition definition = new PackagingDefinition(
+                RETAIL_PACKAGE,
+                "Retail Package",
+                PackagingDefinition.CURRENT_SCHEMA_VERSION,
+                PackagingFormat.RETAIL,
+                QuantityUnit.GRAM,
+                Set.of(BEEF),
+                Set.of(TAG_GROUND),
+                Map.of(METADATA_SOURCE, "built_in")
+        );
+
+        assertTrue(definition.requiredSupplyItems().isEmpty());
+        assertTrue(definition.isCompatibleWith(product("butchercraft:ground_beef", BEEF, QuantityUnit.GRAM, TAG_GROUND)));
     }
 
     @Test
@@ -103,6 +129,7 @@ class PackagingDefinitionTest {
 
         assertEquals(base, validBuilder().build());
         assertNotEquals(base, validBuilder().displayName("Different").build());
+        assertNotEquals(base, validBuilder().requiredSupplyItem("butchercraft:extra_supply").build());
         assertNotEquals(base, validBuilder().compatibleTag("butchercraft:trait/extra").build());
         assertNotEquals(base, validBuilder().metadata("butchercraft:schema/extra", "value").build());
         assertNotEquals(base, validBuilder().defaultQuantityUnit(QuantityUnit.PIECE).build());
@@ -113,8 +140,9 @@ class PackagingDefinitionTest {
                 .id(RETAIL_PACKAGE)
                 .displayName("Retail Package")
                 .schemaVersion(PackagingDefinition.CURRENT_SCHEMA_VERSION)
-                .format(PackagingFormat.RETAIL)
+                .format(PackagingFormat.TRAY_WRAP)
                 .defaultQuantityUnit(QuantityUnit.GRAM)
+                .requiredSupplyItem(FOAM_TRAY)
                 .compatibleCategory(BEEF)
                 .compatibleTag(TAG_GROUND)
                 .metadata(METADATA_SOURCE, "built_in");

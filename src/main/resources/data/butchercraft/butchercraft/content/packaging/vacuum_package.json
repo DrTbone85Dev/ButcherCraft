@@ -1,12 +1,11 @@
 {
   "schema_version": 1,
-  "id": "butchercraft:retail_package",
-  "display_name": "Retail Package",
-  "format": "tray_wrap",
+  "id": "butchercraft:vacuum_package",
+  "display_name": "Vacuum Package",
+  "format": "vacuum",
   "default_quantity_unit": "gram",
   "required_supply_items": [
-    "butchercraft:foam_tray",
-    "butchercraft:plastic_wrap_roll"
+    "butchercraft:vacuum_bag"
   ],
   "compatible_categories": [
     "butchercraft:beef",

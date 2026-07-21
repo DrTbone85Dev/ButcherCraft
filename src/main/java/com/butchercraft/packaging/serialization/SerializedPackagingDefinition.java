@@ -15,16 +15,41 @@ public record SerializedPackagingDefinition(
         String displayName,
         String format,
         String defaultQuantityUnit,
+        List<String> requiredSupplyItems,
         List<String> compatibleCategories,
         List<String> compatibleTags,
         Map<String, String> metadata
 ) {
+    public SerializedPackagingDefinition(
+            PackagingSchemaVersion schemaVersion,
+            String id,
+            String displayName,
+            String format,
+            String defaultQuantityUnit,
+            List<String> compatibleCategories,
+            List<String> compatibleTags,
+            Map<String, String> metadata
+    ) {
+        this(
+                schemaVersion,
+                id,
+                displayName,
+                format,
+                defaultQuantityUnit,
+                List.of(),
+                compatibleCategories,
+                compatibleTags,
+                metadata
+        );
+    }
+
     public SerializedPackagingDefinition {
         Objects.requireNonNull(schemaVersion, "schemaVersion");
         id = requiredString(id, "id");
         displayName = requiredString(displayName, "displayName");
         format = requiredString(format, "format");
         defaultQuantityUnit = requiredString(defaultQuantityUnit, "defaultQuantityUnit");
+        requiredSupplyItems = copyStrings(requiredSupplyItems, "requiredSupplyItems");
         compatibleCategories = copyStrings(compatibleCategories, "compatibleCategories");
         compatibleTags = copyStrings(compatibleTags, "compatibleTags");
         metadata = copyMetadata(metadata);

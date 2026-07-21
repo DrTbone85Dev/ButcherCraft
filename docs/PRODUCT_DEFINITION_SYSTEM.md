@@ -1,12 +1,12 @@
 # ButcherCraft Product Definition System
 
-Status: v0.8.0 Sprint 2 retail product registry foundation
+Status: v0.8.0 Sprint C retail product registry foundation
 
 ## Purpose
 
 The Product Definition System gives stable product ids an authoritative pure Java source of descriptive data. It is separate from Minecraft ItemStack product snapshots, existing datapack-backed processing product definitions, and temporary development item mappings.
 
-This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof without adding packaging execution.
+This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof without adding packaging execution. Sprint C adds physical packaging supply references at the packaging-definition layer without changing product metadata.
 
 ## Package
 
@@ -156,7 +156,7 @@ This slice does not add codecs tied to Minecraft registries, product-to-item map
 
 ## Remaining Work
 
-After v0.8.0 Sprint 2, product definitions have a pure Java serialization contract, datapack loading path, bounded beef fabrication proof catalog, and optional retail packaging metadata. The project still needs:
+After v0.8.0 Sprint C, product definitions have a pure Java serialization contract, datapack loading path, bounded beef fabrication proof catalog, optional retail packaging metadata, and compatibility with packaging definitions that reference fixed supply item ids. The project still needs:
 
 - Metadata key policy.
 - Schema migration rules.

@@ -1,12 +1,12 @@
 # ButcherCraft Datapack Products
 
-Status: v0.8.0 Sprint 2 datapack product loading with retail metadata
+Status: v0.8.0 Sprint C datapack product loading with retail metadata
 
 ## Purpose
 
 Datapack product loading makes the immutable `ProductRegistry` data-driven without changing ItemStack product data, development product item mappings, Grinder behavior, or Bandsaw behavior.
 
-Version 0.6.9 loads product JSON resources, maps them to canonical serialized product records, deserializes through the canonical product deserializer, and assembles products and transformations as one validated content snapshot. Version 0.7.0 expands the bundled product resources with the first multi-stage beef fabrication catalog while preserving the same loading path. Version 0.8.0 Sprint 2 adds optional retail packaging metadata and validates it against the candidate packaging registry before snapshot activation.
+Version 0.6.9 loads product JSON resources, maps them to canonical serialized product records, deserializes through the canonical product deserializer, and assembles products and transformations as one validated content snapshot. Version 0.7.0 expands the bundled product resources with the first multi-stage beef fabrication catalog while preserving the same loading path. Version 0.8.0 Sprint 2 adds optional retail packaging metadata and validates it against the candidate packaging registry before snapshot activation. Sprint C adds packaging supply-reference validation inside the candidate packaging registry stage.
 
 ## Resource Path
 
@@ -144,7 +144,7 @@ Content snapshot loading also includes packaging and transformation datapack err
 
 Product, packaging, and transformation registries are activated as one immutable `ContentSnapshot`.
 
-Failed product loading prevents packaging and transformation loading. Failed packaging loading or product packaging metadata validation prevents transformation loading. Failed transformation loading rejects the full snapshot. In all cases, the previously active product, packaging, and transformation registries remain active.
+Failed product loading prevents packaging and transformation loading. Failed packaging loading, including invalid packaging supply references, or product packaging metadata validation prevents transformation loading. Failed transformation loading rejects the full snapshot. In all cases, the previously active product, packaging, and transformation registries remain active.
 
 ## Compatibility
 

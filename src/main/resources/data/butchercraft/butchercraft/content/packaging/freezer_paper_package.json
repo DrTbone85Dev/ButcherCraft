@@ -1,12 +1,11 @@
 {
   "schema_version": 1,
-  "id": "butchercraft:retail_package",
-  "display_name": "Retail Package",
-  "format": "tray_wrap",
+  "id": "butchercraft:freezer_paper_package",
+  "display_name": "Freezer Paper Package",
+  "format": "freezer_paper",
   "default_quantity_unit": "gram",
   "required_supply_items": [
-    "butchercraft:foam_tray",
-    "butchercraft:plastic_wrap_roll"
+    "butchercraft:freezer_paper_roll"
   ],
   "compatible_categories": [
     "butchercraft:beef",

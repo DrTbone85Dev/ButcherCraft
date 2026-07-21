@@ -24,6 +24,36 @@ public final class ModItems {
             new Item.Properties()
     );
 
+    public static final DeferredItem<Item> FOAM_TRAY = ITEMS.registerSimpleItem(
+            "foam_tray",
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<Item> PLASTIC_WRAP_ROLL = ITEMS.registerSimpleItem(
+            "plastic_wrap_roll",
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<Item> VACUUM_BAG = ITEMS.registerSimpleItem(
+            "vacuum_bag",
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<Item> BUTCHER_PAPER_ROLL = ITEMS.registerSimpleItem(
+            "butcher_paper_roll",
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<Item> FREEZER_PAPER_ROLL = ITEMS.registerSimpleItem(
+            "freezer_paper_roll",
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<Item> RETAIL_LABEL_ROLL = ITEMS.registerSimpleItem(
+            "retail_label_roll",
+            new Item.Properties()
+    );
+
     /**
      * Development-only product fixture used to verify ItemStack product data integration.
      */

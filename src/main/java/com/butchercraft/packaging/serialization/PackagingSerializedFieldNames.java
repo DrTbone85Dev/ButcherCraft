@@ -9,6 +9,7 @@ public final class PackagingSerializedFieldNames {
     public static final String DISPLAY_NAME = "display_name";
     public static final String FORMAT = "format";
     public static final String DEFAULT_QUANTITY_UNIT = "default_quantity_unit";
+    public static final String REQUIRED_SUPPLY_ITEMS = "required_supply_items";
     public static final String COMPATIBLE_CATEGORIES = "compatible_categories";
     public static final String COMPATIBLE_TAGS = "compatible_tags";
     public static final String METADATA = "metadata";

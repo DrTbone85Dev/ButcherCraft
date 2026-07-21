@@ -22,6 +22,9 @@ public final class CanonicalPackagingDefinitionSerializer
                 definition.displayName(),
                 definition.format().id(),
                 definition.defaultQuantityUnit().id(),
+                definition.requiredSupplyItems().stream()
+                        .map(EngineId::value)
+                        .toList(),
                 definition.compatibleCategories().stream()
                         .map(ProductCategory::id)
                         .map(EngineId::value)

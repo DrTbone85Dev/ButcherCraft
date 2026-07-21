@@ -4,7 +4,7 @@ Status: Milestones 2B through 2E workstation framework, with v0.8.0 Packaging Ta
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table as an inventory-only workstation foundation, and Sprint 2 adds retail product data without packaging execution.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table as an inventory-only workstation foundation, Sprint 2 adds retail product data without packaging execution, and Sprint C adds packaging supply items without supply consumption.
 
 This is not final artwork, not a player recipe-selection system, not a packaging gameplay system, and not a complete product item factory.
 
@@ -71,7 +71,7 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 - The default legacy strategy preserves the existing processing transaction path.
 - The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
-- `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds.
+- `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
 - Development workstation and any future un-migrated processing workstations remain on the legacy strategy until explicitly migrated.
 - The Packaging Table does not create a `WorkstationProcessingController` and has no execution strategy in v0.8.0.
 
@@ -197,7 +197,7 @@ Permanent foundation block:
 butchercraft:packaging_table
 ```
 
-The block appears in the ButcherCraft creative tab, opens a placeholder inventory menu and client screen, persists Meat, Tray, Wrap, and Result slots, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:packaging`. Sprint 2 adds a `package_retail` processing-operation definition for the graph, but the table still has no controller or execution strategy.
+The block appears in the ButcherCraft creative tab, opens a placeholder inventory menu and client screen, persists Meat, Tray, Wrap, and Result slots, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:packaging`. Sprint 2 adds a `package_retail` processing-operation definition for the graph, and Sprint C adds supply items that packaging definitions may reference, but the table still has no controller or execution strategy.
 
 The Packaging Table is documented in `docs/PACKAGING_TABLE.md`.
 

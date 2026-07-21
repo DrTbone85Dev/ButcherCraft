@@ -197,6 +197,8 @@ Prototype values:
 
 `butchercraft:retail_ground_beef` declares packaging metadata referencing `butchercraft:retail_package` and `butchercraft:ground_beef`. The Packaging Table does not execute this operation in Sprint 2.
 
+Sprint C adds physical packaging supply items and lets packaging definitions describe required supplies. This changes packaging content validation, not processing execution. `package_retail` remains graph-only, and no workstation consumes Foam Trays, Plastic Wrap Rolls, Vacuum Bags, paper rolls, or label rolls.
+
 Milestones 2B through 2E and version 0.7.0 consume processing definitions through `WorkstationOperationResolver`. Sprint 2 adds `package_retail` to the graph, but no workstation consumes it yet. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific or cut-specific branches; they supply only their workstation capabilities.
 
 ## Canonical Butcher-Cut Terminology

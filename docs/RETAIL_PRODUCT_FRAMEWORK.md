@@ -1,21 +1,22 @@
 # ButcherCraft Retail Product Framework
 
-Status: v0.8.0 Sprint 2 data foundation
+Status: v0.8.0 Sprint C data foundation
 
 ## Purpose
 
-The Retail Product Framework establishes datapack-backed definitions for packaged retail products without implementing packaging gameplay. It gives future packaging work an authoritative content layer while the Packaging Table remains an inventory-only workstation foundation.
+The Retail Product Framework establishes datapack-backed definitions for packaged retail products without implementing packaging gameplay. It gives future packaging work an authoritative content layer while the Packaging Table remains an inventory-only workstation foundation. Sprint C adds physical packaging supply items and optional supply references on packaging definitions, but still does not execute packaging.
 
 This sprint adds:
 
 - A pure Java `PackagingDefinition` model, serializer, deserializer, datapack loader, immutable registry, and registry service.
 - A packaging registry inside the active `ContentSnapshot` so product, packaging, and transformation registries activate atomically.
 - Optional packaging metadata on canonical product definitions.
-- One built-in packaging definition: `butchercraft:retail_package`.
+- Four built-in packaging definitions: `butchercraft:retail_package`, `butchercraft:vacuum_package`, `butchercraft:butcher_paper_package`, and `butchercraft:freezer_paper_package`.
 - One built-in retail product definition: `butchercraft:retail_ground_beef`.
 - One processing graph operation: `butchercraft:package_retail`.
+- Six registered packaging supply items documented in `docs/PACKAGING_SUPPLIES.md`.
 
-It does not add recipes, execution, supply consumption, labels, weights, freshness, spoilage, textures, overlays, business logic, GUI changes, sounds, or animations.
+It does not add recipes, execution, supply consumption, labels, weights, freshness, spoilage, dynamic textures, overlays, business logic, GUI changes, sounds, or animations.
 
 ## Packaging Definition Schema
 
@@ -26,11 +27,12 @@ It does not add recipes, execution, supply consumption, labels, weights, freshne
 - Positive schema version.
 - Typed `PackagingFormat`.
 - Default `QuantityUnit`.
+- Immutable required supply item ids.
 - Immutable compatible product categories.
 - Immutable compatible product tags.
 - Immutable metadata keyed by `EngineId`.
 
-At least one compatibility rule is required. A packaging definition may match by category, tag, or both. The built-in retail package matches red-meat categories and the `butchercraft:trait/ground` source-product tag.
+At least one compatibility rule is required. A packaging definition may match by category, tag, or both. Required supply items are descriptive until packaging execution is scheduled. The built-in retail package matches red-meat categories and the `butchercraft:trait/ground` source-product tag.
 
 ## Resource Path
 
@@ -40,10 +42,13 @@ Packaging definition JSON resources live under:
 data/<namespace>/butchercraft/content/packaging/<path>.json
 ```
 
-The bundled proof resource is:
+The bundled proof resources are:
 
 ```text
 data/butchercraft/butchercraft/content/packaging/retail_package.json
+data/butchercraft/butchercraft/content/packaging/vacuum_package.json
+data/butchercraft/butchercraft/content/packaging/butcher_paper_package.json
+data/butchercraft/butchercraft/content/packaging/freezer_paper_package.json
 ```
 
 ## JSON Shape
@@ -53,8 +58,12 @@ data/butchercraft/butchercraft/content/packaging/retail_package.json
   "schema_version": 1,
   "id": "butchercraft:retail_package",
   "display_name": "Retail Package",
-  "format": "retail",
+  "format": "tray_wrap",
   "default_quantity_unit": "gram",
+  "required_supply_items": [
+    "butchercraft:foam_tray",
+    "butchercraft:plastic_wrap_roll"
+  ],
   "compatible_categories": [
     "butchercraft:beef",
     "butchercraft:pork",
@@ -124,10 +133,10 @@ This operation is graph content only in this sprint. The Packaging Table does no
 
 ## Validation
 
-Packaging datapack loading rejects malformed roots, missing IDs, missing display names, duplicate IDs, unsupported schema versions, unknown formats, unknown categories, unknown quantity units, malformed category arrays, malformed tags, malformed metadata, and domain construction failures.
+Packaging datapack loading rejects malformed roots, missing IDs, missing display names, duplicate IDs, unsupported schema versions, unknown formats, unknown categories, unknown quantity units, malformed required supplies, unknown supply items, malformed category arrays, malformed tags, malformed metadata, and domain construction failures.
 
 Product packaging metadata validation rejects unknown packaging definitions, unknown source products, self-references, category or unit mismatches, and source products that are incompatible with the selected packaging definition.
 
 ## Out Of Scope
 
-This framework intentionally excludes packaging recipes, packaging execution, supply consumption, labels, weights, freshness, spoilage, vacuum packaging, dynamic textures, overlay rendering, business logic, GUI changes, sounds, animations, and item factory behavior.
+This framework intentionally excludes packaging recipes, packaging execution, supply consumption, labels, weights, freshness, spoilage, vacuum packaging gameplay, dynamic textures, overlay rendering, business logic, GUI changes, sounds, animations, and item factory behavior.

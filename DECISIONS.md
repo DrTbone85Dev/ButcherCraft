@@ -753,6 +753,23 @@ Consequences:
 - Existing products without packaging metadata remain valid.
 - Packaging recipes, supply consumption, labels, weights, freshness, spoilage, dynamic textures, overlay rendering, business logic, GUI changes, sounds, animations, and item factory behavior remain out of scope.
 
+## DEC-0051: Packaging Supplies Are Fixed Items Referenced By Data Only
+
+Status: Accepted
+
+Decision: version 0.8.0 Sprint C adds Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll as fixed Minecraft item registrations. `PackagingDefinition` gains optional immutable required supply item ids, and packaging datapack loading validates those ids against the fixed built-in supply item set.
+
+Rationale: future packaging recipes need stable physical materials before supply consumption, labels, spoilage, or business rules are designed. Keeping supply ids in packaging definitions proves the data contract without making the Packaging Table consume items or execute packaging operations.
+
+Consequences:
+
+- Built-in packaging definitions now prove `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats.
+- Older packaging definitions without `required_supply_items` still load with an empty supply list.
+- Datapacks may reference known supply item ids but do not dynamically register supply items, models, textures, or creative-tab entries.
+- Malformed supply arrays and unknown supply ids fail packaging loading with structured validation errors and preserve the previously active content snapshot.
+- The Retail Label Roll is registered for future label systems but does not add labels to products in this sprint.
+- Packaging recipes, Packaging Table execution, supply consumption, labels on products, dynamic rendering, weight, freshness, spoilage, sounds, animations, GUI changes, and business logic remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

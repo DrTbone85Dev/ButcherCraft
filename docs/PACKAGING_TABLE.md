@@ -1,10 +1,10 @@
 # Packaging Table Foundation
 
-Status: v0.8.0 Project Meat Counter workstation foundation
+Status: v0.8.0 Project Meat Counter workstation foundation with Sprint C supplies
 
 ## Purpose
 
-Version 0.8.0 adds the Packaging Table as a permanent ButcherCraft workstation shell. It exists so the project can validate registration, placement, menus, inventory persistence, client screen wiring, item-handler exposure, and block-break recovery before packaging gameplay is designed. Sprint 2 adds retail product data definitions alongside the table foundation, but the table itself remains inventory-only.
+Version 0.8.0 adds the Packaging Table as a permanent ButcherCraft workstation shell. It exists so the project can validate registration, placement, menus, inventory persistence, client screen wiring, item-handler exposure, and block-break recovery before packaging gameplay is designed. Sprint 2 adds retail product data definitions alongside the table foundation, and Sprint C adds physical packaging supply items. The table itself remains inventory-only.
 
 This foundation is intentionally not a packaging execution system. It does not consume inputs, create packaged outputs, apply labels, change quality, fulfill orders, run employees, or load packaging recipes.
 
@@ -19,6 +19,7 @@ The foundation registers:
 - Client screen: `PackagingTableScreen`
 - Creative-tab entry in the ButcherCraft tab
 - Generated blockstate, block model, item model, loot table, and language entries
+- Related packaging supply items in the ButcherCraft creative tab: Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll
 
 Placeholder assets are abstract Minecraft-style development assets and are expected to be replaced later.
 
@@ -60,9 +61,10 @@ The inventory exposes the standard item-handler capability registered in `ModCap
 
 Sprint 2 adds a data-only retail product framework:
 
-- `butchercraft:retail_package` under `data/butchercraft/butchercraft/content/packaging`.
+- `butchercraft:retail_package`, `butchercraft:vacuum_package`, `butchercraft:butcher_paper_package`, and `butchercraft:freezer_paper_package` under `data/butchercraft/butchercraft/content/packaging`.
 - `butchercraft:retail_ground_beef` under `data/butchercraft/butchercraft/content/product`.
 - `butchercraft:package_retail` under the generated processing-operation definitions.
+- Packaging definitions may list required supply item ids, but no supplies are consumed.
 
 These definitions prove product and packaging data can load through the active content snapshot and processing graph. No packaging transformation JSON is added, and the Packaging Table does not create a `WorkstationProcessingController`.
 
@@ -72,9 +74,10 @@ The Packaging Table foundation does not implement:
 
 - Packaging recipes or transformations
 - Tray or wrap item semantics
+- Supply consumption
 - Label generation
 - Order fulfillment
 - Employee operation
 - Quality, freshness, or temperature changes
-- Packaging execution or supply consumption
+- Packaging execution
 - Final art, sounds, particles, or animations

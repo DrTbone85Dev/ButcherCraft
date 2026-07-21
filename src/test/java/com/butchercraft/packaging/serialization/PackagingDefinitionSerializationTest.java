@@ -21,8 +21,10 @@ class PackagingDefinitionSerializationTest {
                 .id("butchercraft:retail_package")
                 .displayName("Retail Package")
                 .schemaVersion(PackagingDefinition.CURRENT_SCHEMA_VERSION)
-                .format(PackagingFormat.RETAIL)
+                .format(PackagingFormat.TRAY_WRAP)
                 .defaultQuantityUnit(QuantityUnit.GRAM)
+                .requiredSupplyItem("butchercraft:foam_tray")
+                .requiredSupplyItem("butchercraft:plastic_wrap_roll")
                 .compatibleCategory(ProductCategory.fromId(EngineId.of("butchercraft:beef")))
                 .compatibleTag("butchercraft:trait/ground")
                 .metadata("butchercraft:schema/source", "test")
@@ -36,8 +38,10 @@ class PackagingDefinitionSerializationTest {
         assertEquals(PackagingSchemaVersion.CURRENT, serialized.schemaVersion());
         assertEquals("butchercraft:retail_package", serialized.id());
         assertEquals("Retail Package", serialized.displayName());
-        assertEquals("retail", serialized.format());
+        assertEquals("tray_wrap", serialized.format());
         assertEquals("gram", serialized.defaultQuantityUnit());
+        assertEquals(List.of("butchercraft:foam_tray", "butchercraft:plastic_wrap_roll"),
+                serialized.requiredSupplyItems());
         assertEquals(List.of("butchercraft:beef"), serialized.compatibleCategories());
         assertEquals(List.of("butchercraft:trait/ground"), serialized.compatibleTags());
         assertEquals(Map.of("butchercraft:schema/source", "test"), serialized.metadata());
@@ -51,6 +55,7 @@ class PackagingDefinitionSerializationTest {
                 " Retail Package ",
                 " retail ",
                 " gram ",
+                List.of(" butchercraft:foam_tray "),
                 List.of(" butchercraft:beef "),
                 List.of(" butchercraft:trait/ground "),
                 Map.of(" butchercraft:schema/source ", " test ")
@@ -60,9 +65,11 @@ class PackagingDefinitionSerializationTest {
         assertEquals("Retail Package", serialized.displayName());
         assertEquals("retail", serialized.format());
         assertEquals("gram", serialized.defaultQuantityUnit());
+        assertEquals(List.of("butchercraft:foam_tray"), serialized.requiredSupplyItems());
         assertEquals(List.of("butchercraft:beef"), serialized.compatibleCategories());
         assertEquals(List.of("butchercraft:trait/ground"), serialized.compatibleTags());
         assertEquals(Map.of("butchercraft:schema/source", "test"), serialized.metadata());
+        assertThrows(UnsupportedOperationException.class, () -> serialized.requiredSupplyItems().clear());
         assertThrows(UnsupportedOperationException.class, () -> serialized.compatibleCategories().clear());
         assertThrows(UnsupportedOperationException.class, () -> serialized.compatibleTags().clear());
         assertThrows(UnsupportedOperationException.class, () -> serialized.metadata().clear());
@@ -73,6 +80,7 @@ class PackagingDefinitionSerializationTest {
                 "Retail Package",
                 "retail",
                 "gram",
+                List.of(),
                 List.of("butchercraft:beef"),
                 List.of("butchercraft:trait/ground"),
                 Map.of()

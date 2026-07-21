@@ -53,6 +53,12 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.GRINDER.get());
                         output.accept(ModItems.BANDSAW.get());
                         output.accept(ModItems.PACKAGING_TABLE.get());
+                        output.accept(ModItems.FOAM_TRAY.get());
+                        output.accept(ModItems.PLASTIC_WRAP_ROLL.get());
+                        output.accept(ModItems.VACUUM_BAG.get());
+                        output.accept(ModItems.BUTCHER_PAPER_ROLL.get());
+                        output.accept(ModItems.FREEZER_PAPER_ROLL.get());
+                        output.accept(ModItems.RETAIL_LABEL_ROLL.get());
                         output.accept(ModItems.DEVELOPMENT_PROCESSING_WORKSTATION.get());
                     })
                     .build());

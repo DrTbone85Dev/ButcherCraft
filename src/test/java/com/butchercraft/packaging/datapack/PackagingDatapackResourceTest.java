@@ -39,8 +39,13 @@ class PackagingDatapackResourceTest {
     void builtInRegistryIsLoadedFromPackagingDatapackResources() {
         PackagingRegistry registry = BuiltInPackagingRegistry.builtInRegistry();
 
-        assertEquals(1, registry.size());
-        assertEquals(List.of("butchercraft:retail_package"), registry.stream()
+        assertEquals(4, registry.size());
+        assertEquals(List.of(
+                        "butchercraft:retail_package",
+                        "butchercraft:vacuum_package",
+                        "butchercraft:butcher_paper_package",
+                        "butchercraft:freezer_paper_package"
+                ), registry.stream()
                 .map(definition -> definition.id().value())
                 .toList());
     }

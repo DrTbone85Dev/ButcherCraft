@@ -36,7 +36,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
 | `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, operation, context, validation, evaluation, result, and transaction domain rules. |
 | `com.butchercraft.transformation` | Minecraft-independent generic material-transformation ids, material amounts, definitions, contexts, evaluations, evaluators, and compatibility adapters. |
-| `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, serialization, datapack validation, and registry access. |
+| `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, supply-reference serialization, datapack validation, and registry access. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
 | `com.butchercraft.api` | Documented public API intended for expansion mods. |
@@ -459,6 +459,8 @@ Version 0.7.0 expands the bundled beef fabrication catalog through the existing 
 Version 0.8.0 adds the Packaging Table workstation foundation. The table registers a placeable block, item, block entity, menu, client screen, creative-tab entry, generated assets, and a three-input, one-result placeholder inventory. It uses a shared inventory-only workstation block entity base and deliberately does not execute packaging operations, transformations, product-item mappings, or gameplay packaging behavior.
 
 Version 0.8.0 Sprint 2 adds the Retail Product Framework. `PackagingDefinition` is a pure Java schema and datapack-backed immutable registry under `data/<namespace>/butchercraft/content/packaging`. `ProductDefinition` gains optional packaging metadata linking packaged products to a packaging definition id and source product id. `ContentSnapshotService` now activates product, packaging, and transformation registries together only after candidate products, candidate packaging, product packaging metadata, and candidate transformations validate. The built-in proof adds `butchercraft:retail_package`, `butchercraft:retail_ground_beef`, and a graph-only `butchercraft:package_retail` processing operation. The Packaging Table still has no processing controller, no transformation definition, and no packaging execution path.
+
+Version 0.8.0 Sprint C adds Packaging Supplies as fixed Minecraft item registrations and extends `PackagingDefinition` with optional immutable required supply item ids. Built-in packaging definitions now prove `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats. Supply ids validate during packaging datapack loading through the content snapshot, but datapacks do not dynamically register supply items and no workstation consumes supplies.
 
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 

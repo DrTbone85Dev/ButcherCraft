@@ -15,6 +15,12 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
     protected void addTranslations() {
         add("itemGroup.butchercraft", "ButcherCraft");
         add(ModItems.DEVELOPMENT_TEST_ITEM.get(), "Development Test Item");
+        add(ModItems.FOAM_TRAY.get(), "Foam Tray");
+        add(ModItems.PLASTIC_WRAP_ROLL.get(), "Plastic Wrap Roll");
+        add(ModItems.VACUUM_BAG.get(), "Vacuum Bag");
+        add(ModItems.BUTCHER_PAPER_ROLL.get(), "Butcher Paper Roll");
+        add(ModItems.FREEZER_PAPER_ROLL.get(), "Freezer Paper Roll");
+        add(ModItems.RETAIL_LABEL_ROLL.get(), "Retail Label Roll");
         add(ModItems.BEEF_TRIM_TEST.get(), "Beef Trim Test Product");
         add(ModItems.GROUND_BEEF_TEST.get(), "Ground Beef Test Product");
         add(ModItems.PORK_TRIM_TEST.get(), "Pork Trim Test Product");

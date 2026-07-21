@@ -26,19 +26,27 @@ public final class PackagingDatapackLoader {
     private final PackagingJsonDefinitionParser parser;
     private final CanonicalPackagingDefinitionDeserializer deserializer;
     private final Set<EngineId> knownCategories;
+    private final Set<EngineId> knownSupplyItems;
 
     public PackagingDatapackLoader(Set<EngineId> knownCategories) {
-        this(new PackagingJsonDefinitionParser(), new CanonicalPackagingDefinitionDeserializer(), knownCategories);
+        this(knownCategories, Set.of());
+    }
+
+    public PackagingDatapackLoader(Set<EngineId> knownCategories, Set<EngineId> knownSupplyItems) {
+        this(new PackagingJsonDefinitionParser(), new CanonicalPackagingDefinitionDeserializer(), knownCategories,
+                knownSupplyItems);
     }
 
     PackagingDatapackLoader(
             PackagingJsonDefinitionParser parser,
             CanonicalPackagingDefinitionDeserializer deserializer,
-            Set<EngineId> knownCategories
+            Set<EngineId> knownCategories,
+            Set<EngineId> knownSupplyItems
     ) {
         this.parser = Objects.requireNonNull(parser, "parser");
         this.deserializer = Objects.requireNonNull(deserializer, "deserializer");
         this.knownCategories = Set.copyOf(Objects.requireNonNull(knownCategories, "knownCategories"));
+        this.knownSupplyItems = Set.copyOf(Objects.requireNonNull(knownSupplyItems, "knownSupplyItems"));
     }
 
     public PackagingDatapackLoadResult load(Map<String, JsonElement> resources) {
@@ -63,6 +71,7 @@ public final class PackagingDatapackLoader {
 
             validateFormat(source, serialized, errors);
             validateQuantityUnit(source, serialized, errors);
+            validateRequiredSupplyItems(source, serialized, errors);
             validateCategories(source, serialized, errors);
             validateTags(source, serialized, errors);
             validateMetadata(source, serialized, errors);
@@ -144,6 +153,35 @@ public final class PackagingDatapackLoader {
                     PackagingDatapackErrorCode.UNKNOWN_QUANTITY_UNIT,
                     exception.getMessage()
             ));
+        }
+    }
+
+    private void validateRequiredSupplyItems(
+            String source,
+            SerializedPackagingDefinition serialized,
+            List<PackagingDatapackValidationError> errors
+    ) {
+        for (String supplyItemValue : serialized.requiredSupplyItems()) {
+            EngineId supplyItemId;
+            try {
+                supplyItemId = EngineId.of(supplyItemValue);
+            } catch (RuntimeException exception) {
+                errors.add(PackagingDatapackValidationError.of(
+                        source,
+                        serialized.id(),
+                        PackagingDatapackErrorCode.MALFORMED_REQUIRED_SUPPLIES,
+                        exception.getMessage()
+                ));
+                continue;
+            }
+            if (!knownSupplyItems.contains(supplyItemId)) {
+                errors.add(PackagingDatapackValidationError.of(
+                        source,
+                        serialized.id(),
+                        PackagingDatapackErrorCode.UNKNOWN_SUPPLY_ITEM,
+                        "Unknown packaging supply item " + supplyItemId.value()
+                ));
+            }
         }
     }
 
