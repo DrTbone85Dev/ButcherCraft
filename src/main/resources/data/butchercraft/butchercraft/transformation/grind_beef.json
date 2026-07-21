@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:grind_beef",
+  "display_name": "Grind Beef",
+  "required_capability": "butchercraft:grinding",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 100,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:ground_beef",
+      "quantity": 90,
+      "unit": "gram",
+      "classification": "primary"
+    }
+  ],
+  "duration": {
+    "milliseconds": 3000
+  },
+  "yield": {
+    "numerator": 9,
+    "denominator": 10
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

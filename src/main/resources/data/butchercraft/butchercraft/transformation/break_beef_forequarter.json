@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:break_beef_forequarter",
+  "display_name": "Break Beef Forequarter",
+  "required_capability": "butchercraft:bandsaw",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_forequarter",
+      "quantity": 100000,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:beef_chuck",
+      "quantity": 30000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_rib",
+      "quantity": 10000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_packer_brisket",
+      "quantity": 10000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_plate",
+      "quantity": 10000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_shank",
+      "quantity": 5000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 15000,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_fat",
+      "quantity": 5000,
+      "unit": "gram",
+      "classification": "byproduct"
+    },
+    {
+      "product_id": "butchercraft:beef_bone",
+      "quantity": 10000,
+      "unit": "gram",
+      "classification": "waste"
+    }
+  ],
+  "duration": {
+    "milliseconds": 6000
+  },
+  "yield": {
+    "numerator": 19,
+    "denominator": 20
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

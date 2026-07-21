@@ -6,6 +6,7 @@ import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.transformation.BuiltInTransformationRegistry;
 import com.butchercraft.transformation.MaterialAmount;
+import com.butchercraft.transformation.TransformationId;
 import com.butchercraft.transformation.TransformationMaterialStore;
 import com.butchercraft.transformation.TransformationOutput;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,11 @@ class WorkstationInventoryMaterialStoreTest {
     }
 
     private static List<MaterialAmount> bandsawOutputs() {
-        return BuiltInTransformationRegistry.breakBeefForequarter().outputs().stream()
+        return BuiltInTransformationRegistry.builtInRegistry()
+                .find(TransformationId.of("butchercraft:break_beef_forequarter"))
+                .orElseThrow()
+                .outputs()
+                .stream()
                 .map(TransformationOutput::producedAmount)
                 .toList();
     }

@@ -1,10 +1,10 @@
 # ButcherCraft Transformation Serialization
 
-Status: v0.6.5 pure Java serialization foundation
+Status: v0.6.8 schema contract used by datapack loading
 
 ## Purpose
 
-The Transformation Serialization layer establishes the stable external schema contract for future `TransformationDefinition` datapack loading without adding datapack loading yet.
+The Transformation Serialization layer establishes the stable external schema contract used by `TransformationDefinition` datapack loading.
 
 It answers one narrow question:
 
@@ -70,7 +70,7 @@ The canonical serializer and deserializer are:
 - `CanonicalTransformationDefinitionSerializer`
 - `CanonicalTransformationDefinitionDeserializer`
 
-They round-trip through pure Java records, not JSON, codecs, datapack registries, or resource locations.
+They round-trip through pure Java records, not Minecraft codecs, datapack registries, or resource locations. Version 0.6.8 adds a separate JSON parser that maps datapack files onto these records.
 
 ## Schema Versioning
 
@@ -96,25 +96,23 @@ Full transformation validation remains owned by `TransformationDefinition` const
 
 Product-reference validation remains separate. A serialized or deserialized transformation can be validated later through `TransformationProductReferenceValidator` against a `ProductRegistry`.
 
-## Built-In Grinder Compatibility
+## Built-In Compatibility
 
-The built-in Grinder transformations remain Java-defined and registry-backed in v0.6.5:
+The bundled Grinder and Bandsaw transformations are datapack resources in v0.6.8:
 
 ```text
 butchercraft:grind_beef
 butchercraft:grind_pork
 butchercraft:grind_bison
+butchercraft:break_beef_forequarter
 ```
 
-Tests prove all three round-trip through the canonical serialization layer without changing ids, display names, required capability, inputs, outputs, duration, yield, or metadata.
+Tests prove all four load through datapack JSON, deserialize through the canonical serialization layer, and round-trip without changing ids, display names, required capability, inputs, outputs, duration, yield, or metadata.
 
 ## Out Of Scope
 
 This milestone does not add:
 
-- Datapack loading.
-- Resource reload listeners.
-- JSON resource discovery.
 - Minecraft codecs or `ResourceLocation` usage in the serialization package.
 - Automatic schema migration execution.
 - Product definition serialization.
@@ -122,14 +120,6 @@ This milestone does not add:
 - Bandsaw, smoker, packaging, cooler, menu, screen, or item data component migration.
 - Public expansion APIs.
 
-## Next Work Before Datapacks
+## Next Work
 
-Before transformation datapack integration, the project still needs:
-
-- A concrete JSON codec or parser that maps to the frozen field names.
-- Datapack resource path rules.
-- Reload-scoped error reporting for malformed external definitions.
-- Migration lookup and execution rules.
-- Registry assembly ordering.
-- Product-reference validation against `ProductRegistry`.
-- Capability-reference validation against workstation capability data.
+After v0.6.8, transformation datapack integration still needs implemented schema migrations, broader reload diagnostics, expanded catalogs, and a stable product definition datapack story for the pure product registry.

@@ -1,16 +1,16 @@
 # Bandsaw Transformation Migration
 
-Status: v0.6.7 implementation note
+Status: v0.6.8 implementation note
 
 ## Scope
 
-Version 0.6.7 migrates only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution.
+Version 0.6.7 migrates only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution. Version 0.6.8 keeps that behavior and loads the transformation definition from bundled datapack JSON.
 
-The migration does not add datapack transformation loading, full carcass fabrication, recipe-selection UI, new product item systems, spoilage, packaging, power, employees, commerce, or any other workstation migration.
+The migration does not add full carcass fabrication, recipe-selection UI, new product item systems, spoilage, packaging, power, employees, commerce, or any other workstation migration.
 
 ## Bandsaw Transformation
 
-The built-in transformation registry includes:
+The bundled transformation datapack resources include:
 
 ```text
 butchercraft:break_beef_forequarter
@@ -97,9 +97,8 @@ The migration preserves:
 
 ## Remaining Work
 
-Before datapack integration and full fabrication, ButcherCraft still needs:
+Before full fabrication, ButcherCraft still needs:
 
-- Serialized transformation resources and reload-scoped validation.
 - A real data-driven product-to-ItemStack creation system.
 - Full cut catalogs and additional fabrication transformations.
 - External schema migration behavior for future transformation versions.

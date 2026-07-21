@@ -4,7 +4,6 @@ import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.result.FailureReason;
 import com.butchercraft.engine.result.OperationResult;
 import com.butchercraft.engine.transaction.TransactionState;
-import com.butchercraft.transformation.BuiltInTransformationRegistry;
 import com.butchercraft.transformation.MaterialAmount;
 import com.butchercraft.transformation.TransformationContext;
 import com.butchercraft.transformation.TransformationDefinition;
@@ -16,18 +15,20 @@ import com.butchercraft.transformation.TransformationId;
 import com.butchercraft.transformation.TransformationMaterialStore;
 import com.butchercraft.transformation.TransformationOutput;
 import com.butchercraft.transformation.TransformationRegistry;
+import com.butchercraft.transformation.datapack.TransformationRegistryService;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 final class TransformationWorkstationExecutionStrategy implements WorkstationExecutionStrategy {
     static final TransformationWorkstationExecutionStrategy INSTANCE =
-            new TransformationWorkstationExecutionStrategy(BuiltInTransformationRegistry.builtInRegistry());
+            new TransformationWorkstationExecutionStrategy(TransformationRegistryService::currentRegistry, false);
     static final TransformationWorkstationExecutionStrategy ATOMIC_INSTANCE =
-            new TransformationWorkstationExecutionStrategy(BuiltInTransformationRegistry.builtInRegistry(), true);
+            new TransformationWorkstationExecutionStrategy(TransformationRegistryService::currentRegistry, true);
 
-    private final TransformationRegistry registry;
+    private final Supplier<TransformationRegistry> registrySupplier;
     private final boolean atomicTransactions;
 
     TransformationWorkstationExecutionStrategy(TransformationRegistry registry) {
@@ -35,7 +36,11 @@ final class TransformationWorkstationExecutionStrategy implements WorkstationExe
     }
 
     TransformationWorkstationExecutionStrategy(TransformationRegistry registry, boolean atomicTransactions) {
-        this.registry = Objects.requireNonNull(registry, "registry");
+        this(() -> registry, atomicTransactions);
+    }
+
+    private TransformationWorkstationExecutionStrategy(Supplier<TransformationRegistry> registrySupplier, boolean atomicTransactions) {
+        this.registrySupplier = Objects.requireNonNull(registrySupplier, "registrySupplier");
         this.atomicTransactions = atomicTransactions;
     }
 
@@ -143,7 +148,7 @@ final class TransformationWorkstationExecutionStrategy implements WorkstationExe
         Objects.requireNonNull(capability, "capability");
         Objects.requireNonNull(operation, "operation");
         TransformationId transformationId = new TransformationId(operation.engineOperation().id());
-        Optional<TransformationDefinition> registeredDefinition = registry.find(transformationId);
+        Optional<TransformationDefinition> registeredDefinition = registrySupplier.get().find(transformationId);
         if (registeredDefinition.isEmpty()) {
             return TransformationPlan.rejected(
                     "missing_transformation_definition",
