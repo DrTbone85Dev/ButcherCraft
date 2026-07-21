@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.6.9 - Datapack Product Loading
+
+### Core
+
+- Added a stable serialized product-definition schema and canonical serializer/deserializer.
+- Added datapack JSON loading for product definitions under `data/<namespace>/butchercraft/product`.
+- Moved the current Grinder and Bandsaw proof product definitions into bundled datapack resources.
+- Added atomic content snapshot activation so product and transformation registries reload together.
+
+### Stability
+
+- Added structured validation errors for malformed product datapacks.
+- Rejected duplicate product ids, missing ids or display names, unsupported schema versions, unknown product categories, unknown quantity units, malformed tags, and malformed metadata.
+- Validated transformation product references against the candidate product registry from the same reload.
+- Preserved existing Product-to-ItemStack mappings, Grinder behavior, and Bandsaw behavior.
+
 ## ButcherCraft v0.6.8 - Datapack Transformation Loading
 
 ### Core

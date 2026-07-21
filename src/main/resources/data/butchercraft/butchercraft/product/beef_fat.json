@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:beef_fat",
+  "display_name": "Beef Fat",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/fat"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

@@ -13,11 +13,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProductDefinitionDependencyBoundaryTest {
     @Test
     void productDefinitionSourcesDoNotImportMinecraftOrNeoForge() throws IOException {
-        Path productDefinitionRoot = TestProjectPaths.projectPath("src/main/java/com/butchercraft/product/definition");
-        assertTrue(Files.isDirectory(productDefinitionRoot), "Product definition source directory must exist");
-
         List<Path> offenders;
-        try (var paths = Files.walk(productDefinitionRoot)) {
+        try (var paths = javaFiles(
+                TestProjectPaths.projectPath("src/main/java/com/butchercraft/product/definition"),
+                TestProjectPaths.projectPath("src/main/java/com/butchercraft/product/datapack"),
+                TestProjectPaths.projectPath("src/main/java/com/butchercraft/product/serialization")
+        )) {
             offenders = paths
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(ProductDefinitionDependencyBoundaryTest::containsForbiddenDependency)
@@ -25,6 +26,17 @@ class ProductDefinitionDependencyBoundaryTest {
         }
 
         assertTrue(offenders.isEmpty(), "Product definition sources must not import Minecraft or NeoForge: " + offenders);
+    }
+
+    private static java.util.stream.Stream<Path> javaFiles(Path... roots) throws IOException {
+        java.util.List<Path> files = new java.util.ArrayList<>();
+        for (Path root : roots) {
+            assertTrue(Files.isDirectory(root), "Product source directory must exist: " + root);
+            try (var paths = Files.walk(root)) {
+                files.addAll(paths.filter(path -> path.toString().endsWith(".java")).toList());
+            }
+        }
+        return files.stream();
     }
 
     private static boolean containsForbiddenDependency(Path path) {

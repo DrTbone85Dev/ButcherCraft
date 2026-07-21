@@ -1,12 +1,12 @@
 # ButcherCraft Product Definition System
 
-Status: v0.6.8 pure Java foundation with current Grinder and Bandsaw proof products
+Status: v0.6.9 datapack-backed product registry foundation
 
 ## Purpose
 
 The Product Definition System gives stable product ids an authoritative pure Java source of descriptive data. It is separate from Minecraft ItemStack product snapshots, existing datapack-backed processing product definitions, and temporary development item mappings.
 
-This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`.
+This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft.
 
 ## Package
 
@@ -17,6 +17,15 @@ com.butchercraft.product.definition
 ```
 
 This package must not import Minecraft or NeoForge classes.
+
+Product serialization and datapack loading live under:
+
+```text
+com.butchercraft.product.serialization
+com.butchercraft.product.datapack
+```
+
+These packages also remain free of Minecraft and NeoForge imports. Minecraft reload integration lives under `com.butchercraft.integration.datapack`.
 
 ## Product Schema
 
@@ -49,9 +58,23 @@ Metadata follows the same philosophy as transformation metadata: typed keys, sim
 
 Registration and query streams preserve insertion order. Duplicate product ids are rejected during building.
 
+## Serialized Product Schema
+
+Version 0.6.9 adds the canonical serialized product representation:
+
+- `schema_version`
+- `id`
+- `display_name`
+- `category`
+- `default_quantity_unit`
+- `tags`
+- `metadata`
+
+The JSON form is documented in `docs/DATAPACK_PRODUCTS.md`.
+
 ## Built-In Products
 
-Version 0.6.4 registers the products used by the Grinder transformation proof:
+Version 0.6.4 introduced the products used by the Grinder transformation proof:
 
 ```text
 butchercraft:beef_trim
@@ -62,7 +85,7 @@ butchercraft:bison_trim
 butchercraft:ground_bison
 ```
 
-Version 0.6.7 adds the minimum current Bandsaw proof products:
+Version 0.6.7 added the minimum current Bandsaw proof products:
 
 ```text
 butchercraft:beef_forequarter
@@ -75,7 +98,7 @@ butchercraft:beef_fat
 butchercraft:beef_bone
 ```
 
-All use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
+Version 0.6.9 moves these definitions into bundled datapack JSON resources under `data/butchercraft/butchercraft/product`. All use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
 
 ## Transformation Validation
 
@@ -85,21 +108,17 @@ Transformation definitions continue to reference product ids through `EngineId` 
 
 This separation allows future serialization to decode transformation definitions before all registries are assembled, then validate references once registries are available.
 
-Version 0.6.8 uses this registry to reject transformation datapack resources that reference unknown products.
+Version 0.6.8 uses this registry to reject transformation datapack resources that reference unknown products. Version 0.6.9 validates those transformation references against the candidate product registry assembled during the same reload, then activates product and transformation registries together.
 
 ## Out Of Scope
 
-This slice does not add serialization, codecs, JSON files, datapack loading, reload listeners, product-to-item mapping, spoilage, quality expansion, packaging states, storage rules, recipe selection, or other workstation migrations.
+This slice does not add codecs tied to Minecraft registries, product-to-item mapping, spoilage, quality expansion, packaging states, storage rules, recipe selection, or other workstation migrations.
 
-## Before Datapack Integration
+## Remaining Work
 
-After v0.6.5, transformation definitions have a pure Java serialization contract. Product definitions still need their own external schema before product datapack integration can move onto the pure product registry.
+After v0.6.9, product definitions have a pure Java serialization contract and datapack loading path. The project still needs:
 
-For product definitions and datapack integration, the project still needs:
-
-- Stable serialized field names.
 - Metadata key policy.
 - Schema migration rules.
-- External validation error reporting.
-- Registry assembly order.
+- Datapack-driven category catalogs or category validation ownership.
 - A clear relationship between pure product definitions and existing datapack-backed processing product definitions.

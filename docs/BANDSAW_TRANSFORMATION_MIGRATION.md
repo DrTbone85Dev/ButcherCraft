@@ -1,10 +1,10 @@
 # Bandsaw Transformation Migration
 
-Status: v0.6.8 implementation note
+Status: v0.6.9 implementation note
 
 ## Scope
 
-Version 0.6.7 migrates only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution. Version 0.6.8 keeps that behavior and loads the transformation definition from bundled datapack JSON.
+Version 0.6.7 migrates only the Bandsaw to capability-based, registry-driven, atomic multi-output transformation execution. Version 0.6.8 keeps that behavior and loads the transformation definition from bundled datapack JSON. Version 0.6.9 loads the required product definitions from bundled datapack JSON and activates product and transformation registries together.
 
 The migration does not add full carcass fabrication, recipe-selection UI, new product item systems, spoilage, packaging, power, employees, commerce, or any other workstation migration.
 

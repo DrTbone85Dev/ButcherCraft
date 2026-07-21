@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:bison_trim",
+  "display_name": "Bison Trim",
+  "category": "butchercraft:bison",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/trim"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

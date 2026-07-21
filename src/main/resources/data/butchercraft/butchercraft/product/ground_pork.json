@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:ground_pork",
+  "display_name": "Ground Pork",
+  "category": "butchercraft:pork",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/ground"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

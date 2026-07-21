@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:beef_chuck",
+  "display_name": "Beef Chuck",
+  "category": "butchercraft:beef",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/primal"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

@@ -1,6 +1,6 @@
 # ButcherCraft Transformation Serialization
 
-Status: v0.6.8 schema contract used by datapack loading
+Status: v0.6.9 schema contract used by datapack content loading
 
 ## Purpose
 
@@ -70,7 +70,7 @@ The canonical serializer and deserializer are:
 - `CanonicalTransformationDefinitionSerializer`
 - `CanonicalTransformationDefinitionDeserializer`
 
-They round-trip through pure Java records, not Minecraft codecs, datapack registries, or resource locations. Version 0.6.8 adds a separate JSON parser that maps datapack files onto these records.
+They round-trip through pure Java records, not Minecraft codecs, datapack registries, or resource locations. Version 0.6.8 adds a separate JSON parser that maps datapack files onto these records. Version 0.6.9 loads transformations as part of a larger content snapshot after candidate product definitions are validated.
 
 ## Schema Versioning
 
@@ -115,11 +115,10 @@ This milestone does not add:
 
 - Minecraft codecs or `ResourceLocation` usage in the serialization package.
 - Automatic schema migration execution.
-- Product definition serialization.
 - Product-to-item mapping.
 - Bandsaw, smoker, packaging, cooler, menu, screen, or item data component migration.
 - Public expansion APIs.
 
 ## Next Work
 
-After v0.6.8, transformation datapack integration still needs implemented schema migrations, broader reload diagnostics, expanded catalogs, and a stable product definition datapack story for the pure product registry.
+After v0.6.9, transformation datapack integration still needs implemented schema migrations, broader reload diagnostics, expanded catalogs, and richer product/category ownership for custom content.

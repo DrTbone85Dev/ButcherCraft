@@ -1,0 +1,17 @@
+package com.butchercraft.product.datapack;
+
+/**
+ * Stable validation codes for datapack product loading.
+ */
+public enum ProductDatapackErrorCode {
+    MALFORMED_JSON,
+    MALFORMED_DEFINITION,
+    DUPLICATE_ID,
+    MISSING_ID,
+    MISSING_DISPLAY_NAME,
+    UNKNOWN_CATEGORY,
+    UNKNOWN_QUANTITY_UNIT,
+    UNSUPPORTED_SCHEMA_VERSION,
+    MALFORMED_TAGS,
+    MALFORMED_METADATA
+}

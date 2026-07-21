@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:pork_trim",
+  "display_name": "Pork Trim",
+  "category": "butchercraft:pork",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/trim"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}
