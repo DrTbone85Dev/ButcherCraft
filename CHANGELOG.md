@@ -1,5 +1,20 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 4 - Commercial Property Foundation
+
+### Core
+
+- Added immutable commercial property domain models for permanent property locations, property ids, types, condition, status, utilities, sizes, expansion capacity, history, and ownership records.
+- Added deterministic generation of commercial properties for every generated settlement.
+- Added an immutable `CommercialPropertyRegistry` with deterministic ordering and lookup by id, settlement, property type, status, condition, and search text.
+- Extended World Identity persistence to schema version 3 so commercial properties are saved with the existing world identity snapshot.
+
+### Stability
+
+- Added migration from Phase 1 and Phase 2 development world identity schemas by preserving saved identity data and generating commercial properties from the saved seed and settlements.
+- Added validation for duplicate ids, duplicate property names within a settlement, invalid settlement references, invalid construction years, empty ownership history, missing utility profiles, missing summaries, and invalid typed fields.
+- Kept business entities, player ownership, purchasing, economy, village structures, building placement, inspections, taxes, UI, commands, NPC behavior, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 3 - Manufacturer Foundation
 
 ### Core

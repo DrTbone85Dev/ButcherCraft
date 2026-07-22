@@ -1,5 +1,7 @@
 package com.butchercraft.world.identity;
 
+import com.butchercraft.world.property.BuiltInCommercialPropertyCatalog;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -60,12 +62,16 @@ public final class WorldIdentityGenerator {
                 .map(slot -> generateCounty(worldSeed, regionDefinition, slot))
                 .toList();
         validateGeneratedNames(counties);
+        List<Settlement> settlements = counties.stream()
+                .flatMap(county -> county.settlements().stream())
+                .toList();
         return new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 "world_" + Long.toUnsignedString(WorldIdentityDeterminism.mix64(worldSeed ^ ID_SALT), 36),
                 worldSeed,
                 region,
-                counties
+                counties,
+                BuiltInCommercialPropertyCatalog.generate(worldSeed, settlements)
         );
     }
 

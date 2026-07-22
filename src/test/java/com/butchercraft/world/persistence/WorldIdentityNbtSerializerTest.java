@@ -21,6 +21,7 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(identity.region().description(), restored.region().description());
         assertEquals(identity.region().culturalIdentity(), restored.region().culturalIdentity());
         assertEquals(identity.region().namingProfileId(), restored.region().namingProfileId());
+        assertEquals(identity.commercialProperties(), restored.commercialProperties());
     }
 
     @Test
@@ -49,12 +50,30 @@ class WorldIdentityNbtSerializerTest {
         assertEquals("legacy_world", migrated.id());
         assertEquals(987L, migrated.worldSeed());
         assertEquals("legacy_region", migrated.region().id());
-        assertEquals("Legacy Phase 1 development region migrated to the version 2 world identity schema.",
+        assertEquals("Legacy Phase 1 development region migrated to the version 3 world identity schema.",
                 migrated.region().description());
         assertEquals("Legacy naming", migrated.region().culturalIdentity());
         assertEquals("legacy_phase_1", migrated.region().namingProfileId());
         assertEquals("Legacy County", migrated.counties().getFirst().displayName());
         assertEquals("Legacy Village", migrated.settlements().getFirst().displayName());
+        assertEquals(4, migrated.commercialProperties().size());
+        assertEquals("legacy_settlement", migrated.commercialProperties().getFirst().settlementId());
+    }
+
+    @Test
+    void legacyPhaseTwoWorldIdentityMigratesWithGeneratedCommercialProperties() {
+        WorldIdentity phaseTwoIdentity = new WorldIdentityGenerator().generate(456L);
+        CompoundTag phaseTwo = WorldIdentityNbtSerializer.save(phaseTwoIdentity);
+        phaseTwo.putInt("schema_version", 2);
+        phaseTwo.remove("commercial_properties");
+
+        WorldIdentity migrated = WorldIdentityNbtSerializer.load(phaseTwo);
+
+        assertEquals(WorldIdentity.CURRENT_SCHEMA_VERSION, migrated.schemaVersion());
+        assertEquals(phaseTwoIdentity.id(), migrated.id());
+        assertEquals(phaseTwoIdentity.region(), migrated.region());
+        assertEquals(phaseTwoIdentity.counties(), migrated.counties());
+        assertEquals(phaseTwoIdentity.commercialProperties(), migrated.commercialProperties());
     }
 
     private static CompoundTag legacyPhaseOneTag() {
