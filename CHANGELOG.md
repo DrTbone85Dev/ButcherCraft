@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 8 - Player Legacy Foundation
+
+### Core
+
+- Added immutable player legacy domain models for player identities, career profiles, starting scenarios, starting assets, starting relationships, inheritance records, legacy progress, and player backgrounds.
+- Added a deterministic built-in starting scenario catalog covering inherited family businesses, vacant property purchases, existing business managers, startup operations, county contracts, and cooperative assignments.
+- Added immutable `PlayerRegistry` validation and lookup support by scenario id, starting scenario type, and career profile.
+- Preserved World Identity schema version 6 because Phase 8 does not generate or persist player save data yet.
+
+### Stability
+
+- Added validation for duplicate scenario ids, duplicate scenario names, missing career coverage, missing scenario type coverage, missing inheritance records, orphaned placeholders, invalid player scenario references, incompatible career profiles, unknown starting settlements, missing summaries, and malformed typed fields.
+- Added regression coverage proving player legacy templates do not alter World Identity persistence or migration behavior.
+- Preserved the principle that the player enters an existing simulation rather than creating the world.
+- Kept character creation, UI, networking, economy, inventory, machines, NPCs, quests, commands, progression systems, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 7 - Supply Chain & Trade Network Foundation
 
 ### Core

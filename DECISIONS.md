@@ -923,6 +923,22 @@ Consequences:
 - Supply relationship categories, product categories, business specializations, and relationship strengths are strongly typed.
 - No economy, pricing, money, inventory, purchasing, transportation simulation, trucking, vehicles, pathfinding, AI, NPC behavior, player interaction, UI, commands, recipes, machine behavior, shortages, recalls, seasonal variation, or dynamic markets are introduced.
 
+## DEC-0061: The Player Enters An Existing World
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 8 introduces player legacy as immutable pure Java architecture outside the saved World Identity snapshot. Player legacy templates define career profiles, starting scenarios, starting assets, starting relationships, inheritance placeholders, background summaries, and initial legacy metadata. Player identities may reference existing simulation entities, but world identity, business, ownership, and supply-network systems do not reference player-specific data.
+
+Rationale: future inheritance, purchases, career progression, inspections, finances, employees, customers, reputation, newspapers, retirement, succession, and multi-generation gameplay need the player to feel like a participant entering an existing industry. Keeping player legacy out of World Identity persistence until actual player save data is scheduled prevents the player from becoming the source of world generation or reshaping established simulation history.
+
+Consequences:
+
+- World Identity remains schema version 6; Phase 8 does not add player identity data to the existing world save.
+- Built-in starting scenario templates use stable ids and placeholder references for future player-save systems.
+- `PlayerRegistry` validates scenario ids, scenario type coverage, career profile coverage, inheritance records, placeholder references, player scenario references, career compatibility, and starting settlement references.
+- Player career profiles, starting scenario types, acquisition types, starting relationship types, and initial reputation categories are strongly typed.
+- No character creation, UI, networking, economy, inventory, machines, NPCs, quests, dialogue, commands, gameplay, progression systems, player save data generation, finances, equipment ownership, employees, customers, inspections, retirement, succession, or multi-generation gameplay is introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.
