@@ -889,6 +889,40 @@ Consequences:
 - Business type, status, reputation, occupancy reason, ownership type, and relationship type are strongly typed.
 - No player-owned businesses, purchasing, economy, money, employees, NPC interaction, UI, commands, recipes, machine ownership, property purchasing, retail customers, progression, physical buildings, inspections, taxes, newspapers, or gameplay effects are introduced.
 
+## DEC-0059: Ownership Entities Control Businesses Without Becoming Businesses
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 6 introduces ownership entities, families, historical persons, ownership shares, and ownership histories as immutable world identity records saved inside the existing World Identity snapshot. An ownership entity represents the individual, family, partnership, cooperative, corporation, estate, or municipality that controls a business for a period of time. Ownership entities reference businesses, businesses reference commercial properties, and commercial properties remain independent physical locations.
+
+Rationale: future inheritance, wills, estate transfers, partnerships, business sales, succession, shareholder models, newspapers, inspections, finance, and legacy gameplay need stable owner identity before gameplay systems depend on business control. Keeping owners separate from businesses allows ownership to change over time without replacing the business identity, and keeping businesses separate from properties allows a property to outlive multiple organizations.
+
+Consequences:
+
+- World Identity schema version 5 stores families, historical persons, ownership entities, and ownership histories alongside regions, counties, settlements, commercial properties, and businesses.
+- Phase 1 through Phase 4 development saves migrate by preserving existing identity data and generating ownership records from the saved world seed and business snapshot.
+- Ownership generation uses stable business ids and deterministic salts rather than mutable random streams or iteration order.
+- `FamilyRegistry` validates family and historical person references, and `OwnershipRegistry` validates business references, owner references, orphaned owners, duplicate histories, timeline overlap, and ownership share totals.
+- Ownership categories, acquisition methods, and family reputations are strongly typed.
+- No NPCs, player families, inheritance gameplay, dialogue, marriage, children, AI, economy, payroll, lawsuits, politics, UI, commands, quests, active relationships, physical entities, or gameplay effects are introduced.
+
+## DEC-0060: Supply Chains Are Historical Relationships, Not Gameplay
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 7 introduces supply networks as immutable world identity records saved inside the existing World Identity snapshot. A supply network represents historical commercial relationships among businesses, manufacturers, trade territories, distribution routes, preferred suppliers, preferred manufacturers, and business specializations. Supply relationships reference businesses; they do not own inventory, prices, deliveries, or active purchasing behavior.
+
+Rationale: future purchasing, contracts, inventory, transportation, inspections, reputation, market pressure, recalls, and regional pricing need a stable commercial ecosystem before gameplay systems depend on suppliers. Keeping the supply network separate from commercial properties, businesses, and ownership entities preserves the core identity model: locations are places, businesses are organizations, ownership entities control organizations, and supply networks describe relationships among them.
+
+Consequences:
+
+- World Identity schema version 6 stores the supply network alongside regions, counties, settlements, commercial properties, businesses, and ownership records.
+- Phase 1 through Phase 5 development saves migrate by preserving existing identity data and generating supply network records from the saved world seed and preserved business or ownership snapshot.
+- Supply network generation uses stable business ids, settlement ids, region ids, manufacturer ids, and deterministic salts rather than mutable random streams or registry order.
+- `TradeNetworkRegistry` validates business references, manufacturer references, territory references, product categories, chronology, duplicate ids, duplicate relationships, missing contracts, missing preferred-supplier records, orphaned territories, orphaned trade regions, and specialization coverage.
+- Supply relationship categories, product categories, business specializations, and relationship strengths are strongly typed.
+- No economy, pricing, money, inventory, purchasing, transportation simulation, trucking, vehicles, pathfinding, AI, NPC behavior, player interaction, UI, commands, recipes, machine behavior, shortages, recalls, seasonal variation, or dynamic markets are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

@@ -4,6 +4,91 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 7: Supply Chain & Trade Network Foundation
+
+Goal: establish permanent supply-chain and trade-network identity records that explain how businesses, manufacturers, territories, and commercial routes are historically connected without adding purchasing, pricing, inventory, logistics, UI, commands, or gameplay behavior.
+
+Included work:
+
+- Immutable pure Java trade domain models: `SupplyNetwork`, `SupplyNetworkId`, `SupplyRelationship`, `SupplyContract`, `DistributionRoute`, `DistributionTerritory`, `TradeRegion`, `PreferredSupplier`, `PreferredManufacturer`, `BusinessSpecializationProfile`, `BusinessSpecialization`, `ProductCategory`, and `TradeNetworkRegistry`.
+- Strongly typed supply relationship categories, product categories, business specializations, and relationship strengths.
+- Deterministic supply network generation from the saved world seed, region, settlements, businesses, manufacturers, and ownership histories.
+- Supply relationships that reference supplier and customer business ids while preserving the separation between commercial properties, businesses, ownership entities, and supply networks.
+- Immutable `TradeNetworkRegistry` validation and lookup by relationship id, business, manufacturer, settlement, product category, territory, and relationship type.
+- World Identity schema version 6 with supply network data saved in the existing world identity persistence format.
+- Development-schema migration from Phase 1 through Phase 5 identities by preserving saved identity data and generating the trade network from the saved seed and preserved business or ownership snapshot.
+- Automated coverage for deterministic generation, generation-order independence, relationship id stability, registry lookup, relationship integrity, validation failures, serialization, save/load persistence, schema migration, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Economy, pricing, money, inventory, purchasing, contracts as gameplay, transportation simulation, trucking, vehicles, pathfinding, AI, NPC behavior, player interaction, UI, commands, recipes, machine behavior, shortages, product recalls, seasonal variation, and dynamic markets.
+
+Acceptance criteria:
+
+- Generated World Identity snapshots include deterministic trade regions, distribution territories, distribution routes, supply relationships, archival contracts, preferred supplier records, preferred manufacturer records, and business specialization profiles.
+- Supply relationship ids, business references, manufacturer references, territory references, product categories, chronology, contracts, preferred-supplier records, and specialization coverage validate.
+- Supply network data persists through the existing World Identity save format.
+- Phase 1 through Phase 5 development saves migrate through a deliberate schema path rather than being regenerated wholesale.
+- The trade package remains independent of Minecraft and NeoForge imports.
+- Existing workstation, product, packaging, transformation, manufacturer, property, region, business, and ownership behavior remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- Runtime startup validation is recommended after persistence changes. Phase 7 does not add player-facing supply-chain interaction.
+
+Rollback considerations:
+
+- The Phase 7 foundation is additive around the World Identity snapshot. Removing the trade domain, generator, registry, schema migration, tests, and documentation entry should restore the Phase 6 family and ownership foundation without affecting products, transformations, packaging, workstations, manufacturers, properties, businesses, or registered gameplay content.
+
+## Milestone 0.9.0 Phase 6: Family & Ownership Identity Foundation
+
+Goal: establish permanent family and ownership identity records that explain who built, owned, operated, inherited, sold, and merged businesses without making owners into businesses or commercial properties.
+
+Included work:
+
+- Immutable pure Java ownership domain models: `OwnershipEntity`, `OwnershipEntityId`, `OwnershipEntityType`, `Family`, `FamilyId`, `PersonIdentity`, `PersonId`, `OwnershipShare`, `OwnershipRecord`, `OwnershipHistory`, `FamilyRelationship`, `FamilyRegistry`, and `OwnershipRegistry`.
+- Strongly typed ownership entity categories for individuals, families, partnerships, cooperatives, corporations, estates, and municipalities.
+- Strongly typed acquisition methods and family reputation classifications with no gameplay effects.
+- Deterministic generation of family, historical person, ownership entity, and ownership history records from the saved world seed, region, settlements, and business records.
+- Ownership histories that reference business ids while businesses continue to reference only commercial property ids.
+- Ownership percentages stored as basis points so future partnerships and shareholder models can split ownership without redesign.
+- World Identity schema version 5 with ownership data saved in the existing world identity persistence format.
+- Development-schema migration from Phase 1 through Phase 4 identities by preserving saved region, county, settlement, property, and business data and generating ownership from the saved seed and business snapshot.
+- Automated coverage for deterministic generation, generation-order independence, identity stability, registry lookup, share validation, chronology validation, serialization, save/load persistence, schema migration, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- NPCs, player families, inheritance gameplay, dialogue, marriage, children, AI, economy, payroll, lawsuits, politics, UI, commands, quests, active relationships, family simulation, physical entities, and gameplay effects.
+
+Acceptance criteria:
+
+- Generated World Identity snapshots include deterministic families, historical people, ownership entities, and ownership histories for generated business records.
+- Ownership ids, family ids, person ids, business references, ownership shares, chronology, family references, person references, and registry ordering validate.
+- Ownership data persists through the existing World Identity save format.
+- Phase 1 through Phase 4 development saves migrate through a deliberate schema path rather than being regenerated wholesale.
+- The ownership package remains independent of Minecraft and NeoForge imports.
+- Existing workstation, product, packaging, transformation, manufacturer, property, region, and business behavior remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- Runtime startup validation is recommended after persistence changes. Phase 6 does not add player-facing ownership interaction.
+
+Rollback considerations:
+
+- The Phase 6 foundation is additive around the World Identity snapshot. Removing the ownership domain, generator, registries, schema migration, tests, and documentation entry should restore the Phase 5 business identity foundation without affecting products, transformations, packaging, workstations, manufacturers, properties, businesses, or registered gameplay content.
+
 ## Milestone 0.9.0 Phase 5: Business Identity Foundation
 
 Goal: establish permanent business identity records as world identity organizations that future inheritance, purchase, competition, employees, suppliers, inspections, newspapers, finances, mergers, and family legacy systems can reference without making businesses into properties or owners.

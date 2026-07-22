@@ -42,6 +42,14 @@ class WorldIdentityGeneratorTest {
         assertEquals(7, identity.settlements().size());
         assertEquals(28, identity.commercialProperties().size());
         assertEquals(26, identity.businesses().size());
+        assertEquals(26, identity.families().size());
+        assertEquals(26, identity.historicalPersons().size());
+        assertEquals(26, identity.ownershipEntities().size());
+        assertEquals(26, identity.ownershipHistories().size());
+        assertEquals(26, identity.supplyNetwork().supplyRelationships().size());
+        assertEquals(26, identity.supplyNetwork().supplyContracts().size());
+        assertEquals(7, identity.supplyNetwork().distributionTerritories().size());
+        assertEquals(6, identity.supplyNetwork().distributionRoutes().size());
         assertTrue(RegionCatalog.builtIn().contains(identity.region().id()));
         assertFalseBlank(identity.region().description());
         assertFalseBlank(identity.region().culturalIdentity());

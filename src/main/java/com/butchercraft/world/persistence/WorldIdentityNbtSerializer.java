@@ -18,6 +18,22 @@ import com.butchercraft.world.identity.Region;
 import com.butchercraft.world.identity.Settlement;
 import com.butchercraft.world.identity.SettlementType;
 import com.butchercraft.world.identity.WorldIdentity;
+import com.butchercraft.world.ownership.BuiltInOwnershipCatalog;
+import com.butchercraft.world.ownership.Family;
+import com.butchercraft.world.ownership.FamilyId;
+import com.butchercraft.world.ownership.FamilyRelationship;
+import com.butchercraft.world.ownership.FamilyRelationshipType;
+import com.butchercraft.world.ownership.FamilyReputation;
+import com.butchercraft.world.ownership.OwnershipAcquisitionMethod;
+import com.butchercraft.world.ownership.OwnershipEntity;
+import com.butchercraft.world.ownership.OwnershipEntityId;
+import com.butchercraft.world.ownership.OwnershipEntityType;
+import com.butchercraft.world.ownership.OwnershipHistory;
+import com.butchercraft.world.ownership.OwnershipIdentitySnapshot;
+import com.butchercraft.world.ownership.OwnershipRecord;
+import com.butchercraft.world.ownership.OwnershipShare;
+import com.butchercraft.world.ownership.PersonId;
+import com.butchercraft.world.ownership.PersonIdentity;
 import com.butchercraft.world.property.BuiltInCommercialPropertyCatalog;
 import com.butchercraft.world.property.BuildingSize;
 import com.butchercraft.world.property.CommercialProperty;
@@ -26,13 +42,31 @@ import com.butchercraft.world.property.CommercialPropertyType;
 import com.butchercraft.world.property.ElectricalService;
 import com.butchercraft.world.property.ExpansionCapacity;
 import com.butchercraft.world.property.LotSize;
-import com.butchercraft.world.property.OwnershipRecord;
 import com.butchercraft.world.property.PropertyAcquisitionMethod;
 import com.butchercraft.world.property.PropertyCondition;
 import com.butchercraft.world.property.PropertyHistory;
 import com.butchercraft.world.property.PropertyStatus;
 import com.butchercraft.world.property.RefrigerationCapacity;
 import com.butchercraft.world.property.UtilityProfile;
+import com.butchercraft.world.trade.BusinessSpecialization;
+import com.butchercraft.world.trade.BusinessSpecializationProfile;
+import com.butchercraft.world.trade.DistributionRoute;
+import com.butchercraft.world.trade.DistributionRouteId;
+import com.butchercraft.world.trade.DistributionTerritory;
+import com.butchercraft.world.trade.DistributionTerritoryId;
+import com.butchercraft.world.trade.PreferredManufacturer;
+import com.butchercraft.world.trade.PreferredSupplier;
+import com.butchercraft.world.trade.ProductCategory;
+import com.butchercraft.world.trade.RelationshipStrength;
+import com.butchercraft.world.trade.SupplyContract;
+import com.butchercraft.world.trade.SupplyContractId;
+import com.butchercraft.world.trade.SupplyNetwork;
+import com.butchercraft.world.trade.SupplyNetworkId;
+import com.butchercraft.world.trade.SupplyRelationship;
+import com.butchercraft.world.trade.SupplyRelationshipId;
+import com.butchercraft.world.trade.SupplyRelationshipType;
+import com.butchercraft.world.trade.TradeRegion;
+import com.butchercraft.world.trade.TradeRegionId;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -108,6 +142,62 @@ public final class WorldIdentityNbtSerializer {
     private static final String PROPERTY_ID = "property_id";
     private static final String REASON = "reason";
     private static final String NOTES = "notes";
+    private static final String FAMILIES = "families";
+    private static final String HISTORICAL_PERSONS = "historical_persons";
+    private static final String OWNERSHIP_ENTITIES = "ownership_entities";
+    private static final String OWNERSHIP_HISTORIES = "ownership_histories";
+    private static final String FAMILY_ID = "family_id";
+    private static final String SURNAME = "surname";
+    private static final String FOUNDING_SETTLEMENT_ID = "founding_settlement_id";
+    private static final String LEGACY_SCORE = "legacy_score";
+    private static final String FAMILY_REPUTATION = "family_reputation";
+    private static final String APPROXIMATE_FOUNDING_YEAR = "approximate_founding_year";
+    private static final String PERSON_ID = "person_id";
+    private static final String FULL_NAME = "full_name";
+    private static final String BIRTH_YEAR = "birth_year";
+    private static final String DEATH_YEAR = "death_year";
+    private static final String PRIMARY_FAMILY_ID = "primary_family_id";
+    private static final String ENTITY_TYPE = "entity_type";
+    private static final String ESTABLISHED_YEAR = "established_year";
+    private static final String FAMILY_RELATIONSHIPS = "family_relationships";
+    private static final String RELATED_FAMILY_ID = "related_family_id";
+    private static final String OWNERSHIP_ENTITY_ID = "ownership_entity_id";
+    private static final String OWNERSHIP_RECORDS = "ownership_records";
+    private static final String BUSINESS_ID = "business_id";
+    private static final String OWNERSHIP_SHARE_BASIS_POINTS = "ownership_share_basis_points";
+    private static final String SUPPLY_NETWORK = "supply_network";
+    private static final String TRADE_REGIONS = "trade_regions";
+    private static final String DISTRIBUTION_TERRITORIES = "distribution_territories";
+    private static final String DISTRIBUTION_ROUTES = "distribution_routes";
+    private static final String SUPPLY_RELATIONSHIPS = "supply_relationships";
+    private static final String SUPPLY_CONTRACTS = "supply_contracts";
+    private static final String PREFERRED_SUPPLIERS = "preferred_suppliers";
+    private static final String NETWORK_PREFERRED_MANUFACTURERS = "preferred_manufacturers";
+    private static final String BUSINESS_SPECIALIZATIONS = "business_specializations";
+    private static final String TRADE_REGION_ID = "trade_region_id";
+    private static final String SETTLEMENT_IDS = "settlement_ids";
+    private static final String COVERED_SETTLEMENTS = "covered_settlements";
+    private static final String PRIMARY_BUSINESSES = "primary_businesses";
+    private static final String DOMINANT_MANUFACTURERS = "dominant_manufacturers";
+    private static final String DISTRIBUTION_IMPORTANCE = "distribution_importance";
+    private static final String REGIONAL_INFLUENCE_SCORE = "regional_influence_score";
+    private static final String ORIGIN_SETTLEMENT_ID = "origin_settlement_id";
+    private static final String DESTINATION_SETTLEMENT_ID = "destination_settlement_id";
+    private static final String PRODUCT_CATEGORIES = "product_categories";
+    private static final String PRODUCT_CATEGORY = "product_category";
+    private static final String ROUTE_IMPORTANCE = "route_importance";
+    private static final String SUPPLIER_BUSINESS_ID = "supplier_business_id";
+    private static final String CUSTOMER_BUSINESS_ID = "customer_business_id";
+    private static final String PREFERRED_MANUFACTURER_ID = "preferred_manufacturer_id";
+    private static final String RELATIONSHIP_STRENGTH = "relationship_strength";
+    private static final String TERRITORY_ID = "territory_id";
+    private static final String RELATIONSHIP_ID = "relationship_id";
+    private static final String CONTRACT_ID = "contract_id";
+    private static final String RECORDED_STRENGTH = "recorded_strength";
+    private static final String TERMS_SUMMARY = "terms_summary";
+    private static final String MANUFACTURER_ID = "manufacturer_id";
+    private static final String SPECIALIZATIONS = "specializations";
+    private static final String SPECIALIZATION = "specialization";
 
     private WorldIdentityNbtSerializer() {
     }
@@ -133,6 +223,27 @@ public final class WorldIdentityNbtSerializer {
             businesses.add(saveBusiness(business));
         }
         tag.put(BUSINESSES, businesses);
+        ListTag families = new ListTag();
+        for (Family family : identity.families()) {
+            families.add(saveFamily(family));
+        }
+        tag.put(FAMILIES, families);
+        ListTag historicalPersons = new ListTag();
+        for (PersonIdentity person : identity.historicalPersons()) {
+            historicalPersons.add(savePerson(person));
+        }
+        tag.put(HISTORICAL_PERSONS, historicalPersons);
+        ListTag ownershipEntities = new ListTag();
+        for (OwnershipEntity ownershipEntity : identity.ownershipEntities()) {
+            ownershipEntities.add(saveOwnershipEntity(ownershipEntity));
+        }
+        tag.put(OWNERSHIP_ENTITIES, ownershipEntities);
+        ListTag ownershipHistories = new ListTag();
+        for (OwnershipHistory ownershipHistory : identity.ownershipHistories()) {
+            ownershipHistories.add(saveOwnershipHistory(ownershipHistory));
+        }
+        tag.put(OWNERSHIP_HISTORIES, ownershipHistories);
+        tag.put(SUPPLY_NETWORK, saveSupplyNetwork(identity.supplyNetwork()));
         return tag;
     }
 
@@ -141,6 +252,12 @@ public final class WorldIdentityNbtSerializer {
         int schemaVersion = tag.getInt(SCHEMA_VERSION);
         if (schemaVersion == WorldIdentity.CURRENT_SCHEMA_VERSION) {
             return loadCurrent(tag, schemaVersion);
+        }
+        if (schemaVersion == 5) {
+            return loadLegacyPhaseFive(tag);
+        }
+        if (schemaVersion == 4) {
+            return loadLegacyPhaseFour(tag);
         }
         if (schemaVersion == 3) {
             return loadLegacyPhaseThree(tag);
@@ -166,6 +283,11 @@ public final class WorldIdentityNbtSerializer {
         require(tag, COUNTIES, Tag.TAG_LIST);
         require(tag, COMMERCIAL_PROPERTIES, Tag.TAG_LIST);
         require(tag, BUSINESSES, Tag.TAG_LIST);
+        require(tag, FAMILIES, Tag.TAG_LIST);
+        require(tag, HISTORICAL_PERSONS, Tag.TAG_LIST);
+        require(tag, OWNERSHIP_ENTITIES, Tag.TAG_LIST);
+        require(tag, OWNERSHIP_HISTORIES, Tag.TAG_LIST);
+        require(tag, SUPPLY_NETWORK, Tag.TAG_COMPOUND);
         return new WorldIdentity(
                 schemaVersion,
                 tag.getString(ID),
@@ -173,7 +295,65 @@ public final class WorldIdentityNbtSerializer {
                 loadRegion(tag.getCompound(REGION)),
                 loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND)),
                 loadCommercialProperties(tag.getList(COMMERCIAL_PROPERTIES, Tag.TAG_COMPOUND)),
-                loadBusinesses(tag.getList(BUSINESSES, Tag.TAG_COMPOUND))
+                loadBusinesses(tag.getList(BUSINESSES, Tag.TAG_COMPOUND)),
+                loadFamilies(tag.getList(FAMILIES, Tag.TAG_COMPOUND)),
+                loadHistoricalPersons(tag.getList(HISTORICAL_PERSONS, Tag.TAG_COMPOUND)),
+                loadOwnershipEntities(tag.getList(OWNERSHIP_ENTITIES, Tag.TAG_COMPOUND)),
+                loadOwnershipHistories(tag.getList(OWNERSHIP_HISTORIES, Tag.TAG_COMPOUND)),
+                loadSupplyNetwork(tag.getCompound(SUPPLY_NETWORK))
+        );
+    }
+
+    private static WorldIdentity loadLegacyPhaseFive(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, WORLD_SEED, Tag.TAG_LONG);
+        require(tag, REGION, Tag.TAG_COMPOUND);
+        require(tag, COUNTIES, Tag.TAG_LIST);
+        require(tag, COMMERCIAL_PROPERTIES, Tag.TAG_LIST);
+        require(tag, BUSINESSES, Tag.TAG_LIST);
+        require(tag, FAMILIES, Tag.TAG_LIST);
+        require(tag, HISTORICAL_PERSONS, Tag.TAG_LIST);
+        require(tag, OWNERSHIP_ENTITIES, Tag.TAG_LIST);
+        require(tag, OWNERSHIP_HISTORIES, Tag.TAG_LIST);
+        return new WorldIdentity(
+                WorldIdentity.CURRENT_SCHEMA_VERSION,
+                tag.getString(ID),
+                tag.getLong(WORLD_SEED),
+                loadRegion(tag.getCompound(REGION)),
+                loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND)),
+                loadCommercialProperties(tag.getList(COMMERCIAL_PROPERTIES, Tag.TAG_COMPOUND)),
+                loadBusinesses(tag.getList(BUSINESSES, Tag.TAG_COMPOUND)),
+                loadFamilies(tag.getList(FAMILIES, Tag.TAG_COMPOUND)),
+                loadHistoricalPersons(tag.getList(HISTORICAL_PERSONS, Tag.TAG_COMPOUND)),
+                loadOwnershipEntities(tag.getList(OWNERSHIP_ENTITIES, Tag.TAG_COMPOUND)),
+                loadOwnershipHistories(tag.getList(OWNERSHIP_HISTORIES, Tag.TAG_COMPOUND))
+        );
+    }
+
+    private static WorldIdentity loadLegacyPhaseFour(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, WORLD_SEED, Tag.TAG_LONG);
+        require(tag, REGION, Tag.TAG_COMPOUND);
+        require(tag, COUNTIES, Tag.TAG_LIST);
+        require(tag, COMMERCIAL_PROPERTIES, Tag.TAG_LIST);
+        require(tag, BUSINESSES, Tag.TAG_LIST);
+        long worldSeed = tag.getLong(WORLD_SEED);
+        Region region = loadRegion(tag.getCompound(REGION));
+        List<County> counties = loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND));
+        List<Business> businesses = loadBusinesses(tag.getList(BUSINESSES, Tag.TAG_COMPOUND));
+        OwnershipIdentitySnapshot ownership = BuiltInOwnershipCatalog.generate(worldSeed, region, settlementsFrom(counties), businesses);
+        return new WorldIdentity(
+                WorldIdentity.CURRENT_SCHEMA_VERSION,
+                tag.getString(ID),
+                worldSeed,
+                region,
+                counties,
+                loadCommercialProperties(tag.getList(COMMERCIAL_PROPERTIES, Tag.TAG_COMPOUND)),
+                businesses,
+                ownership.families(),
+                ownership.historicalPersons(),
+                ownership.ownershipEntities(),
+                ownership.ownershipHistories()
         );
     }
 
@@ -187,6 +367,7 @@ public final class WorldIdentityNbtSerializer {
         Region region = loadRegion(tag.getCompound(REGION));
         List<County> counties = loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND));
         List<CommercialProperty> commercialProperties = loadCommercialProperties(tag.getList(COMMERCIAL_PROPERTIES, Tag.TAG_COMPOUND));
+        List<Business> businesses = BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties);
         return new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 tag.getString(ID),
@@ -194,7 +375,7 @@ public final class WorldIdentityNbtSerializer {
                 region,
                 counties,
                 commercialProperties,
-                BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties)
+                businesses
         );
     }
 
@@ -207,6 +388,7 @@ public final class WorldIdentityNbtSerializer {
         Region region = loadRegion(tag.getCompound(REGION));
         List<County> counties = loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND));
         List<CommercialProperty> commercialProperties = BuiltInCommercialPropertyCatalog.generate(worldSeed, settlementsFrom(counties));
+        List<Business> businesses = BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties);
         return new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 tag.getString(ID),
@@ -214,7 +396,7 @@ public final class WorldIdentityNbtSerializer {
                 region,
                 counties,
                 commercialProperties,
-                BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties)
+                businesses
         );
     }
 
@@ -227,6 +409,7 @@ public final class WorldIdentityNbtSerializer {
         Region region = loadLegacyPhaseOneRegion(tag.getCompound(REGION));
         List<County> counties = loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND));
         List<CommercialProperty> commercialProperties = BuiltInCommercialPropertyCatalog.generate(worldSeed, settlementsFrom(counties));
+        List<Business> businesses = BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties);
         return new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 tag.getString(ID),
@@ -234,7 +417,7 @@ public final class WorldIdentityNbtSerializer {
                 region,
                 counties,
                 commercialProperties,
-                BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties)
+                businesses
         );
     }
 
@@ -278,7 +461,7 @@ public final class WorldIdentityNbtSerializer {
         return new Region(
                 tag.getString(ID),
                 tag.getString(DISPLAY_NAME),
-                "Legacy Phase 1 development region migrated to the version 4 world identity schema.",
+                "Legacy Phase 1 development region migrated to the version 6 world identity schema.",
                 tag.getString(AGRICULTURAL_IDENTITY),
                 tag.getString(ECONOMIC_IDENTITY),
                 tag.getString(LEGACY_NAMING_CONVENTION),
@@ -434,8 +617,8 @@ public final class WorldIdentityNbtSerializer {
         CompoundTag tag = new CompoundTag();
         tag.putString(HISTORICAL_SUMMARY, history.historicalSummary());
         ListTag ownershipHistory = new ListTag();
-        for (OwnershipRecord record : history.ownershipHistory()) {
-            ownershipHistory.add(saveOwnershipRecord(record));
+        for (com.butchercraft.world.property.OwnershipRecord record : history.ownershipHistory()) {
+            ownershipHistory.add(savePropertyOwnershipRecord(record));
         }
         tag.put(OWNERSHIP_HISTORY, ownershipHistory);
         return tag;
@@ -450,7 +633,7 @@ public final class WorldIdentityNbtSerializer {
         );
     }
 
-    private static CompoundTag saveOwnershipRecord(OwnershipRecord record) {
+    private static CompoundTag savePropertyOwnershipRecord(com.butchercraft.world.property.OwnershipRecord record) {
         CompoundTag tag = new CompoundTag();
         tag.putString(OWNER_NAME, record.ownerName());
         tag.putInt(START_YEAR, record.startYear());
@@ -460,12 +643,12 @@ public final class WorldIdentityNbtSerializer {
         return tag;
     }
 
-    private static OwnershipRecord loadOwnershipRecord(CompoundTag tag) {
+    private static com.butchercraft.world.property.OwnershipRecord loadPropertyOwnershipRecord(CompoundTag tag) {
         require(tag, OWNER_NAME, Tag.TAG_STRING);
         require(tag, START_YEAR, Tag.TAG_INT);
         require(tag, ACQUISITION_METHOD, Tag.TAG_STRING);
         require(tag, HISTORICAL_NOTES, Tag.TAG_STRING);
-        return new OwnershipRecord(
+        return new com.butchercraft.world.property.OwnershipRecord(
                 tag.getString(OWNER_NAME),
                 tag.getInt(START_YEAR),
                 tag.contains(END_YEAR, Tag.TAG_INT) ? OptionalInt.of(tag.getInt(END_YEAR)) : OptionalInt.empty(),
@@ -482,10 +665,10 @@ public final class WorldIdentityNbtSerializer {
         return properties;
     }
 
-    private static List<OwnershipRecord> loadOwnershipHistory(ListTag tags) {
-        List<OwnershipRecord> records = new ArrayList<>();
+    private static List<com.butchercraft.world.property.OwnershipRecord> loadOwnershipHistory(ListTag tags) {
+        List<com.butchercraft.world.property.OwnershipRecord> records = new ArrayList<>();
         for (int index = 0; index < tags.size(); index++) {
-            records.add(loadOwnershipRecord(tags.getCompound(index)));
+            records.add(loadPropertyOwnershipRecord(tags.getCompound(index)));
         }
         return records;
     }
@@ -705,6 +888,653 @@ public final class WorldIdentityNbtSerializer {
             ids.add(tag.getString(ID));
         }
         return ids;
+    }
+
+    private static CompoundTag saveFamily(Family family) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, family.id().value());
+        tag.putString(SURNAME, family.surname());
+        tag.putString(FOUNDING_SETTLEMENT_ID, family.foundingSettlementId());
+        tag.putString(HISTORICAL_SUMMARY, family.historicalSummary());
+        tag.putInt(LEGACY_SCORE, family.legacyScore());
+        tag.putString(FAMILY_REPUTATION, family.reputation().serializedName());
+        tag.putInt(APPROXIMATE_FOUNDING_YEAR, family.approximateFoundingYear());
+        return tag;
+    }
+
+    private static Family loadFamily(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, SURNAME, Tag.TAG_STRING);
+        require(tag, FOUNDING_SETTLEMENT_ID, Tag.TAG_STRING);
+        require(tag, HISTORICAL_SUMMARY, Tag.TAG_STRING);
+        require(tag, LEGACY_SCORE, Tag.TAG_INT);
+        require(tag, FAMILY_REPUTATION, Tag.TAG_STRING);
+        require(tag, APPROXIMATE_FOUNDING_YEAR, Tag.TAG_INT);
+        return new Family(
+                new FamilyId(tag.getString(ID)),
+                tag.getString(SURNAME),
+                tag.getString(FOUNDING_SETTLEMENT_ID),
+                tag.getString(HISTORICAL_SUMMARY),
+                tag.getInt(LEGACY_SCORE),
+                FamilyReputation.fromSerializedName(tag.getString(FAMILY_REPUTATION)),
+                tag.getInt(APPROXIMATE_FOUNDING_YEAR)
+        );
+    }
+
+    private static CompoundTag savePerson(PersonIdentity person) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, person.id().value());
+        tag.putString(FULL_NAME, person.fullName());
+        tag.putInt(BIRTH_YEAR, person.birthYear());
+        person.deathYear().ifPresent(deathYear -> tag.putInt(DEATH_YEAR, deathYear));
+        tag.putString(PRIMARY_FAMILY_ID, person.primaryFamilyId().value());
+        tag.putString(HISTORICAL_SUMMARY, person.historicalSummary());
+        return tag;
+    }
+
+    private static PersonIdentity loadPerson(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, FULL_NAME, Tag.TAG_STRING);
+        require(tag, BIRTH_YEAR, Tag.TAG_INT);
+        require(tag, PRIMARY_FAMILY_ID, Tag.TAG_STRING);
+        require(tag, HISTORICAL_SUMMARY, Tag.TAG_STRING);
+        return new PersonIdentity(
+                new PersonId(tag.getString(ID)),
+                tag.getString(FULL_NAME),
+                tag.getInt(BIRTH_YEAR),
+                tag.contains(DEATH_YEAR, Tag.TAG_INT) ? OptionalInt.of(tag.getInt(DEATH_YEAR)) : OptionalInt.empty(),
+                new FamilyId(tag.getString(PRIMARY_FAMILY_ID)),
+                tag.getString(HISTORICAL_SUMMARY)
+        );
+    }
+
+    private static CompoundTag saveOwnershipEntity(OwnershipEntity entity) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, entity.id().value());
+        tag.putString(DISPLAY_NAME, entity.displayName());
+        tag.putString(ENTITY_TYPE, entity.type().serializedName());
+        tag.putInt(ESTABLISHED_YEAR, entity.establishedYear());
+        entity.familyId().ifPresent(familyId -> tag.putString(FAMILY_ID, familyId.value()));
+        entity.personId().ifPresent(personId -> tag.putString(PERSON_ID, personId.value()));
+        tag.putString(HISTORICAL_SUMMARY, entity.historicalSummary());
+        ListTag relationships = new ListTag();
+        for (FamilyRelationship relationship : entity.familyRelationships()) {
+            relationships.add(saveFamilyRelationship(relationship));
+        }
+        tag.put(FAMILY_RELATIONSHIPS, relationships);
+        return tag;
+    }
+
+    private static OwnershipEntity loadOwnershipEntity(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, ENTITY_TYPE, Tag.TAG_STRING);
+        require(tag, ESTABLISHED_YEAR, Tag.TAG_INT);
+        require(tag, HISTORICAL_SUMMARY, Tag.TAG_STRING);
+        require(tag, FAMILY_RELATIONSHIPS, Tag.TAG_LIST);
+        return new OwnershipEntity(
+                new OwnershipEntityId(tag.getString(ID)),
+                tag.getString(DISPLAY_NAME),
+                OwnershipEntityType.fromSerializedName(tag.getString(ENTITY_TYPE)),
+                tag.getInt(ESTABLISHED_YEAR),
+                tag.contains(FAMILY_ID, Tag.TAG_STRING) ? Optional.of(new FamilyId(tag.getString(FAMILY_ID))) : Optional.empty(),
+                tag.contains(PERSON_ID, Tag.TAG_STRING) ? Optional.of(new PersonId(tag.getString(PERSON_ID))) : Optional.empty(),
+                tag.getString(HISTORICAL_SUMMARY),
+                loadFamilyRelationships(tag.getList(FAMILY_RELATIONSHIPS, Tag.TAG_COMPOUND))
+        );
+    }
+
+    private static CompoundTag saveFamilyRelationship(FamilyRelationship relationship) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(RELATED_FAMILY_ID, relationship.relatedFamilyId().value());
+        tag.putString(RELATIONSHIP_TYPE, relationship.relationshipType().serializedName());
+        tag.putString(NOTES, relationship.notes());
+        return tag;
+    }
+
+    private static FamilyRelationship loadFamilyRelationship(CompoundTag tag) {
+        require(tag, RELATED_FAMILY_ID, Tag.TAG_STRING);
+        require(tag, RELATIONSHIP_TYPE, Tag.TAG_STRING);
+        require(tag, NOTES, Tag.TAG_STRING);
+        return new FamilyRelationship(
+                new FamilyId(tag.getString(RELATED_FAMILY_ID)),
+                FamilyRelationshipType.fromSerializedName(tag.getString(RELATIONSHIP_TYPE)),
+                tag.getString(NOTES)
+        );
+    }
+
+    private static CompoundTag saveOwnershipHistory(OwnershipHistory history) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(BUSINESS_ID, history.businessId().value());
+        ListTag records = new ListTag();
+        for (OwnershipRecord record : history.ownershipRecords()) {
+            records.add(saveOwnershipRecord(record));
+        }
+        tag.put(OWNERSHIP_RECORDS, records);
+        return tag;
+    }
+
+    private static OwnershipHistory loadOwnershipHistoryRecord(CompoundTag tag) {
+        require(tag, BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, OWNERSHIP_RECORDS, Tag.TAG_LIST);
+        return new OwnershipHistory(
+                new BusinessId(tag.getString(BUSINESS_ID)),
+                loadOwnershipRecords(tag.getList(OWNERSHIP_RECORDS, Tag.TAG_COMPOUND))
+        );
+    }
+
+    private static CompoundTag saveOwnershipRecord(OwnershipRecord record) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(OWNERSHIP_ENTITY_ID, record.ownershipEntityId().value());
+        tag.putString(BUSINESS_ID, record.businessId().value());
+        tag.putInt(OWNERSHIP_SHARE_BASIS_POINTS, record.ownershipShare().basisPoints());
+        tag.putInt(START_YEAR, record.startYear());
+        record.endYear().ifPresent(endYear -> tag.putInt(END_YEAR, endYear));
+        tag.putString(ACQUISITION_METHOD, record.acquisitionMethod().serializedName());
+        tag.putString(NOTES, record.notes());
+        return tag;
+    }
+
+    private static OwnershipRecord loadOwnershipRecord(CompoundTag tag) {
+        require(tag, OWNERSHIP_ENTITY_ID, Tag.TAG_STRING);
+        require(tag, BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, OWNERSHIP_SHARE_BASIS_POINTS, Tag.TAG_INT);
+        require(tag, START_YEAR, Tag.TAG_INT);
+        require(tag, ACQUISITION_METHOD, Tag.TAG_STRING);
+        require(tag, NOTES, Tag.TAG_STRING);
+        return new OwnershipRecord(
+                new OwnershipEntityId(tag.getString(OWNERSHIP_ENTITY_ID)),
+                new BusinessId(tag.getString(BUSINESS_ID)),
+                new OwnershipShare(tag.getInt(OWNERSHIP_SHARE_BASIS_POINTS)),
+                tag.getInt(START_YEAR),
+                tag.contains(END_YEAR, Tag.TAG_INT) ? OptionalInt.of(tag.getInt(END_YEAR)) : OptionalInt.empty(),
+                OwnershipAcquisitionMethod.fromSerializedName(tag.getString(ACQUISITION_METHOD)),
+                tag.getString(NOTES)
+        );
+    }
+
+    private static List<Family> loadFamilies(ListTag tags) {
+        List<Family> families = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            families.add(loadFamily(tags.getCompound(index)));
+        }
+        return families;
+    }
+
+    private static List<PersonIdentity> loadHistoricalPersons(ListTag tags) {
+        List<PersonIdentity> people = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            people.add(loadPerson(tags.getCompound(index)));
+        }
+        return people;
+    }
+
+    private static List<OwnershipEntity> loadOwnershipEntities(ListTag tags) {
+        List<OwnershipEntity> entities = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            entities.add(loadOwnershipEntity(tags.getCompound(index)));
+        }
+        return entities;
+    }
+
+    private static List<OwnershipHistory> loadOwnershipHistories(ListTag tags) {
+        List<OwnershipHistory> histories = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            histories.add(loadOwnershipHistoryRecord(tags.getCompound(index)));
+        }
+        return histories;
+    }
+
+    private static List<OwnershipRecord> loadOwnershipRecords(ListTag tags) {
+        List<OwnershipRecord> records = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            records.add(loadOwnershipRecord(tags.getCompound(index)));
+        }
+        return records;
+    }
+
+    private static List<FamilyRelationship> loadFamilyRelationships(ListTag tags) {
+        List<FamilyRelationship> relationships = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            relationships.add(loadFamilyRelationship(tags.getCompound(index)));
+        }
+        return relationships;
+    }
+
+    private static CompoundTag saveSupplyNetwork(SupplyNetwork supplyNetwork) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, supplyNetwork.id().value());
+        tag.putString(DISPLAY_NAME, supplyNetwork.displayName());
+        tag.putString(REGION_ID, supplyNetwork.regionId());
+        ListTag tradeRegions = new ListTag();
+        for (TradeRegion tradeRegion : supplyNetwork.tradeRegions()) {
+            tradeRegions.add(saveTradeRegion(tradeRegion));
+        }
+        tag.put(TRADE_REGIONS, tradeRegions);
+        ListTag territories = new ListTag();
+        for (DistributionTerritory territory : supplyNetwork.distributionTerritories()) {
+            territories.add(saveDistributionTerritory(territory));
+        }
+        tag.put(DISTRIBUTION_TERRITORIES, territories);
+        ListTag routes = new ListTag();
+        for (DistributionRoute route : supplyNetwork.distributionRoutes()) {
+            routes.add(saveDistributionRoute(route));
+        }
+        tag.put(DISTRIBUTION_ROUTES, routes);
+        ListTag relationships = new ListTag();
+        for (SupplyRelationship relationship : supplyNetwork.supplyRelationships()) {
+            relationships.add(saveSupplyRelationship(relationship));
+        }
+        tag.put(SUPPLY_RELATIONSHIPS, relationships);
+        ListTag contracts = new ListTag();
+        for (SupplyContract contract : supplyNetwork.supplyContracts()) {
+            contracts.add(saveSupplyContract(contract));
+        }
+        tag.put(SUPPLY_CONTRACTS, contracts);
+        ListTag preferredSuppliers = new ListTag();
+        for (PreferredSupplier preferredSupplier : supplyNetwork.preferredSuppliers()) {
+            preferredSuppliers.add(savePreferredSupplier(preferredSupplier));
+        }
+        tag.put(PREFERRED_SUPPLIERS, preferredSuppliers);
+        ListTag preferredManufacturers = new ListTag();
+        for (PreferredManufacturer preferredManufacturer : supplyNetwork.preferredManufacturers()) {
+            preferredManufacturers.add(savePreferredManufacturer(preferredManufacturer));
+        }
+        tag.put(NETWORK_PREFERRED_MANUFACTURERS, preferredManufacturers);
+        ListTag businessSpecializations = new ListTag();
+        for (BusinessSpecializationProfile profile : supplyNetwork.businessSpecializations()) {
+            businessSpecializations.add(saveBusinessSpecializationProfile(profile));
+        }
+        tag.put(BUSINESS_SPECIALIZATIONS, businessSpecializations);
+        return tag;
+    }
+
+    private static SupplyNetwork loadSupplyNetwork(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, REGION_ID, Tag.TAG_STRING);
+        require(tag, TRADE_REGIONS, Tag.TAG_LIST);
+        require(tag, DISTRIBUTION_TERRITORIES, Tag.TAG_LIST);
+        require(tag, DISTRIBUTION_ROUTES, Tag.TAG_LIST);
+        require(tag, SUPPLY_RELATIONSHIPS, Tag.TAG_LIST);
+        require(tag, SUPPLY_CONTRACTS, Tag.TAG_LIST);
+        require(tag, PREFERRED_SUPPLIERS, Tag.TAG_LIST);
+        require(tag, NETWORK_PREFERRED_MANUFACTURERS, Tag.TAG_LIST);
+        require(tag, BUSINESS_SPECIALIZATIONS, Tag.TAG_LIST);
+        return new SupplyNetwork(
+                new SupplyNetworkId(tag.getString(ID)),
+                tag.getString(DISPLAY_NAME),
+                tag.getString(REGION_ID),
+                loadTradeRegions(tag.getList(TRADE_REGIONS, Tag.TAG_COMPOUND)),
+                loadDistributionTerritories(tag.getList(DISTRIBUTION_TERRITORIES, Tag.TAG_COMPOUND)),
+                loadDistributionRoutes(tag.getList(DISTRIBUTION_ROUTES, Tag.TAG_COMPOUND)),
+                loadSupplyRelationships(tag.getList(SUPPLY_RELATIONSHIPS, Tag.TAG_COMPOUND)),
+                loadSupplyContracts(tag.getList(SUPPLY_CONTRACTS, Tag.TAG_COMPOUND)),
+                loadPreferredSuppliers(tag.getList(PREFERRED_SUPPLIERS, Tag.TAG_COMPOUND)),
+                loadPreferredManufacturers(tag.getList(NETWORK_PREFERRED_MANUFACTURERS, Tag.TAG_COMPOUND)),
+                loadBusinessSpecializationProfiles(tag.getList(BUSINESS_SPECIALIZATIONS, Tag.TAG_COMPOUND))
+        );
+    }
+
+    private static CompoundTag saveTradeRegion(TradeRegion tradeRegion) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, tradeRegion.id().value());
+        tag.putString(DISPLAY_NAME, tradeRegion.displayName());
+        tag.putString(REGION_ID, tradeRegion.regionId());
+        tag.put(SETTLEMENT_IDS, saveStringIds(tradeRegion.settlementIds()));
+        tag.putInt(REGIONAL_INFLUENCE_SCORE, tradeRegion.regionalInfluenceScore());
+        tag.putString(HISTORICAL_NOTES, tradeRegion.historicalNotes());
+        return tag;
+    }
+
+    private static TradeRegion loadTradeRegion(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, REGION_ID, Tag.TAG_STRING);
+        require(tag, SETTLEMENT_IDS, Tag.TAG_LIST);
+        require(tag, REGIONAL_INFLUENCE_SCORE, Tag.TAG_INT);
+        require(tag, HISTORICAL_NOTES, Tag.TAG_STRING);
+        return new TradeRegion(
+                new TradeRegionId(tag.getString(ID)),
+                tag.getString(DISPLAY_NAME),
+                tag.getString(REGION_ID),
+                loadStringIds(tag.getList(SETTLEMENT_IDS, Tag.TAG_COMPOUND)),
+                tag.getInt(REGIONAL_INFLUENCE_SCORE),
+                tag.getString(HISTORICAL_NOTES)
+        );
+    }
+
+    private static CompoundTag saveDistributionTerritory(DistributionTerritory territory) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, territory.id().value());
+        tag.putString(DISPLAY_NAME, territory.displayName());
+        tag.putString(TRADE_REGION_ID, territory.tradeRegionId().value());
+        tag.put(COVERED_SETTLEMENTS, saveStringIds(territory.coveredSettlementIds()));
+        tag.put(PRIMARY_BUSINESSES, saveBusinessIds(territory.primaryBusinessIds()));
+        tag.put(DOMINANT_MANUFACTURERS, saveStringIds(territory.dominantManufacturerIds()));
+        tag.putInt(DISTRIBUTION_IMPORTANCE, territory.distributionImportance());
+        tag.putInt(REGIONAL_INFLUENCE_SCORE, territory.regionalInfluenceScore());
+        tag.putString(HISTORICAL_NOTES, territory.historicalNotes());
+        return tag;
+    }
+
+    private static DistributionTerritory loadDistributionTerritory(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, TRADE_REGION_ID, Tag.TAG_STRING);
+        require(tag, COVERED_SETTLEMENTS, Tag.TAG_LIST);
+        require(tag, PRIMARY_BUSINESSES, Tag.TAG_LIST);
+        require(tag, DOMINANT_MANUFACTURERS, Tag.TAG_LIST);
+        require(tag, DISTRIBUTION_IMPORTANCE, Tag.TAG_INT);
+        require(tag, REGIONAL_INFLUENCE_SCORE, Tag.TAG_INT);
+        require(tag, HISTORICAL_NOTES, Tag.TAG_STRING);
+        return new DistributionTerritory(
+                new DistributionTerritoryId(tag.getString(ID)),
+                tag.getString(DISPLAY_NAME),
+                new TradeRegionId(tag.getString(TRADE_REGION_ID)),
+                loadStringIds(tag.getList(COVERED_SETTLEMENTS, Tag.TAG_COMPOUND)),
+                loadBusinessIds(tag.getList(PRIMARY_BUSINESSES, Tag.TAG_COMPOUND)),
+                loadStringIds(tag.getList(DOMINANT_MANUFACTURERS, Tag.TAG_COMPOUND)),
+                tag.getInt(DISTRIBUTION_IMPORTANCE),
+                tag.getInt(REGIONAL_INFLUENCE_SCORE),
+                tag.getString(HISTORICAL_NOTES)
+        );
+    }
+
+    private static CompoundTag saveDistributionRoute(DistributionRoute route) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, route.id().value());
+        tag.putString(DISPLAY_NAME, route.displayName());
+        tag.putString(ORIGIN_SETTLEMENT_ID, route.originSettlementId());
+        tag.putString(DESTINATION_SETTLEMENT_ID, route.destinationSettlementId());
+        tag.put(PRIMARY_BUSINESSES, saveBusinessIds(route.primaryBusinessIds()));
+        tag.put(PRODUCT_CATEGORIES, saveProductCategories(route.productCategories()));
+        tag.putInt(ROUTE_IMPORTANCE, route.routeImportance());
+        tag.putString(HISTORICAL_NOTES, route.historicalNotes());
+        return tag;
+    }
+
+    private static DistributionRoute loadDistributionRoute(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, ORIGIN_SETTLEMENT_ID, Tag.TAG_STRING);
+        require(tag, DESTINATION_SETTLEMENT_ID, Tag.TAG_STRING);
+        require(tag, PRIMARY_BUSINESSES, Tag.TAG_LIST);
+        require(tag, PRODUCT_CATEGORIES, Tag.TAG_LIST);
+        require(tag, ROUTE_IMPORTANCE, Tag.TAG_INT);
+        require(tag, HISTORICAL_NOTES, Tag.TAG_STRING);
+        return new DistributionRoute(
+                new DistributionRouteId(tag.getString(ID)),
+                tag.getString(DISPLAY_NAME),
+                tag.getString(ORIGIN_SETTLEMENT_ID),
+                tag.getString(DESTINATION_SETTLEMENT_ID),
+                loadBusinessIds(tag.getList(PRIMARY_BUSINESSES, Tag.TAG_COMPOUND)),
+                loadProductCategories(tag.getList(PRODUCT_CATEGORIES, Tag.TAG_COMPOUND)),
+                tag.getInt(ROUTE_IMPORTANCE),
+                tag.getString(HISTORICAL_NOTES)
+        );
+    }
+
+    private static CompoundTag saveSupplyRelationship(SupplyRelationship relationship) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, relationship.id().value());
+        tag.putString(SUPPLIER_BUSINESS_ID, relationship.supplierBusinessId().value());
+        tag.putString(CUSTOMER_BUSINESS_ID, relationship.customerBusinessId().value());
+        tag.putString(RELATIONSHIP_TYPE, relationship.relationshipType().serializedName());
+        tag.putString(PREFERRED_MANUFACTURER_ID, relationship.preferredManufacturerId());
+        tag.put(PRODUCT_CATEGORIES, saveProductCategories(relationship.productCategories()));
+        tag.putInt(START_YEAR, relationship.historicalStartYear());
+        relationship.historicalEndYear().ifPresent(endYear -> tag.putInt(END_YEAR, endYear));
+        tag.putString(RELATIONSHIP_STRENGTH, relationship.relationshipStrength().serializedName());
+        tag.putString(TERRITORY_ID, relationship.territoryId().value());
+        tag.putString(HISTORICAL_NOTES, relationship.historicalNotes());
+        return tag;
+    }
+
+    private static SupplyRelationship loadSupplyRelationship(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, SUPPLIER_BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, CUSTOMER_BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, RELATIONSHIP_TYPE, Tag.TAG_STRING);
+        require(tag, PREFERRED_MANUFACTURER_ID, Tag.TAG_STRING);
+        require(tag, PRODUCT_CATEGORIES, Tag.TAG_LIST);
+        require(tag, START_YEAR, Tag.TAG_INT);
+        require(tag, RELATIONSHIP_STRENGTH, Tag.TAG_STRING);
+        require(tag, TERRITORY_ID, Tag.TAG_STRING);
+        require(tag, HISTORICAL_NOTES, Tag.TAG_STRING);
+        return new SupplyRelationship(
+                new SupplyRelationshipId(tag.getString(ID)),
+                new BusinessId(tag.getString(SUPPLIER_BUSINESS_ID)),
+                new BusinessId(tag.getString(CUSTOMER_BUSINESS_ID)),
+                SupplyRelationshipType.fromSerializedName(tag.getString(RELATIONSHIP_TYPE)),
+                tag.getString(PREFERRED_MANUFACTURER_ID),
+                loadProductCategories(tag.getList(PRODUCT_CATEGORIES, Tag.TAG_COMPOUND)),
+                tag.getInt(START_YEAR),
+                tag.contains(END_YEAR, Tag.TAG_INT) ? OptionalInt.of(tag.getInt(END_YEAR)) : OptionalInt.empty(),
+                RelationshipStrength.fromSerializedName(tag.getString(RELATIONSHIP_STRENGTH)),
+                new DistributionTerritoryId(tag.getString(TERRITORY_ID)),
+                tag.getString(HISTORICAL_NOTES)
+        );
+    }
+
+    private static CompoundTag saveSupplyContract(SupplyContract contract) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(ID, contract.id().value());
+        tag.putString(RELATIONSHIP_ID, contract.relationshipId().value());
+        tag.putInt(START_YEAR, contract.startYear());
+        contract.endYear().ifPresent(endYear -> tag.putInt(END_YEAR, endYear));
+        tag.putString(RECORDED_STRENGTH, contract.recordedStrength().serializedName());
+        tag.putString(TERMS_SUMMARY, contract.termsSummary());
+        return tag;
+    }
+
+    private static SupplyContract loadSupplyContract(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, RELATIONSHIP_ID, Tag.TAG_STRING);
+        require(tag, START_YEAR, Tag.TAG_INT);
+        require(tag, RECORDED_STRENGTH, Tag.TAG_STRING);
+        require(tag, TERMS_SUMMARY, Tag.TAG_STRING);
+        return new SupplyContract(
+                new SupplyContractId(tag.getString(ID)),
+                new SupplyRelationshipId(tag.getString(RELATIONSHIP_ID)),
+                tag.getInt(START_YEAR),
+                tag.contains(END_YEAR, Tag.TAG_INT) ? OptionalInt.of(tag.getInt(END_YEAR)) : OptionalInt.empty(),
+                RelationshipStrength.fromSerializedName(tag.getString(RECORDED_STRENGTH)),
+                tag.getString(TERMS_SUMMARY)
+        );
+    }
+
+    private static CompoundTag savePreferredSupplier(PreferredSupplier preferredSupplier) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(CUSTOMER_BUSINESS_ID, preferredSupplier.customerBusinessId().value());
+        tag.putString(SUPPLIER_BUSINESS_ID, preferredSupplier.supplierBusinessId().value());
+        tag.putString(RELATIONSHIP_ID, preferredSupplier.relationshipId().value());
+        tag.put(PRODUCT_CATEGORIES, saveProductCategories(preferredSupplier.productCategories()));
+        tag.putString(RELATIONSHIP_STRENGTH, preferredSupplier.relationshipStrength().serializedName());
+        tag.putString(NOTES, preferredSupplier.notes());
+        return tag;
+    }
+
+    private static PreferredSupplier loadPreferredSupplier(CompoundTag tag) {
+        require(tag, CUSTOMER_BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, SUPPLIER_BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, RELATIONSHIP_ID, Tag.TAG_STRING);
+        require(tag, PRODUCT_CATEGORIES, Tag.TAG_LIST);
+        require(tag, RELATIONSHIP_STRENGTH, Tag.TAG_STRING);
+        require(tag, NOTES, Tag.TAG_STRING);
+        return new PreferredSupplier(
+                new BusinessId(tag.getString(CUSTOMER_BUSINESS_ID)),
+                new BusinessId(tag.getString(SUPPLIER_BUSINESS_ID)),
+                new SupplyRelationshipId(tag.getString(RELATIONSHIP_ID)),
+                loadProductCategories(tag.getList(PRODUCT_CATEGORIES, Tag.TAG_COMPOUND)),
+                RelationshipStrength.fromSerializedName(tag.getString(RELATIONSHIP_STRENGTH)),
+                tag.getString(NOTES)
+        );
+    }
+
+    private static CompoundTag savePreferredManufacturer(PreferredManufacturer preferredManufacturer) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(BUSINESS_ID, preferredManufacturer.businessId().value());
+        tag.putString(MANUFACTURER_ID, preferredManufacturer.manufacturerId());
+        tag.put(PRODUCT_CATEGORIES, saveProductCategories(preferredManufacturer.productCategories()));
+        tag.putString(NOTES, preferredManufacturer.notes());
+        return tag;
+    }
+
+    private static PreferredManufacturer loadPreferredManufacturer(CompoundTag tag) {
+        require(tag, BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, MANUFACTURER_ID, Tag.TAG_STRING);
+        require(tag, PRODUCT_CATEGORIES, Tag.TAG_LIST);
+        require(tag, NOTES, Tag.TAG_STRING);
+        return new PreferredManufacturer(
+                new BusinessId(tag.getString(BUSINESS_ID)),
+                tag.getString(MANUFACTURER_ID),
+                loadProductCategories(tag.getList(PRODUCT_CATEGORIES, Tag.TAG_COMPOUND)),
+                tag.getString(NOTES)
+        );
+    }
+
+    private static CompoundTag saveBusinessSpecializationProfile(BusinessSpecializationProfile profile) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString(BUSINESS_ID, profile.businessId().value());
+        tag.put(SPECIALIZATIONS, saveBusinessSpecializations(profile.specializations()));
+        tag.putString(NOTES, profile.notes());
+        return tag;
+    }
+
+    private static BusinessSpecializationProfile loadBusinessSpecializationProfile(CompoundTag tag) {
+        require(tag, BUSINESS_ID, Tag.TAG_STRING);
+        require(tag, SPECIALIZATIONS, Tag.TAG_LIST);
+        require(tag, NOTES, Tag.TAG_STRING);
+        return new BusinessSpecializationProfile(
+                new BusinessId(tag.getString(BUSINESS_ID)),
+                loadBusinessSpecializations(tag.getList(SPECIALIZATIONS, Tag.TAG_COMPOUND)),
+                tag.getString(NOTES)
+        );
+    }
+
+    private static List<TradeRegion> loadTradeRegions(ListTag tags) {
+        List<TradeRegion> tradeRegions = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            tradeRegions.add(loadTradeRegion(tags.getCompound(index)));
+        }
+        return tradeRegions;
+    }
+
+    private static List<DistributionTerritory> loadDistributionTerritories(ListTag tags) {
+        List<DistributionTerritory> territories = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            territories.add(loadDistributionTerritory(tags.getCompound(index)));
+        }
+        return territories;
+    }
+
+    private static List<DistributionRoute> loadDistributionRoutes(ListTag tags) {
+        List<DistributionRoute> routes = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            routes.add(loadDistributionRoute(tags.getCompound(index)));
+        }
+        return routes;
+    }
+
+    private static List<SupplyRelationship> loadSupplyRelationships(ListTag tags) {
+        List<SupplyRelationship> relationships = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            relationships.add(loadSupplyRelationship(tags.getCompound(index)));
+        }
+        return relationships;
+    }
+
+    private static List<SupplyContract> loadSupplyContracts(ListTag tags) {
+        List<SupplyContract> contracts = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            contracts.add(loadSupplyContract(tags.getCompound(index)));
+        }
+        return contracts;
+    }
+
+    private static List<PreferredSupplier> loadPreferredSuppliers(ListTag tags) {
+        List<PreferredSupplier> preferredSuppliers = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            preferredSuppliers.add(loadPreferredSupplier(tags.getCompound(index)));
+        }
+        return preferredSuppliers;
+    }
+
+    private static List<PreferredManufacturer> loadPreferredManufacturers(ListTag tags) {
+        List<PreferredManufacturer> preferredManufacturers = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            preferredManufacturers.add(loadPreferredManufacturer(tags.getCompound(index)));
+        }
+        return preferredManufacturers;
+    }
+
+    private static List<BusinessSpecializationProfile> loadBusinessSpecializationProfiles(ListTag tags) {
+        List<BusinessSpecializationProfile> profiles = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            profiles.add(loadBusinessSpecializationProfile(tags.getCompound(index)));
+        }
+        return profiles;
+    }
+
+    private static ListTag saveBusinessIds(List<BusinessId> ids) {
+        ListTag tags = new ListTag();
+        for (BusinessId id : ids) {
+            CompoundTag tag = new CompoundTag();
+            tag.putString(BUSINESS_ID, id.value());
+            tags.add(tag);
+        }
+        return tags;
+    }
+
+    private static List<BusinessId> loadBusinessIds(ListTag tags) {
+        List<BusinessId> ids = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            CompoundTag tag = tags.getCompound(index);
+            require(tag, BUSINESS_ID, Tag.TAG_STRING);
+            ids.add(new BusinessId(tag.getString(BUSINESS_ID)));
+        }
+        return ids;
+    }
+
+    private static ListTag saveProductCategories(List<ProductCategory> productCategories) {
+        ListTag tags = new ListTag();
+        for (ProductCategory productCategory : productCategories) {
+            CompoundTag tag = new CompoundTag();
+            tag.putString(PRODUCT_CATEGORY, productCategory.serializedName());
+            tags.add(tag);
+        }
+        return tags;
+    }
+
+    private static List<ProductCategory> loadProductCategories(ListTag tags) {
+        List<ProductCategory> productCategories = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            CompoundTag tag = tags.getCompound(index);
+            require(tag, PRODUCT_CATEGORY, Tag.TAG_STRING);
+            productCategories.add(ProductCategory.fromSerializedName(tag.getString(PRODUCT_CATEGORY)));
+        }
+        return productCategories;
+    }
+
+    private static ListTag saveBusinessSpecializations(List<BusinessSpecialization> specializations) {
+        ListTag tags = new ListTag();
+        for (BusinessSpecialization specialization : specializations) {
+            CompoundTag tag = new CompoundTag();
+            tag.putString(SPECIALIZATION, specialization.serializedName());
+            tags.add(tag);
+        }
+        return tags;
+    }
+
+    private static List<BusinessSpecialization> loadBusinessSpecializations(ListTag tags) {
+        List<BusinessSpecialization> specializations = new ArrayList<>();
+        for (int index = 0; index < tags.size(); index++) {
+            CompoundTag tag = tags.getCompound(index);
+            require(tag, SPECIALIZATION, Tag.TAG_STRING);
+            specializations.add(BusinessSpecialization.fromSerializedName(tag.getString(SPECIALIZATION)));
+        }
+        return specializations;
     }
 
     private static List<Settlement> settlementsFrom(List<County> counties) {
