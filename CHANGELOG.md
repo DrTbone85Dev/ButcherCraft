@@ -1,5 +1,57 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 12 - Workforce Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.workforce` foundation for business workforce definitions.
+- Added immutable workforce definitions, positions, shift assignments, staffing rules, position types, skill levels, certification types, and stable workforce ids.
+- Added deterministic workforce defaults for existing businesses based on Business Runtime shift structure.
+- Added `WorkforceRegistry`, `WorkforceManager`, and schema-versioned `WorkforceStorage`.
+- Added independent JSON persistence at `<world>/butchercraft/workforce_definitions.json`.
+- Registered `WorkforceService` for server lifecycle loading and save flushing.
+
+### Stability
+
+- Added validation for duplicate definition ids, duplicate position ids, unknown businesses, invalid shifts, invalid position references, invalid skill levels, invalid certifications, invalid staffing rules, required positions with zero staffing, corrupt persistence, and unsupported schema versions.
+- Added stress coverage for 10,000 businesses with multiple workforce definitions each.
+- Kept employees, villagers, AI, hiring, firing, payroll, production, machines, inventory, economy, inspections, reputation, productivity, gameplay, GUI, and networking out of scope.
+
+## ButcherCraft v0.9.0-alpha.1 Phase 11 - Business Operations Framework
+
+### Core
+
+- Added the `com.butchercraft.world.business.runtime` foundation for mutable business runtime state separate from immutable Business Identity.
+- Added business operational status, business hours, shift schedules, workforce capacity, active workforce, maintenance state, and schema-versioned runtime state records.
+- Added a deterministic `BusinessRuntimeRegistry` and `BusinessRuntimeManager` for lookup, validation, opening, closing, maintenance, suspension, and schedule evaluation.
+- Added `BusinessEventListener` integration with daily and weekly Simulation Clock rollover events.
+- Added independent JSON persistence at `<world>/butchercraft/business_runtime.json`.
+- Registered server lifecycle integration for runtime load, event subscription, save flushing, and listener cleanup.
+
+### Stability
+
+- Added validation for duplicate business runtime ids, unknown business references, invalid statuses, invalid hours, invalid shifts, negative workforce values, inconsistent open/closed state, corrupt persistence, and unsupported runtime schema versions.
+- Added stress coverage for 10,000 businesses across 365 simulated days with deterministic transitions and no duplicate state changes after the initial opening transition.
+- Kept employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, and gameplay effects out of scope.
+
+## ButcherCraft v0.9.0-alpha.1 Phase 10 - World Simulation Clock & Event Framework
+
+### Core
+
+- Added the deterministic `com.butchercraft.world.simulation` foundation for simulated world time.
+- Added configurable simulation timing through `SimulationConfiguration`, `SimulationTime`, and `SimulationCalendar`.
+- Added `SimulationClock` as the authoritative simulated-time owner with day, week, month, year, weekday, and season calculation.
+- Added `SimulationScheduler`, `ScheduledSimulationEvent`, `SimulationEventType`, `SimulationEventStatus`, and `SimulationEventBus`.
+- Added built-in rollover infrastructure events for daily, weekly, monthly, and yearly cycles.
+- Added independent JSON persistence at `<world>/butchercraft/simulation_state.json`.
+- Registered server lifecycle integration for server start, server tick advancement, and server stop flushing.
+
+### Stability
+
+- Added validation for negative time, invalid configuration values, invalid calendar values, duplicate event ids, non-pending scheduled events, events scheduled in the past, corrupt persistence, and unsupported simulation schema versions.
+- Added stress coverage for one million simulation ticks with deterministic event ordering and no duplicate execution.
+- Kept production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 9 - Player Identity Instantiation & Persistence
 
 ### Core

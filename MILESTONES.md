@@ -4,6 +4,129 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 12: Workforce Framework
+
+Goal: define the organizational staffing structure required for businesses to operate, without creating employees or gameplay behavior.
+
+Included work:
+
+- Pure workforce models: `WorkforceDefinition`, `WorkforceDefinitionId`, `WorkforcePosition`, `PositionId`, `WorkforcePositionType`, `WorkforceSkillLevel`, `CertificationType`, `WorkforceShiftAssignment`, and `WorkforceStaffingRule`.
+- `WorkforceRegistry` for deterministic definition loading, lookup by `BusinessId`, id uniqueness, and validation.
+- `WorkforceManager` for definition creation, validation, runtime lookup, and required-position lookup by current business runtime shift.
+- Deterministic default workforce definition creation for businesses using Business Runtime shift structure.
+- Schema-versioned `WorkforceStorage` at `<world>/butchercraft/workforce_definitions.json`.
+- `WorkforceService` registered for server start and stop lifecycle integration outside the pure workforce package.
+- Automated coverage for definition creation, lookup, immutability, duplicate positions, duplicate definitions, invalid business references, invalid shift references, invalid staffing rules, invalid enum values, persistence, schema rejection, malformed JSON rejection, dependency boundaries, lifecycle registration, and 10,000 businesses with multiple definitions each.
+
+Excluded work:
+
+- Employees, villagers, AI, hiring, firing, payroll, production, machines, inventory, economy, inspections, reputation, productivity, gameplay, GUI, and networking.
+
+Acceptance criteria:
+
+- Workforce definitions reference businesses by `BusinessId` and do not duplicate immutable business identity data.
+- Workforce definitions reference Business Runtime shifts and can resolve required positions for the current active shift.
+- Workforce persistence stores definitions only and never stores workers.
+- Workforce schema version 1 rejects unsupported future schemas until migrations are deliberately added.
+- The workforce package remains Minecraft-independent; only `com.butchercraft.world.WorkforceService` performs server lifecycle integration.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- A future server smoke check should confirm `<world>/butchercraft/workforce_definitions.json` is written on orderly shutdown. Phase 12 adds no visible gameplay or UI.
+
+Rollback considerations:
+
+- Phase 12 is additive around workforce definitions. Removing the workforce package, `WorkforceService`, lifecycle registration, tests, and documentation should restore Phase 11 business runtime behavior without changing World Identity, Player Identity, Simulation Clock, or Business Runtime schemas.
+
+## Milestone 0.9.0 Phase 11: Business Operations Framework
+
+Goal: establish mutable business runtime operations on top of immutable Business Identity so businesses can respond to the Simulation Clock without adding gameplay systems.
+
+Included work:
+
+- Pure runtime value objects for `BusinessRuntimeState`, `BusinessOperationalStatus`, `BusinessHours`, and `BusinessShift`.
+- `BusinessRuntimeRegistry` for deterministic lookup, storage, validation, and uniqueness.
+- `BusinessRuntimeManager` for explicit opening, closing, shift, maintenance, suspension, and schedule evaluation transitions.
+- `BusinessEventListener` subscribed to daily and weekly simulation rollover events.
+- Schema-versioned `BusinessRuntimeStorage` at `<world>/butchercraft/business_runtime.json`.
+- `BusinessRuntimeService` registered for server start and stop lifecycle integration outside the pure business runtime package.
+- Automated coverage for registry creation, lookup, persistence, schema rejection, malformed JSON rejection, hours, opening, closing, suspended businesses, shift transitions, event integration, deterministic ordering, dependency boundaries, and 10,000 businesses across 365 simulated days.
+
+Excluded work:
+
+- Employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, and gameplay effects.
+
+Acceptance criteria:
+
+- Business Identity remains immutable.
+- Business Runtime State references immutable businesses by `BusinessId` and does not duplicate business identity data.
+- Runtime state persists separately from World Identity, Player Identity, and Simulation Clock state.
+- Business runtime schema version 1 rejects unsupported future schemas until migrations are deliberately added.
+- The business runtime package remains Minecraft-independent; only `com.butchercraft.world.BusinessRuntimeService` performs server lifecycle integration.
+- Daily and weekly rollover events can drive deterministic runtime evaluation.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- A future server smoke check should confirm `<world>/butchercraft/business_runtime.json` is written on orderly shutdown. Phase 11 adds no visible gameplay or UI.
+
+Rollback considerations:
+
+- Phase 11 is additive around business runtime state. Removing the runtime package, `BusinessRuntimeService`, lifecycle registration, tests, and documentation should restore Phase 10 simulation-clock behavior without changing World Identity, Player Identity, or Simulation Clock schemas.
+
+## Milestone 0.9.0 Phase 10: World Simulation Clock & Event Framework
+
+Goal: establish the single authoritative ButcherCraft simulation clock and event framework so future gameplay systems schedule work through shared simulated world time instead of independent timers.
+
+Included work:
+
+- Pure simulation value objects: `SimulationConfiguration`, `SimulationTime`, `SimulationCalendar`, and `Season`.
+- `SimulationClock` for authoritative simulated-time advancement and calendar exposure.
+- `SimulationScheduler` for deterministic pending event scheduling, cancellation, and due-event ordering.
+- `ScheduledSimulationEvent`, `SimulationEventType`, `SimulationEventStatus`, `SimulationEventBus`, and listener support.
+- Built-in infrastructure event types for daily, weekly, monthly, and yearly rollovers.
+- Schema-versioned `SimulationState` and `SimulationStateStorage` at `<world>/butchercraft/simulation_state.json`.
+- `SimulationClockService` registered for server start, server tick advancement, and server stop save flushing.
+- Automated coverage for clock advancement, deterministic progression, calendar rollovers, scheduler ordering, cancellation, simultaneous events, persistence, schema rejection, dependency boundaries, and one million simulation ticks.
+
+Excluded work:
+
+- Production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, gameplay events, gameplay effects, and user-facing controls.
+
+Acceptance criteria:
+
+- There is one active simulation clock per running server.
+- Minecraft server ticks advance ButcherCraft simulated time, but Minecraft time-of-day is not treated as business simulation time.
+- Simulated calendar values derive from configuration, not scattered constants.
+- Rollover events publish through the event bus; the clock does not directly call gameplay systems.
+- Simulation state persists separately from World Identity and Player Identity data.
+- Simulation schema version 1 rejects unsupported future schemas until migrations are deliberately added.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- A future server smoke check should confirm `<world>/butchercraft/simulation_state.json` is written on orderly shutdown. Phase 10 adds no visible gameplay or UI.
+
+Rollback considerations:
+
+- Phase 10 is additive around simulation time. Removing the simulation package, lifecycle registration, tests, and documentation should restore Phase 9 runtime player identity behavior without changing World Identity or Player Identity schemas.
+
 ## Milestone 0.9.0 Phase 9: Player Identity Instantiation & Persistence
 
 Goal: create persistent runtime ButcherCraft identities for Minecraft players joining a world while preserving immutable World Identity as a separate snapshot.

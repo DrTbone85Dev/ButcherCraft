@@ -956,6 +956,57 @@ Consequences:
 - Player login creates a runtime identity once, then reuses the persisted record on later joins.
 - No economy, production, machines, inventory, employees, NPC AI, contracts, progression, skills, money, orders, reputation changes, business simulation, rendering, UI, commands, or gameplay effects are introduced.
 
+## DEC-0063: ButcherCraft Simulation Time Is Not Minecraft Time-Of-Day
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 10 introduces `SimulationClock` as the authoritative source of ButcherCraft simulated world time. Minecraft server ticks provide execution cadence, but business simulation time is represented by configurable simulation ticks, minutes, hours, days, weeks, months, years, weekdays, and seasons. Future systems must schedule work through `SimulationScheduler` and observe events through `SimulationEventBus` rather than implementing independent timing models.
+
+Rationale: production, employees, inspections, deliveries, business hours, maintenance, refrigeration, economy, and reputation all need shared deterministic time. Keeping simulated time separate from Minecraft time-of-day prevents client frame rate, rendering, sleep behavior, or unrelated Minecraft mechanics from becoming accidental business simulation rules.
+
+Consequences:
+
+- Simulation state persists independently at `<world>/butchercraft/simulation_state.json`.
+- World Identity remains schema version 6 and Player Identity remains schema version 1.
+- Simulation persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Built-in daily, weekly, monthly, and yearly rollover events are infrastructure events only.
+- The clock publishes events through `SimulationEventBus`; it does not directly invoke gameplay systems.
+- No production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, gameplay events, or gameplay effects are introduced.
+
+## DEC-0064: Business Runtime State Is Separate From Business Identity
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 11 introduces mutable business runtime state outside the immutable World Identity snapshot. Runtime records reference immutable businesses by `BusinessId`, store operational status, open/closed state, business hours, shift schedule, workforce capacity, active workforce, maintenance flag, last state-change simulation tick, and schema version, and persist independently at `<world>/butchercraft/business_runtime.json`.
+
+Rationale: future employees, production, inspections, deliveries, refrigeration, reputation, and economy systems need businesses that can change over simulated time. Keeping runtime state separate preserves generated business history while allowing server-authoritative operations to evolve without rewriting World Identity or duplicating business records.
+
+Consequences:
+
+- World Identity remains schema version 6 and does not store mutable business runtime state.
+- Business runtime persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Business runtime records store references to businesses rather than duplicating display names, ownership, properties, settlements, or historical summaries.
+- Business runtime subscribes to daily and weekly simulation rollover events and never owns a separate clock.
+- The pure runtime package remains Minecraft-independent; only `com.butchercraft.world.BusinessRuntimeService` performs server lifecycle integration.
+- No employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, or gameplay effects are introduced.
+
+## DEC-0065: Workforce Definitions Describe Jobs, Not Workers
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 12 introduces immutable workforce definitions outside Business Identity and Business Runtime. A workforce definition references one business by `BusinessId`, stores positions, shift assignments, staffing rules, skill levels, certification requirements, and schema version, and persists independently at `<world>/butchercraft/workforce_definitions.json`.
+
+Rationale: future employees, AI, scheduling, production, payroll, and automation need a stable organizational structure before any worker identity exists. Keeping workforce definitions separate from employees prevents the framework from prematurely modeling people, payroll, productivity, or gameplay outcomes.
+
+Consequences:
+
+- World Identity remains schema version 6 and does not store workforce definitions.
+- Business Runtime remains schema version 1 and does not store position catalogs.
+- Workforce persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Workforce records store `BusinessId` and shift ids rather than duplicating business identity or runtime state.
+- Current Business Runtime shift ids can be used to resolve required positions, but no worker occupancy, hiring, payroll, production, AI, or gameplay effect is introduced.
+- The pure workforce package remains Minecraft-independent; only `com.butchercraft.world.WorkforceService` performs server lifecycle integration.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

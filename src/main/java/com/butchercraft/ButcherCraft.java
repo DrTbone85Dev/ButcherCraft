@@ -11,8 +11,11 @@ import com.butchercraft.registration.ModDataPackRegistries;
 import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
+import com.butchercraft.world.BusinessRuntimeService;
+import com.butchercraft.world.WorkforceService;
 import com.butchercraft.world.WorldIdentityService;
 import com.butchercraft.world.player.runtime.PlayerJoinInitializer;
+import com.butchercraft.world.simulation.SimulationClockService;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -45,6 +48,13 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(ContentDatapackReloadListener::register);
         NeoForge.EVENT_BUS.addListener(WorldIdentityService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(PlayerJoinInitializer.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(SimulationClockService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(SimulationClockService.INSTANCE::advance);
+        NeoForge.EVENT_BUS.addListener(SimulationClockService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(BusinessRuntimeService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(BusinessRuntimeService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(WorkforceService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(WorkforceService.INSTANCE::save);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }
