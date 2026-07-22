@@ -5,18 +5,18 @@ Status: approved owner identity
 ## Official Identity
 
 - Project name: ButcherCraft
-- Short description: A Minecraft meat-processing and business-management simulation where players grow from manual processing to staffed facilities with cleanliness, refrigeration, product quality, customer orders, and MCDA inspections.
+- Short description: A deterministic regional world simulation platform where industry modules, players, NPCs, and compatible mods participate in a shared economy; Meat Processing is the flagship implementation.
 - Mod ID: `butchercraft`
 - Java package: `com.butchercraft`
 - Asset namespace: `butchercraft`
 
-## Planned Expansions
+## Platform Identity
 
-- ButcherCraft Core
-- ButcherCraft Refrigeration
-- ButcherCraft Harvest & Fabrication
-- ButcherCraft Further Processing
-- ButcherCraft Commerce
+- ButcherCraft Core owns shared regional identity, simulation services, persistence foundations, and future economic contracts.
+- Meat Processing is the flagship industry module and preserves the established hands-on processing and business-management direction.
+- Future industry modules may include Agriculture, Dairy, Manufacturing, Forestry, Transportation, Retail, Restaurants, and Utilities.
+- Future compatibility modules may connect MineColonies, Create, Farmer's Delight, Immersive Engineering, and third-party industries through shared contracts.
+- Module names describe architectural responsibilities and do not by themselves commit to separate downloadable artifacts.
 
 ## Versioning
 

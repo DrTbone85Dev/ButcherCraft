@@ -119,7 +119,7 @@ Update planning docs when behavior changes:
 - `PROJECT_VISION.md` for player-facing direction.
 - `GAMEPLAY_DESIGN.md` for system rules and interactions.
 - `TECHNICAL_ARCHITECTURE.md` for package ownership, persistence, APIs, networking, and performance.
-- `MODULE_PLAN.md` for expansion boundaries.
+- `MODULES.md` for active Core, industry, and compatibility boundaries; `MODULE_PLAN.md` preserves the historical Meat Processing expansion plan.
 - `MILESTONES.md` for delivery plan and verification.
 - `DECISIONS.md` for accepted or superseded architecture decisions.
 - `KNOWN_LIMITATIONS.md` for risks, prototypes, and unresolved issues.

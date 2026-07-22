@@ -1,8 +1,12 @@
 # ButcherCraft Architecture Review
 
-Status: pre-production design review  
-Reviewed documents: `AGENTS.md`, `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, `TECHNICAL_ARCHITECTURE.md`, `MODULE_PLAN.md`, `MILESTONES.md`, `DECISIONS.md`, `KNOWN_LIMITATIONS.md`  
+Status: preserved pre-production Meat Processing design review
+
+Reviewed documents: `AGENTS.md`, `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, `TECHNICAL_ARCHITECTURE.md`, `MODULE_PLAN.md`, `MILESTONES.md`, `DECISIONS.md`, `KNOWN_LIMITATIONS.md`
+
 Scope: architecture review only; no gameplay implementation
+
+This review remains historical rationale for the initial vertical slice. Phase 13 does not rewrite its findings; current platform direction is documented in `VISION.md`, `MODULES.md`, and `TECHNICAL_ARCHITECTURE.md`.
 
 ## Executive Summary
 

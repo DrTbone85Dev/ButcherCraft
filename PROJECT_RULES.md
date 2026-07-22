@@ -2,7 +2,18 @@
 
 Status: authoritative project invariants
 
-These rules are non-negotiable for ButcherCraft implementation work. They define project invariants, not command instructions.
+These rules are non-negotiable for ButcherCraft implementation work. They define project invariants, not command instructions. `CORE_PRINCIPLES.md` is the constitutional platform-level companion to these operational rules; neither document overrides the other.
+
+## Platform Principles
+
+- ButcherCraft Core is the shared deterministic regional simulation platform. Meat Processing is its flagship industry implementation, not the boundary of the platform.
+- Immutable world identity and historical records remain separate from mutable runtime state.
+- All future systems use the authoritative Simulation Clock and Event Framework instead of creating parallel time models.
+- Core, industry modules, and compatibility modules communicate through stable ids, immutable summaries, events, registries, and deliberately documented contracts.
+- Industry modules do not create parallel economies, world identities, business identities, or persistence foundations.
+- Compatibility modules translate external capabilities into shared contracts and preserve source-mod ownership.
+- Durable structures require schema versions and deliberate migration behavior.
+- Long-term compatibility is protected through stable ids, explicit versioning, deterministic migrations, and preservation of unresolved optional references where practical.
 
 ## Core Rules
 
@@ -17,9 +28,9 @@ These rules are non-negotiable for ButcherCraft implementation work. They define
    - Any randomness added later must be explicit, seeded where practical, testable, and documented.
 
 3. Minecraft-independent domain logic.
-   - Core business and processing rules must not depend on Minecraft or NeoForge classes.
-   - Minecraft integration may depend on the engine.
-   - The engine must never depend on Minecraft integration.
+   - Core world, simulation, business, workforce, economic, product, and processing rules must not depend on Minecraft or NeoForge classes.
+   - Minecraft integration may depend on pure domains.
+   - Pure domains must never depend on Minecraft integration.
 
 4. Realism serves gameplay.
    - Real-world processes should be modeled when they create meaningful player decisions.
@@ -42,7 +53,7 @@ These rules are non-negotiable for ButcherCraft implementation work. They define
    - Mutable state must have a clear owner and explicit transition rules.
 
 9. Server authority.
-   - Future gameplay changes involving inventory, money, product state, or progression must be validated and committed server-side.
+   - Future gameplay changes involving inventory, money, product state, ownership, production, employment, orders, markets, or progression must be validated and committed server-side.
 
 10. No speculative APIs.
     - Do not create broad public expansion APIs until a real consumer exists.

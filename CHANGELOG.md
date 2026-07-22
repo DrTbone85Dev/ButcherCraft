@@ -1,5 +1,19 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 13 - Core Platform Reorientation
+
+### Architecture
+
+- Redefined ButcherCraft Core as a deterministic regional world simulation engine with Meat Processing as its flagship industry implementation.
+- Added canonical platform vision, core principles, module boundaries, simulation model, future economy model, compatibility philosophy, era roadmap, and planned API overview.
+- Documented how industry and compatibility modules will participate in shared identity, simulation, persistence, and future economic contracts.
+- Reviewed the current package layout and recorded future migration criteria without renaming packages or introducing public APIs.
+
+### Compatibility
+
+- Preserved all existing architecture, historical milestones, save schemas, stable ids, content, and gameplay behavior.
+- Added no economy, production, employees, AI, logistics, markets, utilities, compatibility adapters, networking, or gameplay systems.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 12 - Workforce Framework
 
 ### Core

@@ -5,6 +5,45 @@ Target: Minecraft 1.21.1, NeoForge, Java 21
 
 This document records ButcherCraft's current architecture, planned system boundaries, and accepted technical constraints. Supporting design documents may expand individual systems, but this root file is the canonical Technical Architecture document.
 
+## Platform Orientation
+
+ButcherCraft Core is a deterministic regional world simulation engine. Industry modules participate in shared identity, time, business, workforce, persistence, and future economic services. Meat Processing is the flagship implementation and currently owns the developed product, transformation, packaging, workstation, and machine content.
+
+The player is a persistent participant in an existing world rather than the source of world generation. Immutable World Identity establishes regions, counties, settlements, manufacturers, properties, businesses, families, ownership, and historical supply relationships. Separate versioned runtime systems may change over simulated time without rewriting that identity.
+
+Phase 13 changes documentation and architectural direction only. It does not add economy, population, production scheduling, logistics, employees, AI, markets, utilities, gameplay, schemas, or persistence files.
+
+Canonical platform documents:
+
+- `VISION.md`: long-term living-world purpose and player experience.
+- `CORE_PRINCIPLES.md`: constitutional architecture principles.
+- `MODULES.md`: Core, industry, and compatibility responsibilities.
+- `SIMULATION_MODEL.md`: conceptual world-to-economy flow.
+- `ECONOMY_MODEL.md`: future economic vocabulary and boundaries.
+- `COMPATIBILITY.md`: future cross-mod integration philosophy.
+- `ROADMAP.md`: strategic development eras.
+- `docs/API_OVERVIEW.md`: planned extension concepts, not a stable API.
+
+## Core System Relationships
+
+```text
+Immutable World Identity
+  -> Runtime Player Identity
+  -> Business Runtime
+       -> Workforce Definitions
+
+Simulation Clock -> Scheduler -> Event Bus -> Focused runtime services
+
+Datapack resources
+  -> validated Product + Packaging + Transformation candidate registries
+  -> atomic ContentSnapshot activation
+  -> workstation resolution
+  -> evaluation and atomic transaction
+  -> server-owned inventory commit
+```
+
+The arrows represent references or event flow, not shared mutable ownership. Runtime records store stable identity ids. Services own their persistence and transitions. Minecraft lifecycle adapters initialize and save pure Java domains at the boundary.
+
 ## Version-Specific Ground Rules
 
 - Use NeoForge 1.21.1 APIs for the pinned MDK version.
@@ -18,7 +57,7 @@ This document records ButcherCraft's current architecture, planned system bounda
 - Keep client classes under a client package and register client-only screens/renderers only from client setup paths.
 - Do not use APIs from a different Minecraft or NeoForge version.
 
-## Proposed Identity
+## Project Identity
 
 - Mod display name: ButcherCraft.
 - Approved mod id: `butchercraft`.
@@ -67,6 +106,8 @@ The v0.8.0E presentation foundation does not introduce final textures, dynamic r
 
 Every major system has a proposed technical owner in package form:
 
+Packages that already exist describe current ownership. Entries for packages not yet present are future boundary recommendations and do not authorize implementation or establish a public API.
+
 | Package | Owner responsibility |
 | --- | --- |
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
@@ -75,11 +116,11 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, supply-reference serialization, datapack validation, and registry access. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
-| `com.butchercraft.api` | Documented public API intended for expansion mods. |
-| `com.butchercraft.api.product` | Product ids, product traits, quality/freshness API contracts. |
-| `com.butchercraft.api.processing` | Public process definitions and station interaction contracts. |
-| `com.butchercraft.api.refrigeration` | Cooling capability contracts and room summary types. |
-| `com.butchercraft.api.business` | Order, customer, and facility identity contracts exposed to expansions. |
+| `com.butchercraft.api` | Future documented public API after real module consumers validate contracts; not currently implemented or stable. |
+| `com.butchercraft.api.product` | Future product ids, traits, and quality/freshness contracts. |
+| `com.butchercraft.api.processing` | Future public process definitions and station interaction contracts. |
+| `com.butchercraft.api.refrigeration` | Future cooling capability contracts and room summary types. |
+| `com.butchercraft.api.business` | Future order, customer, and facility identity contracts. |
 | `com.butchercraft.product` | Minecraft-facing product data components, ItemStack adapters, product item fixtures, quality summaries, freshness and temperature services. |
 | `com.butchercraft.processing` | Manual stations, processing recipes, process state, yield results. |
 | `com.butchercraft.workstation` | Reusable server-side workstation state, operation resolution, inventory reservation, progress, failure reporting, and temporary development workstation fixtures. |
@@ -104,9 +145,28 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.data` | Data generation providers. |
 | `com.butchercraft.test` | Game tests or test-only helpers when the project adds test infrastructure. |
 
-Expansion mods should depend on the core mod and its documented `api` package, not on internal implementation packages.
+Future industry and compatibility modules should depend on the core mod and its documented `api` package once those contracts exist, not on internal implementation packages.
 
 Minecraft integration packages may depend on `com.butchercraft.engine`, `com.butchercraft.product.definition`, `com.butchercraft.packaging`, and `com.butchercraft.transformation`. Engine, product-definition, packaging, and transformation packages must not import Minecraft or NeoForge classes.
+
+### Package Boundary Review
+
+The current package layout already aligns with the platform direction and requires no Phase 13 refactor:
+
+- `com.butchercraft.world.identity`, `world.business`, `world.ownership`, `world.property`, `world.trade`, and `world.manufacturer` contain immutable or historical regional identity domains.
+- `com.butchercraft.world.player.runtime`, `world.simulation`, `world.business.runtime`, and `world.workforce` own separate runtime or organizational state with independent schemas.
+- `com.butchercraft.engine`, `transformation`, `product.definition`, `packaging.definition`, and their serialization models remain pure Java foundations.
+- `com.butchercraft.content` coordinates validated immutable content snapshots.
+- `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
+- `com.butchercraft.integration`, registration, menus, screens, ItemStack adapters, and top-level world services remain Minecraft or NeoForge boundaries.
+
+Future migration recommendations:
+
+- Do not rename existing packages merely to match module branding.
+- Wait for a real second industry before deciding which processing, product, transformation, or workstation types become public Core contracts.
+- Introduce focused population, economy, market, order, warehouse, transport, or utility packages only in milestones that implement those systems and define persistence ownership.
+- Keep first-party industry content out of a future public API package.
+- Promote only the smallest proven contracts to `com.butchercraft.api`, with compatibility tests and documented lifecycle rules.
 
 ## Pre-Implementation Boundary Decisions
 
@@ -554,6 +614,8 @@ No command should be claimed as tested unless it was actually run.
 
 ## Public API Documentation
 
+`docs/API_OVERVIEW.md` records the long-term API vocabulary. It is not a stable Java API, and no current internal package is a compatibility guarantee.
+
 Any package under `com.butchercraft.api` must include documentation for:
 
 - Stability expectations.
@@ -563,7 +625,13 @@ Any package under `com.butchercraft.api` must include documentation for:
 - Persistence expectations.
 - Versioning and migration behavior.
 
-Expansion mods must use public APIs, tags, datapack registries, or capabilities. They should not reach into core internal packages.
+Industry and compatibility modules must use public APIs, tags, datapack registries, capabilities, or events once those contracts exist. They should not reach into Core internal packages.
+
+## Future Expansion Philosophy
+
+Core owns shared regional identity, the authoritative simulation clock, persistence policy, and future cross-industry economic contracts. Industry modules own their products, equipment, transformations, operating rules, and presentation. Compatibility modules translate external systems into shared contracts without taking ownership of those systems.
+
+New industries must not create parallel clocks, markets, business identities, or save foundations. New APIs must follow a real consumer, not precede one. Existing Meat Processing systems remain internal unless a second implementation demonstrates that a boundary is genuinely generic.
 
 ## NeoForge Reference Links
 

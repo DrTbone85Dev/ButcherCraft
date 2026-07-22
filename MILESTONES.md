@@ -4,6 +4,51 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 13: Core Platform Reorientation
+
+Goal: establish ButcherCraft Core as a modular deterministic regional world simulation platform while preserving Meat Processing as the flagship implementation and adding no gameplay or economy system.
+
+Included work:
+
+- Canonical platform vision in `VISION.md`.
+- Constitutional architecture rules in `CORE_PRINCIPLES.md`, aligned with `PROJECT_RULES.md`.
+- Core, industry-module, and compatibility-module responsibilities in `MODULES.md`.
+- Conceptual regional flow in `SIMULATION_MODEL.md`.
+- Future-only economic vocabulary and boundaries in `ECONOMY_MODEL.md`.
+- Cross-mod integration philosophy in `COMPATIBILITY.md`.
+- Era-based strategic planning in `ROADMAP.md` while preserving this file's historical milestones.
+- Planned extension concepts in `docs/API_OVERVIEW.md` without adding a stable Java API.
+- Documentation-only review of current packages, persistence ownership, dependency direction, and future migration criteria.
+- Updates to project identity, architecture, decisions, limitations, release notes, and contributor entry points.
+
+Excluded work:
+
+- Employees, villagers, AI, economy, production scheduling, inventory systems, recipes, machines, GUI, networking, pathfinding, markets, pricing, transportation, warehousing, consumers, utilities, population simulation, compatibility adapters, and gameplay.
+
+Acceptance criteria:
+
+- ButcherCraft Core is documented as the shared regional simulation platform.
+- Meat Processing remains the flagship implementation and its historical design documents are preserved.
+- Core, industry, and compatibility responsibilities are explicit.
+- Existing immutable identity, mutable runtime, simulation, persistence, and Minecraft-adapter boundaries remain unchanged.
+- No package, public id, schema, save format, Java source, asset, datapack, test, or gameplay behavior changes.
+- Future economy and API documents clearly state that they are planning material only.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+- Documentation link and duplicate-file scan.
+
+Manual verification:
+
+- No client launch is required because Phase 13 changes documentation only.
+
+Rollback considerations:
+
+- Phase 13 has no runtime or persistence migration. Reverting its documentation would restore the Phase 12 wording without changing saves, registries, assets, or gameplay.
+
 ## Milestone 0.9.0 Phase 12: Workforce Framework
 
 Goal: define the organizational staffing structure required for businesses to operate, without creating employees or gameplay behavior.

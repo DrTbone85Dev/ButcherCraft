@@ -1,6 +1,8 @@
 # ButcherCraft Module Plan
 
-Status: proposed planning document
+Status: preserved historical Meat Processing expansion plan; superseded for active platform planning by `MODULES.md`
+
+This plan records the earlier strategy for organizing the Meat Processing feature family. Phase 13 preserves that rationale but moves active Core, industry, and compatibility responsibilities to `MODULES.md` and strategic sequencing to `ROADMAP.md`.
 
 ## Module Strategy
 
