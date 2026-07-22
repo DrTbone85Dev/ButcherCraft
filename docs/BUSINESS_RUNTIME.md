@@ -100,7 +100,9 @@ The runtime framework rejects:
 
 Future systems should integrate through the runtime manager and simulation event bus instead of mutating immutable business identity records.
 
-Planned consumers include employees, production scheduling, inspections, refrigeration, suppliers, commercial reputation, orders, and economy systems. Those systems are intentionally not implemented in Phase 11.
+The Workforce Framework consumes active shift ids from Business Runtime to determine which positions are required for a current shift. Planned later consumers include employees, production scheduling, inspections, refrigeration, suppliers, commercial reputation, orders, and economy systems.
+
+Those later systems are intentionally not implemented in Phase 11.
 
 ## Out Of Scope
 

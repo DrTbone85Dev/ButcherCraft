@@ -990,6 +990,23 @@ Consequences:
 - The pure runtime package remains Minecraft-independent; only `com.butchercraft.world.BusinessRuntimeService` performs server lifecycle integration.
 - No employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, or gameplay effects are introduced.
 
+## DEC-0065: Workforce Definitions Describe Jobs, Not Workers
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 12 introduces immutable workforce definitions outside Business Identity and Business Runtime. A workforce definition references one business by `BusinessId`, stores positions, shift assignments, staffing rules, skill levels, certification requirements, and schema version, and persists independently at `<world>/butchercraft/workforce_definitions.json`.
+
+Rationale: future employees, AI, scheduling, production, payroll, and automation need a stable organizational structure before any worker identity exists. Keeping workforce definitions separate from employees prevents the framework from prematurely modeling people, payroll, productivity, or gameplay outcomes.
+
+Consequences:
+
+- World Identity remains schema version 6 and does not store workforce definitions.
+- Business Runtime remains schema version 1 and does not store position catalogs.
+- Workforce persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Workforce records store `BusinessId` and shift ids rather than duplicating business identity or runtime state.
+- Current Business Runtime shift ids can be used to resolve required positions, but no worker occupancy, hiring, payroll, production, AI, or gameplay effect is introduced.
+- The pure workforce package remains Minecraft-independent; only `com.butchercraft.world.WorkforceService` performs server lifecycle integration.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

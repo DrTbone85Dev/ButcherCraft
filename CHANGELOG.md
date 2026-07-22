@@ -1,5 +1,22 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 12 - Workforce Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.workforce` foundation for business workforce definitions.
+- Added immutable workforce definitions, positions, shift assignments, staffing rules, position types, skill levels, certification types, and stable workforce ids.
+- Added deterministic workforce defaults for existing businesses based on Business Runtime shift structure.
+- Added `WorkforceRegistry`, `WorkforceManager`, and schema-versioned `WorkforceStorage`.
+- Added independent JSON persistence at `<world>/butchercraft/workforce_definitions.json`.
+- Registered `WorkforceService` for server lifecycle loading and save flushing.
+
+### Stability
+
+- Added validation for duplicate definition ids, duplicate position ids, unknown businesses, invalid shifts, invalid position references, invalid skill levels, invalid certifications, invalid staffing rules, required positions with zero staffing, corrupt persistence, and unsupported schema versions.
+- Added stress coverage for 10,000 businesses with multiple workforce definitions each.
+- Kept employees, villagers, AI, hiring, firing, payroll, production, machines, inventory, economy, inspections, reputation, productivity, gameplay, GUI, and networking out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 11 - Business Operations Framework
 
 ### Core
