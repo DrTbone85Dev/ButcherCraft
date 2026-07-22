@@ -31,7 +31,11 @@ public final class WorldIdentitySavedData extends SavedData {
     }
 
     public static WorldIdentitySavedData load(CompoundTag tag, HolderLookup.Provider registries) {
-        return new WorldIdentitySavedData(WorldIdentityNbtSerializer.load(tag));
+        WorldIdentitySavedData savedData = new WorldIdentitySavedData(WorldIdentityNbtSerializer.load(tag));
+        if (WorldIdentityNbtSerializer.requiresMigration(tag)) {
+            savedData.setDirty();
+        }
+        return savedData;
     }
 
     public static WorldIdentitySavedData generated(WorldIdentity identity) {

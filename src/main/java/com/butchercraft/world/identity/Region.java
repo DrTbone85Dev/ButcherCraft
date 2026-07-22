@@ -5,16 +5,20 @@ import java.util.Objects;
 public record Region(
         String id,
         String displayName,
+        String description,
         String agriculturalIdentity,
         String economicIdentity,
-        String namingConvention
+        String culturalIdentity,
+        String namingProfileId
 ) {
     public Region {
         id = requireNonBlank(id, "id");
         displayName = requireNonBlank(displayName, "displayName");
+        description = requireNonBlank(description, "description");
         agriculturalIdentity = requireNonBlank(agriculturalIdentity, "agriculturalIdentity");
         economicIdentity = requireNonBlank(economicIdentity, "economicIdentity");
-        namingConvention = requireNonBlank(namingConvention, "namingConvention");
+        culturalIdentity = requireNonBlank(culturalIdentity, "culturalIdentity");
+        namingProfileId = requireNonBlank(namingProfileId, "namingProfileId");
     }
 
     private static String requireNonBlank(String value, String fieldName) {

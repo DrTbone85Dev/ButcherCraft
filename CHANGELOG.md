@@ -1,5 +1,36 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 3 - Manufacturer Foundation
+
+### Core
+
+- Added immutable manufacturer domain models for manufacturers, categories, market tiers, headquarters, branding, and engineering philosophies.
+- Added a canonical built-in manufacturer catalog containing 30 handcrafted fictional companies.
+- Added an immutable `ManufacturerRegistry` with deterministic ordering and lookup by id, category, tier, region, and search text.
+- Integrated manufacturer headquarters with the existing handcrafted World Identity regions.
+
+### Stability
+
+- Added validation for duplicate ids, duplicate names, duplicate slogans, invalid headquarters regions, missing categories, missing branding, invalid founding years, empty histories, empty specialties, and missing engineering philosophies.
+- Added regression coverage for catalog integrity, regional distribution, lookup behavior, deterministic ordering, validation failures, future placeholder fields, immutability, and Minecraft dependency boundaries.
+- Kept gameplay, economy, purchasing, villagers, recipes, machines, UI, commands, player interaction, progression, and commercial properties out of scope.
+
+## ButcherCraft v0.9.0-alpha.1 - World Identity Regions And Naming
+
+### Core
+
+- Added a canonical handcrafted region catalog for Prairie Commonwealth, Iron Valley, Great River Basin, High Plains Territory, and Timber Ridge.
+- Added immutable region definitions, naming profiles, naming roles, and deterministic name selection infrastructure.
+- Updated world identity generation to select regions from the catalog and generate county and settlement names from region-specific curated name pools.
+- Updated the world identity persistence schema to version 2 with region description, cultural identity, and naming profile id fields.
+- Updated development version metadata to `0.9.0-alpha.1`.
+
+### Stability
+
+- Added a deliberate migration path for Phase 1 development world identity saves.
+- Added validation for duplicate region ids, missing region definitions, unsupported naming profiles, malformed naming data, blank generated names, and duplicate generated names.
+- Kept manufacturers, commercial properties, economy systems, interfaces, commands, and other player-facing gameplay out of scope.
+
 ## ButcherCraft v0.9.0 Phase 1 - World Identity Foundation
 
 ### Core

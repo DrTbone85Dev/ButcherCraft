@@ -820,6 +820,41 @@ Consequences:
 - World Identity loading is server-side and passive; no commands, GUI, economy, manufacturers, commercial properties, or player interactions are introduced in Phase 1.
 - Future schema migrations must preserve existing saved identities rather than regenerating them from the seed.
 
+## DEC-0055: Region And Naming Generation Uses Stable Catalog Identifiers
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 2 defines the first five handcrafted World Identity regions in a pure Java `RegionCatalog` and assigns each region a stable naming profile. Region selection and generated county or settlement names are derived from the world seed plus stable region, profile, role, and entity identifiers through ButcherCraft-owned hashing. The generator does not use a shared mutable random sequence.
+
+Rationale: future world identity systems need names that remain stable when individual entities are generated independently. Stable identifiers prevent unrelated code motion, helper calls, or generation order from renaming existing counties and settlements.
+
+Consequences:
+
+- Built-in regions are Prairie Commonwealth, Iron Valley, Great River Basin, High Plains Territory, and Timber Ridge.
+- Naming profiles use curated handcrafted name pools rather than uncontrolled syllable generation.
+- Region selection is scored by region id instead of list position, with deterministic ordering only as a tie-breaker.
+- County and settlement ids are based on stable generation slots, not selected display names.
+- World identity schema version 2 adds region description, cultural identity, and naming profile id fields.
+- Phase 1 development saves migrate into schema version 2 and are marked dirty so the upgraded snapshot can be persisted.
+- Road names, business names, manufacturer names, commercial properties, economy behavior, commands, and UI remain out of scope.
+
+## DEC-0056: Manufacturers Are Canonical World Identity Data Before Commerce
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 3 introduces manufacturers as immutable pure Java world identity domain data under a canonical `ManufacturerRegistry`. The built-in catalog contains exactly 30 handcrafted fictional companies with stable ids, regional headquarters, categories, market tiers, engineering philosophies, history, slogans, branding, specialties, reputation, and future catalog or website placeholders.
+
+Rationale: future equipment catalogs, manuals, advertisements, warranties, supplier relationships, service bulletins, trade shows, recalls, and industrial history need a stable manufacturer identity source before commerce or machine gameplay depends on company references. Building this as a validated registry avoids scattering manufacturer names across future systems.
+
+Consequences:
+
+- Manufacturer headquarters reference the existing handcrafted World Identity regions.
+- Manufacturer categories, market tiers, and engineering philosophies are strongly typed rather than free-form strings.
+- Registry ordering is deterministic by stable id and does not depend on source list order.
+- Validation rejects duplicate ids, names, slogans, unknown headquarters regions, incomplete identities, invalid founding years, empty histories, empty specialties, and missing branding.
+- The manufacturer package remains independent of Minecraft and NeoForge imports.
+- Equipment catalogs, purchasing, recipes, machines, UI, commands, economy, commercial properties, warranties, service records, supplier relationships, and gameplay effects remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

@@ -19,9 +19,13 @@ public final class WorldIdentityNbtSerializer {
     private static final String REGION = "region";
     private static final String COUNTIES = "counties";
     private static final String DISPLAY_NAME = "display_name";
+    private static final String DESCRIPTION = "description";
     private static final String AGRICULTURAL_IDENTITY = "agricultural_identity";
     private static final String ECONOMIC_IDENTITY = "economic_identity";
-    private static final String NAMING_CONVENTION = "naming_convention";
+    private static final String CULTURAL_IDENTITY = "cultural_identity";
+    private static final String NAMING_PROFILE_ID = "naming_profile_id";
+    private static final String LEGACY_NAMING_CONVENTION = "naming_convention";
+    private static final String LEGACY_PHASE_ONE_NAMING_PROFILE = "legacy_phase_1";
     private static final String REGION_ID = "region_id";
     private static final String SETTLEMENTS = "settlements";
     private static final String COUNTY_ID = "county_id";
@@ -47,9 +51,21 @@ public final class WorldIdentityNbtSerializer {
     public static WorldIdentity load(CompoundTag tag) {
         require(tag, SCHEMA_VERSION, Tag.TAG_INT);
         int schemaVersion = tag.getInt(SCHEMA_VERSION);
-        if (schemaVersion != WorldIdentity.CURRENT_SCHEMA_VERSION) {
-            throw new IllegalArgumentException("Unsupported world identity schema version: " + schemaVersion);
+        if (schemaVersion == WorldIdentity.CURRENT_SCHEMA_VERSION) {
+            return loadCurrent(tag, schemaVersion);
         }
+        if (schemaVersion == 1) {
+            return loadLegacyPhaseOne(tag);
+        }
+        throw new IllegalArgumentException("Unsupported world identity schema version: " + schemaVersion);
+    }
+
+    public static boolean requiresMigration(CompoundTag tag) {
+        require(tag, SCHEMA_VERSION, Tag.TAG_INT);
+        return tag.getInt(SCHEMA_VERSION) != WorldIdentity.CURRENT_SCHEMA_VERSION;
+    }
+
+    private static WorldIdentity loadCurrent(CompoundTag tag, int schemaVersion) {
         require(tag, ID, Tag.TAG_STRING);
         require(tag, WORLD_SEED, Tag.TAG_LONG);
         require(tag, REGION, Tag.TAG_COMPOUND);
@@ -63,28 +79,65 @@ public final class WorldIdentityNbtSerializer {
         );
     }
 
+    private static WorldIdentity loadLegacyPhaseOne(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, WORLD_SEED, Tag.TAG_LONG);
+        require(tag, REGION, Tag.TAG_COMPOUND);
+        require(tag, COUNTIES, Tag.TAG_LIST);
+        return new WorldIdentity(
+                WorldIdentity.CURRENT_SCHEMA_VERSION,
+                tag.getString(ID),
+                tag.getLong(WORLD_SEED),
+                loadLegacyPhaseOneRegion(tag.getCompound(REGION)),
+                loadCounties(tag.getList(COUNTIES, Tag.TAG_COMPOUND))
+        );
+    }
+
     private static CompoundTag saveRegion(Region region) {
         CompoundTag tag = new CompoundTag();
         tag.putString(ID, region.id());
         tag.putString(DISPLAY_NAME, region.displayName());
+        tag.putString(DESCRIPTION, region.description());
         tag.putString(AGRICULTURAL_IDENTITY, region.agriculturalIdentity());
         tag.putString(ECONOMIC_IDENTITY, region.economicIdentity());
-        tag.putString(NAMING_CONVENTION, region.namingConvention());
+        tag.putString(CULTURAL_IDENTITY, region.culturalIdentity());
+        tag.putString(NAMING_PROFILE_ID, region.namingProfileId());
         return tag;
     }
 
     private static Region loadRegion(CompoundTag tag) {
         require(tag, ID, Tag.TAG_STRING);
         require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, DESCRIPTION, Tag.TAG_STRING);
         require(tag, AGRICULTURAL_IDENTITY, Tag.TAG_STRING);
         require(tag, ECONOMIC_IDENTITY, Tag.TAG_STRING);
-        require(tag, NAMING_CONVENTION, Tag.TAG_STRING);
+        require(tag, CULTURAL_IDENTITY, Tag.TAG_STRING);
+        require(tag, NAMING_PROFILE_ID, Tag.TAG_STRING);
         return new Region(
                 tag.getString(ID),
                 tag.getString(DISPLAY_NAME),
+                tag.getString(DESCRIPTION),
                 tag.getString(AGRICULTURAL_IDENTITY),
                 tag.getString(ECONOMIC_IDENTITY),
-                tag.getString(NAMING_CONVENTION)
+                tag.getString(CULTURAL_IDENTITY),
+                tag.getString(NAMING_PROFILE_ID)
+        );
+    }
+
+    private static Region loadLegacyPhaseOneRegion(CompoundTag tag) {
+        require(tag, ID, Tag.TAG_STRING);
+        require(tag, DISPLAY_NAME, Tag.TAG_STRING);
+        require(tag, AGRICULTURAL_IDENTITY, Tag.TAG_STRING);
+        require(tag, ECONOMIC_IDENTITY, Tag.TAG_STRING);
+        require(tag, LEGACY_NAMING_CONVENTION, Tag.TAG_STRING);
+        return new Region(
+                tag.getString(ID),
+                tag.getString(DISPLAY_NAME),
+                "Legacy Phase 1 development region migrated to the version 2 world identity schema.",
+                tag.getString(AGRICULTURAL_IDENTITY),
+                tag.getString(ECONOMIC_IDENTITY),
+                tag.getString(LEGACY_NAMING_CONVENTION),
+                LEGACY_PHASE_ONE_NAMING_PROFILE
         );
     }
 

@@ -4,6 +4,88 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 3: Manufacturer Foundation
+
+Goal: establish the canonical manufacturer database for future catalogs, manuals, advertisements, warranties, service records, supplier relationships, trade shows, and industrial history without adding gameplay systems.
+
+Included work:
+
+- Immutable pure Java manufacturer domain models: `Manufacturer`, `ManufacturerCategory`, `ManufacturerTier`, `ManufacturerBranding`, `Headquarters`, and `EngineeringPhilosophy`.
+- Canonical `BuiltInManufacturerCatalog` with exactly 30 handcrafted fictional manufacturers.
+- Immutable `ManufacturerRegistry` with deterministic id ordering, id lookup, category lookup, tier lookup, region lookup, and simple future-facing search.
+- Manufacturer headquarters references to the five existing handcrafted World Identity regions.
+- Per-company founding year, history, slogan, brand colors, visual identity, specialties, reputation, website placeholder, and catalog description placeholder.
+- Validation for duplicate ids, duplicate names, duplicate slogans, invalid headquarters regions, missing categories, missing branding, invalid founding years, null engineering philosophies, empty histories, and empty specialties.
+- Automated coverage for catalog integrity, distribution, lookup behavior, deterministic ordering, validation failures, immutability, future placeholder fields, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Gameplay, economy, purchasing, villagers, recipes, machines, UI, commands, player interaction, progression systems, commercial properties, equipment catalogs, manuals, advertisements, warranties, service bulletins, trade shows, supplier relationships, recalls, company mergers, and historical timelines.
+
+Acceptance criteria:
+
+- Exactly 30 manufacturers exist.
+- Manufacturer ids, names, and slogans are unique.
+- Every manufacturer has valid regional headquarters, categories, tier, philosophy, branding, history, specialties, reputation, and future placeholders.
+- Registry ordering is deterministic and independent of catalog construction order.
+- Lookups by id, category, tier, and region are deterministic.
+- The manufacturer package remains independent of Minecraft and NeoForge imports.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Not required for Phase 3 because the manufacturer registry is pure Java and is not initialized by gameplay, startup registration, commands, screens, or datapacks.
+
+Rollback considerations:
+
+- The Phase 3 foundation is additive. Removing the manufacturer domain, built-in catalog, registry, tests, and documentation entry should restore the Phase 2 World Identity foundation without affecting products, transformations, packaging, workstations, or runtime registration.
+
+## Milestone 0.9.0 Phase 2: Regions And Naming
+
+Goal: replace placeholder region generation with handcrafted region definitions and deterministic region-aware naming infrastructure without adding player-facing gameplay.
+
+Included work:
+
+- Canonical pure Java `RegionCatalog` containing Prairie Commonwealth, Iron Valley, Great River Basin, High Plains Territory, and Timber Ridge.
+- Immutable `RegionDefinition`, `NamingProfile`, and `NamingRole` models for handcrafted regional identity and curated name pools.
+- Deterministic region selection from stable region ids and the world seed.
+- Deterministic county and settlement naming derived from the world seed plus stable region, profile, role, and entity ids.
+- World identity schema version 2 with region description, cultural identity, and naming profile id fields.
+- Development-schema migration for Phase 1 world identity saves.
+- Automated coverage for built-in region completeness, uniqueness, deterministic selection, broad seed coverage, name stability, generation-order independence, duplicate-name checks, catalog validation, serialization, and migration behavior.
+- Development version metadata set to `0.9.0-alpha.1`.
+
+Excluded work:
+
+- Manufacturers, commercial properties, economy simulation, interfaces, commands, GUI, road names, business names, property names, manufacturer names, and gameplay interactions.
+
+Acceptance criteria:
+
+- All five initial handcrafted regions exist and validate.
+- Region selection is deterministic and independent of catalog construction order.
+- County and settlement names are deterministic, nonblank, region-specific, and duplicate-free within a generated identity.
+- Phase 1 development saves load through an explicit migration path rather than being regenerated.
+- Existing workstation, product, packaging, and datapack gameplay remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Deferred unless runtime startup validation is needed. Phase 2 does not add player-facing World Identity interactions.
+
+Rollback considerations:
+
+- The Phase 2 foundation is additive around the Phase 1 world identity boundary. Removing the catalog, naming infrastructure, schema migration, tests, and version/docs updates should restore the Phase 1 development architecture.
+
 ## Milestone 0.9.0 Phase 1: World Identity Foundation
 
 Goal: establish the World Identity Engine foundation as deterministic world-level architecture without adding economy, commerce, manufacturers, or player-facing gameplay.
