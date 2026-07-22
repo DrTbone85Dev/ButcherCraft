@@ -906,6 +906,23 @@ Consequences:
 - Ownership categories, acquisition methods, and family reputations are strongly typed.
 - No NPCs, player families, inheritance gameplay, dialogue, marriage, children, AI, economy, payroll, lawsuits, politics, UI, commands, quests, active relationships, physical entities, or gameplay effects are introduced.
 
+## DEC-0060: Supply Chains Are Historical Relationships, Not Gameplay
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 7 introduces supply networks as immutable world identity records saved inside the existing World Identity snapshot. A supply network represents historical commercial relationships among businesses, manufacturers, trade territories, distribution routes, preferred suppliers, preferred manufacturers, and business specializations. Supply relationships reference businesses; they do not own inventory, prices, deliveries, or active purchasing behavior.
+
+Rationale: future purchasing, contracts, inventory, transportation, inspections, reputation, market pressure, recalls, and regional pricing need a stable commercial ecosystem before gameplay systems depend on suppliers. Keeping the supply network separate from commercial properties, businesses, and ownership entities preserves the core identity model: locations are places, businesses are organizations, ownership entities control organizations, and supply networks describe relationships among them.
+
+Consequences:
+
+- World Identity schema version 6 stores the supply network alongside regions, counties, settlements, commercial properties, businesses, and ownership records.
+- Phase 1 through Phase 5 development saves migrate by preserving existing identity data and generating supply network records from the saved world seed and preserved business or ownership snapshot.
+- Supply network generation uses stable business ids, settlement ids, region ids, manufacturer ids, and deterministic salts rather than mutable random streams or registry order.
+- `TradeNetworkRegistry` validates business references, manufacturer references, territory references, product categories, chronology, duplicate ids, duplicate relationships, missing contracts, missing preferred-supplier records, orphaned territories, orphaned trade regions, and specialization coverage.
+- Supply relationship categories, product categories, business specializations, and relationship strengths are strongly typed.
+- No economy, pricing, money, inventory, purchasing, transportation simulation, trucking, vehicles, pathfinding, AI, NPC behavior, player interaction, UI, commands, recipes, machine behavior, shortages, recalls, seasonal variation, or dynamic markets are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

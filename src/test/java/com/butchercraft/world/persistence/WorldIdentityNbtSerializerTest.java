@@ -27,6 +27,7 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(identity.historicalPersons(), restored.historicalPersons());
         assertEquals(identity.ownershipEntities(), restored.ownershipEntities());
         assertEquals(identity.ownershipHistories(), restored.ownershipHistories());
+        assertEquals(identity.supplyNetwork(), restored.supplyNetwork());
     }
 
     @Test
@@ -55,7 +56,7 @@ class WorldIdentityNbtSerializerTest {
         assertEquals("legacy_world", migrated.id());
         assertEquals(987L, migrated.worldSeed());
         assertEquals("legacy_region", migrated.region().id());
-        assertEquals("Legacy Phase 1 development region migrated to the version 5 world identity schema.",
+        assertEquals("Legacy Phase 1 development region migrated to the version 6 world identity schema.",
                 migrated.region().description());
         assertEquals("Legacy naming", migrated.region().culturalIdentity());
         assertEquals("legacy_phase_1", migrated.region().namingProfileId());
@@ -67,6 +68,8 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(4, migrated.historicalPersons().size());
         assertEquals(4, migrated.ownershipEntities().size());
         assertEquals(4, migrated.ownershipHistories().size());
+        assertEquals(4, migrated.supplyNetwork().supplyRelationships().size());
+        assertEquals(1, migrated.supplyNetwork().distributionTerritories().size());
         assertEquals("legacy_settlement", migrated.commercialProperties().getFirst().settlementId());
         assertEquals("legacy_settlement", migrated.businesses().getFirst().primarySettlementId());
     }
@@ -90,6 +93,7 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(phaseTwoIdentity.historicalPersons(), migrated.historicalPersons());
         assertEquals(phaseTwoIdentity.ownershipEntities(), migrated.ownershipEntities());
         assertEquals(phaseTwoIdentity.ownershipHistories(), migrated.ownershipHistories());
+        assertEquals(phaseTwoIdentity.supplyNetwork(), migrated.supplyNetwork());
     }
 
     @Test
@@ -111,6 +115,7 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(phaseThreeIdentity.historicalPersons(), migrated.historicalPersons());
         assertEquals(phaseThreeIdentity.ownershipEntities(), migrated.ownershipEntities());
         assertEquals(phaseThreeIdentity.ownershipHistories(), migrated.ownershipHistories());
+        assertEquals(phaseThreeIdentity.supplyNetwork(), migrated.supplyNetwork());
     }
 
     @Test
@@ -135,6 +140,29 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(phaseFourIdentity.historicalPersons(), migrated.historicalPersons());
         assertEquals(phaseFourIdentity.ownershipEntities(), migrated.ownershipEntities());
         assertEquals(phaseFourIdentity.ownershipHistories(), migrated.ownershipHistories());
+        assertEquals(phaseFourIdentity.supplyNetwork(), migrated.supplyNetwork());
+    }
+
+    @Test
+    void legacyPhaseFiveWorldIdentityMigratesWithGeneratedSupplyNetwork() {
+        WorldIdentity phaseFiveIdentity = new WorldIdentityGenerator().generate(765L);
+        CompoundTag phaseFive = WorldIdentityNbtSerializer.save(phaseFiveIdentity);
+        phaseFive.putInt("schema_version", 5);
+        phaseFive.remove("supply_network");
+
+        WorldIdentity migrated = WorldIdentityNbtSerializer.load(phaseFive);
+
+        assertEquals(WorldIdentity.CURRENT_SCHEMA_VERSION, migrated.schemaVersion());
+        assertEquals(phaseFiveIdentity.id(), migrated.id());
+        assertEquals(phaseFiveIdentity.region(), migrated.region());
+        assertEquals(phaseFiveIdentity.counties(), migrated.counties());
+        assertEquals(phaseFiveIdentity.commercialProperties(), migrated.commercialProperties());
+        assertEquals(phaseFiveIdentity.businesses(), migrated.businesses());
+        assertEquals(phaseFiveIdentity.families(), migrated.families());
+        assertEquals(phaseFiveIdentity.historicalPersons(), migrated.historicalPersons());
+        assertEquals(phaseFiveIdentity.ownershipEntities(), migrated.ownershipEntities());
+        assertEquals(phaseFiveIdentity.ownershipHistories(), migrated.ownershipHistories());
+        assertEquals(phaseFiveIdentity.supplyNetwork(), migrated.supplyNetwork());
     }
 
     private static CompoundTag legacyPhaseOneTag() {

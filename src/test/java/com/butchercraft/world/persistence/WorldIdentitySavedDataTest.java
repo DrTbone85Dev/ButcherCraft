@@ -52,5 +52,6 @@ class WorldIdentitySavedDataTest {
         assertEquals(identity.historicalPersons(), restored.identity().historicalPersons());
         assertEquals(identity.ownershipEntities(), restored.identity().ownershipEntities());
         assertEquals(identity.ownershipHistories(), restored.identity().ownershipHistories());
+        assertEquals(identity.supplyNetwork(), restored.identity().supplyNetwork());
     }
 }

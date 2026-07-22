@@ -4,6 +4,48 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 7: Supply Chain & Trade Network Foundation
+
+Goal: establish permanent supply-chain and trade-network identity records that explain how businesses, manufacturers, territories, and commercial routes are historically connected without adding purchasing, pricing, inventory, logistics, UI, commands, or gameplay behavior.
+
+Included work:
+
+- Immutable pure Java trade domain models: `SupplyNetwork`, `SupplyNetworkId`, `SupplyRelationship`, `SupplyContract`, `DistributionRoute`, `DistributionTerritory`, `TradeRegion`, `PreferredSupplier`, `PreferredManufacturer`, `BusinessSpecializationProfile`, `BusinessSpecialization`, `ProductCategory`, and `TradeNetworkRegistry`.
+- Strongly typed supply relationship categories, product categories, business specializations, and relationship strengths.
+- Deterministic supply network generation from the saved world seed, region, settlements, businesses, manufacturers, and ownership histories.
+- Supply relationships that reference supplier and customer business ids while preserving the separation between commercial properties, businesses, ownership entities, and supply networks.
+- Immutable `TradeNetworkRegistry` validation and lookup by relationship id, business, manufacturer, settlement, product category, territory, and relationship type.
+- World Identity schema version 6 with supply network data saved in the existing world identity persistence format.
+- Development-schema migration from Phase 1 through Phase 5 identities by preserving saved identity data and generating the trade network from the saved seed and preserved business or ownership snapshot.
+- Automated coverage for deterministic generation, generation-order independence, relationship id stability, registry lookup, relationship integrity, validation failures, serialization, save/load persistence, schema migration, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Economy, pricing, money, inventory, purchasing, contracts as gameplay, transportation simulation, trucking, vehicles, pathfinding, AI, NPC behavior, player interaction, UI, commands, recipes, machine behavior, shortages, product recalls, seasonal variation, and dynamic markets.
+
+Acceptance criteria:
+
+- Generated World Identity snapshots include deterministic trade regions, distribution territories, distribution routes, supply relationships, archival contracts, preferred supplier records, preferred manufacturer records, and business specialization profiles.
+- Supply relationship ids, business references, manufacturer references, territory references, product categories, chronology, contracts, preferred-supplier records, and specialization coverage validate.
+- Supply network data persists through the existing World Identity save format.
+- Phase 1 through Phase 5 development saves migrate through a deliberate schema path rather than being regenerated wholesale.
+- The trade package remains independent of Minecraft and NeoForge imports.
+- Existing workstation, product, packaging, transformation, manufacturer, property, region, business, and ownership behavior remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- Runtime startup validation is recommended after persistence changes. Phase 7 does not add player-facing supply-chain interaction.
+
+Rollback considerations:
+
+- The Phase 7 foundation is additive around the World Identity snapshot. Removing the trade domain, generator, registry, schema migration, tests, and documentation entry should restore the Phase 6 family and ownership foundation without affecting products, transformations, packaging, workstations, manufacturers, properties, businesses, or registered gameplay content.
+
 ## Milestone 0.9.0 Phase 6: Family & Ownership Identity Foundation
 
 Goal: establish permanent family and ownership identity records that explain who built, owned, operated, inherited, sold, and merged businesses without making owners into businesses or commercial properties.
