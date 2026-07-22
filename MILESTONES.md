@@ -4,6 +4,48 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 9: Player Identity Instantiation & Persistence
+
+Goal: create persistent runtime ButcherCraft identities for Minecraft players joining a world while preserving immutable World Identity as a separate snapshot.
+
+Included work:
+
+- Immutable runtime player identity records containing Minecraft UUID, `PlayerIdentityId`, starting scenario id, career profile, settlement id, optional commercial property, business, ownership entity, and family references, deterministic creation timestamp, and player identity schema version.
+- `PlayerIdentityFactory` for deterministic first-time identity creation from world seed plus Minecraft UUID.
+- `PlayerIdentityRegistry` with immutable UUID and player-identity-id indexes.
+- `PlayerIdentityStorage` with schema-versioned JSON serialization under `<world>/butchercraft/player_identities.json`.
+- `PlayerIdentityManager` for synchronized lookup, first-join creation, validation coordination, and persistence.
+- `PlayerJoinInitializer` registered on server-side player login.
+- Automated coverage for deterministic creation, save/load, corruption rejection, unsupported schema rejection, duplicate rejection, missing-reference rejection, integration boundaries, and 100 simulated multiplayer joins.
+
+Excluded work:
+
+- Economy, production, machines, inventory, employees, NPC AI, contracts, progression, skills, money, orders, reputation changes, business simulation, rendering, UI, commands, networking beyond identity creation, and gameplay effects.
+
+Acceptance criteria:
+
+- First join creates exactly one identity for a Minecraft UUID in that world.
+- Later joins reuse the persisted identity and never recreate it.
+- Runtime identities persist separately from immutable World Identity.
+- World Identity remains schema version 6.
+- Player Identity persistence uses schema version 1 and rejects unsupported future schemas until migrations are deliberately implemented.
+- Player identity records store stable references only; they do not duplicate world identity data.
+- Runtime manager operations are synchronized so concurrent joins do not create duplicate identities.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- A future in-game smoke check should confirm a joining player creates `<world>/butchercraft/player_identities.json`. Phase 9 does not add visible gameplay or UI.
+
+Rollback considerations:
+
+- Phase 9 is additive around player identity persistence. Removing the runtime player package, login registration, tests, and documentation should restore Phase 8 behavior without changing World Identity saves.
+
 ## Milestone 0.9.0 Phase 8: Player Legacy Foundation
 
 Goal: establish permanent player legacy identity architecture so future gameplay can place the player into an already-existing world without making the player responsible for creating that world.

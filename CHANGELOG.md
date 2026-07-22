@@ -1,5 +1,23 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 9 - Player Identity Instantiation & Persistence
+
+### Core
+
+- Added runtime player identity records that map a Minecraft UUID to a stable ButcherCraft `PlayerIdentityId`, starting scenario, career profile, world settlement, optional property/business/ownership/family references, deterministic creation timestamp, and schema version.
+- Added an immutable runtime `PlayerIdentityRegistry` with UUID and identity-id indexes.
+- Added `PlayerIdentityFactory`, `PlayerIdentityManager`, `PlayerIdentityStorage`, and `PlayerJoinInitializer`.
+- Registered server-side player-login initialization so a player identity is created once on first join and reused on later joins.
+- Added independent JSON persistence at `<world>/butchercraft/player_identities.json`.
+- Preserved World Identity schema version 6; player identities are not stored inside the immutable World Identity snapshot.
+
+### Stability
+
+- Added validation for duplicate Minecraft UUIDs, duplicate player identity ids, invalid starting scenarios, invalid career profiles, missing settlements, missing commercial properties, missing businesses, missing ownership entities, missing families, corrupt persistence, and unsupported player identity schema versions.
+- Added deterministic creation tests proving the same world seed and UUID resolve to the same identity.
+- Added multiplayer simulation coverage for 100 player joins without identity collisions.
+- Kept economy, production, inventory, machines, employees, NPC AI, contracts, progression, skills, money, orders, reputation changes, business simulation, rendering, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 8 - Player Legacy Foundation
 
 ### Core

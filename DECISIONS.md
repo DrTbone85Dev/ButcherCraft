@@ -939,6 +939,23 @@ Consequences:
 - Player career profiles, starting scenario types, acquisition types, starting relationship types, and initial reputation categories are strongly typed.
 - No character creation, UI, networking, economy, inventory, machines, NPCs, quests, dialogue, commands, gameplay, progression systems, player save data generation, finances, equipment ownership, employees, customers, inspections, retirement, succession, or multi-generation gameplay is introduced.
 
+## DEC-0062: Runtime Player Identities Are Separate Mutable World Participants
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 9 introduces runtime player identity persistence outside the immutable World Identity snapshot. A player identity maps a Minecraft UUID to a stable ButcherCraft player identity id, starting scenario, career profile, settlement reference, optional property/business/ownership/family references, deterministic creation timestamp, and player identity schema version. The runtime player identity registry is loaded, validated, updated, and saved independently at `<world>/butchercraft/player_identities.json`.
+
+Rationale: players are mutable participants in the world, while World Identity is immutable generated history. Future gameplay systems need a persistent player anchor for business management, employees, production, economy, reputation, and progression without rewriting the generated world snapshot or making the player the source of world history.
+
+Consequences:
+
+- World Identity remains schema version 6 and does not store player identity records.
+- Player identity persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Player identity generation is deterministic from world seed plus Minecraft UUID.
+- Player identity records store references to settlements, properties, businesses, ownership entities, and families rather than duplicating the referenced world data.
+- Player login creates a runtime identity once, then reuses the persisted record on later joins.
+- No economy, production, machines, inventory, employees, NPC AI, contracts, progression, skills, money, orders, reputation changes, business simulation, rendering, UI, commands, or gameplay effects are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

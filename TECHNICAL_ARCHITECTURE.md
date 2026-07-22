@@ -84,6 +84,9 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.processing` | Manual stations, processing recipes, process state, yield results. |
 | `com.butchercraft.workstation` | Reusable server-side workstation state, operation resolution, inventory reservation, progress, failure reporting, and temporary development workstation fixtures. |
 | `com.butchercraft.machine` | Grinder, Bandsaw, packaging station, base machine block entities, tick helpers. |
+| `com.butchercraft.world` | Minecraft-facing world identity service, immutable generated world snapshot access, and server lifecycle integration. |
+| `com.butchercraft.world.player` | Pure player legacy template domain, career profiles, starting scenarios, and scenario registry. |
+| `com.butchercraft.world.player.runtime` | Runtime player identity creation, immutable player identity registry, independent player identity persistence, and server-login initialization. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -122,6 +125,7 @@ Required boundaries:
 - The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Beef, pork, and bison grinding flows are selected through product/species/profile/operation definitions, not Grinder code branches.
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
 - The Packaging Table consumes the same workstation framework with only the `butchercraft:packaging` capability. Retail packaging output is selected through processing-operation and product packaging metadata, while supply requirements come from packaging definitions rather than table code branches.
+- World Identity remains an immutable generated snapshot. Runtime player identity records are stored separately at `<world>/butchercraft/player_identities.json` and reference world settlement, property, business, ownership, and family ids without embedding or mutating those world records.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
