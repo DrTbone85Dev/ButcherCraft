@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 6 - Family & Ownership Identity Foundation
+
+### Core
+
+- Added immutable family and ownership identity domain models for families, historical persons, ownership entities, ownership shares, ownership records, ownership histories, and family relationship placeholders.
+- Added deterministic ownership generation from the saved world seed, region, settlements, and business records.
+- Added immutable `FamilyRegistry` and `OwnershipRegistry` validation and lookup support.
+- Extended World Identity persistence to schema version 5 so family and ownership records are saved with the existing world identity snapshot.
+
+### Stability
+
+- Added migration from Phase 1 through Phase 4 development world identity schemas by preserving saved identity data and generating ownership records from the saved seed and business snapshot.
+- Added validation for duplicate ids, missing business references, missing family/person references, orphaned ownership entities, invalid shares, ownership totals above 100 percent, broken chronology, and incomplete typed fields.
+- Preserved the permanent separation between commercial properties, businesses, and ownership entities.
+- Kept NPCs, player families, inheritance gameplay, dialogue, marriage, children, AI, economy, payroll, lawsuits, politics, UI, commands, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 5 - Business Identity Foundation
 
 ### Core

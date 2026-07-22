@@ -33,10 +33,18 @@ class WorldIdentityModelTest {
         assertEquals(1, identity.counties().size());
         assertEquals(4, identity.commercialProperties().size());
         assertEquals(4, identity.businesses().size());
+        assertEquals(4, identity.families().size());
+        assertEquals(4, identity.historicalPersons().size());
+        assertEquals(4, identity.ownershipEntities().size());
+        assertEquals(4, identity.ownershipHistories().size());
         assertThrows(UnsupportedOperationException.class, () -> county.settlements().add(settlement));
         assertThrows(UnsupportedOperationException.class, () -> identity.counties().add(county));
         assertThrows(UnsupportedOperationException.class, () -> identity.commercialProperties().clear());
         assertThrows(UnsupportedOperationException.class, () -> identity.businesses().clear());
+        assertThrows(UnsupportedOperationException.class, () -> identity.families().clear());
+        assertThrows(UnsupportedOperationException.class, () -> identity.historicalPersons().clear());
+        assertThrows(UnsupportedOperationException.class, () -> identity.ownershipEntities().clear());
+        assertThrows(UnsupportedOperationException.class, () -> identity.ownershipHistories().clear());
     }
 
     @Test
@@ -50,7 +58,7 @@ class WorldIdentityModelTest {
         assertThrows(IllegalArgumentException.class, () -> new County("county", "County", "region", List.of(
                 new Settlement("settlement", "Settlement", "wrong_county", SettlementType.HAMLET)
         )));
-        assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(5, "world", 1L, region, List.of(county)));
+        assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(6, "world", 1L, region, List.of(county)));
         assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 "world",
@@ -84,6 +92,7 @@ class WorldIdentityModelTest {
 
         assertEquals(3, identity.businessesForSettlement(settlement.id()).size());
         assertEquals(1, identity.businessesForProperty(identity.businessesForSettlement(settlement.id()).getFirst().primaryPropertyId()).size());
+        assertEquals(1, identity.ownershipHistoriesForBusiness(identity.businessesForSettlement(settlement.id()).getFirst().id().value()).size());
     }
 
     private static Region region(String id) {

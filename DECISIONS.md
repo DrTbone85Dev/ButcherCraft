@@ -889,6 +889,23 @@ Consequences:
 - Business type, status, reputation, occupancy reason, ownership type, and relationship type are strongly typed.
 - No player-owned businesses, purchasing, economy, money, employees, NPC interaction, UI, commands, recipes, machine ownership, property purchasing, retail customers, progression, physical buildings, inspections, taxes, newspapers, or gameplay effects are introduced.
 
+## DEC-0059: Ownership Entities Control Businesses Without Becoming Businesses
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 6 introduces ownership entities, families, historical persons, ownership shares, and ownership histories as immutable world identity records saved inside the existing World Identity snapshot. An ownership entity represents the individual, family, partnership, cooperative, corporation, estate, or municipality that controls a business for a period of time. Ownership entities reference businesses, businesses reference commercial properties, and commercial properties remain independent physical locations.
+
+Rationale: future inheritance, wills, estate transfers, partnerships, business sales, succession, shareholder models, newspapers, inspections, finance, and legacy gameplay need stable owner identity before gameplay systems depend on business control. Keeping owners separate from businesses allows ownership to change over time without replacing the business identity, and keeping businesses separate from properties allows a property to outlive multiple organizations.
+
+Consequences:
+
+- World Identity schema version 5 stores families, historical persons, ownership entities, and ownership histories alongside regions, counties, settlements, commercial properties, and businesses.
+- Phase 1 through Phase 4 development saves migrate by preserving existing identity data and generating ownership records from the saved world seed and business snapshot.
+- Ownership generation uses stable business ids and deterministic salts rather than mutable random streams or iteration order.
+- `FamilyRegistry` validates family and historical person references, and `OwnershipRegistry` validates business references, owner references, orphaned owners, duplicate histories, timeline overlap, and ownership share totals.
+- Ownership categories, acquisition methods, and family reputations are strongly typed.
+- No NPCs, player families, inheritance gameplay, dialogue, marriage, children, AI, economy, payroll, lawsuits, politics, UI, commands, quests, active relationships, physical entities, or gameplay effects are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

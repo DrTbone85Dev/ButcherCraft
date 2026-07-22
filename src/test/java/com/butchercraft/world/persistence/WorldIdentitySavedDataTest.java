@@ -48,5 +48,9 @@ class WorldIdentitySavedDataTest {
         assertEquals(WorldIdentity.CURRENT_SCHEMA_VERSION, restored.identity().schemaVersion());
         assertEquals(identity.commercialProperties(), restored.identity().commercialProperties());
         assertEquals(identity.businesses(), restored.identity().businesses());
+        assertEquals(identity.families(), restored.identity().families());
+        assertEquals(identity.historicalPersons(), restored.identity().historicalPersons());
+        assertEquals(identity.ownershipEntities(), restored.identity().ownershipEntities());
+        assertEquals(identity.ownershipHistories(), restored.identity().ownershipHistories());
     }
 }

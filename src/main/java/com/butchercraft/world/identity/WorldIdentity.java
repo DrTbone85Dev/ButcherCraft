@@ -3,6 +3,15 @@ package com.butchercraft.world.identity;
 import com.butchercraft.world.business.Business;
 import com.butchercraft.world.business.BusinessRegistry;
 import com.butchercraft.world.business.BuiltInBusinessCatalog;
+import com.butchercraft.world.ownership.BuiltInOwnershipCatalog;
+import com.butchercraft.world.ownership.Family;
+import com.butchercraft.world.ownership.FamilyRegistry;
+import com.butchercraft.world.ownership.OwnershipEntity;
+import com.butchercraft.world.ownership.OwnershipEntityId;
+import com.butchercraft.world.ownership.OwnershipHistory;
+import com.butchercraft.world.ownership.OwnershipIdentitySnapshot;
+import com.butchercraft.world.ownership.OwnershipRegistry;
+import com.butchercraft.world.ownership.PersonIdentity;
 import com.butchercraft.world.property.BuiltInCommercialPropertyCatalog;
 import com.butchercraft.world.property.CommercialProperty;
 import com.butchercraft.world.property.CommercialPropertyId;
@@ -21,9 +30,13 @@ public record WorldIdentity(
         Region region,
         List<County> counties,
         List<CommercialProperty> commercialProperties,
-        List<Business> businesses
+        List<Business> businesses,
+        List<Family> families,
+        List<PersonIdentity> historicalPersons,
+        List<OwnershipEntity> ownershipEntities,
+        List<OwnershipHistory> ownershipHistories
 ) {
-    public static final int CURRENT_SCHEMA_VERSION = 4;
+    public static final int CURRENT_SCHEMA_VERSION = 5;
 
     public WorldIdentity(int schemaVersion, String id, long worldSeed, Region region, List<County> counties) {
         this(schemaVersion, id, worldSeed, region, counties, generatedProperties(worldSeed, counties));
@@ -45,6 +58,52 @@ public record WorldIdentity(
                 counties,
                 commercialProperties,
                 BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties)
+        );
+    }
+
+    public WorldIdentity(
+            int schemaVersion,
+            String id,
+            long worldSeed,
+            Region region,
+            List<County> counties,
+            List<CommercialProperty> commercialProperties,
+            List<Business> businesses
+    ) {
+        this(
+                schemaVersion,
+                id,
+                worldSeed,
+                region,
+                counties,
+                commercialProperties,
+                businesses,
+                BuiltInOwnershipCatalog.generate(worldSeed, region, settlementsFrom(counties), businesses)
+        );
+    }
+
+    private WorldIdentity(
+            int schemaVersion,
+            String id,
+            long worldSeed,
+            Region region,
+            List<County> counties,
+            List<CommercialProperty> commercialProperties,
+            List<Business> businesses,
+            OwnershipIdentitySnapshot ownership
+    ) {
+        this(
+                schemaVersion,
+                id,
+                worldSeed,
+                region,
+                counties,
+                commercialProperties,
+                businesses,
+                ownership.families(),
+                ownership.historicalPersons(),
+                ownership.ownershipEntities(),
+                ownership.ownershipHistories()
         );
     }
 
@@ -79,6 +138,11 @@ public record WorldIdentity(
         validateCommercialProperties(commercialProperties, settlementIds);
         businesses = List.copyOf(Objects.requireNonNull(businesses, "businesses"));
         validateBusinesses(businesses, region, settlementsFrom(counties), commercialProperties);
+        families = List.copyOf(Objects.requireNonNull(families, "families"));
+        historicalPersons = List.copyOf(Objects.requireNonNull(historicalPersons, "historicalPersons"));
+        ownershipEntities = List.copyOf(Objects.requireNonNull(ownershipEntities, "ownershipEntities"));
+        ownershipHistories = List.copyOf(Objects.requireNonNull(ownershipHistories, "ownershipHistories"));
+        validateOwnership(families, historicalPersons, ownershipEntities, ownershipHistories, settlementsFrom(counties), businesses);
     }
 
     public List<Settlement> settlements() {
@@ -106,6 +170,21 @@ public record WorldIdentity(
         return businesses.stream()
                 .filter(business -> business.occupancyHistory().stream()
                         .anyMatch(occupancy -> occupancy.propertyId().equals(propertyId)))
+                .toList();
+    }
+
+    public List<OwnershipHistory> ownershipHistoriesForBusiness(String businessId) {
+        Objects.requireNonNull(businessId, "businessId");
+        return ownershipHistories.stream()
+                .filter(history -> history.businessId().value().equals(businessId))
+                .toList();
+    }
+
+    public List<OwnershipHistory> ownershipHistoriesForEntity(OwnershipEntityId entityId) {
+        Objects.requireNonNull(entityId, "entityId");
+        return ownershipHistories.stream()
+                .filter(history -> history.ownershipRecords().stream()
+                        .anyMatch(record -> record.ownershipEntityId().equals(entityId)))
                 .toList();
     }
 
@@ -154,6 +233,18 @@ public record WorldIdentity(
             List<CommercialProperty> commercialProperties
     ) {
         BusinessRegistry.of(businesses, region, settlements, commercialProperties);
+    }
+
+    private static void validateOwnership(
+            List<Family> families,
+            List<PersonIdentity> historicalPersons,
+            List<OwnershipEntity> ownershipEntities,
+            List<OwnershipHistory> ownershipHistories,
+            List<Settlement> settlements,
+            List<Business> businesses
+    ) {
+        FamilyRegistry.of(families, historicalPersons, settlements);
+        OwnershipRegistry.of(ownershipEntities, ownershipHistories, families, historicalPersons, businesses);
     }
 
     private static String requireNonBlank(String value, String fieldName) {
