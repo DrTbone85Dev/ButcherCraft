@@ -804,6 +804,22 @@ Consequences:
 - Packaging Table GUI layout constants are documented and tested so final GUI art can target the active 176x166 region in a 256x256 texture.
 - Final textures, generated AI artwork, custom renderers, animations, dynamic labels, item recipes, gameplay balance changes, and new product content remain out of scope.
 
+## DEC-0054: World Identity Is Deterministic SavedData Before Gameplay
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 1 introduces the World Identity foundation as immutable pure Java domain data generated deterministically from the world seed and persisted in Overworld-scoped `SavedData`. `WorldIdentityService` owns the Minecraft boundary for creating, loading, caching, and exposing the active identity when the server starts.
+
+Rationale: future manufacturers, commercial properties, local markets, and business simulation need stable world identity context before gameplay systems depend on it. Generating the identity from the seed gives new worlds deterministic defaults, while persisting the first generated identity prevents future schema changes from silently reshaping an existing save.
+
+Consequences:
+
+- `WorldIdentity`, `Region`, `County`, and `Settlement` remain pure Java models without Minecraft or NeoForge imports.
+- The first schema stores one region, counties, settlements, the source seed, and descriptive identity fields only.
+- The data file name is `butchercraft_world_identity`, attached to the Overworld because the identity describes the whole save rather than a single dimension.
+- World Identity loading is server-side and passive; no commands, GUI, economy, manufacturers, commercial properties, or player interactions are introduced in Phase 1.
+- Future schema migrations must preserve existing saved identities rather than regenerating them from the seed.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

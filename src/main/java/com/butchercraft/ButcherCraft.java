@@ -11,6 +11,7 @@ import com.butchercraft.registration.ModDataPackRegistries;
 import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
+import com.butchercraft.world.WorldIdentityService;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -41,6 +42,7 @@ public final class ButcherCraft {
         modEventBus.addListener(this::commonSetup);
         NeoForge.EVENT_BUS.addListener(ButcherCraftDiagnostics::registerCommands);
         NeoForge.EVENT_BUS.addListener(ContentDatapackReloadListener::register);
+        NeoForge.EVENT_BUS.addListener(WorldIdentityService.INSTANCE::initialize);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }

@@ -1,5 +1,19 @@
 # Changelog
 
+## ButcherCraft v0.9.0 Phase 1 - World Identity Foundation
+
+### Core
+
+- Added immutable World Identity domain models for world identity, region, county, and settlement data.
+- Added deterministic world identity generation from the Minecraft world seed.
+- Added world-level SavedData persistence so each world identity is generated once and reloaded on later sessions.
+- Added a server-start World Identity service boundary for creating, loading, and providing access to the active identity.
+
+### Stability
+
+- Kept manufacturers, commercial properties, economy systems, gameplay interactions, commands, screens, and world-generation changes out of scope.
+- Added regression coverage for deterministic generation, validation, serialization, persistence, service load/create behavior, and Minecraft dependency boundaries.
+
 ## ButcherCraft v0.8.0 - Project Meat Counter
 
 ### Core

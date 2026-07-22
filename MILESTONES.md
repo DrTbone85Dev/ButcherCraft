@@ -4,6 +4,45 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 1: World Identity Foundation
+
+Goal: establish the World Identity Engine foundation as deterministic world-level architecture without adding economy, commerce, manufacturers, or player-facing gameplay.
+
+Included work:
+
+- Immutable pure Java domain models for `WorldIdentity`, `Region`, `County`, and `Settlement`.
+- Deterministic world identity generation from the Minecraft world seed.
+- Server-side `WorldIdentityService` for creating, loading, caching, and exposing the active world identity.
+- Overworld-scoped `SavedData` persistence under `butchercraft_world_identity` so generated identity data is created once per world and reloaded on subsequent sessions.
+- NBT serialization and validation for the current world identity schema.
+- Automated coverage for deterministic generation, model validation, serialization, persistence, service load/create behavior, source-level save/load integration, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Manufacturers, commercial properties, economy simulation, settlements as interactable locations, business logic, commands, GUI, networking, new world-generation features, and gameplay interactions.
+
+Acceptance criteria:
+
+- Identical world seeds produce identical world identity data.
+- Different world seeds can produce different identity data.
+- A newly generated identity is marked dirty for world persistence.
+- Saved identity data round-trips through NBT and is loaded instead of regenerated.
+- The World Identity domain package remains independent of Minecraft and NeoForge imports.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Deferred until a future milestone exposes World Identity data through development diagnostics or gameplay. Phase 1 does not add a player-facing surface.
+
+Rollback considerations:
+
+- The Phase 1 foundation is additive. Removing the world identity domain, service, persistence adapter, server-start listener, tests, and documentation entry should restore the v0.8.0 feature surface without changing existing workstation, product, packaging, or datapack behavior.
+
 ## Milestone 0.8.0: Project Meat Counter - Packaging Foundation
 
 Goal: add the Packaging Table as a permanent workstation foundation, establish the Retail Product Framework, introduce Packaging Supplies, and implement the first data-driven packaging gameplay flow without adding packaging recipes, labels, freshness, spoilage, or business logic.
