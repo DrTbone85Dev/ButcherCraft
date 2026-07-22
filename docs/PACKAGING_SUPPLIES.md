@@ -1,6 +1,6 @@
 # ButcherCraft Packaging Supplies
 
-Status: v0.8.0 Sprint D physical supply foundation with Packaging Table consumption
+Status: v0.8.0 Sprint E physical supply foundation with asset-framework texture targets
 
 ## Purpose
 
@@ -19,7 +19,16 @@ The sprint adds these physical items:
 | `butchercraft:freezer_paper_roll` | Freezer Paper Roll | Registered and valid for future freezer-paper package flows. |
 | `butchercraft:retail_label_roll` | Retail Label Roll | Creative-tab supply item reserved for future label systems. |
 
-Each item uses normal `DeferredRegister` item registration, appears in the ButcherCraft creative tab, has English localization, and receives a generated item model using the shared abstract `packaging_supply_placeholder` texture.
+Each item uses normal `DeferredRegister` item registration, appears in the ButcherCraft creative tab, has English localization, and receives a generated item model using a stable per-item texture path under `assets/butchercraft/textures/item/packaging`. The current PNG contents are development placeholders, but the resource locations are intended for direct final-art replacement.
+
+| Item id | Texture resource | Source file | Status |
+| --- | --- | --- | --- |
+| `butchercraft:foam_tray` | `butchercraft:item/packaging/foam_tray` | `src/main/resources/assets/butchercraft/textures/item/packaging/foam_tray.png` | Placeholder, framework ready |
+| `butchercraft:plastic_wrap_roll` | `butchercraft:item/packaging/plastic_wrap_roll` | `src/main/resources/assets/butchercraft/textures/item/packaging/plastic_wrap_roll.png` | Placeholder, framework ready |
+| `butchercraft:vacuum_bag` | `butchercraft:item/packaging/vacuum_bag` | `src/main/resources/assets/butchercraft/textures/item/packaging/vacuum_bag.png` | Placeholder, framework ready |
+| `butchercraft:butcher_paper_roll` | `butchercraft:item/packaging/butcher_paper_roll` | `src/main/resources/assets/butchercraft/textures/item/packaging/butcher_paper_roll.png` | Placeholder, framework ready |
+| `butchercraft:freezer_paper_roll` | `butchercraft:item/packaging/freezer_paper_roll` | `src/main/resources/assets/butchercraft/textures/item/packaging/freezer_paper_roll.png` | Placeholder, framework ready |
+| `butchercraft:retail_label_roll` | `butchercraft:item/packaging/retail_label_roll` | `src/main/resources/assets/butchercraft/textures/item/packaging/retail_label_roll.png` | Placeholder, deferred gameplay |
 
 ## Packaging Definition Supply References
 
@@ -64,6 +73,6 @@ Because packaging, product, and transformation registries activate as one conten
 
 ## Boundaries
 
-This sprint does not implement packaging recipes, labels on products, dynamic rendering, weight, freshness, spoilage, custom sounds, animations, or business logic.
+This sprint does not implement packaging recipes, labels on products, dynamic rendering, weight, freshness, spoilage, custom sounds, animations, final artwork, or business logic.
 
 The supply item list is Java-controlled Minecraft content. Datapacks may reference known supply ids in packaging definitions, but datapacks do not dynamically register supply items, textures, models, or creative-tab entries.

@@ -61,7 +61,9 @@ class PackagingTableInteractionTest {
         assertTrue(screen.contains("slot.tray"));
         assertTrue(screen.contains("slot.wrap"));
         assertTrue(screen.contains("slot.result"));
-        assertTrue(screen.contains("renderProgress(guiGraphics"));
+        assertTrue(screen.contains("PackagingTableGuiLayout.BACKGROUND_TEXTURE"));
+        assertTrue(screen.contains("PackagingTableGuiLayout.PROGRESS_WIDTH"));
+        assertTrue(screen.contains("PackagingTableGuiLayout.PROGRESS_HEIGHT"));
     }
 
     private static String source(String relativePath) throws IOException {

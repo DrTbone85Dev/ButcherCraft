@@ -54,7 +54,7 @@ class ProductDataAssetsTest {
     void productItemModelsExistAndUsePlaceholderTexture() throws IOException {
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/beef_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_beef_test.json"));
-        assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/retail_ground_beef_test.json"));
+        assertRetailGroundBeefModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/retail_ground_beef_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/pork_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_pork_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/bison_trim_test.json"));
@@ -91,6 +91,13 @@ class ProductDataAssetsTest {
         String model = Files.readString(path);
         assertTrue(model.contains("\"minecraft:item/generated\""));
         assertTrue(model.contains("\"butchercraft:item/development_test_item\""));
+    }
+
+    private static void assertRetailGroundBeefModel(Path path) throws IOException {
+        assertTrue(Files.isRegularFile(path), "Expected item model at " + path);
+        String model = Files.readString(path);
+        assertTrue(model.contains("\"minecraft:item/generated\""));
+        assertTrue(model.contains("\"butchercraft:item/packaging/retail_ground_beef\""));
     }
 
     private static String retiredGenericBrisketItemModelPath() {

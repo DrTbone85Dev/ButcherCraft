@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "butchercraft:item/packaging_supply_placeholder"
+    "layer0": "butchercraft:item/packaging/plastic_wrap_roll"
   }
 }

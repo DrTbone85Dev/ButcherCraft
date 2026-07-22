@@ -26,14 +26,18 @@ Included work:
 - Optional `required_supply_items` validation on packaging definitions.
 - Packaging Table execution for Ground Beef plus Foam Tray plus Plastic Wrap Roll into Retail Ground Beef.
 - Stack-level packaging metadata on packaged product ItemStacks.
+- Asset framework foundation for the active packaging build: canonical texture directories, per-asset packaging texture paths, a Packaging Table GUI texture contract, placeholder texture dimensions, asset manifest, and artist handoff specifications.
 - Automated coverage for registration, menu wiring, inventory layout, serialization, generated data, packaging definition loading, supply reference validation, creative-tab population, content-snapshot compatibility, product metadata validation, packaging execution, blocked output behavior, and rollback safety.
 - Documentation in `docs/PACKAGING_TABLE.md`.
 - Documentation in `docs/RETAIL_PRODUCT_FRAMEWORK.md`.
 - Documentation in `docs/PACKAGING_SUPPLIES.md`.
+- Documentation in `docs/ASSET_MANIFEST.md`.
+- Documentation in `docs/ASSET_SPECIFICATIONS.md`.
+- Documentation in `docs/PACKAGING_TABLE_GUI_SPEC.md`.
 
 Excluded work:
 
-- Packaging recipes, product transformations, labels, quality changes, freshness, spoilage, order fulfillment, employees, commerce, storage rules, custom sounds, animations, final artwork, or dynamic product item creation.
+- Packaging recipes, product transformations, labels, quality changes, freshness, spoilage, order fulfillment, employees, commerce, storage rules, custom sounds, animations, final artwork, generated AI artwork, custom renderers, or dynamic product item creation.
 - Migration of Grinder, Bandsaw, smoker, coolers, or any other workstation behavior.
 
 Acceptance criteria:
@@ -48,6 +52,7 @@ Acceptance criteria:
 - `package_retail` appears in the processing graph and is executed by the Packaging Table when required supplies are present.
 - Required supplies are consumed only after successful completion, and blocked or failed packaging does not consume or duplicate items.
 - Existing Grinder and Bandsaw behavior and datapack reload compatibility remain unchanged.
+- Packaging assets use stable resource-pack replacement paths, placeholder textures are 16x16 or documented GUI-sized PNGs, generated model JSON references existing textures, and no placeholder asset is marked production approved.
 
 Automated verification:
 
@@ -60,11 +65,11 @@ Automated verification:
 
 Manual in-game verification:
 
-- Recommended before upload: launch a client, create or load a development world, find the Packaging Table, Retail Ground Beef Test Product, and all six packaging supply items in the creative tab, place the table, open the GUI, package Ground Beef Test Product with Foam Tray and Plastic Wrap Roll, verify Retail Ground Beef appears in the result slot, verify missing supplies and blocked output preserve input, and confirm existing Grinder and Bandsaw test flows still work.
+- Recommended before upload: launch a client, create or load a development world, find the Packaging Table, Retail Ground Beef Test Product, and all six packaging supply items in the creative tab, place the table, inspect the block and item rendering from multiple facings, open the GUI, package Ground Beef Test Product with Foam Tray and Plastic Wrap Roll, verify Retail Ground Beef appears in the result slot, verify missing supplies and blocked output preserve input, and confirm existing Grinder and Bandsaw test flows still work.
 
 Rollback considerations:
 
-- The v0.8.0 feature is additive. Removing the Packaging Table registrations, supply item registrations, assets, menu/screen, retail packaging definitions, retail product definition, `package_retail` operation, packaging execution strategy, retail fixture item, tests, and docs should restore the v0.7.0 feature surface without changing Grinder or Bandsaw behavior.
+- The v0.8.0 feature is additive. Removing the Packaging Table registrations, supply item registrations, assets, menu/screen, retail packaging definitions, retail product definition, `package_retail` operation, packaging execution strategy, retail fixture item, asset manifest/specification docs, tests, and docs should restore the v0.7.0 feature surface without changing Grinder or Bandsaw behavior.
 
 ## Milestone 0.7.0: Beef Fabrication Expansion
 

@@ -13,13 +13,14 @@
 - Expanded packaging definitions with `tray_wrap`, `vacuum`, `butcher_paper`, and `freezer_paper` formats plus optional required supply item references.
 - Implemented the first Packaging Table gameplay flow: Ground Beef plus required retail packaging supplies now processes through `butchercraft:package_retail` into Retail Ground Beef.
 - Added stack-level packaging metadata for packaged product fixtures while preserving legacy product stack data compatibility.
+- Established the asset framework foundation with per-asset packaging texture paths, a Packaging Table GUI texture contract, a polished placeholder table model structure, and an asset manifest/specification handoff for future final artwork.
 
 ### Stability
 
 - Kept packaging recipes, labels, freshness, spoilage, dynamic rendering, employee behavior, order integration, and business logic out of scope.
 - Preserved existing Grinder and Bandsaw gameplay behavior while extending datapack loading to product, packaging, and transformation snapshots.
 - Added atomic workstation commit planning so packaging product input, required supplies, and output insertion commit or roll back together.
-- Added regression coverage for Packaging Table registration, lifecycle, inventory persistence, menu layout, generated data, packaging definition loading, supply reference validation, product metadata validation, serialization, creative-tab population, packaging execution, blocked output behavior, and content-loading compatibility.
+- Added regression coverage for Packaging Table registration, lifecycle, inventory persistence, menu layout, generated data, packaging definition loading, supply reference validation, product metadata validation, serialization, creative-tab population, packaging execution, blocked output behavior, content-loading compatibility, asset references, GUI bounds, and placeholder manifest policy.
 
 ## ButcherCraft v0.7.0 - Beef Fabrication Expansion
 
