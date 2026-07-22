@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,6 +30,11 @@ class PackagingTableRegistrationTest {
         BlockItem blockItem = assertInstanceOf(BlockItem.class, ModItems.PACKAGING_TABLE.get());
 
         assertEquals(ModBlocks.PACKAGING_TABLE.get(), blockItem.getBlock());
+    }
+
+    @Test
+    void packagingTableDoesNotOccludeNeighborTerrainFaces() {
+        assertFalse(ModBlocks.PACKAGING_TABLE.get().defaultBlockState().canOcclude());
     }
 
     @Test
