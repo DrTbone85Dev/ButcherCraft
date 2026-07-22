@@ -40,6 +40,7 @@ class WorldIdentityGeneratorTest {
         assertTrue(identity.id().startsWith("world_"));
         assertEquals(3, identity.counties().size());
         assertEquals(7, identity.settlements().size());
+        assertEquals(28, identity.commercialProperties().size());
         assertTrue(RegionCatalog.builtIn().contains(identity.region().id()));
         assertFalseBlank(identity.region().description());
         assertFalseBlank(identity.region().culturalIdentity());
@@ -52,6 +53,7 @@ class WorldIdentityGeneratorTest {
             assertFalseBlank(county.displayName());
             for (Settlement settlement : county.settlements()) {
                 assertEquals(county.id(), settlement.countyId());
+                assertEquals(4, identity.commercialPropertiesForSettlement(settlement.id()).size());
                 settlementTypes.add(settlement.type());
             }
         }

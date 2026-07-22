@@ -855,6 +855,23 @@ Consequences:
 - The manufacturer package remains independent of Minecraft and NeoForge imports.
 - Equipment catalogs, purchasing, recipes, machines, UI, commands, economy, commercial properties, warranties, service records, supplier relationships, and gameplay effects remain out of scope.
 
+## DEC-0057: Commercial Properties Are Permanent Locations Separate From Businesses
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 4 introduces commercial properties as immutable world identity records saved inside the existing World Identity snapshot. A commercial property represents a permanent location with construction history, utility infrastructure, expansion capacity, condition, status, and ownership history. Businesses are not modeled in this phase; historical owner names are property records only and do not create business entities.
+
+Rationale: future purchases, inheritance, renovations, inspections, newspaper articles, supplier routes, insurance, tax records, historical preservation, and business valuation all need stable property identities before business gameplay depends on locations. Keeping properties separate from businesses allows different businesses, vacancies, and future player ownership to occupy the same location over time without replacing the property record.
+
+Consequences:
+
+- World Identity schema version 3 stores commercial properties alongside regions, counties, and settlements.
+- Phase 1 and Phase 2 development saves migrate by preserving existing identity data and generating commercial properties from the saved world seed and settlements.
+- Property generation uses stable settlement ids and fixed property slots rather than mutable random streams or iteration order.
+- `CommercialPropertyRegistry` validates settlement references, duplicate ids, and duplicate names within each settlement.
+- Property types, condition, status, acquisition method, electrical service, and refrigeration capacity are strongly typed.
+- No business entities, player ownership, purchasing, economy, village structures, building placement, inspections, taxes, UI, commands, NPCs, progression, or gameplay effects are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

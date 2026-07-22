@@ -4,6 +4,49 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 4: Commercial Property Foundation
+
+Goal: establish permanent commercial property records as world identity locations that future business, inheritance, purchase, renovation, inspection, newspaper, supplier, insurance, tax, and history systems can reference without making properties into businesses.
+
+Included work:
+
+- Immutable pure Java commercial property domain models: `CommercialProperty`, `CommercialPropertyId`, `CommercialPropertyType`, `PropertyCondition`, `PropertyStatus`, `UtilityProfile`, `OwnershipRecord`, `PropertyHistory`, `LotSize`, `BuildingSize`, and `ExpansionCapacity`.
+- Strongly typed utility infrastructure fields for electrical service, water, sewer, natural gas, loading dock, rail access, highway access, and refrigeration capacity.
+- Strongly typed property types for family butcher shops, vacant storefronts, locker plants, warehouses, industrial buildings, empty commercial lots, distribution centers, and cold storage facilities.
+- Deterministic generation of four commercial properties for every generated settlement using stable settlement ids, property slots, and the world seed.
+- Historical summaries and ownership records for each property, with owner names recorded as property history rather than business entities.
+- Immutable `CommercialPropertyRegistry` with deterministic id ordering, id lookup, settlement lookup, type lookup, status lookup, condition lookup, and simple future-facing search.
+- World Identity schema version 3 with commercial properties saved in the existing world identity persistence format.
+- Development-schema migration from Phase 1 and Phase 2 identities by preserving saved region, county, and settlement data and generating commercial properties from the saved seed and settlements.
+- Automated coverage for deterministic generation, generation-order independence, settlement references, registry lookup, validation failures, serialization, save/load persistence, schema migration, historical summaries, ownership preservation, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Business entities, player ownership, property purchasing, village structure generation, building placement, economy, NPC behavior, retail customers, machine placement, contracts, inspections, taxes, UI, commands, progression, and physical commercial buildings.
+
+Acceptance criteria:
+
+- Every generated settlement has commercial property records.
+- Commercial property ids, names within each settlement, histories, ownership records, utility profiles, condition, status, sizes, and settlement references validate.
+- Commercial properties persist through the existing World Identity save format.
+- Phase 1 and Phase 2 development saves migrate through a deliberate schema path rather than being regenerated wholesale.
+- The commercial property package remains independent of Minecraft and NeoForge imports.
+- Existing workstation, product, packaging, transformation, manufacturer, and region behavior remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual in-game verification:
+
+- Runtime startup validation is recommended after persistence changes. Phase 4 does not add player-facing commercial property interaction.
+
+Rollback considerations:
+
+- The Phase 4 foundation is additive around the World Identity snapshot. Removing the commercial property domain, generator, registry, schema migration, tests, and documentation entry should restore the Phase 3 manufacturer foundation without affecting products, transformations, packaging, workstations, or registered gameplay content.
+
 ## Milestone 0.9.0 Phase 3: Manufacturer Foundation
 
 Goal: establish the canonical manufacturer database for future catalogs, manuals, advertisements, warranties, service records, supplier relationships, trade shows, and industrial history without adding gameplay systems.

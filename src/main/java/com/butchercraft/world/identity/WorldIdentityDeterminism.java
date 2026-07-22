@@ -1,13 +1,13 @@
 package com.butchercraft.world.identity;
 
-final class WorldIdentityDeterminism {
+public final class WorldIdentityDeterminism {
     private static final long FNV_OFFSET_BASIS = 0xcbf29ce484222325L;
     private static final long FNV_PRIME = 0x100000001b3L;
 
     private WorldIdentityDeterminism() {
     }
 
-    static long stableScore(long seed, long salt, String... stableParts) {
+    public static long stableScore(long seed, long salt, String... stableParts) {
         long value = seed ^ salt;
         for (String part : stableParts) {
             value ^= hashString(part);
@@ -16,14 +16,14 @@ final class WorldIdentityDeterminism {
         return mix64(value);
     }
 
-    static int stableIndex(long seed, long salt, int bound, String... stableParts) {
+    public static int stableIndex(long seed, long salt, int bound, String... stableParts) {
         if (bound <= 0) {
             throw new IllegalArgumentException("Bound must be positive");
         }
         return (int) Long.remainderUnsigned(stableScore(seed, salt, stableParts), bound);
     }
 
-    static long mix64(long value) {
+    public static long mix64(long value) {
         long mixed = value + 0x9e3779b97f4a7c15L;
         mixed = (mixed ^ (mixed >>> 30)) * 0xbf58476d1ce4e5b9L;
         mixed = (mixed ^ (mixed >>> 27)) * 0x94d049bb133111ebL;
