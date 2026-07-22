@@ -4,6 +4,46 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 8: Player Legacy Foundation
+
+Goal: establish permanent player legacy identity architecture so future gameplay can place the player into an already-existing world without making the player responsible for creating that world.
+
+Included work:
+
+- Immutable pure Java player legacy domain models: `PlayerIdentity`, `PlayerIdentityId`, `CareerProfile`, `StartingScenario`, `StartingScenarioId`, `StartingScenarioType`, `StartingAssets`, `StartingRelationship`, `StartingRelationshipType`, `InheritanceRecord`, `LegacyProgress`, `PlayerBackground`, `InitialReputation`, `LegacyAcquisitionType`, and `PlayerRegistry`.
+- Strongly typed career profiles for family successors, independent entrepreneurs, cooperative managers, corporate managers, county processors, and apprentice butchers.
+- Strongly typed starting scenario templates for inherited family businesses, vacant property purchases, existing business managers, startup operations, county contracts, and cooperative assignments.
+- Stable built-in `BuiltInStartingScenarioCatalog` templates with placeholder references for future business, property, equipment, supplier relationship, financial, inheritance, community, and contact systems.
+- Immutable `PlayerRegistry` validation and lookup by scenario id, starting scenario type, and career profile.
+- Explicit identity validation against existing world settlements and scenario-compatible career profiles without generating player save data.
+- Automated coverage for deterministic scenario catalog loading, registry lookup, validation failures, enum serialization, persistence non-integration, schema migration regression, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Character creation, UI, networking, economy, inventory, machines, NPCs, quests, dialogue, commands, gameplay, progression systems, player save data generation, finances, equipment ownership, employees, customers, inspections, retirement, succession, and multi-generation gameplay.
+
+Acceptance criteria:
+
+- Built-in scenario templates are deterministic, stable by id, and cover every supported career profile and starting scenario type.
+- Player legacy models validate required summaries, inheritance references, starting assets, starting relationships, scenario references, career compatibility, and starting settlement references.
+- Existing World Identity persistence remains independent of player data; Phase 8 does not increment the World Identity schema.
+- The player legacy package remains independent of Minecraft and NeoForge imports.
+- Existing workstation, product, packaging, transformation, manufacturer, property, region, business, ownership, and supply-network behavior remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- Runtime startup validation is not required for Phase 8 because the player legacy foundation is pure Java and does not add player-facing runtime integration.
+
+Rollback considerations:
+
+- The Phase 8 foundation is additive and not saved into world data. Removing the player legacy package, tests, and documentation entry should restore the Phase 7 supply-chain foundation without affecting saved World Identity snapshots or registered gameplay content.
+
 ## Milestone 0.9.0 Phase 7: Supply Chain & Trade Network Foundation
 
 Goal: establish permanent supply-chain and trade-network identity records that explain how businesses, manufacturers, territories, and commercial routes are historically connected without adding purchasing, pricing, inventory, logistics, UI, commands, or gameplay behavior.
