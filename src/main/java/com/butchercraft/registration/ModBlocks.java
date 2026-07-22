@@ -59,6 +59,7 @@ public final class ModBlocks {
                     BlockBehaviour.Properties.of()
                             .strength(2.0F)
                             .sound(SoundType.WOOD)
+                            .noOcclusion()
             );
 
     private ModBlocks() {
