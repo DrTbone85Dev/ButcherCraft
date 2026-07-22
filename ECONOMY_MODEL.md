@@ -2,7 +2,7 @@
 
 Status: future concepts only; no economy implementation
 
-This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 now provides immutable schema-versioned Goods definitions and relationship metadata; no economic behavior or runtime quantity exists.
+This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, and Phase 15 provides immutable Economic Actor definitions plus in-memory runtime capabilities; no economic behavior or runtime quantity exists.
 
 All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
@@ -11,6 +11,12 @@ All future supply, demand, inventory, production, warehousing, transport, consum
 The economy exists independently of the player. Players, NPCs, businesses, industry modules, and compatible mods participate under shared rules. No participant receives a private parallel market simply because it comes from a different module.
 
 Economic outcomes should be explainable from supply, demand, capacity, location, time, contracts, and explicit events. Hidden random price movement is not an acceptable substitute for modeled causes.
+
+## Economic Actors
+
+Economic Actors are the common participant identity for future producers, consumers, warehouses, carriers, markets, processors, utilities, services, compatibility modules, NPC organizations, and player businesses. Actors relate to economic goods through `GoodId`, advertise typed capabilities, and may reference Business Runtime and Workforce through stable ids.
+
+Actor definitions do not own inventory, quantities, production, orders, prices, transport, employment, or gameplay. Those focused future systems will identify participants by `ActorId` and retain their own state and transactions. See `docs/ECONOMIC_ACTORS.md`.
 
 ## Supply
 

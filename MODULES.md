@@ -15,6 +15,7 @@ ButcherCraft Core is the common platform. It owns concepts that must remain cons
 - Business identity and mutable business runtime foundations.
 - Shared workforce structure and future cross-industry worker contracts.
 - Immutable commodity and product identities shared across industries.
+- Industry-neutral Economic Actor identity, capability, and Good-relationship contracts.
 - Future economy, market, consumer, logistics, utility, and population foundations.
 - Persistence ownership, schema versioning, validation, and migration policy.
 - Content snapshot coordination for shared data-driven definitions.
@@ -25,7 +26,7 @@ Core must not become a collection of industry-specific recipes or machine behavi
 
 ### Current State
 
-Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, Business Runtime, Workforce definitions, immutable economic Goods definitions, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations.
+Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, Business Runtime, Workforce definitions, immutable economic Goods definitions, industry-neutral Economic Actor definitions and runtime capabilities, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations.
 
 Economy, logistics execution, population simulation, consumers, utilities, and a stable third-party API are planned, not implemented.
 
@@ -183,6 +184,7 @@ The existing layout already supports the platform direction:
 | `com.butchercraft.world.workforce` | Cross-industry staffing structure. |
 | `com.butchercraft.world.trade` | Immutable historical supply-network identity. |
 | `com.butchercraft.world.goods` | Universal immutable economic commodities, products, units, metadata, and transformation relationships. |
+| `com.butchercraft.world.economy.actor` | Universal economic participant definitions, capabilities, Good relationships, and separate in-memory runtime status. |
 | `com.butchercraft.engine` | Pure processing and transaction foundations. |
 | `com.butchercraft.product` | Product definitions and Minecraft adapters. |
 | `com.butchercraft.transformation` | Generic material transformations. |

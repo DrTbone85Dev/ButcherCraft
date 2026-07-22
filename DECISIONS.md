@@ -1048,6 +1048,25 @@ Consequences:
 - No built-in economic goods are registered in Phase 14; a future mapping or migration milestone must resolve overlap with existing processing products deliberately.
 - Inventory, quantities, warehousing, prices, markets, orders, production, transportation, utilities, networking, GUI, and gameplay remain out of scope.
 
+## DEC-0068: Economic Actors Define Participants Without Owning Economic Behavior
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 15 introduces `com.butchercraft.world.economy.actor` as the universal participant model for future economic systems. Immutable actor definitions identify a participant's type, primary industry, capabilities, Good relationships, supported industries, and optional dependency metadata. Mutable actor runtime state is separate, references Business Runtime and Workforce through stable ids, and is not persisted with actor definitions.
+
+Rationale: producers, consumers, warehouses, carriers, markets, utilities, services, compatible mods, NPC organizations, and player businesses need one industry-neutral identity and capability contract. Making ItemStacks, block entities, businesses, or industry-specific machines the participant authority would fragment the regional economy and couple economic simulation to gameplay representation.
+
+Consequences:
+
+- Actors relate to economic goods only through `GoodId`; the actor package does not import Minecraft, NeoForge, or ItemStack APIs.
+- `EconomicActorRegistry` is immutable and deterministic and validates known industries, known goods, dependencies, duplicate relationships, and dependency cycles.
+- Relationship metadata may describe supported industries but does not execute production, consumption, storage, or transportation.
+- `EconomicActorRuntime` stores only status, enabled/operational flags, optional stable Business Runtime and Workforce references, and the last simulation tick.
+- Immutable definitions persist independently at `<world>/butchercraft/economic_actors.json` with schema version 1; runtime state is not persisted in Phase 15.
+- `EconomicActorService` depends on `GoodService`, preserving the direction Goods -> Actors.
+- No built-in actors are registered in Phase 15.
+- Inventory, quantities, warehousing behavior, orders, contracts, scheduling, pricing, markets, production, AI, transportation, logistics, employment, networking, GUI, and gameplay remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

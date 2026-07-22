@@ -4,6 +4,49 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 15: Economic Actor Framework
+
+Goal: define the universal participants that may relate to economic Goods without implementing inventory, production, pricing, logistics, employment, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.economy.actor` domain with immutable actor definitions, stable ids, typed actor classifications, additive capabilities, good roles, and relationship metadata.
+- Immutable actor-to-good relationships with optional dependency actors and cross-industry support metadata.
+- Mutable in-memory `EconomicActorRuntime` state with explicit status, enabled/operational flags, stable Business Runtime and Workforce references, and monotonic simulation ticks.
+- Deterministic immutable `EconomicActorRegistry`, registration builder, and `EconomicActorManager` lookup, relationship-query, runtime-access, and validation paths.
+- Duplicate actor, duplicate relationship, unknown industry, unknown good, unknown actor, malformed definition, capability mismatch, and circular dependency validation.
+- Schema-versioned `EconomicActorStorage` persistence at `<world>/butchercraft/economic_actors.json` with deterministic JSON and atomic replacement.
+- `EconomicActorService` lifecycle integration after `GoodService`, outside the pure actor package.
+- Automated model, registry, manager, persistence, lifecycle, dependency-boundary, and 100,000-actor/10,000-relationship stress coverage.
+- Architecture documentation in `docs/ECONOMIC_ACTORS.md`.
+
+Excluded work:
+
+- Inventory, quantities, warehousing behavior, orders, contracts, scheduling, pricing, markets, production, AI, transportation, logistics, employment, networking, GUI, and gameplay.
+
+Acceptance criteria:
+
+- Every participant is expressible through stable actor identity, type, industry, capabilities, and immutable relationship metadata.
+- Actors relate to Goods only by `GoodId` and never through ItemStacks.
+- Definitions and relationships are deterministic, schema-versioned, and independent of Minecraft and NeoForge.
+- Runtime state remains independent and is not written into immutable actor definition persistence.
+- Invalid enum values, unknown references, duplicate ids and relationships, corrupt persistence, and dependency cycles fail visibly.
+- A catalog of 100,000 definitions and 10,000 relationships loads deterministically.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 15 adds no visible content, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 15 is additive. Removing the actor package, `EconomicActorService`, lifecycle registration, independent `economic_actors.json` file, tests, and documentation restores Phase 14 without changing Goods, World Identity, Simulation, Business Runtime, Workforce, product content, or ItemStack schemas.
+
 ## Milestone 0.9.0 Phase 14: Commodity And Product Framework
 
 Goal: establish a universal immutable language for economic goods without implementing inventory, pricing, production, logistics, or gameplay.

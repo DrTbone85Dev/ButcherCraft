@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 15 - Economic Actor Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.economy.actor` foundation for universal economic participants.
+- Added immutable actor definitions with stable ids, typed classifications, capabilities, Good relationships, cross-industry support metadata, and dependency metadata.
+- Added mutable in-memory actor runtime state with stable Business Runtime and Workforce references and no inventory or production state.
+- Added deterministic actor registration, lookup, relationship queries, validation, and independent schema-versioned persistence at `<world>/butchercraft/economic_actors.json`.
+- Added `EconomicActorService` lifecycle integration after the Goods service.
+
+### Stability
+
+- Added validation for duplicate actors and relationships, unknown industries, goods, actors, types, and capabilities, capability-role mismatches, malformed persistence, unsupported schemas, and circular dependency chains.
+- Added automated coverage for deterministic loading of 100,000 actor definitions and 10,000 relationships.
+- Preserved all existing Goods, Business Runtime, Workforce, processing, ItemStack, workstation, content registry, and gameplay behavior.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 14 - Commodity And Product Framework
 
 ### Core

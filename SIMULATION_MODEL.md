@@ -71,6 +71,8 @@ Markets will reconcile available supply, active demand, location, time, and cons
 
 The economy is the resulting network of production, consumption, trade, services, capacity, competition, and change. No single manager should own all economic behavior. The economy emerges from focused services exchanging explicit records and events.
 
+Economic Actors now provide the immutable identity, capabilities, Good relationships, and separate in-memory runtime status for future participants. They define who may participate, not how supply, demand, production, storage, transport, trade, or pricing behaves.
+
 ## Identity And Runtime Separation
 
 ```text
@@ -110,4 +112,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, and immutable economic Goods definitions exist. Population, quantities, inventory, regional production, active distribution, consumers, markets, and the economy remain conceptual future work.
+World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, and Economic Actor definitions/runtime capabilities exist. Population, quantities, inventory, regional production, active distribution behavior, consumers, markets, and the economy remain conceptual future work.

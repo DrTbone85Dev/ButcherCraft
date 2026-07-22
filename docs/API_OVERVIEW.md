@@ -54,6 +54,18 @@ Possible extension points:
 - Product equivalence or compatibility tags.
 - ItemStack conversion at the Minecraft boundary.
 
+### Economic Actor Provider
+
+Identifies a participant independently from its Minecraft representation or industry implementation. Phase 15's internal `com.butchercraft.world.economy.actor` package provides stable actor ids, immutable classifications, typed capabilities, Good relationships, cross-industry support metadata, and separate in-memory runtime status. It is not yet a public API.
+
+Possible extension points:
+
+- Actor identity and classification.
+- Capability declarations.
+- Relationships to stable Good ids.
+- Bounded runtime status summaries.
+- Compatibility-module actor contribution after lifecycle and registration contracts are proven.
+
 ### Recipe
 
 Represents a declared production or transformation process. Existing transformation and processing definitions are current internal foundations; a cross-industry public contract is not yet selected.
@@ -152,7 +164,7 @@ Possible extension points:
 
 ## Existing Internal Foundations
 
-The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, and workforce packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
+The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, workforce, goods, and economic actor packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
 
 There is currently no stable `com.butchercraft.api` contract. Internal classes must not be treated as public compatibility guarantees merely because they are accessible on the classpath.
 

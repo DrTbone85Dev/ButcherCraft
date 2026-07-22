@@ -199,6 +199,7 @@ Phase 14 registers no built-in economic goods. The examples in the project brief
 
 Future systems may reference `GoodId` for:
 
+- economic actor relationship metadata
 - inventory and warehouses
 - supply and demand
 - production planning
@@ -221,4 +222,3 @@ Those systems must own their own quantities and mutable runtime state. They must
 - ItemStack conversion
 - datapack loading
 - networking, GUI, commands, and gameplay
-
