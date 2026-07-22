@@ -1,5 +1,22 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 11 - Business Operations Framework
+
+### Core
+
+- Added the `com.butchercraft.world.business.runtime` foundation for mutable business runtime state separate from immutable Business Identity.
+- Added business operational status, business hours, shift schedules, workforce capacity, active workforce, maintenance state, and schema-versioned runtime state records.
+- Added a deterministic `BusinessRuntimeRegistry` and `BusinessRuntimeManager` for lookup, validation, opening, closing, maintenance, suspension, and schedule evaluation.
+- Added `BusinessEventListener` integration with daily and weekly Simulation Clock rollover events.
+- Added independent JSON persistence at `<world>/butchercraft/business_runtime.json`.
+- Registered server lifecycle integration for runtime load, event subscription, save flushing, and listener cleanup.
+
+### Stability
+
+- Added validation for duplicate business runtime ids, unknown business references, invalid statuses, invalid hours, invalid shifts, negative workforce values, inconsistent open/closed state, corrupt persistence, and unsupported runtime schema versions.
+- Added stress coverage for 10,000 businesses across 365 simulated days with deterministic transitions and no duplicate state changes after the initial opening transition.
+- Kept employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 10 - World Simulation Clock & Event Framework
 
 ### Core

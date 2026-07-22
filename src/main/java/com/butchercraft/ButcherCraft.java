@@ -11,6 +11,7 @@ import com.butchercraft.registration.ModDataPackRegistries;
 import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
+import com.butchercraft.world.BusinessRuntimeService;
 import com.butchercraft.world.WorldIdentityService;
 import com.butchercraft.world.player.runtime.PlayerJoinInitializer;
 import com.butchercraft.world.simulation.SimulationClockService;
@@ -49,6 +50,8 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(SimulationClockService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(SimulationClockService.INSTANCE::advance);
         NeoForge.EVENT_BUS.addListener(SimulationClockService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(BusinessRuntimeService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(BusinessRuntimeService.INSTANCE::save);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }

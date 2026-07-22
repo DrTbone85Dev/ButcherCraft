@@ -4,6 +4,47 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 11: Business Operations Framework
+
+Goal: establish mutable business runtime operations on top of immutable Business Identity so businesses can respond to the Simulation Clock without adding gameplay systems.
+
+Included work:
+
+- Pure runtime value objects for `BusinessRuntimeState`, `BusinessOperationalStatus`, `BusinessHours`, and `BusinessShift`.
+- `BusinessRuntimeRegistry` for deterministic lookup, storage, validation, and uniqueness.
+- `BusinessRuntimeManager` for explicit opening, closing, shift, maintenance, suspension, and schedule evaluation transitions.
+- `BusinessEventListener` subscribed to daily and weekly simulation rollover events.
+- Schema-versioned `BusinessRuntimeStorage` at `<world>/butchercraft/business_runtime.json`.
+- `BusinessRuntimeService` registered for server start and stop lifecycle integration outside the pure business runtime package.
+- Automated coverage for registry creation, lookup, persistence, schema rejection, malformed JSON rejection, hours, opening, closing, suspended businesses, shift transitions, event integration, deterministic ordering, dependency boundaries, and 10,000 businesses across 365 simulated days.
+
+Excluded work:
+
+- Employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, and gameplay effects.
+
+Acceptance criteria:
+
+- Business Identity remains immutable.
+- Business Runtime State references immutable businesses by `BusinessId` and does not duplicate business identity data.
+- Runtime state persists separately from World Identity, Player Identity, and Simulation Clock state.
+- Business runtime schema version 1 rejects unsupported future schemas until migrations are deliberately added.
+- The business runtime package remains Minecraft-independent; only `com.butchercraft.world.BusinessRuntimeService` performs server lifecycle integration.
+- Daily and weekly rollover events can drive deterministic runtime evaluation.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- A future server smoke check should confirm `<world>/butchercraft/business_runtime.json` is written on orderly shutdown. Phase 11 adds no visible gameplay or UI.
+
+Rollback considerations:
+
+- Phase 11 is additive around business runtime state. Removing the runtime package, `BusinessRuntimeService`, lifecycle registration, tests, and documentation should restore Phase 10 simulation-clock behavior without changing World Identity, Player Identity, or Simulation Clock schemas.
+
 ## Milestone 0.9.0 Phase 10: World Simulation Clock & Event Framework
 
 Goal: establish the single authoritative ButcherCraft simulation clock and event framework so future gameplay systems schedule work through shared simulated world time instead of independent timers.

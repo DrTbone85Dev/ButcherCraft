@@ -973,6 +973,23 @@ Consequences:
 - The clock publishes events through `SimulationEventBus`; it does not directly invoke gameplay systems.
 - No production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, gameplay events, or gameplay effects are introduced.
 
+## DEC-0064: Business Runtime State Is Separate From Business Identity
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 11 introduces mutable business runtime state outside the immutable World Identity snapshot. Runtime records reference immutable businesses by `BusinessId`, store operational status, open/closed state, business hours, shift schedule, workforce capacity, active workforce, maintenance flag, last state-change simulation tick, and schema version, and persist independently at `<world>/butchercraft/business_runtime.json`.
+
+Rationale: future employees, production, inspections, deliveries, refrigeration, reputation, and economy systems need businesses that can change over simulated time. Keeping runtime state separate preserves generated business history while allowing server-authoritative operations to evolve without rewriting World Identity or duplicating business records.
+
+Consequences:
+
+- World Identity remains schema version 6 and does not store mutable business runtime state.
+- Business runtime persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Business runtime records store references to businesses rather than duplicating display names, ownership, properties, settlements, or historical summaries.
+- Business runtime subscribes to daily and weekly simulation rollover events and never owns a separate clock.
+- The pure runtime package remains Minecraft-independent; only `com.butchercraft.world.BusinessRuntimeService` performs server lifecycle integration.
+- No employees, production, machines, economy, payroll, inspections, AI, inventory, orders, customers, transportation, maintenance gameplay, GUI, networking, or gameplay effects are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.
