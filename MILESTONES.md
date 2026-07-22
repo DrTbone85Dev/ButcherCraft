@@ -4,6 +4,50 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 5: Business Identity Foundation
+
+Goal: establish permanent business identity records as world identity organizations that future inheritance, purchase, competition, employees, suppliers, inspections, newspapers, finances, mergers, and family legacy systems can reference without making businesses into properties or owners.
+
+Included work:
+
+- Immutable pure Java business domain models: `Business`, `BusinessId`, `BusinessType`, `BusinessStatus`, `BusinessReputation`, `BusinessOccupancy`, `BusinessHistory`, `BusinessOwnershipModel`, and `BusinessRelationship`.
+- Strongly typed business types for family butcher shops, retail meat markets, custom processors, regional processing companies, locker plants, cold storage companies, food distribution companies, and wholesale suppliers.
+- Strongly typed operational status and reputation classifications with no gameplay effects.
+- Deterministic generation of business records from the saved world seed, region, settlements, and commercial properties using stable property ids.
+- Occupancy history records that reference commercial property ids while leaving commercial property records independent of businesses.
+- Future-ready placeholders for additional locations, corporate headquarters, business relationships, ownership metadata, and preferred manufacturer ids.
+- Immutable `BusinessRegistry` with deterministic id ordering, id lookup, property lookup, settlement lookup, type lookup, status lookup, reputation lookup, and simple future-facing search.
+- World Identity schema version 4 with businesses saved in the existing world identity persistence format.
+- Development-schema migration from Phase 1, Phase 2, and Phase 3 identities by preserving saved region, county, settlement, and property data and generating businesses from the saved seed and property snapshot.
+- Automated coverage for deterministic generation, generation-order independence, property references, registry lookup, validation failures, serialization, save/load persistence, schema migration, historical summaries, occupancy preservation, identity stability, and Minecraft dependency boundaries.
+
+Excluded work:
+
+- Player-owned businesses, purchasing, economy, money, employees, NPC interaction, UI, commands, recipes, machine ownership, property purchasing, retail customers, progression systems, physical buildings, active supplier relationships, inspections, taxes, newspapers, and gameplay effects.
+
+Acceptance criteria:
+
+- Generated World Identity snapshots include deterministic business records for occupied-capable commercial properties.
+- Business ids, names within each settlement, occupancy histories, primary property references, settlement references, region references, statuses, reputations, ownership metadata, and manufacturer placeholders validate.
+- Businesses persist through the existing World Identity save format.
+- Phase 1, Phase 2, and Phase 3 development saves migrate through a deliberate schema path rather than being regenerated wholesale.
+- The business package remains independent of Minecraft and NeoForge imports.
+- Existing workstation, product, packaging, transformation, manufacturer, property, and region behavior remains unchanged.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon clean test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- Runtime startup validation is recommended after persistence changes. Phase 5 does not add player-facing business interaction.
+
+Rollback considerations:
+
+- The Phase 5 foundation is additive around the World Identity snapshot. Removing the business domain, generator, registry, schema migration, tests, and documentation entry should restore the Phase 4 commercial property foundation without affecting products, transformations, packaging, workstations, manufacturers, properties, or registered gameplay content.
+
 ## Milestone 0.9.0 Phase 4: Commercial Property Foundation
 
 Goal: establish permanent commercial property records as world identity locations that future business, inheritance, purchase, renovation, inspection, newspaper, supplier, insurance, tax, and history systems can reference without making properties into businesses.

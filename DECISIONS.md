@@ -872,6 +872,23 @@ Consequences:
 - Property types, condition, status, acquisition method, electrical service, and refrigeration capacity are strongly typed.
 - No business entities, player ownership, purchasing, economy, village structures, building placement, inspections, taxes, UI, commands, NPCs, progression, or gameplay effects are introduced.
 
+## DEC-0058: Businesses Are Organizations Separate From Properties And Owners
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 5 introduces businesses as immutable world identity records saved inside the existing World Identity snapshot. A business represents a legal and commercial organization with type, status, reputation, founding year, occupancy history, ownership metadata, manufacturer-reference placeholders, and lineage placeholders. A commercial property remains the permanent physical place, and an owner remains the individual, family, cooperative, bank, estate, or company controlling the business record.
+
+Rationale: future inheritance, purchasing, employees, customers, inspections, supplier contracts, finances, newspapers, mergers, bankruptcy, rebranding, and family legacy starts need stable business identity before gameplay systems depend on commercial organizations. Keeping businesses separate from properties allows a property to host many businesses over time, and keeping owners separate from businesses allows ownership history to evolve without replacing the organization.
+
+Consequences:
+
+- World Identity schema version 4 stores businesses alongside regions, counties, settlements, and commercial properties.
+- Phase 1, Phase 2, and Phase 3 development saves migrate by preserving existing identity data and generating businesses from the saved world seed and property snapshot.
+- Business generation uses stable commercial property ids and deterministic salts rather than mutable random streams or iteration order.
+- `BusinessRegistry` validates property references, settlement references, region references, manufacturer references, duplicate ids, and duplicate business names within each settlement.
+- Business type, status, reputation, occupancy reason, ownership type, and relationship type are strongly typed.
+- No player-owned businesses, purchasing, economy, money, employees, NPC interaction, UI, commands, recipes, machine ownership, property purchasing, retail customers, progression, physical buildings, inspections, taxes, newspapers, or gameplay effects are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

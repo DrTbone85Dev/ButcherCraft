@@ -22,6 +22,7 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(identity.region().culturalIdentity(), restored.region().culturalIdentity());
         assertEquals(identity.region().namingProfileId(), restored.region().namingProfileId());
         assertEquals(identity.commercialProperties(), restored.commercialProperties());
+        assertEquals(identity.businesses(), restored.businesses());
     }
 
     @Test
@@ -50,14 +51,16 @@ class WorldIdentityNbtSerializerTest {
         assertEquals("legacy_world", migrated.id());
         assertEquals(987L, migrated.worldSeed());
         assertEquals("legacy_region", migrated.region().id());
-        assertEquals("Legacy Phase 1 development region migrated to the version 3 world identity schema.",
+        assertEquals("Legacy Phase 1 development region migrated to the version 4 world identity schema.",
                 migrated.region().description());
         assertEquals("Legacy naming", migrated.region().culturalIdentity());
         assertEquals("legacy_phase_1", migrated.region().namingProfileId());
         assertEquals("Legacy County", migrated.counties().getFirst().displayName());
         assertEquals("Legacy Village", migrated.settlements().getFirst().displayName());
         assertEquals(4, migrated.commercialProperties().size());
+        assertEquals(4, migrated.businesses().size());
         assertEquals("legacy_settlement", migrated.commercialProperties().getFirst().settlementId());
+        assertEquals("legacy_settlement", migrated.businesses().getFirst().primarySettlementId());
     }
 
     @Test
@@ -74,6 +77,24 @@ class WorldIdentityNbtSerializerTest {
         assertEquals(phaseTwoIdentity.region(), migrated.region());
         assertEquals(phaseTwoIdentity.counties(), migrated.counties());
         assertEquals(phaseTwoIdentity.commercialProperties(), migrated.commercialProperties());
+        assertEquals(phaseTwoIdentity.businesses(), migrated.businesses());
+    }
+
+    @Test
+    void legacyPhaseThreeWorldIdentityMigratesWithGeneratedBusinesses() {
+        WorldIdentity phaseThreeIdentity = new WorldIdentityGenerator().generate(789L);
+        CompoundTag phaseThree = WorldIdentityNbtSerializer.save(phaseThreeIdentity);
+        phaseThree.putInt("schema_version", 3);
+        phaseThree.remove("businesses");
+
+        WorldIdentity migrated = WorldIdentityNbtSerializer.load(phaseThree);
+
+        assertEquals(WorldIdentity.CURRENT_SCHEMA_VERSION, migrated.schemaVersion());
+        assertEquals(phaseThreeIdentity.id(), migrated.id());
+        assertEquals(phaseThreeIdentity.region(), migrated.region());
+        assertEquals(phaseThreeIdentity.counties(), migrated.counties());
+        assertEquals(phaseThreeIdentity.commercialProperties(), migrated.commercialProperties());
+        assertEquals(phaseThreeIdentity.businesses(), migrated.businesses());
     }
 
     private static CompoundTag legacyPhaseOneTag() {
