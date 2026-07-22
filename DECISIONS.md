@@ -38,7 +38,7 @@ Consequences:
 
 ## DEC-0003: Core Mod Plus Substantial Expansions
 
-Status: Proposed
+Status: Superseded by DEC-0066
 
 Decision: build ButcherCraft Core and a limited number of substantial optional expansions: ButcherCraft Harvest & Fabrication, ButcherCraft Refrigeration, ButcherCraft Further Processing, and ButcherCraft Commerce.
 
@@ -49,6 +49,8 @@ Consequences:
 - Core must expose documented APIs.
 - Expansions must avoid tight coupling to one another.
 - No separate downloadable mod should be created for every machine.
+
+This proposal remains the historical origin of the Meat Processing expansion strategy. DEC-0066 broadens active planning to a regional simulation platform while preserving the principle that modules should represent coherent responsibilities rather than one artifact per machine.
 
 ## DEC-0004: Manual-First Progression
 
@@ -1006,6 +1008,26 @@ Consequences:
 - Workforce records store `BusinessId` and shift ids rather than duplicating business identity or runtime state.
 - Current Business Runtime shift ids can be used to resolve required positions, but no worker occupancy, hiring, payroll, production, AI, or gameplay effect is introduced.
 - The pure workforce package remains Minecraft-independent; only `com.butchercraft.world.WorkforceService` performs server lifecycle integration.
+
+## DEC-0066: ButcherCraft Core Is A Regional Simulation Platform
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 13 defines ButcherCraft Core as a deterministic regional world simulation engine. Industry modules participate in shared identity, simulation time, business, workforce, persistence, and future economic contracts. Meat Processing remains the flagship implementation rather than the sole architectural purpose of the project. Players, future NPCs, and compatible mods are participants in an existing world and do not become the source of world identity.
+
+Rationale: the implemented World Identity, regional geography, manufacturers, properties, businesses, ownership, supply relationships, player identity, Simulation Clock, Business Runtime, and Workforce foundations already describe a general living region. Constraining those systems to one industry would duplicate clocks, persistence, identity, and future economy behavior when other industries or compatible mods are added.
+
+Consequences:
+
+- `VISION.md`, `CORE_PRINCIPLES.md`, `MODULES.md`, `SIMULATION_MODEL.md`, `ECONOMY_MODEL.md`, `COMPATIBILITY.md`, and `ROADMAP.md` are the active platform planning documents.
+- `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and `MODULE_PLAN.md` preserve the flagship Meat Processing experience and historical expansion rationale.
+- Core owns shared regional identity, simulation services, persistence foundations, and future cross-industry contracts.
+- Industry modules own industry-specific products, transformations, equipment, operating rules, and presentation.
+- Compatibility modules translate external capabilities into shared contracts while preserving source-mod ownership.
+- A future industry must not introduce a parallel world identity, simulation clock, business identity, economy, or save foundation.
+- Public APIs remain unimplemented until a real module or compatibility consumer proves the smallest stable contract.
+- Existing package names, public registry ids, schemas, save files, assets, datapacks, and gameplay behavior remain unchanged.
+- Phase 13 implements no economy, production, employees, AI, logistics, markets, pricing, transportation, utilities, compatibility adapter, or gameplay system.
 
 ## Decisions Needing Owner Approval
 

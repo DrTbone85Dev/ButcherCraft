@@ -1,6 +1,8 @@
 # ButcherCraft Gameplay Design
 
-Status: proposed planning document
+Status: flagship Meat Processing gameplay design
+
+This document defines the planned Meat Processing experience. It remains valid for the flagship industry module while `VISION.md` and `SIMULATION_MODEL.md` define the wider regional simulation platform.
 
 ## Design Goals
 

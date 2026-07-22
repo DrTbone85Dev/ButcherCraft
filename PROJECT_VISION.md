@@ -1,8 +1,12 @@
-# ButcherCraft Project Vision
+# ButcherCraft Meat Processing Module Vision
 
-Status: proposed planning document  
-Target: Minecraft 1.21.1, NeoForge, Java 21  
-Scope: ButcherCraft Core with a limited number of substantial optional expansion mods
+Status: preserved flagship-industry vision; `VISION.md` is the canonical platform vision
+
+Target: Minecraft 1.21.1, NeoForge, Java 21
+
+Scope: flagship Meat Processing player experience and its historical expansion direction
+
+This document preserves the original player-facing design and rationale for Meat Processing. Phase 13 broadens ButcherCraft Core into a regional simulation platform without discarding this experience. Active platform direction is defined by `VISION.md`, `CORE_PRINCIPLES.md`, and `MODULES.md`.
 
 ## Core Player Experience
 

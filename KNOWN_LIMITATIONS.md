@@ -15,6 +15,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 - Milestone 2D adds pork and bison red-meat grinding prototype definitions and development fixture items to prove the Grinder remains data-driven. It does not add full species catalogs, animal entities, regulatory rules, final product items, or final balance.
 - Milestone 2E adds a permanent Bandsaw machine and one prototype beef forequarter fabrication flow. It does not add animal entities, carcass entities, full cut catalogs, recipe-selection UI, power, employees, refrigeration, commerce, regulatory rules, or final balance.
 - Version 0.6.0 begins the pure Java Material Transformation Engine foundation. Version 0.6.1 migrates only the Grinder to capability-based transformation execution. Version 0.6.2 adds an immutable transformation registry. Version 0.6.3 formalizes the canonical transformation definition schema. Version 0.6.4 adds a pure Java product definition foundation. Version 0.6.5 adds a pure Java transformation serialization contract. Version 0.6.6 adds pure Java atomic multi-output transformation transactions. Version 0.6.7 migrates only the Bandsaw proof to registry-driven atomic transformation execution. Version 0.6.8 loads the current Grinder and Bandsaw transformations from datapack JSON. Version 0.6.9 loads the current product definitions from datapack JSON and activates products and transformations together. Version 0.7.0 adds a bounded beef fabrication content expansion on the same Bandsaw path. Version 0.8.0 adds the Packaging Table workstation foundation, Sprint 2 adds the Retail Product Framework, Sprint C adds physical Packaging Supplies, Sprint D adds the first supply-consuming Packaging Table flow, and Sprint E adds an asset framework foundation with stable replacement paths and documented art contracts. Version 0.9.0-alpha.1 adds World Identity region, deterministic naming, manufacturer catalog, commercial property, business identity, ownership identity, supply-chain identity, player legacy templates, runtime player identity persistence, the World Simulation Clock foundation, mutable business runtime state, and workforce definitions. It does not implement smoker behavior, cooler behavior, order integration, employee operation, freshness, spoilage, labels, dynamic rendering, final artwork, economy systems, player character creation, player-facing identity UI, business gameplay, employees, or World Identity gameplay interactions.
+- Phase 13 establishes the regional simulation platform vision through documentation only. The concepts in `SIMULATION_MODEL.md`, `ECONOMY_MODEL.md`, `COMPATIBILITY.md`, and `docs/API_OVERVIEW.md` are not implemented systems, persistence schemas, public APIs, compatibility promises, or gameplay.
 - The Packaging Table can package the current Ground Beef Test Product into Retail Ground Beef Test Product when Foam Tray and Plastic Wrap Roll are present. Other packaging definitions, packaging choices, labels, final tray/wrap visuals, vacuum packaging gameplay, butcher-paper/freezer-paper gameplay, order fulfillment, and retail business behavior remain deferred.
 - World Identity currently generates and persists region, county, settlement, commercial property, business, family, historical person, ownership, and supply-chain identity only. The region catalog, naming profiles, manufacturer catalog, property records, business records, ownership records, and supply network records do not create settlement interfaces, regional demand, road names, purchasing, inspections, taxes, economy behavior, employees, customers, active supplier contracts, family legacy starts, NPCs, or player ownership.
 - The manufacturer catalog is pure identity data only. It does not create equipment items, catalogs, manuals, advertisements, warranties, service bulletins, trade shows, supplier relationships, recalls, mergers, purchasing options, recipes, machine behavior, or gameplay effects.
@@ -38,6 +39,8 @@ This file records expected risks, limitations, and prototype areas. It should be
 - The official NeoForge 1.21.1 documentation is version-specific but no longer the latest documentation line.
 - Exact helper method signatures should be confirmed against the pinned MDK before implementation.
 - Avoid copying code from tutorials for other Minecraft versions.
+- There is no stable `com.butchercraft.api` package. Existing internal classes remain revisable and must not be treated as third-party compatibility contracts.
+- Planned Industry, Business, Product, Recipe, Consumer, Producer, Market, Order, Warehouse, Transport, Utility, and Population API concepts do not freeze class names, packages, codecs, or lifecycle behavior.
 
 ## Foundation Limitations
 
@@ -182,9 +185,10 @@ Prototype needed:
 
 ## Expansion Boundary Risks
 
-- Expansions can accidentally depend on core internals if public APIs are incomplete.
+- Industry and compatibility modules can accidentally depend on Core internals while public APIs remain intentionally incomplete.
 - Optional integrations can create load-order and missing-mod problems.
 - Datapack registry formats can become difficult to migrate if stabilized too early.
+- A new industry can accidentally duplicate regional identity, simulation time, economy, or persistence instead of using shared Core services.
 
 Mitigation direction:
 
@@ -192,6 +196,7 @@ Mitigation direction:
 - Mark experimental APIs clearly.
 - Use tags and public interfaces over internal package access.
 - Test expansion removal from a save before release.
+- Require a real second consumer before extracting broad public contracts or renaming current packages.
 
 ## Art and Presentation Limitations
 
@@ -211,4 +216,4 @@ Mitigation direction:
 - Cleanliness event and summary.
 - MCDA escalation.
 - Room refrigeration validation.
-- Expansion API sample.
+- First real industry or compatibility consumer for a minimal experimental API.
