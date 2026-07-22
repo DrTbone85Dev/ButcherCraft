@@ -47,5 +47,6 @@ class WorldIdentitySavedDataTest {
         assertTrue(restored.isDirty());
         assertEquals(WorldIdentity.CURRENT_SCHEMA_VERSION, restored.identity().schemaVersion());
         assertEquals(identity.commercialProperties(), restored.identity().commercialProperties());
+        assertEquals(identity.businesses(), restored.identity().businesses());
     }
 }

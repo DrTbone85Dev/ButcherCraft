@@ -41,6 +41,7 @@ class WorldIdentityGeneratorTest {
         assertEquals(3, identity.counties().size());
         assertEquals(7, identity.settlements().size());
         assertEquals(28, identity.commercialProperties().size());
+        assertEquals(26, identity.businesses().size());
         assertTrue(RegionCatalog.builtIn().contains(identity.region().id()));
         assertFalseBlank(identity.region().description());
         assertFalseBlank(identity.region().culturalIdentity());
@@ -54,6 +55,8 @@ class WorldIdentityGeneratorTest {
             for (Settlement settlement : county.settlements()) {
                 assertEquals(county.id(), settlement.countyId());
                 assertEquals(4, identity.commercialPropertiesForSettlement(settlement.id()).size());
+                int expectedBusinesses = settlement.type() == SettlementType.HAMLET ? 3 : 4;
+                assertEquals(expectedBusinesses, identity.businessesForSettlement(settlement.id()).size());
                 settlementTypes.add(settlement.type());
             }
         }

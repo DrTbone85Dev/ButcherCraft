@@ -1,5 +1,8 @@
 package com.butchercraft.world.identity;
 
+import com.butchercraft.world.business.Business;
+import com.butchercraft.world.business.BusinessRegistry;
+import com.butchercraft.world.business.BuiltInBusinessCatalog;
 import com.butchercraft.world.property.BuiltInCommercialPropertyCatalog;
 import com.butchercraft.world.property.CommercialProperty;
 import com.butchercraft.world.property.CommercialPropertyId;
@@ -17,18 +20,31 @@ public record WorldIdentity(
         long worldSeed,
         Region region,
         List<County> counties,
-        List<CommercialProperty> commercialProperties
+        List<CommercialProperty> commercialProperties,
+        List<Business> businesses
 ) {
-    public static final int CURRENT_SCHEMA_VERSION = 3;
+    public static final int CURRENT_SCHEMA_VERSION = 4;
 
     public WorldIdentity(int schemaVersion, String id, long worldSeed, Region region, List<County> counties) {
+        this(schemaVersion, id, worldSeed, region, counties, generatedProperties(worldSeed, counties));
+    }
+
+    public WorldIdentity(
+            int schemaVersion,
+            String id,
+            long worldSeed,
+            Region region,
+            List<County> counties,
+            List<CommercialProperty> commercialProperties
+    ) {
         this(
                 schemaVersion,
                 id,
                 worldSeed,
                 region,
                 counties,
-                BuiltInCommercialPropertyCatalog.generate(worldSeed, settlementsFrom(counties))
+                commercialProperties,
+                BuiltInBusinessCatalog.generate(worldSeed, region, settlementsFrom(counties), commercialProperties)
         );
     }
 
@@ -61,6 +77,8 @@ public record WorldIdentity(
         }
         commercialProperties = List.copyOf(Objects.requireNonNull(commercialProperties, "commercialProperties"));
         validateCommercialProperties(commercialProperties, settlementIds);
+        businesses = List.copyOf(Objects.requireNonNull(businesses, "businesses"));
+        validateBusinesses(businesses, region, settlementsFrom(counties), commercialProperties);
     }
 
     public List<Settlement> settlements() {
@@ -74,6 +92,25 @@ public record WorldIdentity(
         return commercialProperties.stream()
                 .filter(property -> property.settlementId().equals(settlementId))
                 .toList();
+    }
+
+    public List<Business> businessesForSettlement(String settlementId) {
+        Objects.requireNonNull(settlementId, "settlementId");
+        return businesses.stream()
+                .filter(business -> business.primarySettlementId().equals(settlementId))
+                .toList();
+    }
+
+    public List<Business> businessesForProperty(CommercialPropertyId propertyId) {
+        Objects.requireNonNull(propertyId, "propertyId");
+        return businesses.stream()
+                .filter(business -> business.occupancyHistory().stream()
+                        .anyMatch(occupancy -> occupancy.propertyId().equals(propertyId)))
+                .toList();
+    }
+
+    private static List<CommercialProperty> generatedProperties(long worldSeed, List<County> counties) {
+        return BuiltInCommercialPropertyCatalog.generate(worldSeed, settlementsFrom(counties));
     }
 
     private static List<Settlement> settlementsFrom(List<County> counties) {
@@ -108,6 +145,15 @@ public record WorldIdentity(
                 throw new IllegalArgumentException("Settlement has no commercial properties: " + settlementId);
             }
         }
+    }
+
+    private static void validateBusinesses(
+            List<Business> businesses,
+            Region region,
+            List<Settlement> settlements,
+            List<CommercialProperty> commercialProperties
+    ) {
+        BusinessRegistry.of(businesses, region, settlements, commercialProperties);
     }
 
     private static String requireNonBlank(String value, String fieldName) {

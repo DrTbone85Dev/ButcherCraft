@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 5 - Business Identity Foundation
+
+### Core
+
+- Added immutable business identity domain models for business ids, business types, operational status, reputation, occupancy history, ownership metadata, lineage placeholders, and future manufacturer references.
+- Added deterministic business generation from the saved world seed, region, settlements, and commercial property records.
+- Added an immutable `BusinessRegistry` with deterministic ordering and lookup by id, property, settlement, business type, status, reputation, and search text.
+- Extended World Identity persistence to schema version 4 so business records are saved with the existing world identity snapshot.
+
+### Stability
+
+- Added migration from Phase 1, Phase 2, and Phase 3 development world identity schemas by preserving saved identity data and generating business records from the saved seed, settlements, and commercial properties.
+- Added validation for duplicate ids, duplicate business names within a settlement, invalid property references, invalid manufacturer references, invalid founding years, missing summaries, empty occupancy history, broken timelines, and invalid typed fields.
+- Preserved the permanent separation between commercial properties, businesses, and owners.
+- Kept player-owned businesses, purchasing, economy, money, employees, NPC interaction, UI, commands, recipes, machine ownership, property purchasing, retail customers, progression systems, and physical buildings out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 4 - Commercial Property Foundation
 
 ### Core

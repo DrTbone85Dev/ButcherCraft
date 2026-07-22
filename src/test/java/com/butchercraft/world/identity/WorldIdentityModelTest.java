@@ -32,9 +32,11 @@ class WorldIdentityModelTest {
         assertEquals(1, county.settlements().size());
         assertEquals(1, identity.counties().size());
         assertEquals(4, identity.commercialProperties().size());
+        assertEquals(4, identity.businesses().size());
         assertThrows(UnsupportedOperationException.class, () -> county.settlements().add(settlement));
         assertThrows(UnsupportedOperationException.class, () -> identity.counties().add(county));
         assertThrows(UnsupportedOperationException.class, () -> identity.commercialProperties().clear());
+        assertThrows(UnsupportedOperationException.class, () -> identity.businesses().clear());
     }
 
     @Test
@@ -48,7 +50,7 @@ class WorldIdentityModelTest {
         assertThrows(IllegalArgumentException.class, () -> new County("county", "County", "region", List.of(
                 new Settlement("settlement", "Settlement", "wrong_county", SettlementType.HAMLET)
         )));
-        assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(4, "world", 1L, region, List.of(county)));
+        assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(5, "world", 1L, region, List.of(county)));
         assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 "world",
@@ -73,6 +75,15 @@ class WorldIdentityModelTest {
         Settlement settlement = identity.settlements().getFirst();
 
         assertEquals(4, identity.commercialPropertiesForSettlement(settlement.id()).size());
+    }
+
+    @Test
+    void worldReturnsBusinessesForSettlementAndProperty() {
+        WorldIdentity identity = new WorldIdentityGenerator().generate(88L);
+        Settlement settlement = identity.settlements().getFirst();
+
+        assertEquals(3, identity.businessesForSettlement(settlement.id()).size());
+        assertEquals(1, identity.businessesForProperty(identity.businessesForSettlement(settlement.id()).getFirst().primaryPropertyId()).size());
     }
 
     private static Region region(String id) {
