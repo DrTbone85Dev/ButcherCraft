@@ -1,0 +1,16 @@
+package com.butchercraft.world.inventory;
+
+public enum InventoryMovementCode {
+    ALLOWED,
+    UNKNOWN_SOURCE,
+    UNKNOWN_TARGET,
+    SAME_INVENTORY,
+    INVALID_QUANTITY,
+    SOURCE_UNAVAILABLE,
+    TARGET_UNAVAILABLE,
+    UNKNOWN_GOOD,
+    INVALID_UNIT,
+    INVALID_METADATA,
+    INSUFFICIENT_QUANTITY,
+    CAPACITY_EXCEEDED
+}

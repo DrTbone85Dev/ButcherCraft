@@ -2,7 +2,7 @@
 
 Status: future concepts only; no economy implementation
 
-This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, and Phase 15 provides immutable Economic Actor definitions plus in-memory runtime capabilities; no economic behavior or runtime quantity exists.
+This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, and Phase 16 provides actor-owned Inventory and Storage runtime quantities; no production, logistics, market, or pricing behavior exists.
 
 All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
@@ -40,7 +40,9 @@ Production turns inputs into outputs through declared transformations, recipes, 
 
 ## Warehousing
 
-Warehousing provides location, capacity, custody, condition, and availability for goods between production and consumption. Warehouses should not become universal inventories owned by the economy. Inventory remains owned by a business, facility, shipment, or other explicit participant.
+Warehousing provides location, capacity, custody, condition, and availability for goods between production and consumption. Phase 16 now provides actor-owned inventory containers, hierarchical storage locations, exact quantities, and capacity validation. Warehouse operations, custody transfers, reservations, condition, availability, and logistics remain future systems.
+
+Inventory is never a universal collection owned by the economy. Each container belongs to an explicit Economic Actor and exists at an explicit Storage Node. See `docs/INVENTORY_FRAMEWORK.md`.
 
 ## Transportation
 

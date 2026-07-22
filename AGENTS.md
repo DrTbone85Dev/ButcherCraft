@@ -110,6 +110,7 @@ Do not claim a command passed unless you actually ran it.
 - World/facility/business/order/inspection state belongs in `SavedData` unless a narrower holder is clearly better.
 - Immutable economic good definitions and relationships persist independently in schema-versioned `<world>/butchercraft/goods.json`; runtime quantities must belong to future inventory or economy owners.
 - Immutable economic actor definitions persist independently in schema-versioned `<world>/butchercraft/economic_actors.json`; actor runtime assignments remain separate and actors must reference Goods by `GoodId`, never by ItemStack.
+- Economic inventory containers, storage nodes, and runtime Good quantities persist independently in schema-versioned `<world>/butchercraft/inventory.json`; the pure inventory package must not import Minecraft inventory, Container, slot, menu, or ItemStack APIs.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.

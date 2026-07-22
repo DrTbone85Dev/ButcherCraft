@@ -122,7 +122,7 @@ Possible extension points:
 
 ### Warehouse
 
-Provides custody and capacity summaries for stored goods.
+Provides custody and capacity summaries for stored goods. Phase 16's internal `com.butchercraft.world.inventory` package now provides actor-owned container ids, hierarchical storage-node ids, exact runtime quantities, typed capacity metadata, and validation-only movement candidates. It is not yet a public API.
 
 Possible extension points:
 
@@ -130,6 +130,7 @@ Possible extension points:
 - Capacity and handling capabilities.
 - Validated deposit, reservation, and withdrawal requests.
 - Inventory summaries rather than mutable collections.
+- Stable inventory and storage-node references.
 
 ### Transport
 
@@ -164,7 +165,7 @@ Possible extension points:
 
 ## Existing Internal Foundations
 
-The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, workforce, goods, and economic actor packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
+The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, workforce, goods, economic actor, and inventory packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
 
 There is currently no stable `com.butchercraft.api` contract. Internal classes must not be treated as public compatibility guarantees merely because they are accessible on the classpath.
 

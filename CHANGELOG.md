@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 16 - Inventory And Storage Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.inventory` foundation for actor-owned Good quantities and physical storage locations.
+- Added immutable inventory containers, nested storage nodes, typed capacities, exact entries, typed future metadata, and mutable runtime status and quantities.
+- Added deterministic inventory registration, ownership and storage queries, capacity validation, runtime quantity updates, and validation-only atomic movement candidates.
+- Added independent schema-versioned persistence at `<world>/butchercraft/inventory.json`.
+- Added `InventoryService` lifecycle integration after the Economic Actor service.
+
+### Stability
+
+- Added validation for duplicate ids, unknown Goods, actors, and storage nodes, mismatched units, negative quantities, malformed metadata, missing runtimes, capacity violations, malformed persistence, unsupported schemas, and circular storage hierarchies.
+- Added automated coverage for deterministic validation of 100,000 inventory containers and 1,000,000 runtime entries.
+- Preserved all existing Goods, Economic Actors, Business Runtime, Workforce, processing, ItemStack, workstation, content registry, and gameplay behavior.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 15 - Economic Actor Framework
 
 ### Core

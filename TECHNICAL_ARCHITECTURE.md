@@ -37,7 +37,8 @@ Simulation Clock -> Scheduler -> Event Bus -> Focused runtime services
 Industry catalog
   -> immutable Good definitions + relationship graph
   -> immutable Economic Actor definitions + in-memory runtime capabilities
-  -> future inventories, production, logistics, consumers, and markets by GoodId and ActorId
+  -> actor-owned Inventory containers + hierarchical Storage Nodes + runtime quantities
+  -> future production, logistics, consumers, and markets by GoodId, ActorId, and InventoryId
 
 Datapack resources
   -> validated Product + Packaging + Transformation candidate registries
@@ -138,6 +139,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.workforce` | Pure workforce definitions, positions, staffing rules, shift assignments, skill levels, certifications, registry, manager lookup, validation, and JSON persistence. |
 | `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
+| `com.butchercraft.world.inventory` | Pure actor-owned inventory containers, hierarchical storage nodes, capacity metadata, exact runtime Good quantities, typed entry metadata, deterministic registry, manager validation, and JSON persistence. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -164,6 +166,7 @@ The current package layout already aligns with the platform direction and requir
 - `com.butchercraft.world.player.runtime`, `world.simulation`, `world.business.runtime`, and `world.workforce` own separate runtime or organizational state with independent schemas.
 - `com.butchercraft.world.goods` owns immutable economic definitions and relationships. It stores no inventory quantities, prices, production state, or ItemStacks.
 - `com.butchercraft.world.economy.actor` owns immutable participant definitions and separate in-memory runtime status. Actors reference Goods, Business Runtime, and Workforce only through stable ids and store no inventory, production, pricing, transport, or ItemStack state.
+- `com.butchercraft.world.inventory` owns economic quantity and location state independently from Minecraft inventories. It references actors, Goods, and storage nodes by stable ids and imports no Minecraft, NeoForge, Container, menu, slot, or ItemStack APIs.
 - `com.butchercraft.engine`, `transformation`, `product.definition`, `packaging.definition`, and their serialization models remain pure Java foundations.
 - `com.butchercraft.content` coordinates validated immutable content snapshots.
 - `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
@@ -202,6 +205,7 @@ Required boundaries:
 - Business Identity remains immutable inside World Identity. Mutable business runtime state is stored separately at `<world>/butchercraft/business_runtime.json`, references businesses by `BusinessId`, and responds to daily and weekly simulation rollover events without owning an independent clock.
 - Workforce definitions are organizational structure, not employee records. They persist separately at `<world>/butchercraft/workforce_definitions.json`, reference businesses by `BusinessId`, reference Business Runtime shift ids, and resolve required positions for a current shift without assigning workers.
 - Economic Actors define participants, not economic behavior. Immutable definitions persist separately at `<world>/butchercraft/economic_actors.json`, reference goods by `GoodId`, and keep mutable runtime status and optional Business Runtime/Workforce assignments outside definition persistence.
+- Economic Inventory defines ownership, location, capacity, and runtime quantities, not movement or production. Containers reference actors and storage nodes, entries reference Goods by `GoodId`, and the pure domain remains independent from Minecraft inventory representation.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
@@ -264,6 +268,7 @@ Additional persistence ownership rules:
 - Workforce definitions currently persist in schema-versioned JSON at `<world>/butchercraft/workforce_definitions.json` and store only organizational staffing structure plus stable business and shift references. Worker identities, payroll, scheduling, and productivity must live in future employee systems.
 - Economic good definitions and transformation relationships persist in schema-versioned JSON at `<world>/butchercraft/goods.json`. The file stores immutable definitions only; future inventory, warehouse, market, order, shipment, and production quantities require separate runtime owners.
 - Economic actor definitions and relationship metadata persist in schema-versioned JSON at `<world>/butchercraft/economic_actors.json`. Runtime actor status and assignments are in-memory Phase 15 state; future durable runtime ownership requires a separate schema and must not rewrite immutable definitions.
+- Economic inventory containers, storage nodes, runtime statuses, exact quantities, canonical units, and typed entry metadata persist in schema-versioned JSON at `<world>/butchercraft/inventory.json`. Minecraft inventory, ItemStack, slot, menu, GUI, routing, order, and production state must not be duplicated into this file.
 - Work-order queues use `SavedData` only when queued or reserved work must survive save/load; transient station progress remains on the relevant block entity.
 - Facility-level cleanliness summaries may use `SavedData`; local station cleanliness remains on block entities unless a chunk or zone attachment is explicitly introduced.
 - Refrigeration room registries and durable room summaries may use `SavedData`; active thermal caches remain on controllers or runtime services and must be rebuildable.
@@ -308,7 +313,23 @@ Phase 15 introduces `com.butchercraft.world.economy.actor` as the universal indu
 
 `EconomicActorService` depends on `GoodService`, loads definitions only after the active Goods registry is available, and owns world lifecycle persistence at `<world>/butchercraft/economic_actors.json`. The actor package remains pure Java; only the service imports Minecraft and NeoForge APIs. Phase 15 registers no built-in actors and persists no actor runtime state.
 
-Future inventory, production, demand, order, market, transport, utility, NPC, compatibility, and player-business systems must identify participants by `ActorId`, identify goods by `GoodId`, and own their mutable transactions and quantities outside actor definitions.
+Future inventory, production, demand, order, market, transport, utility, NPC, compatibility, and player-business systems must identify participants by `ActorId`, identify goods by `GoodId`, and own their mutable transactions outside actor definitions.
+
+## Inventory And Storage Architecture
+
+Phase 16 introduces `com.butchercraft.world.inventory` as the universal runtime ownership and physical-location model for economic Goods.
+
+`InventoryContainer` is immutable identity metadata linking one `InventoryId` to one owner `ActorId`, one `StorageNodeId`, one typed inventory classification, and one capacity definition. `StorageNode` is immutable location metadata with a typed `StorageRequirement`, capacity, and optional parent node. Parent references form a validated acyclic hierarchy for distribution centers, warehouses, coolers, freezers, vehicles, shelves, bins, and future compatibility locations.
+
+`InventoryRuntime` is mutable state separate from container identity. It stores status, deterministic entries, last simulation tick, and schema version. `InventoryEntry` stores exact non-negative `long` quantity by `GoodId` and the Good definition's canonical `UnitOfMeasure`. Typed optional lot, expiration-tick, quality-basis-point, and origin-actor metadata is persisted but has no behavior in Phase 16.
+
+`StorageCapacity` provides optional weight, volume, discrete-unit, and distinct-Good limits. Validation uses exact deterministic unit conversion for supported weight and volume units. Container limits and aggregate storage-node/ancestor limits are validated before manager additions commit.
+
+`InventoryRegistry` is immutable and deterministic. It validates duplicate ids, owner and storage references, capacity nesting, missing parents, and hierarchy cycles. `InventoryManager` owns runtime records, validates Good, unit, actor, metadata, and capacity references, and provides quantity, ownership, and storage-hierarchy queries. Movement validation evaluates atomic source-removal and target-addition candidates but performs no movement, routing, reservation, or scheduling.
+
+`InventoryService` depends on `EconomicActorService`, loads only after Goods and Actors are active, and owns world lifecycle persistence at `<world>/butchercraft/inventory.json`. The inventory package remains pure Java; only the service imports Minecraft and NeoForge APIs. Phase 16 registers no built-in inventories or storage nodes and creates no ItemStack bridge.
+
+Future production, order, warehouse-operation, logistics, market, spoilage, and compatibility systems must identify inventory by `InventoryId`, preserve server authority, and use explicit transactions. Minecraft inventory adapters must remain outside the pure inventory domain.
 
 ## Item Data-Component Strategy
 

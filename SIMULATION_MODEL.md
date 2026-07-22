@@ -57,7 +57,11 @@ Production will transform inputs into outputs under industry rules, facility cap
 
 ## Distribution
 
-Distribution will move goods between producers, warehouses, retailers, restaurants, and other consumers. Historical supply relationships already provide identity context; active transport, inventory movement, and logistics are future systems.
+Distribution will move goods between producers, warehouses, retailers, restaurants, and other consumers. Historical supply relationships already provide identity context, and Inventory now records current ownership and location. Active transport, inventory movement, routing, and logistics remain future systems.
+
+## Inventory And Storage
+
+Economic Actors own immutable inventory-container identities. Each container is located at a hierarchical Storage Node and has separate mutable runtime entries containing exact Good quantities. Capacity validation constrains candidate runtime states, but Inventory does not schedule, route, reserve, produce, consume, spoil, price, or render Goods.
 
 ## Consumers
 
@@ -112,4 +116,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, and Economic Actor definitions/runtime capabilities exist. Population, quantities, inventory, regional production, active distribution behavior, consumers, markets, and the economy remain conceptual future work.
+World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, and economic Inventory/Storage runtime quantities exist. Population, regional production, active distribution behavior, consumers, markets, and the economy remain conceptual future work.

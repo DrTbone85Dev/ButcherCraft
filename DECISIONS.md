@@ -1067,6 +1067,27 @@ Consequences:
 - No built-in actors are registered in Phase 15.
 - Inventory, quantities, warehousing behavior, orders, contracts, scheduling, pricing, markets, production, AI, transportation, logistics, employment, networking, GUI, and gameplay remain out of scope.
 
+## DEC-0069: Economic Inventory Is Independent From Minecraft Inventory
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 16 introduces `com.butchercraft.world.inventory` as the universal runtime ownership and location model for economic Goods. Economic Actors own immutable inventory-container identities, containers reference immutable hierarchical Storage Nodes, and separate mutable runtime records store exact quantities by `GoodId` and canonical `UnitOfMeasure`. Minecraft inventories, containers, slots, ItemStacks, and menus are not part of this domain.
+
+Rationale: regional warehouses, coolers, vehicles, retailers, processors, utilities, player businesses, and compatibility modules need quantities that exist independently from loaded chunks and Minecraft item representation. Using block-entity slots as the economic authority would couple world simulation to gameplay containers, prevent aggregate off-screen simulation, and fragment ownership across industries.
+
+Consequences:
+
+- Inventory ownership references Economic Actors by `ActorId`; entries reference Goods by `GoodId`.
+- Storage Nodes provide nested physical-location and capacity metadata without implementing logistics or environmental simulation.
+- `InventoryRegistry` is immutable and deterministic; `InventoryManager` owns runtime records and validated quantity updates.
+- Capacity validation covers containers and aggregate ancestor-node usage with deterministic typed unit conversion.
+- Proposed movements validate atomic source-removal and target-addition candidates but do not execute transfers.
+- Inventory definitions and runtime quantities persist at `<world>/butchercraft/inventory.json` with schema version 1.
+- Typed lot, expiration, quality, and origin metadata is persisted but has no Phase 16 behavior.
+- `InventoryService` depends on `EconomicActorService`, preserving Goods -> Actors -> Inventory dependency direction.
+- No built-in inventories or storage nodes are registered in Phase 16.
+- Production, spoilage, logistics, transportation, orders, contracts, scheduling, pricing, markets, AI, automation, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.
