@@ -87,6 +87,7 @@ Every major system has a proposed technical owner in package form:
 | `com.butchercraft.world` | Minecraft-facing world identity service, immutable generated world snapshot access, and server lifecycle integration. |
 | `com.butchercraft.world.player` | Pure player legacy template domain, career profiles, starting scenarios, and scenario registry. |
 | `com.butchercraft.world.player.runtime` | Runtime player identity creation, immutable player identity registry, independent player identity persistence, and server-login initialization. |
+| `com.butchercraft.world.simulation` | Simulation clock, configurable calendar, event scheduler, event bus, independent simulation-state persistence, and server tick lifecycle integration. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -126,6 +127,7 @@ Required boundaries:
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
 - The Packaging Table consumes the same workstation framework with only the `butchercraft:packaging` capability. Retail packaging output is selected through processing-operation and product packaging metadata, while supply requirements come from packaging definitions rather than table code branches.
 - World Identity remains an immutable generated snapshot. Runtime player identity records are stored separately at `<world>/butchercraft/player_identities.json` and reference world settlement, property, business, ownership, and family ids without embedding or mutating those world records.
+- ButcherCraft simulated world time is owned by `SimulationClock`, not Minecraft time-of-day. Future systems must schedule work through `SimulationScheduler` and observe rollover events through `SimulationEventBus` instead of owning independent timers.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 

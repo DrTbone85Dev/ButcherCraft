@@ -956,6 +956,23 @@ Consequences:
 - Player login creates a runtime identity once, then reuses the persisted record on later joins.
 - No economy, production, machines, inventory, employees, NPC AI, contracts, progression, skills, money, orders, reputation changes, business simulation, rendering, UI, commands, or gameplay effects are introduced.
 
+## DEC-0063: ButcherCraft Simulation Time Is Not Minecraft Time-Of-Day
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 10 introduces `SimulationClock` as the authoritative source of ButcherCraft simulated world time. Minecraft server ticks provide execution cadence, but business simulation time is represented by configurable simulation ticks, minutes, hours, days, weeks, months, years, weekdays, and seasons. Future systems must schedule work through `SimulationScheduler` and observe events through `SimulationEventBus` rather than implementing independent timing models.
+
+Rationale: production, employees, inspections, deliveries, business hours, maintenance, refrigeration, economy, and reputation all need shared deterministic time. Keeping simulated time separate from Minecraft time-of-day prevents client frame rate, rendering, sleep behavior, or unrelated Minecraft mechanics from becoming accidental business simulation rules.
+
+Consequences:
+
+- Simulation state persists independently at `<world>/butchercraft/simulation_state.json`.
+- World Identity remains schema version 6 and Player Identity remains schema version 1.
+- Simulation persistence starts at schema version 1 and rejects unsupported schemas until explicit migrations are added.
+- Built-in daily, weekly, monthly, and yearly rollover events are infrastructure events only.
+- The clock publishes events through `SimulationEventBus`; it does not directly invoke gameplay systems.
+- No production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, gameplay events, or gameplay effects are introduced.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

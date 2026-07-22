@@ -1,5 +1,23 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 10 - World Simulation Clock & Event Framework
+
+### Core
+
+- Added the deterministic `com.butchercraft.world.simulation` foundation for simulated world time.
+- Added configurable simulation timing through `SimulationConfiguration`, `SimulationTime`, and `SimulationCalendar`.
+- Added `SimulationClock` as the authoritative simulated-time owner with day, week, month, year, weekday, and season calculation.
+- Added `SimulationScheduler`, `ScheduledSimulationEvent`, `SimulationEventType`, `SimulationEventStatus`, and `SimulationEventBus`.
+- Added built-in rollover infrastructure events for daily, weekly, monthly, and yearly cycles.
+- Added independent JSON persistence at `<world>/butchercraft/simulation_state.json`.
+- Registered server lifecycle integration for server start, server tick advancement, and server stop flushing.
+
+### Stability
+
+- Added validation for negative time, invalid configuration values, invalid calendar values, duplicate event ids, non-pending scheduled events, events scheduled in the past, corrupt persistence, and unsupported simulation schema versions.
+- Added stress coverage for one million simulation ticks with deterministic event ordering and no duplicate execution.
+- Kept production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, and gameplay effects out of scope.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 9 - Player Identity Instantiation & Persistence
 
 ### Core

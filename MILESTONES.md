@@ -4,6 +4,48 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 10: World Simulation Clock & Event Framework
+
+Goal: establish the single authoritative ButcherCraft simulation clock and event framework so future gameplay systems schedule work through shared simulated world time instead of independent timers.
+
+Included work:
+
+- Pure simulation value objects: `SimulationConfiguration`, `SimulationTime`, `SimulationCalendar`, and `Season`.
+- `SimulationClock` for authoritative simulated-time advancement and calendar exposure.
+- `SimulationScheduler` for deterministic pending event scheduling, cancellation, and due-event ordering.
+- `ScheduledSimulationEvent`, `SimulationEventType`, `SimulationEventStatus`, `SimulationEventBus`, and listener support.
+- Built-in infrastructure event types for daily, weekly, monthly, and yearly rollovers.
+- Schema-versioned `SimulationState` and `SimulationStateStorage` at `<world>/butchercraft/simulation_state.json`.
+- `SimulationClockService` registered for server start, server tick advancement, and server stop save flushing.
+- Automated coverage for clock advancement, deterministic progression, calendar rollovers, scheduler ordering, cancellation, simultaneous events, persistence, schema rejection, dependency boundaries, and one million simulation ticks.
+
+Excluded work:
+
+- Production, economy, machines, workers, NPC AI, inspections, refrigeration, maintenance, reputation, business operations, GUI, commands, gameplay events, gameplay effects, and user-facing controls.
+
+Acceptance criteria:
+
+- There is one active simulation clock per running server.
+- Minecraft server ticks advance ButcherCraft simulated time, but Minecraft time-of-day is not treated as business simulation time.
+- Simulated calendar values derive from configuration, not scattered constants.
+- Rollover events publish through the event bus; the clock does not directly call gameplay systems.
+- Simulation state persists separately from World Identity and Player Identity data.
+- Simulation schema version 1 rejects unsupported future schemas until migrations are deliberately added.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- A future server smoke check should confirm `<world>/butchercraft/simulation_state.json` is written on orderly shutdown. Phase 10 adds no visible gameplay or UI.
+
+Rollback considerations:
+
+- Phase 10 is additive around simulation time. Removing the simulation package, lifecycle registration, tests, and documentation should restore Phase 9 runtime player identity behavior without changing World Identity or Player Identity schemas.
+
 ## Milestone 0.9.0 Phase 9: Player Identity Instantiation & Persistence
 
 Goal: create persistent runtime ButcherCraft identities for Minecraft players joining a world while preserving immutable World Identity as a separate snapshot.
