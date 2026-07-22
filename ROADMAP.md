@@ -35,10 +35,11 @@ Delivered platform work includes:
 
 ## Era III: Economic Engine
 
-Status: future
+Status: common Goods language implemented; economic behavior future
 
 Planned domains:
 
+- Commodity and product identity foundation (implemented in Phase 14).
 - Supply.
 - Demand.
 - Transportation.
@@ -99,4 +100,3 @@ API stabilization follows real integrations; it does not precede them.
 - Historical milestones are not rewritten when strategic eras change.
 - A second industry or real compatibility consumer should validate boundaries before packages or APIs are extracted broadly.
 - No era may bypass `CORE_PRINCIPLES.md` or `PROJECT_RULES.md`.
-

@@ -34,6 +34,10 @@ Immutable World Identity
 
 Simulation Clock -> Scheduler -> Event Bus -> Focused runtime services
 
+Industry catalog
+  -> immutable Good definitions + relationship graph
+  -> future inventories, production, logistics, consumers, and markets by GoodId
+
 Datapack resources
   -> validated Product + Packaging + Transformation candidate registries
   -> atomic ContentSnapshot activation
@@ -131,6 +135,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.simulation` | Simulation clock, configurable calendar, event scheduler, event bus, independent simulation-state persistence, and server tick lifecycle integration. |
 | `com.butchercraft.world.business.runtime` | Pure business runtime state, hours, shifts, operational status, runtime registry, manager transitions, event listener, validation, and JSON persistence. |
 | `com.butchercraft.world.workforce` | Pure workforce definitions, positions, staffing rules, shift assignments, skill levels, certifications, registry, manager lookup, validation, and JSON persistence. |
+| `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -155,6 +160,7 @@ The current package layout already aligns with the platform direction and requir
 
 - `com.butchercraft.world.identity`, `world.business`, `world.ownership`, `world.property`, `world.trade`, and `world.manufacturer` contain immutable or historical regional identity domains.
 - `com.butchercraft.world.player.runtime`, `world.simulation`, `world.business.runtime`, and `world.workforce` own separate runtime or organizational state with independent schemas.
+- `com.butchercraft.world.goods` owns immutable economic definitions and relationships. It stores no inventory quantities, prices, production state, or ItemStacks.
 - `com.butchercraft.engine`, `transformation`, `product.definition`, `packaging.definition`, and their serialization models remain pure Java foundations.
 - `com.butchercraft.content` coordinates validated immutable content snapshots.
 - `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
@@ -252,6 +258,7 @@ Additional persistence ownership rules:
 
 - Business runtime state currently persists in schema-versioned JSON at `<world>/butchercraft/business_runtime.json` and stores only mutable operational summaries plus stable business references. Future `SavedData` business ledgers must not duplicate this runtime state without an explicit migration decision.
 - Workforce definitions currently persist in schema-versioned JSON at `<world>/butchercraft/workforce_definitions.json` and store only organizational staffing structure plus stable business and shift references. Worker identities, payroll, scheduling, and productivity must live in future employee systems.
+- Economic good definitions and transformation relationships persist in schema-versioned JSON at `<world>/butchercraft/goods.json`. The file stores immutable definitions only; future inventory, warehouse, market, order, shipment, and production quantities require separate runtime owners.
 - Work-order queues use `SavedData` only when queued or reserved work must survive save/load; transient station progress remains on the relevant block entity.
 - Facility-level cleanliness summaries may use `SavedData`; local station cleanliness remains on block entities unless a chunk or zone attachment is explicitly introduced.
 - Refrigeration room registries and durable room summaries may use `SavedData`; active thermal caches remain on controllers or runtime services and must be rebuildable.
@@ -266,6 +273,23 @@ Persistence rules:
 - Unknown ids from missing expansions should be retained where practical and surfaced as inactive or unresolved, not deleted.
 - Mutating saved data must mark the data dirty.
 - Save only compact summaries for high-frequency simulation state. Store detailed transient caches on block entities or runtime services.
+
+## Economic Goods Architecture
+
+Phase 14 introduces `com.butchercraft.world.goods` as the universal immutable language for future economic goods.
+
+`GoodDefinition` is a sealed base with exactly two current categories:
+
+- `CommodityDefinition` for generic resources, utilities, capacities, livestock, and raw materials.
+- `com.butchercraft.world.goods.ProductDefinition` for manufactured or processed economic goods with a source industry and transformation stage.
+
+The economic `ProductDefinition` does not replace `com.butchercraft.product.definition.ProductDefinition`. The existing definition remains authoritative for processing content, datapack product references, ItemStack adapters, and workstation execution. No automatic mapping or catalog migration exists in Phase 14.
+
+`GoodRegistry` is immutable and deterministic. It validates duplicate ids, known industries, transformation input/output references, duplicate relationships, and graph cycles. `GoodManager` replaces registry snapshots for definition registration and lookup but owns no quantities. `GoodTransformation` records an input, output, exact yield ratio, and owning industry without executing production.
+
+`ItemMappingMetadata` contains pure provider and item identifiers only. It is informational and cannot resolve, create, inspect, or mutate an ItemStack. `GoodService` is the sole Minecraft lifecycle adapter for loading and saving `goods.json`.
+
+Future inventories, warehouses, orders, production plans, shipments, consumers, utilities, and markets must reference goods by `GoodId` and own their mutable quantities separately.
 
 ## Item Data-Component Strategy
 

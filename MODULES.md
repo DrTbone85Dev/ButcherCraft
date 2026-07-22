@@ -14,6 +14,7 @@ ButcherCraft Core is the common platform. It owns concepts that must remain cons
 - Simulation Clock, calendar, scheduler, and event publication.
 - Business identity and mutable business runtime foundations.
 - Shared workforce structure and future cross-industry worker contracts.
+- Immutable commodity and product identities shared across industries.
 - Future economy, market, consumer, logistics, utility, and population foundations.
 - Persistence ownership, schema versioning, validation, and migration policy.
 - Content snapshot coordination for shared data-driven definitions.
@@ -24,7 +25,7 @@ Core must not become a collection of industry-specific recipes or machine behavi
 
 ### Current State
 
-Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, Business Runtime, Workforce definitions, generic product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations.
+Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, Business Runtime, Workforce definitions, immutable economic Goods definitions, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations.
 
 Economy, logistics execution, population simulation, consumers, utilities, and a stable third-party API are planned, not implemented.
 
@@ -181,6 +182,7 @@ The existing layout already supports the platform direction:
 | `com.butchercraft.world.business.runtime` | Mutable business operations. |
 | `com.butchercraft.world.workforce` | Cross-industry staffing structure. |
 | `com.butchercraft.world.trade` | Immutable historical supply-network identity. |
+| `com.butchercraft.world.goods` | Universal immutable economic commodities, products, units, metadata, and transformation relationships. |
 | `com.butchercraft.engine` | Pure processing and transaction foundations. |
 | `com.butchercraft.product` | Product definitions and Minecraft adapters. |
 | `com.butchercraft.transformation` | Generic material transformations. |
@@ -193,4 +195,3 @@ No package rename is required for this milestone. Future extraction should occur
 ## Historical Module Plan
 
 `MODULE_PLAN.md` preserves the earlier expansion strategy and remains useful context for the flagship Meat Processing scope. This document supersedes it for active platform-level module planning.
-

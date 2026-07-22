@@ -1029,6 +1029,25 @@ Consequences:
 - Existing package names, public registry ids, schemas, save files, assets, datapacks, and gameplay behavior remain unchanged.
 - Phase 13 implements no economy, production, employees, AI, logistics, markets, pricing, transportation, utilities, compatibility adapter, or gameplay system.
 
+## DEC-0067: Economic Goods Are Independent From ItemStacks And Processing Products
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 14 introduces `com.butchercraft.world.goods` as the immutable economic language for commodities, manufactured products, and directed transformation relationships. Economic goods use stable `GoodId` values and typed metadata. They do not store quantities and do not depend on Minecraft ItemStacks. The economic `ProductDefinition` remains separate from the existing `com.butchercraft.product.definition.ProductDefinition` used by processing content.
+
+Rationale: every future industry, market, warehouse, producer, consumer, logistics service, and compatibility module needs a common identity for what moves through the economy. Making ItemStacks or the existing meat-processing product schema the economic authority would couple regional simulation to Minecraft inventory representation and industry-specific content concerns.
+
+Consequences:
+
+- Every economic good is exactly one commodity or product.
+- `GoodRegistry` is an immutable deterministic snapshot and validates known industries, references, duplicates, and cycles.
+- `GoodTransformation` records relationships and exact yield metadata only; it does not execute production.
+- Economic definitions persist independently at `<world>/butchercraft/goods.json` with schema version 1.
+- Informational item mappings use pure identifier metadata and do not resolve or register Minecraft items.
+- Existing product definitions, datapack content, transformations, ItemStack adapters, and workstation behavior are unchanged.
+- No built-in economic goods are registered in Phase 14; a future mapping or migration milestone must resolve overlap with existing processing products deliberately.
+- Inventory, quantities, warehousing, prices, markets, orders, production, transportation, utilities, networking, GUI, and gameplay remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

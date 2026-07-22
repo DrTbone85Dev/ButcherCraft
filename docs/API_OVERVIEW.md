@@ -45,12 +45,12 @@ Possible extension points:
 
 ### Product
 
-Identifies goods and their descriptive definitions independently from Minecraft ItemStacks. Existing product definitions, registries, serialized schemas, and ItemStack adapters provide the current internal foundation.
+Identifies goods and their descriptive definitions independently from Minecraft ItemStacks. Phase 14's internal `com.butchercraft.world.goods` package now provides stable good and industry ids, immutable commodity and economic product definitions, units, typed handling metadata, and relationship graphs. It is not yet a public API.
 
 Possible extension points:
 
-- Product ids and definitions.
-- Categories, quantity units, tags, and typed metadata.
+- Good ids and commodity/product definitions.
+- Industries, categories, units, stages, and typed handling metadata.
 - Product equivalence or compatibility tags.
 - ItemStack conversion at the Minecraft boundary.
 
@@ -169,4 +169,3 @@ There is currently no stable `com.butchercraft.api` contract. Internal classes m
 ## Out Of Scope
 
 This milestone adds no API classes, service loader, event registration, network protocol, datapack type, compatibility adapter, economy service, or gameplay behavior.
-

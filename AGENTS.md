@@ -59,6 +59,7 @@ Do not claim a command passed unless you actually ran it.
 - Use GameTests when gameplay behavior needs in-game validation.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
+- Keep `com.butchercraft.world.goods` definitions, registries, graph validation, and persistence independent of Minecraft, NeoForge, ItemStack, inventory quantities, and gameplay state.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
 - Keep datapack definition registries, `ResourceLocation`, `ResourceKey`, `Holder`, and `RegistryAccess` usage outside `com.butchercraft.engine`.
@@ -107,6 +108,7 @@ Do not claim a command passed unless you actually ran it.
 - Product item state belongs in item data components.
 - Product-bearing stacks are max stack size one until the project deliberately defines how engine quantity and ItemStack count interact.
 - World/facility/business/order/inspection state belongs in `SavedData` unless a narrower holder is clearly better.
+- Immutable economic good definitions and relationships persist independently in schema-versioned `<world>/butchercraft/goods.json`; runtime quantities must belong to future inventory or economy owners.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.

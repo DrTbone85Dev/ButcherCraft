@@ -1,5 +1,20 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 14 - Commodity And Product Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.goods` foundation for universal economic-good definitions.
+- Added immutable commodity and economic product definitions with typed units, stages, economic flags, storage requirements, transport requirements, and informational item mappings.
+- Added deterministic goods registration, lookup, industry validation, and transformation graph relationships without runtime quantities.
+- Added independent schema-versioned persistence at `<world>/butchercraft/goods.json`.
+
+### Stability
+
+- Added validation for duplicate ids, duplicate transformations, unknown industries, unknown good references, malformed definitions, invalid persisted enum values, unsupported schemas, corrupt JSON, and circular transformations.
+- Added automated coverage for deterministic loading and 100,000 immutable good definitions.
+- Preserved all existing processing products, ItemStack integration, workstation behavior, content registries, and save schemas.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 13 - Core Platform Reorientation
 
 ### Architecture

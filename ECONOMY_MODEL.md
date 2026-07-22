@@ -2,7 +2,9 @@
 
 Status: future concepts only; no economy implementation
 
-This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, persistence schemas, public Java APIs, or gameplay.
+This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 now provides immutable schema-versioned Goods definitions and relationship metadata; no economic behavior or runtime quantity exists.
+
+All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
 ## Economic Philosophy
 
@@ -86,4 +88,3 @@ The following remain undecided until implementation milestones provide evidence:
 - Multiplayer market partitioning.
 - Cross-mod product equivalence.
 - Persistence schemas and migration paths.
-

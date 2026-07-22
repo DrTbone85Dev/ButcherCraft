@@ -110,5 +110,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, and Workforce definitions exist. Population, regional production, active distribution, consumers, markets, and the economy remain conceptual future work.
-
+World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, and immutable economic Goods definitions exist. Population, quantities, inventory, regional production, active distribution, consumers, markets, and the economy remain conceptual future work.

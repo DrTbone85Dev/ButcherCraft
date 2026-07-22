@@ -4,6 +4,51 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 14: Commodity And Product Framework
+
+Goal: establish a universal immutable language for economic goods without implementing inventory, pricing, production, logistics, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.goods` domain with sealed `GoodDefinition`, `CommodityDefinition`, and economic `ProductDefinition` models.
+- Stable `GoodId` and `IndustryId` values plus a built-in platform industry catalog.
+- Typed good category, commodity type, product stage, unit, stackability, economic flag, storage, and transport metadata.
+- Informational provider/item mapping metadata without Minecraft or ItemStack resolution.
+- Immutable `GoodTransformation` relationships with exact yield ratios and owning industries.
+- Deterministic immutable `GoodRegistry`, `GoodRegistryBuilder`, and synchronized `GoodManager` lookup and registration paths.
+- Duplicate id, duplicate relationship, unknown industry, unknown good reference, malformed definition, and circular graph validation.
+- Schema-versioned `GoodStorage` persistence at `<world>/butchercraft/goods.json` with deterministic JSON and atomic replacement.
+- `GoodService` lifecycle integration outside the pure goods package.
+- Automated model, registry, manager, persistence, graph, lifecycle, dependency-boundary, and 100,000-definition stress coverage.
+- Architecture documentation in `docs/GOODS_FRAMEWORK.md`.
+
+Excluded work:
+
+- Built-in economic good catalogs, migration of existing processing products, inventory, quantities, warehousing, pricing, economy, markets, orders, transportation, production, recipes, machines, spoilage, utility simulation, networking, GUI, and gameplay.
+
+Acceptance criteria:
+
+- Every economic definition is exactly one commodity or product.
+- Definitions and relationships are immutable, deterministic, schema-versioned, and independent of Minecraft and NeoForge.
+- Existing processing `ProductDefinition` and ItemStack behavior remain unchanged.
+- Unknown industries, invalid enum values, corrupt persistence, duplicate ids, unresolved transformations, and circular graphs fail visibly.
+- The manager and registry store no runtime quantities.
+- A catalog of 100,000 definitions loads deterministically without duplicate ids.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 14 adds no visible content, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 14 is additive. Removing the goods package, lifecycle service, independent `goods.json` file, tests, and documentation restores Phase 13 without changing World Identity, Simulation, Business Runtime, Workforce, product content, or ItemStack schemas.
+
 ## Milestone 0.9.0 Phase 13: Core Platform Reorientation
 
 Goal: establish ButcherCraft Core as a modular deterministic regional world simulation platform while preserving Meat Processing as the flagship implementation and adding no gameplay or economy system.
