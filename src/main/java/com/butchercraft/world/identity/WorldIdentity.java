@@ -12,7 +12,7 @@ public record WorldIdentity(
         Region region,
         List<County> counties
 ) {
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     public WorldIdentity {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {

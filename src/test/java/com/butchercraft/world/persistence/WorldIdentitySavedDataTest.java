@@ -30,4 +30,21 @@ class WorldIdentitySavedDataTest {
 
         assertEquals(identity, restored.identity());
     }
+
+    @Test
+    void savedDataMarksLegacyPhaseOneIdentityDirtyAfterMigration() {
+        WorldIdentity identity = new WorldIdentityGenerator().generate(444L);
+        CompoundTag legacy = WorldIdentityNbtSerializer.save(identity);
+        legacy.putInt("schema_version", 1);
+        CompoundTag legacyRegion = legacy.getCompound("region");
+        legacyRegion.putString("naming_convention", identity.region().culturalIdentity());
+        legacyRegion.remove("description");
+        legacyRegion.remove("cultural_identity");
+        legacyRegion.remove("naming_profile_id");
+
+        WorldIdentitySavedData restored = WorldIdentitySavedData.load(legacy, RegistryAccess.EMPTY);
+
+        assertTrue(restored.isDirty());
+        assertEquals(WorldIdentity.CURRENT_SCHEMA_VERSION, restored.identity().schemaVersion());
+    }
 }

@@ -24,7 +24,7 @@ class WorldIdentityModelTest {
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 "world_test",
                 1L,
-                new Region("oak_region", "Oak Region", "Pasture farms", "Family shops", "Oak names"),
+                region("oak_region"),
                 counties
         );
         counties.clear();
@@ -37,21 +37,21 @@ class WorldIdentityModelTest {
 
     @Test
     void modelRejectsIncompleteOrInconsistentIdentity() {
-        Region region = new Region("region", "Region", "Agriculture", "Economy", "Naming");
+        Region region = region("region");
         Settlement settlement = new Settlement("settlement", "Settlement", "county", SettlementType.HAMLET);
         County county = new County("county", "County", "region", List.of(settlement));
 
-        assertThrows(IllegalArgumentException.class, () -> new Region(" ", "Region", "Agriculture", "Economy", "Naming"));
+        assertThrows(IllegalArgumentException.class, () -> new Region(" ", "Region", "Description", "Agriculture", "Economy", "Culture", "profile"));
         assertThrows(NullPointerException.class, () -> new Settlement("settlement", "Settlement", "other", null));
         assertThrows(IllegalArgumentException.class, () -> new County("county", "County", "region", List.of(
                 new Settlement("settlement", "Settlement", "wrong_county", SettlementType.HAMLET)
         )));
-        assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(2, "world", 1L, region, List.of(county)));
+        assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(3, "world", 1L, region, List.of(county)));
         assertThrows(IllegalArgumentException.class, () -> new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
                 "world",
                 1L,
-                new Region("other_region", "Other", "Agriculture", "Economy", "Naming"),
+                region("other_region"),
                 List.of(county)
         ));
     }
@@ -63,5 +63,9 @@ class WorldIdentityModelTest {
         assertEquals("hamlet", identity.settlements().get(0).type().serializedName());
         assertEquals("regional_city", identity.settlements().get(identity.settlements().size() - 1).type().serializedName());
         assertTrue(identity.settlements().stream().map(Settlement::id).distinct().count() == identity.settlements().size());
+    }
+
+    private static Region region(String id) {
+        return new Region(id, "Region", "Description", "Agriculture", "Economy", "Culture", "profile");
     }
 }

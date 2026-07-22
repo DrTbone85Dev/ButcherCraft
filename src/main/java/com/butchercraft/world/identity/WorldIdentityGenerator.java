@@ -1,171 +1,157 @@
 package com.butchercraft.world.identity;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 
 public final class WorldIdentityGenerator {
     private static final long ID_SALT = 0x6d2b79f5a1c4d3e7L;
-    private static final long REGION_SALT = 0x1f123bb5c4a19d71L;
-    private static final long COUNTY_SALT = 0x4d9f2c7b66b8f2a5L;
-    private static final long SETTLEMENT_SALT = 0x21d52f91764c3a2bL;
+    private static final long REGION_SELECTION_SALT = 0x1f123bb5c4a19d71L;
 
-    private static final List<RegionTemplate> REGION_TEMPLATES = List.of(
-            new RegionTemplate(
-                    "northwoods_ridge",
-                    "Northwoods Ridge",
-                    "Cool-season livestock farms, forest-edge grazing, and small dairy routes",
-                    "Locker plants, family shops, cold storage services, and seasonal rural trade",
-                    List.of("Pine", "Cedar", "Iron", "Maple", "Clearwater"),
-                    List.of("Ridge", "Falls", "Hollow", "Crossing", "County"),
-                    List.of("Pine", "Cedar", "Mill", "Timber", "Brook"),
-                    List.of("Hollow", "Crossing", "Point", "Falls", "Grove")
+    private static final List<CountyGenerationSlot> COUNTY_LAYOUT = List.of(
+            new CountyGenerationSlot(
+                    "primary_county",
+                    NamingRole.COUNTY_PRIMARY,
+                    List.of(
+                            new SettlementGenerationSlot("rural_hamlet", SettlementType.HAMLET, NamingRole.SETTLEMENT_RURAL_HAMLET),
+                            new SettlementGenerationSlot("agricultural_village", SettlementType.VILLAGE, NamingRole.SETTLEMENT_AGRICULTURAL_VILLAGE)
+                    )
             ),
-            new RegionTemplate(
-                    "prairie_crossroads",
-                    "Prairie Crossroads",
-                    "Open-range cattle country, grain farms, and long-haul livestock routes",
-                    "Roadside butcher shops, market towns, regional processors, and freight depots",
-                    List.of("Prairie", "Wheatland", "Bison", "Rail", "Sunfield"),
-                    List.of("County", "Junction", "Plains", "Crossing", "Bend"),
-                    List.of("Wheat", "Rail", "Meadow", "Sun", "Prairie"),
-                    List.of("Junction", "Market", "Crossing", "Springs", "Center")
+            new CountyGenerationSlot(
+                    "market_county",
+                    NamingRole.COUNTY_MARKET,
+                    List.of(
+                            new SettlementGenerationSlot("market_village", SettlementType.VILLAGE, NamingRole.SETTLEMENT_MARKET_VILLAGE),
+                            new SettlementGenerationSlot("county_town", SettlementType.TOWN, NamingRole.SETTLEMENT_COUNTY_TOWN)
+                    )
             ),
-            new RegionTemplate(
-                    "riverbend_valley",
-                    "Riverbend Valley",
-                    "River-bottom farms, mixed livestock, orchards, and market gardens",
-                    "Dense village trade, supplier routes, family storefronts, and local food markets",
-                    List.of("River", "Valley", "Mill", "Bridge", "Willow"),
-                    List.of("Bend", "County", "Crossing", "Bluff", "Parish"),
-                    List.of("River", "Willow", "Bridge", "Orchard", "Mill"),
-                    List.of("Bend", "Landing", "Ford", "Market", "Bluff")
-            ),
-            new RegionTemplate(
-                    "high_plains",
-                    "High Plains",
-                    "Dryland ranching, hardy herds, hay ground, and broad grazing leases",
-                    "Industrial lots, auction traffic, trucking services, and larger processing yards",
-                    List.of("Mesa", "Sage", "Highland", "Canyon", "Range"),
-                    List.of("County", "Mesa", "Draw", "Flats", "Territory"),
-                    List.of("Sage", "Mesa", "Canyon", "Range", "Dust"),
-                    List.of("Flats", "Station", "Draw", "Outpost", "Heights")
-            ),
-            new RegionTemplate(
-                    "lake_country",
-                    "Lake Country",
-                    "Pasture farms, wetland hay, dairy routes, and small lakeside markets",
-                    "Tourist-season retail, village shops, cold storage, and specialty suppliers",
-                    List.of("Lake", "Harbor", "Reed", "Birch", "Northshore"),
-                    List.of("County", "Shore", "Harbor", "Isle", "Bay"),
-                    List.of("Lake", "Harbor", "Reed", "Birch", "Bay"),
-                    List.of("Shore", "Harbor", "Landing", "Cove", "Village")
+            new CountyGenerationSlot(
+                    "frontier_county",
+                    NamingRole.COUNTY_FRONTIER,
+                    List.of(
+                            new SettlementGenerationSlot("remote_hamlet", SettlementType.HAMLET, NamingRole.SETTLEMENT_REMOTE_HAMLET),
+                            new SettlementGenerationSlot("trade_town", SettlementType.TOWN, NamingRole.SETTLEMENT_TRADE_TOWN),
+                            new SettlementGenerationSlot("regional_city", SettlementType.REGIONAL_CITY, NamingRole.SETTLEMENT_REGIONAL_CITY)
+                    )
             )
     );
 
-    private static final SettlementType[][] SETTLEMENT_LAYOUT = {
-            {SettlementType.HAMLET, SettlementType.VILLAGE},
-            {SettlementType.VILLAGE, SettlementType.TOWN},
-            {SettlementType.HAMLET, SettlementType.TOWN, SettlementType.REGIONAL_CITY}
-    };
+    private final RegionCatalog regionCatalog;
+    private final WorldIdentityNameGenerator nameGenerator;
+
+    public WorldIdentityGenerator() {
+        this(RegionCatalog.builtIn(), new WorldIdentityNameGenerator());
+    }
+
+    public WorldIdentityGenerator(RegionCatalog regionCatalog) {
+        this(regionCatalog, new WorldIdentityNameGenerator());
+    }
+
+    public WorldIdentityGenerator(RegionCatalog regionCatalog, WorldIdentityNameGenerator nameGenerator) {
+        this.regionCatalog = Objects.requireNonNull(regionCatalog, "regionCatalog");
+        this.nameGenerator = Objects.requireNonNull(nameGenerator, "nameGenerator");
+    }
 
     public WorldIdentity generate(long worldSeed) {
-        RegionTemplate template = REGION_TEMPLATES.get(pick(worldSeed, REGION_SALT, REGION_TEMPLATES.size()));
-        Region region = new Region(
-                template.id(),
-                template.displayName(),
-                template.agriculturalIdentity(),
-                template.economicIdentity(),
-                template.namingConvention()
-        );
-        List<County> counties = new ArrayList<>();
-        for (int countyIndex = 0; countyIndex < SETTLEMENT_LAYOUT.length; countyIndex++) {
-            counties.add(generateCounty(worldSeed, region.id(), template, countyIndex));
-        }
+        RegionDefinition regionDefinition = selectRegion(worldSeed);
+        Region region = regionDefinition.toRegion();
+        List<County> counties = COUNTY_LAYOUT.stream()
+                .map(slot -> generateCounty(worldSeed, regionDefinition, slot))
+                .toList();
+        validateGeneratedNames(counties);
         return new WorldIdentity(
                 WorldIdentity.CURRENT_SCHEMA_VERSION,
-                "world_" + Long.toUnsignedString(mix64(worldSeed ^ ID_SALT), 36),
+                "world_" + Long.toUnsignedString(WorldIdentityDeterminism.mix64(worldSeed ^ ID_SALT), 36),
                 worldSeed,
                 region,
                 counties
         );
     }
 
-    private static County generateCounty(long worldSeed, String regionId, RegionTemplate template, int countyIndex) {
-        String countyName = uniqueName(
-                worldSeed,
-                COUNTY_SALT + countyIndex * 101L,
-                template.countyPrefixes(),
-                template.countySuffixes(),
-                countyIndex
-        );
-        String countyId = slug(countyName) + "_" + (countyIndex + 1);
-        SettlementType[] settlementTypes = SETTLEMENT_LAYOUT[countyIndex];
-        List<Settlement> settlements = new ArrayList<>();
-        for (int settlementIndex = 0; settlementIndex < settlementTypes.length; settlementIndex++) {
-            settlements.add(generateSettlement(
+    public RegionDefinition selectRegion(long worldSeed) {
+        RegionDefinition selected = null;
+        long selectedScore = 0L;
+        for (RegionDefinition region : regionCatalog.deterministicSelectionOrder()) {
+            long score = WorldIdentityDeterminism.stableScore(
                     worldSeed,
-                    template,
-                    countyId,
-                    countyIndex,
-                    settlementIndex,
-                    settlementTypes[settlementIndex]
-            ));
+                    REGION_SELECTION_SALT,
+                    "region",
+                    region.id()
+            );
+            if (selected == null
+                    || Long.compareUnsigned(score, selectedScore) > 0
+                    || (score == selectedScore && region.id().compareTo(selected.id()) < 0)) {
+                selected = region;
+                selectedScore = score;
+            }
         }
-        return new County(countyId, countyName, regionId, settlements);
+        if (selected == null) {
+            throw new IllegalStateException("Region catalog did not contain any selectable regions");
+        }
+        return selected;
     }
 
-    private static Settlement generateSettlement(
+    public String selectName(long worldSeed, RegionDefinition region, NamingRole role, String stableEntityId) {
+        return nameGenerator.selectName(worldSeed, regionCatalog, region, role, stableEntityId);
+    }
+
+    private County generateCounty(long worldSeed, RegionDefinition region, CountyGenerationSlot slot) {
+        String countyId = region.id() + "_" + slot.id();
+        String countyName = selectName(worldSeed, region, slot.namingRole(), countyId);
+        List<Settlement> settlements = slot.settlements().stream()
+                .map(settlementSlot -> generateSettlement(worldSeed, region, countyId, settlementSlot))
+                .toList();
+        return new County(countyId, countyName, region.id(), settlements);
+    }
+
+    private Settlement generateSettlement(
             long worldSeed,
-            RegionTemplate template,
+            RegionDefinition region,
             String countyId,
-            int countyIndex,
-            int settlementIndex,
-            SettlementType type
+            SettlementGenerationSlot slot
     ) {
-        long salt = SETTLEMENT_SALT + countyIndex * 211L + settlementIndex * 37L + type.ordinal() * 17L;
-        String settlementName = uniqueName(worldSeed, salt, template.settlementPrefixes(), template.settlementSuffixes(), settlementIndex);
-        String settlementId = countyId + "_" + type.serializedName() + "_" + (settlementIndex + 1);
-        return new Settlement(settlementId, settlementName, countyId, type);
+        String settlementId = countyId + "_" + slot.id();
+        String settlementName = selectName(worldSeed, region, slot.namingRole(), settlementId);
+        return new Settlement(settlementId, settlementName, countyId, slot.type());
     }
 
-    private static String uniqueName(long seed, long salt, List<String> prefixes, List<String> suffixes, int offset) {
-        String prefix = prefixes.get(pick(seed, salt, prefixes.size()));
-        String suffix = suffixes.get(pick(seed, salt + 0x9e3779b97f4a7c15L + offset, suffixes.size()));
-        return prefix + " " + suffix;
+    private static void validateGeneratedNames(List<County> counties) {
+        Set<String> countyNames = new HashSet<>();
+        Set<String> settlementNames = new HashSet<>();
+        for (County county : counties) {
+            if (!countyNames.add(county.displayName())) {
+                throw new IllegalStateException("Duplicate generated county name: " + county.displayName());
+            }
+            for (Settlement settlement : county.settlements()) {
+                if (!settlementNames.add(settlement.displayName())) {
+                    throw new IllegalStateException("Duplicate generated settlement name: " + settlement.displayName());
+                }
+            }
+        }
     }
 
-    private static int pick(long seed, long salt, int bound) {
-        return (int) Long.remainderUnsigned(mix64(seed + salt), bound);
-    }
-
-    private static long mix64(long value) {
-        long mixed = value + 0x9e3779b97f4a7c15L;
-        mixed = (mixed ^ (mixed >>> 30)) * 0xbf58476d1ce4e5b9L;
-        mixed = (mixed ^ (mixed >>> 27)) * 0x94d049bb133111ebL;
-        return mixed ^ (mixed >>> 31);
-    }
-
-    private static String slug(String value) {
-        return value.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", "");
-    }
-
-    private record RegionTemplate(
+    private record CountyGenerationSlot(
             String id,
-            String displayName,
-            String agriculturalIdentity,
-            String economicIdentity,
-            List<String> countyPrefixes,
-            List<String> countySuffixes,
-            List<String> settlementPrefixes,
-            List<String> settlementSuffixes
+            NamingRole namingRole,
+            List<SettlementGenerationSlot> settlements
     ) {
-        String namingConvention() {
-            return "Regional names favor " + String.join(", ", countyPrefixes.subList(0, Math.min(3, countyPrefixes.size())))
-                    + " and " + String.join(", ", settlementSuffixes.subList(0, Math.min(3, settlementSuffixes.size())))
-                    + " place-name patterns.";
+        private CountyGenerationSlot {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(namingRole, "namingRole");
+            settlements = List.copyOf(Objects.requireNonNull(settlements, "settlements"));
+        }
+    }
+
+    private record SettlementGenerationSlot(
+            String id,
+            SettlementType type,
+            NamingRole namingRole
+    ) {
+        private SettlementGenerationSlot {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(type, "type");
+            Objects.requireNonNull(namingRole, "namingRole");
         }
     }
 }
