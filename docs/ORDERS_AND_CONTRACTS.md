@@ -19,6 +19,13 @@ Inventory -> records current quantities
 
 Orders and Contracts never reserve or mutate Inventory. They never submit Transactions. Fulfillment recording only interprets an already `APPLIED` Transaction.
 
+Phase 21 Economic Planning is a read-only consumer of accepted, fulfillable
+Order lines. It reads exact remaining quantity and subtracts existing
+Order-linked Production commitments before creating a Need. Planning never
+changes Order or line status and never records fulfillment. A completed
+Production Run still requires a separately APPLIED Transaction and an explicit
+Order fulfillment allocation through `OrderManager`.
+
 ## Domain Model
 
 The pure Java domain is `com.butchercraft.world.economy.order`. It has no Minecraft, NeoForge, ItemStack, block entity, menu, networking, or client dependencies.

@@ -151,6 +151,50 @@ public final class ProductionManager {
         return ProductionOperationResult.accepted(runtime.snapshot());
     }
 
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> registerAndSchedulePlan(
+            ProductionPlanDefinition plan,
+            SimulationSchedulerManager scheduler,
+            long tick
+    ) {
+        Objects.requireNonNull(plan, "plan");
+        Objects.requireNonNull(scheduler, "scheduler");
+        ProductionPlanDefinition existing = planRegistry.find(plan.id()).orElse(null);
+        if (existing != null) {
+            if (!existing.equals(plan)) {
+                return rejected(ProductionFailureCode.DUPLICATE_PLAN_ID,
+                        "Production plan identity already has different content", plan.id().value());
+            }
+            ProductionRunSnapshot run = findRunByPlan(plan.id()).orElseThrow();
+            if (run.scheduledWorkId().isPresent()) {
+                return ProductionOperationResult.accepted(run);
+            }
+            return schedule(run.id(), scheduler, tick);
+        }
+        ProductionOperationResult<ProductionRunSnapshot> registered = registerPlan(plan);
+        if (!registered.accepted()) return registered;
+        ProductionRunSnapshot run = registered.value().orElseThrow();
+        try {
+            ProductionOperationResult<ProductionRunSnapshot> scheduled = schedule(run.id(), scheduler, tick);
+            if (scheduled.accepted()) return scheduled;
+            removeUnscheduledPlan(plan.id(), run.id());
+            return scheduled;
+        } catch (RuntimeException exception) {
+            removeUnscheduledPlan(plan.id(), run.id());
+            throw exception;
+        }
+    }
+
+    public synchronized List<ProductionFailure> evaluatePlanReadiness(
+            ProductionPlanDefinition plan,
+            long tick
+    ) {
+        Objects.requireNonNull(plan, "plan");
+        List<ProductionFailure> definitionFailures = validator.validatePlan(plan, processRegistry);
+        if (!definitionFailures.isEmpty()) return definitionFailures;
+        ProductionProcessDefinition process = processRegistry.find(plan.processId()).orElseThrow();
+        return validator.validateReadiness(plan, process, tick);
+    }
+
     public synchronized Optional<ProductionRunSnapshot> findRun(ProductionRunId id) {
         ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(id, "id"));
         return runtime == null ? Optional.empty() : Optional.of(runtime.snapshot());
@@ -506,6 +550,19 @@ public final class ProductionManager {
             List<ProductionFailure> failures = validator.validatePlan(plan, processRegistry);
             if (!failures.isEmpty()) throw invalidPersistence("plan", plan.id().value(), failures);
         }
+    }
+
+    private void removeUnscheduledPlan(ProductionPlanId planId, ProductionRunId runId) {
+        ProductionRunRuntime runtime = runs.get(runId);
+        if (runtime == null || runtime.snapshot().scheduledWorkId().isPresent()) {
+            throw new IllegalStateException("Cannot roll back a scheduled Production plan");
+        }
+        unindex(runtime.snapshot());
+        runs.remove(runId);
+        runByPlan.remove(planId);
+        planRegistry = ProductionPlanRegistry.of(planRegistry.definitions().stream()
+                .filter(definition -> !definition.id().equals(planId))
+                .toList());
     }
 
     private void loadRuns(Collection<ProductionRunSnapshot> loadedRuns) {

@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic regional world simulation platform. Industry modules participate in one shared simulation; Meat Processing is the flagship implementation and retains the existing product, workstation, packaging, and facility-management direction.
 
-Registered content remains limited to the existing development fixtures, Grinder, Bandsaw, Packaging Table, retail-product proof, and Packaging Supplies. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, and an industry-neutral Production Framework. The scheduler now has one internal Production Run handler, but no live industry Process definitions or queued Production Runs; this foundation adds no pricing, logistics, markets, accounting, automation, or gameplay.
+Registered content remains limited to the existing development fixtures, Grinder, Bandsaw, Packaging Table, retail-product proof, and Packaging Supplies. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, and the Economic Planning Engine. The scheduler now runs internal Production and Planning handlers; Planning can compile accepted open Order lines into bounded Production Plans without executing or reserving stock. No live industry Process definitions, pricing, logistics, markets, accounting, or gameplay were added.
 
 ## Project Identity
 
@@ -102,6 +102,8 @@ The immutable Order and Contract intent model, runtime lifecycles, transaction-l
 The deterministic simulation Work definition, lifecycle, ordering, budgets, same-tick rules, strict clock policy, persistence, and extension boundaries are documented in `docs/SIMULATION_SCHEDULER.md`.
 
 The industry-neutral Production Process, Plan, and Run schemas, scheduler integration, transaction-backed completion, persistence, and extension boundaries are documented in `docs/PRODUCTION_FRAMEWORK.md`.
+
+The deterministic Observation-to-Approved-Plan pipeline, ownership rules, exact allocation policy, Production submission adapter, six-file persistence contract, and deferred scope are documented in `docs/ECONOMIC_PLANNING_ENGINE.md`.
 
 The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 

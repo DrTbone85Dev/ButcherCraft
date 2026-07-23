@@ -180,6 +180,25 @@ The handler:
 
 No Production Work recursively schedules itself in the same tick. The handler returns typed completed, deferred, or failed outcomes and never accesses mutable Scheduler internals.
 
+### Planning Submission Boundary
+
+Phase 21 adds `ProductionManager.registerAndSchedulePlan` as a narrow internal
+submission operation for already approved Planning intent. The operation
+validates and registers the immutable Plan, creates its authoritative Run, and
+submits the existing Production Work through Scheduler. If Scheduler rejects a
+new Work request, the new unscheduled Plan and Run are removed before failure is
+returned.
+
+The operation is idempotent for equal Plan identity and content: an already
+scheduled equal Plan returns its existing Run and Work reference. Reusing the
+same Plan id with different content is rejected. This helper does not weaken
+normal Process, Plan, Run, binding, or Scheduler validation and does not execute
+Production.
+
+Economic Planning remains a caller, not a Production owner. Production retains
+Plan/Run lifecycle authority and revalidates all requirements when Work
+executes. See `ECONOMIC_PLANNING_ENGINE.md`.
+
 ## Transaction Completion
 
 Phase 20 activates `TransactionType.PRODUCTION` through an additive schema-1 `inventory_changes` plan. Legacy transactions keep their original single-Good fields and remain readable when the new array is absent.
@@ -217,9 +236,11 @@ Startup order is:
 1. Simulation Clock, Goods, Actors, Business Runtime, Workforce, Inventory, Transactions, and Orders/Contracts initialize.
 2. `ProductionService` loads and validates Processes, Plans, and Runs.
 3. Production installs its explicitly constructed handler.
-4. `SimulationSchedulerService` loads queued Work with that handler available.
-5. Production validates every persisted Scheduler Work reference.
-6. Scheduler tick execution begins.
+4. Economic Planning installs its delegating handler.
+5. `SimulationSchedulerService` loads queued Work with both internal handlers available.
+6. Production validates every persisted Scheduler Work reference.
+7. Economic Planning loads its complete cycle snapshot and validates external references.
+8. Scheduler tick execution begins.
 
 The Scheduler domain does not depend on Production. The world integration layer performs the binding.
 
@@ -271,7 +292,7 @@ These are measured test durations, not production latency guarantees. Gradle sta
 - whole batches and deterministic yield only;
 - final Inventory values must be whole schema-1 units;
 - no variable quality, spoilage, equipment rate, power, fuel, maintenance, or utility consumption;
-- no automatic planning, Order fulfillment, logistics, markets, pricing, accounting, AI, or gameplay;
+- Production itself does not select Plans or record Order fulfillment; Phase 21 Planning may submit bounded approved intent, while logistics, markets, pricing, accounting, AI, and gameplay remain absent;
 - no Process datapack or public third-party registration lifecycle;
 - no Process supersession or schema migration beyond fail-visible version rejection;
 - no cross-file filesystem transaction, only complete-set validation before publication;

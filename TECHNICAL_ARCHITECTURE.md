@@ -41,6 +41,7 @@ Industry catalog
   -> immutable Economic Actor definitions + in-memory runtime capabilities
   -> actor-owned Inventory containers + hierarchical Storage Nodes + runtime quantities
   -> Orders and Contracts express intent and obligations by stable ids
+  -> Economic Planning compiles observed Needs into bounded approved intent
   -> Production Processes + immutable Plans + mutable Runs
   -> scheduler eligibility + transaction-backed atomic completion
   -> future logistics, consumers, and markets
@@ -146,6 +147,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
 | `com.butchercraft.world.inventory` | Pure actor-owned inventory containers, hierarchical storage nodes, capacity metadata, exact runtime Good quantities, typed entry metadata, deterministic registry, manager validation, and JSON persistence. |
+| `com.butchercraft.world.planning` | Pure immutable Planning artifacts, exact Needs and capacity claims, deterministic candidate evaluation and selection, typed Production submission, cycle reports, and six-file JSON persistence. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -280,6 +282,7 @@ Additional persistence ownership rules:
 - Economic inventory containers, storage nodes, runtime statuses, exact quantities, canonical units, and typed entry metadata persist in schema-versioned JSON at `<world>/butchercraft/inventory.json`. Minecraft inventory, ItemStack, slot, menu, GUI, routing, order, and production state must not be duplicated into this file.
 - Economic transaction definitions, final statuses, typed metadata, and simulation ticks persist in schema-versioned JSON at `<world>/butchercraft/transactions.json`. Validation objects, undo stacks, runtime snapshots, and execution caches are not persisted.
 - Production Process definitions, Plan definitions, and Run runtime state persist independently at `<world>/butchercraft/production_processes.json`, `production_plans.json`, and `production_runs.json`. All three candidates are cross-validated before publication; per-file replacement does not claim a three-file filesystem transaction.
+- Economic Planning persists terminal Observations, Needs, Opportunities, Candidates, Approved Plans, Constraints, resolution/submission runtime, and reports at `<world>/butchercraft/planning_observations.json`, `planning_needs.json`, `planning_opportunities.json`, `planning_candidates.json`, `planning_approved_plans.json`, and `planning_runtime.json`. An existing set must contain all six files; complete cycle structure and external authority references are validated before publication.
 - Work-order queues use `SavedData` only when queued or reserved work must survive save/load; transient station progress remains on the relevant block entity.
 - Facility-level cleanliness summaries may use `SavedData`; local station cleanliness remains on block entities unless a chunk or zone attachment is explicitly introduced.
 - Refrigeration room registries and durable room summaries may use `SavedData`; active thermal caches remain on controllers or runtime services and must be rebuildable.
@@ -376,7 +379,7 @@ Six stable broad stages order immutable `ScheduledSimulationWork` records. `Simu
 
 `SimulationPipeline` executes a bounded prefix using positive item, stage, work-unit, generation, same-tick, retry, and depth budgets. Handler failures are typed and isolated by stage policy. Generated requests commit atomically and may run in the same tick only in a later unstarted stage that permits enqueue. The scheduler never mutates Inventory or interprets Orders, Contracts, production policy, logistics, or markets.
 
-`SimulationSchedulerService` initializes after `OrderContractService`, executes after the Simulation Clock's post-tick listener, and persists schema-1 state at `<world>/butchercraft/simulation_scheduler.json`. Unknown persisted Work types, mismatched clock ticks, and persisted `RUNNING` state fail visibly. Phase 20 installs the internal `butchercraft:production_run` handler before scheduler loading so persisted Production Work is resolvable; no public runtime registration API is established. See `docs/SIMULATION_SCHEDULER.md` for schemas, lifecycle, ordering, invariants, measured scale, and limitations.
+`SimulationSchedulerService` initializes after `OrderContractService`, executes after the Simulation Clock's post-tick listener, and persists schema-1 state at `<world>/butchercraft/simulation_scheduler.json`. Unknown persisted Work types, mismatched clock ticks, and persisted `RUNNING` state fail visibly. Phase 20 installs `butchercraft:production_run`; Phase 21 installs `butchercraft:economic_planning_cycle` before scheduler loading and keeps one deferred continuation Work in the PLANNING stage. No public runtime registration API is established. See `docs/SIMULATION_SCHEDULER.md` for schemas, lifecycle, ordering, invariants, measured scale, and limitations.
 
 ## Industry-Neutral Production Architecture
 
@@ -389,6 +392,16 @@ The Run owns lifecycle, exact accumulated work, scheduler Work reference, attemp
 Completion constructs one ordered explicit transaction change plan: all consumed inputs first, preserving Inventory entry metadata, followed by every produced output. `TransactionValidator` validates the complete candidate state and `TransactionExecutor` commits the batch atomically through `InventoryManager`. The Run becomes completed only after authoritative Transaction history records `APPLIED`; rejection or commit failure leaves no partial Inventory mutation.
 
 `ProductionService` initializes after Goods, Actors, Inventory, Transactions, Orders/Contracts, Business Runtime, and Workforce are available. It loads Process, Plan, and Run files as one cross-validated candidate, installs the Production handler before scheduler loading, then validates persisted Work references after the scheduler is active. See `docs/PRODUCTION_FRAMEWORK.md` for schemas, transition rules, requirements, persistence, examples, invariants, measured scale, and extension points.
+
+## Economic Planning Architecture
+
+Phase 21 introduces `com.butchercraft.world.planning` as the pure Java decision owner between authoritative economic facts and Production intent. The canonical immutable artifacts are Observation, Need, Constraint, Opportunity, Candidate Plan, and Approved Plan. Separate runtime records track Need resolution, submission outcome, and one terminal cycle report.
+
+Schema 1 observes accepted open Order lines, subtracts matching active Production commitments, discovers compatible Process/Actor/Inventory Opportunities, generates exact whole-batch Candidates, and selects a bounded deterministic prefix through detached cycle-local capacity ledgers. Explicit Need and Candidate comparators, stable hash-derived ids, exact `GoodQuantity`, and insertion-ordered maps make equivalent inputs repeatable. Capacity claims are not reservations.
+
+Approved executable Production intent crosses one typed boundary, `ProductionPlanningSubmissionAdapter`. It calls the idempotent `ProductionManager.registerAndSchedulePlan` operation, which returns existing identical state, rejects identity conflicts, and removes a newly registered unscheduled Plan after Scheduler rejection. Planning never executes a Run, mutates Inventory, submits Transactions, records Order fulfillment, advances time, or transitions Scheduler runtime.
+
+`EconomicPlanningService` installs its handler before Scheduler load, initializes after Production and Scheduler binding, loads six complete-set files, and ensures one continuation Work exists in the PLANNING stage. Interrupted cycles, malformed or partial files, invalid provenance graphs, and missing external references fail visibly. See `docs/ECONOMIC_PLANNING_ENGINE.md` for the schemas, pipeline, ownership boundaries, persistence, invariants, measured scale, and deferred scope.
 
 ## Item Data-Component Strategy
 
@@ -719,6 +732,7 @@ Pure Java services should be easy to test without launching the full game:
 - Cleanliness aggregation.
 - Refrigeration capacity summaries.
 - Order acceptance rules.
+- Economic Planning detection, exact batch allocation, deterministic ranking, idempotent submission, persistence, and ownership boundaries.
 - Inspection escalation.
 
 No command should be claimed as tested unless it was actually run.
@@ -730,6 +744,7 @@ No command should be claimed as tested unless it was actually run.
 - Use lazy product freshness and temperature updates where possible.
 - Batch facility summary updates.
 - Put upper bounds on employees scanning for jobs.
+- Bound every Planning artifact, per-Need fan-out, evaluation, approval, submission, recursion, provider-work, and total-work dimension.
 - Cache multiblock validation results and invalidate on relevant block changes.
 - Keep networking incremental.
 - Profile before adding complex thermal or AI behavior.

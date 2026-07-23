@@ -35,7 +35,7 @@ Delivered platform work includes:
 
 ## Era III: Economic Engine
 
-Status: common Goods, Economic Actor, Inventory, Transaction, Order/Contract, Scheduler, and Production foundations implemented; broader economic behavior future
+Status: common Goods, Economic Actor, Inventory, Transaction, Order/Contract, Scheduler, Production, and Economic Planning foundations implemented; broader economic behavior future
 
 Planned domains:
 
@@ -46,6 +46,7 @@ Planned domains:
 - Industry-neutral Orders, Contracts, lifecycle, transaction-linked fulfillment, and persistence (implemented in Phase 18).
 - One deterministic, bounded, persistent simulation Work scheduler and six-stage pipeline (implemented in Phase 19).
 - Industry-neutral Production Processes, Plans, Runs, scheduler execution, transaction-backed atomic completion, and persistence (implemented in Phase 20; no live industry definitions).
+- Deterministic business-scale Economic Planning from accepted open Order lines to typed Production Plan submission (implemented in Phase 21; no reservations or execution ownership).
 - Supply.
 - Demand.
 - Transportation.

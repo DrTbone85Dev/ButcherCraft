@@ -4,6 +4,48 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 21: Economic Planning Engine
+
+Goal: add one pure Java, deterministic, bounded decision pipeline that compiles authoritative economic facts into approved Production intent without taking ownership of execution, Inventory, Orders, Transactions, Scheduler runtime, or time.
+
+Included work:
+
+- Immutable schema-1 Observations, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, cycle reports, submission runtime, stable ids, exact quantities, provenance, and typed failures.
+- Business-scale Need detection from accepted open Order lines, including subtraction of existing Order-linked Production commitments.
+- Compatible Production Opportunity discovery through existing Goods, Actors, Business Runtime, Workforce, Inventory, Orders/Contracts, Production, Transaction, and Scheduler authorities.
+- Deterministic whole-batch Candidate generation, explicit comparator chains, cycle-local capacity claims, bounded greedy selection, and visible remainder behavior.
+- Typed, idempotent Production Plan registration and Scheduler submission through `ProductionPlanningSubmissionAdapter`.
+- One persistent `butchercraft:economic_planning_cycle` Work in the existing PLANNING stage, with no second clock or independent tick loop.
+- Deterministic six-file schema-1 persistence under `<world>/butchercraft/`, complete-set reconstruction, external-reference validation, and fail-visible interrupted-cycle policy.
+- Domain, algorithm, determinism, ownership, persistence, replay, integration, budget, failure, dependency-boundary, regression, and split-scale stress coverage plus `docs/ECONOMIC_PLANNING_ENGINE.md`.
+
+Excluded work:
+
+- Inventory reservations; purchase, shipment, maintenance, utility, or inspection planning; automated Order creation; pricing; markets; accounting; forecasting; cross-cycle optimization; public provider registration; live industry Processes; gameplay; GUI; commands; networking; ItemStacks; and workstation integration.
+
+Acceptance criteria:
+
+- Planning reads authoritative facts and owns decisions only; Inventory, Transactions, Orders, Production, Scheduler, and Clock retain their existing authority.
+- The same authoritative state, tick, policy, and insertion-independent inputs produce equal cycle artifacts and stable target identities.
+- Approved capacity never exceeds the detached cycle-local Opportunity and input ledgers.
+- Identical submission replay creates no duplicate Production Plan, Run, or Scheduler Work.
+- Budget exhaustion publishes `COMPLETED_WITH_REMAINDER`; malformed, partial, unsupported, interrupted, or externally inconsistent persistence fails visibly.
+- Scale coverage constructs at least 1,000,000 Observations, 500,000 Needs, 500,000 Opportunities, 1,000,000 Candidates, and 100,000 Approved Plans in split datasets.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 21 adds no visible content, networking, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 21 is additive apart from the narrow idempotent `ProductionManager.registerAndSchedulePlan` submission boundary and lifecycle listener registration. Removing the Planning package, service, tests, documentation, and that submission helper restores Phase 20 without changing existing content, ItemStack, workstation, Order, Transaction, Inventory, or Production persistence schemas.
+
 ## Milestone 0.9.0 Phase 20: Industry-Neutral Production Framework
 
 Goal: establish the pure Java operational framework that executes declared Good transformations through authoritative simulation time and atomic economic Transactions without adding industry content or gameplay.

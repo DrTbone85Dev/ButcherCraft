@@ -1182,6 +1182,29 @@ Consequences:
 - `EconomicTransaction` gains an optional additive `inventory_changes` field. Existing schema-1 records without that field remain loadable and preserve their prior behavior.
 - Machine integration, workstation migration, datapack Process loading, and industry gameplay remain future work.
 
+## DEC-0074: Economic Planning Owns Decisions But Never Execution
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003` through `AI-0018`, `AI-0020` through `AI-0028`.
+
+Decision: version 0.9.0 Phase 21 introduces `com.butchercraft.world.planning` as the pure Java Core owner of deterministic economic observations, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, and Planning Cycle runtime. Schema 1 plans business-scale Production only. Planning reads immutable facts from authoritative services, selects bounded intent with exact cycle-local capacity claims, and submits executable approvals through a typed Production adapter. It never advances time, reserves or mutates Inventory, submits economic Transactions, fulfills Orders, executes Production, or owns Scheduler runtime.
+
+Rationale: automated regional behavior needs an explainable decision layer between economic facts and operational execution. Putting selection inside Orders, Production, Inventory, or Scheduler would give those systems conflicting responsibilities and make deterministic replay difficult. Keeping Planning artifacts immutable and separately persisted makes decisions inspectable while reusing existing execution authorities.
+
+Consequences:
+
+- One `butchercraft:economic_planning_cycle` Work runs in the existing PLANNING stage and defers to the next authoritative simulation tick; no second clock or independent tick loop exists.
+- Open accepted Order lines are the only schema-1 Need source. Existing active Production commitments linked to the same Order and output Good are subtracted before a Need is emitted.
+- Later Planning phases consume captured immutable observations and minimal immutable Opportunity process parameters rather than re-reading mutable registries.
+- Need and Candidate comparator chains are explicit. Exact `GoodQuantity`, whole-batch arithmetic, stable ids, and bounded ordered iteration contain no random or floating-point tie breaking.
+- Selection uses detached cycle-local Opportunity and input-capacity ledgers. These claims prevent over-allocation within one cycle but are not durable Inventory reservations.
+- Approved Production intent is submitted only through `ProductionPlanningSubmissionAdapter`. Production atomically registers and schedules an identical Plan, returns existing identical state on replay, rejects identity conflicts, and removes a new unscheduled Plan if Scheduler rejects it.
+- Planning persistence is independently owned at `<world>/butchercraft/planning_observations.json`, `planning_needs.json`, `planning_opportunities.json`, `planning_candidates.json`, `planning_approved_plans.json`, and `planning_runtime.json`.
+- All six files must be present together. Terminal cycle structure, provenance, graph integrity, and external Goods, Orders, Production, Actor, Business, Inventory, and Scheduler references are validated before publication.
+- Persisted interrupted cycles fail initialization visibly. Automatic partial-cycle resume or replay is not claimed in schema 1.
+- Inventory reservations, purchasing, logistics, maintenance, utilities, inspections, markets, pricing, accounting, public provider registration, gameplay, networking, GUI, and ItemStack integration remain future work.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

@@ -12,6 +12,7 @@ World
   -> Population
   -> Businesses
   -> Workforce
+  -> Economic Planning
   -> Production
   -> Distribution
   -> Consumers
@@ -53,7 +54,11 @@ Workforce definitions describe positions, qualifications, shifts, and staffing r
 
 ## Production
 
-The Phase 20 Production Framework now provides industry-neutral immutable Process and Plan definitions, separately owned Run lifecycle, exact deterministic progress, one execution-stage scheduler handler, and atomic multi-input/multi-output completion through the Transaction Framework. It registers no live industry Processes and does not connect existing workstation gameplay. Industry rules, equipment, utilities, planning, and player interaction remain future module responsibilities.
+The Phase 20 Production Framework now provides industry-neutral immutable Process and Plan definitions, separately owned Run lifecycle, exact deterministic progress, one execution-stage scheduler handler, and atomic multi-input/multi-output completion through the Transaction Framework. It registers no live industry Processes and does not connect existing workstation gameplay. Industry rules, equipment, utilities, and player interaction remain future module responsibilities.
+
+## Economic Planning
+
+The Phase 21 Economic Planning Engine observes accepted open Order lines and compatible authoritative Production capacity, derives exact Needs, evaluates Constraints and Opportunities, generates whole-batch Candidates, and selects bounded Approved Plans. It submits executable intent through Production and Scheduler authority but does not reserve Inventory, execute Runs, mutate quantities, fulfill Orders, or own time. Schema 1 is deterministic business-scale Production planning only.
 
 ## Distribution
 
@@ -77,7 +82,7 @@ Contract schedule metadata does not execute obligations. Future production, logi
 
 The Phase 19 scheduler provides one bounded industry-neutral execution order for future subsystem Work. The authoritative Simulation Clock supplies time; the scheduler never advances it. Immutable Work definitions and separately owned runtime lifecycle records move through preparation, obligation evaluation, planning, execution, observation, and finalization stages using stable ordering and explicit budgets.
 
-The live pipeline now has one internal `butchercraft:production_run` handler. It advances only explicitly registered Production Runs and calls their authorized domain manager; it does not create Plans, choose industry work, or interpret Contract schedules. Inventory quantity changes still use Transactions, and Contract metadata remains inert until a later milestone deliberately schedules evaluation.
+The live pipeline now has internal `butchercraft:economic_planning_cycle` and `butchercraft:production_run` handlers. Planning compiles accepted open Order Needs into typed Production Plan submissions in the PLANNING stage. Production advances only explicitly registered Runs in EXECUTION. Inventory quantity changes still use Transactions, and Contract schedule metadata remains inert.
 
 ## Consumers
 
@@ -111,12 +116,13 @@ Runtime records reference identity by stable id. They do not edit historical ide
 
 1. The authoritative Simulation Clock advances on the server.
 2. The Work scheduler promotes a bounded due prefix and executes stable stages.
-3. Registered focused handlers evaluate only the state they own.
-4. The clock's calendar scheduler emits due rollover events in deterministic order.
-5. Proposed economic quantity changes are submitted as immutable transactions.
-6. Accepted transaction changes execute atomically in deterministic order.
-7. Committed state and audit history are persisted by their owning services.
-8. Downstream facts are published as narrow events or immutable summaries.
+3. Economic Planning observes authoritative facts and submits bounded approved intent.
+4. Registered focused execution handlers evaluate only the state they own.
+5. The clock's calendar scheduler emits due rollover events in deterministic order.
+6. Proposed economic quantity changes are submitted as immutable transactions.
+7. Accepted transaction changes execute atomically in deterministic order.
+8. Committed state and audit history are persisted by their owning services.
+9. Downstream facts are published as narrow events or immutable summaries.
 
 This model avoids one global tick method that scans and mutates every subsystem.
 
@@ -134,4 +140,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders and Contracts, and the industry-neutral Production Framework exist. No live industry Process definitions are registered. Population, automatic production planning, active distribution behavior, consumers, markets, and pricing remain future work.
+World Identity, Runtime Player Identity, Simulation Clock, deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders and Contracts, the industry-neutral Production Framework, and schema-1 Economic Planning exist. No live industry Process definitions are registered. Population, broader planning categories, active distribution behavior, consumers, markets, and pricing remain future work.

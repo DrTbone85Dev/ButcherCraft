@@ -80,6 +80,27 @@ Possible extension points:
 
 Phase 20 establishes no third-party registration lifecycle, datapack schema, machine adapter, or binary compatibility promise. Industry modules cannot yet contribute live Processes through a supported public boundary.
 
+### Economic Planning Provider
+
+Represents a future source of immutable observations, Need detection, constraint
+facts, or Opportunity discovery without granting direct access to authoritative
+managers. Phase 21's internal `com.butchercraft.world.planning` package provides
+the first deterministic Observation-to-Approved-Plan pipeline. It is not yet a
+public API.
+
+Possible extension points:
+
+- Stable provider and policy identities.
+- Immutable bounded Observation contributions.
+- Typed Need, Constraint, and Opportunity contributions.
+- Read-only Candidate, Approved Plan, and Cycle report views.
+- Typed Plan submission results and committed decision events.
+
+Phase 21 establishes no public provider registration lifecycle, service loader,
+datapack planning policy, thread-safety promise, or binary compatibility
+contract. External code must not call internal managers or use Planning as an
+Inventory reservation or execution path.
+
 ### Consumer
 
 Provides bounded demand for products or services. Consumers may represent population cohorts, institutions, businesses, players, or compatible mods.
