@@ -150,7 +150,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
 | `com.butchercraft.world.inventory` | Pure actor-owned inventory containers, hierarchical storage nodes, capacity metadata, exact runtime Good quantities, typed entry metadata, deterministic registry, manager validation, and JSON persistence. |
 | `com.butchercraft.world.planning` | Pure immutable Planning artifacts, exact Needs and capacity claims, deterministic candidate evaluation and selection, typed Production submission, cycle reports, and six-file JSON persistence. |
-| `com.butchercraft.world.allocation` | Pure immutable Resource Allocation ids, exact capacity quantities, external references, observed snapshots, Requirements, Requests, AllocationSets, Commitments, ordering, and typed structural validation. |
+| `com.butchercraft.world.allocation` | Pure Resource Allocation definitions, deterministic AllocationSet lifecycle service, immutable registries, views, history, queries, reports, and typed validation. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -179,7 +179,7 @@ The current package layout already aligns with the platform direction and requir
 - `com.butchercraft.world.economy.actor` owns immutable participant definitions and separate in-memory runtime status. Actors reference Goods, Business Runtime, and Workforce only through stable ids and store no inventory, production, pricing, transport, or ItemStack state.
 - `com.butchercraft.world.inventory` owns economic quantity and location state independently from Minecraft inventories. It references actors, Goods, and storage nodes by stable ids and imports no Minecraft, NeoForge, Container, menu, slot, or ItemStack APIs.
 - `com.butchercraft.world.production` owns industry-neutral executable Process and Plan definitions plus separately owned Run runtime state. It references other authorities by stable ids, advances only through supplied simulation ticks, and never mutates Inventory directly.
-- `com.butchercraft.world.allocation` owns immutable Requests, AllocationSets, and Commitments while authoritative providers retain Resource and Capacity ownership. M22A references other subsystems only by stable external identity and has no runtime, persistence, Scheduler stage, or allocation algorithm.
+- `com.butchercraft.world.allocation` owns immutable Requests, AllocationSets, and Commitments plus M22B AllocationSet lifecycle state, immutable registries, reports, history, and queries. Authoritative providers retain Resource and Capacity ownership. Allocation references other subsystems only by stable external identity and has no persistence, Scheduler stage, provider, Capacity ledger, or allocation algorithm.
 - `com.butchercraft.engine`, `transformation`, `product.definition`, `packaging.definition`, and their serialization models remain pure Java foundations.
 - `com.butchercraft.content` coordinates validated immutable content snapshots.
 - `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
@@ -407,7 +407,7 @@ Approved executable Production intent crosses one typed boundary, `ProductionPla
 
 `EconomicPlanningService` installs its handler before Scheduler load, initializes after Production and Scheduler binding, loads six complete-set files, and ensures one continuation Work exists in the PLANNING stage. Interrupted cycles, malformed or partial files, invalid provenance graphs, and missing external references fail visibly. See `docs/ECONOMIC_PLANNING_ENGINE.md` for the schemas, pipeline, ownership boundaries, persistence, invariants, measured scale, and deferred scope.
 
-## Resource Allocation Core Domain
+## Resource Allocation Domain And Runtime
 
 RFC-0022 M22A introduces `com.butchercraft.world.allocation` as a pure Java
 structural domain. Canonical namespaced identities, exact bounded
@@ -428,13 +428,28 @@ ordering. `AllocationRequestDefinition`, `AllocationSetDefinition`, and
 `AllocationCommitmentDefinition` validate canonical identity, association,
 unit, tick, evidence, duplicate, and immutable collection contracts.
 
-M22A performs no allocation. It declares no mutable runtime, capacity ledger,
-provider, manager, persistence file, Scheduler stage, Work type, Planning
-handoff, Production execution gate, Inventory mutation, or Transaction path.
-The existing six-stage Scheduler and all simulation behavior are unchanged.
-See `docs/RESOURCE_ALLOCATION_DOMAIN.md` for schemas, ordering, validation,
-manifest declarations, stress scale, serialization rationale, and deferred
-M22B through M22F scope.
+M22B adds one mutable `AllocationSetRuntime` per Set behind
+`AllocationRuntimeService`. Runtime identity remains `AllocationSetId`.
+Explicit requests move state through REQUESTED, WAITING, ALLOCATED, ACTIVE,
+RELEASED, FAILED, and EXPIRED while enforcing monotonic simulation ticks,
+revisions, complete Commitment structure, and terminal states. Every public
+read is an immutable `AllocationRuntimeView`.
+
+Canonical immutable registries index definitions, runtime views, and reports.
+`AllocationHistory` validates complete transition chains, and
+`AllocationQueryService` provides detached lookup by definition, association,
+status, Planning Cycle reference, Resource, work reference, Cycle, tick, and
+history range. Immutable reports carry outcome, Commitment, conflict, Capacity,
+ordering, work-bound, failure, policy, tick, and schema evidence without
+running an algorithm.
+
+M22A-M22B perform no resource selection. They declare no Capacity ledger,
+provider, allocation manager or cycle, persistence file, Scheduler stage, Work
+type, Planning handoff, Production execution gate, Inventory mutation, or
+Transaction path. The existing six-stage Scheduler and all simulation behavior
+are unchanged. See `docs/RESOURCE_ALLOCATION_DOMAIN.md` for M22A definitions
+and `docs/ALLOCATION_RUNTIME.md` for M22B lifecycle, registries, reports,
+validation, measured scale, and deferred M22C through M22F scope.
 
 ## Architecture Validation Framework
 
@@ -454,9 +469,10 @@ described datum and does not make proposed RFCs effective.
 
 Rule categories include Ownership, Dependencies, Persistence, Scheduler,
 Registries, Transactions, Planning, Production, Allocation, Execution,
-Simulation, and General. The manifest now declares M22A Allocation package and
-artifact ownership plus forbidden dependency directions. It deliberately
-declares no Allocation stage, persistence, runtime, or executable Work.
+Simulation, and General. The manifest declares M22A-M22B Allocation artifact,
+lifecycle, registry, report, and history ownership plus forbidden dependency
+directions and canonical definition, runtime, and report registries. It
+deliberately declares no Allocation stage, persistence, or executable Work.
 
 See `docs/ARCHITECTURE_VALIDATION_FRAMEWORK.md` for rule authoring, descriptor
 contracts, deterministic reporting, current integration, tests, and extension

@@ -4,6 +4,64 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## RFC-0022 Milestone M22B: Allocation Runtime And Registries
+
+Goal: add deterministic Allocation lifecycle state and immutable registry,
+query, history, and report surfaces without performing allocation.
+
+Included work:
+
+- Schema-1 `AllocationSetRuntime` lifecycle with immutable views, explicit
+  transition requests, typed failures, monotonic ticks and revisions, and
+  terminal-state enforcement.
+- Canonically ordered definition, runtime, and report registries with immutable
+  public collections and validated cross-references.
+- Detached query service, ordered lifecycle history, and immutable report,
+  conflict-evidence, Capacity-evidence, ordering, and work-summary structures.
+- Architecture-manifest lifecycle, registry, report, and history ownership plus
+  canonical Allocation registry descriptors.
+- Bounded repeat stress coverage for 100,000 runtime views and 200,000 history
+  records.
+
+Excluded work:
+
+- Allocation algorithms, Capacity ledgers, conflict resolution, fairness,
+  Allocation Cycle execution, Scheduler stage 350, providers, persistence,
+  Planning, Production, execution, Inventory, Transaction, Minecraft, NeoForge,
+  networking, command, menu, or gameplay integration.
+
+Acceptance criteria:
+
+- Only `AllocationRuntimeService` exposes structural runtime mutation.
+- Illegal transitions, terminal transitions, duplicate registration, unknown
+  references, malformed timestamps, incomplete Commitment sets, inconsistent
+  reports, and invalid history fail explicitly.
+- Equivalent inputs produce equal canonical registries, history, queries, and
+  reports regardless of registration order.
+- Architecture validation declares M22B ownership and registries while
+  retaining all forbidden dependency directions and no Allocation persistence
+  or Scheduler stage.
+- RFC-0022 is described as partially implemented through M22B only.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22B adds no world hook, visible content,
+  networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- M22B is additive. Removing its runtime, registry, query, report, history,
+  tests, documentation, and manifest additions restores M22A without changing
+  save data, Scheduler state, or gameplay.
+
 ## RFC-0022 Milestone M22A: Core Allocation Domain
 
 Goal: establish the immutable, industry-neutral Resource Allocation vocabulary

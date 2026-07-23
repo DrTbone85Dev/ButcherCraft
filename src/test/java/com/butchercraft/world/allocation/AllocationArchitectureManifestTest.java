@@ -30,7 +30,11 @@ class AllocationArchitectureManifestTest {
         assertEquals(Set.of(
                 "butchercraft:responsibility/allocation_requests",
                 "butchercraft:responsibility/allocation_sets",
-                "butchercraft:responsibility/allocation_commitments"
+                "butchercraft:responsibility/allocation_commitments",
+                "butchercraft:responsibility/allocation_lifecycle",
+                "butchercraft:responsibility/allocation_registries",
+                "butchercraft:responsibility/allocation_reports",
+                "butchercraft:responsibility/allocation_history"
         ), owned);
         assertTrue(context.ownershipContracts().stream()
                 .filter(contract -> contract.expectedOwnerId().equals(ALLOCATION))
@@ -38,7 +42,7 @@ class AllocationArchitectureManifestTest {
     }
 
     @Test
-    void manifestRecordsM22ABoundariesWithoutRuntimePersistenceOrStage() {
+    void manifestRecordsM22BBoundariesAndRegistriesWithoutPersistenceOrStage() {
         var context = ButcherCraftArchitectureManifest.current();
         Set<String> forbiddenProviders = context.dependencyConstraints().stream()
                 .filter(constraint -> constraint.consumerId().equals(ALLOCATION))
@@ -54,6 +58,20 @@ class AllocationArchitectureManifestTest {
         ), forbiddenProviders);
         assertFalse(context.dependencies().stream()
                 .anyMatch(dependency -> dependency.consumerId().equals(ALLOCATION)));
+        assertEquals(Set.of(
+                "butchercraft:allocation_definitions",
+                "butchercraft:allocation_runtime",
+                "butchercraft:allocation_reports"
+        ), context.registries().stream()
+                .map(registry -> registry.id())
+                .filter(id -> id.startsWith("butchercraft:allocation_"))
+                .collect(Collectors.toSet()));
+        assertTrue(context.registries().stream()
+                .filter(registry -> registry.id().startsWith("butchercraft:allocation_"))
+                .allMatch(registry ->
+                        registry.orderingPolicy()
+                                == com.butchercraft.architecture.validation.OrderingPolicy.CANONICAL_ID
+                                && registry.entries().isEmpty()));
         assertFalse(context.persistenceDescriptors().stream()
                 .anyMatch(descriptor -> descriptor.ownerId().equals(ALLOCATION)));
         assertFalse(context.schedulers().stream()

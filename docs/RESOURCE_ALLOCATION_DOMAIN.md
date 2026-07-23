@@ -1,6 +1,7 @@
 # Resource Allocation Core Domain
 
-Status: RFC-0022 Revision 2 Milestone M22A implemented
+Status: RFC-0022 Revision 2 Milestone M22A implemented; M22B runtime documented
+separately
 
 Milestone M22A establishes the immutable, pure Java vocabulary for future
 resource allocation. It does not allocate resources, run an Allocation Cycle,
@@ -9,8 +10,10 @@ Planning and Production.
 
 The governing design is
 [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md).
-M22A is the first bounded implementation milestone of that RFC. Later M22B
-through M22F milestones remain separately gated.
+M22A is the first bounded implementation milestone of that RFC. M22B lifecycle,
+registry, query, history, and report foundations are documented in
+[`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md). M22C through M22F remain
+separately gated.
 
 ## Ownership
 
@@ -259,12 +262,13 @@ the domain model.
 The explicit architecture manifest declares:
 
 - `butchercraft:allocation` owns the Allocation package;
-- Allocation owns Requests, Sets, and Commitments;
+- Allocation owns Requests, Sets, Commitments, M22B lifecycle, registries,
+  reports, and history;
 - Allocation has forbidden dependency directions toward Planning, Production,
   Scheduler, Inventory, and Transactions;
 - Allocation has no persistence descriptor;
 - Allocation has no Scheduler stage or Work type;
-- Allocation has no runtime dependency edge.
+- Allocation runtime has no external subsystem dependency edge.
 
 The manifest still describes six Scheduler stages at orders 100 through 600.
 M22A does not add the proposed order-350 Allocation stage.
@@ -283,18 +287,20 @@ Each pass reverses and canonically sorts collections, then compares repeat
 digests. It uses no random source, sleep, wall-clock assertion, or filesystem
 enumeration.
 
-## Deferred Work
+## Deferred From M22A
 
-M22A does not implement:
+M22A itself does not implement:
 
 - an Allocation algorithm, conflict graph, or first-fit policy;
-- Allocation Cycle runtime, ledgers, managers, registries, or reports;
+- Allocation Cycle execution, ledgers, managers, or algorithms;
 - resource observation providers;
 - Scheduler stage 350 or Work handling;
 - persistence, load ordering, migration, or runtime publication;
 - Planning submission or Production execution gates;
-- commitment activation, release, expiration, or preemption;
+- automated Commitment activation, release, expiration, or preemption;
 - Inventory mutation or Transaction execution;
 - Minecraft, NeoForge, gameplay, commands, networking, menus, or world hooks.
 
-Those concerns remain gated for future M22B through M22F milestones.
+M22B now provides structural AllocationSet lifecycle, registries, immutable
+queries, history, and report data structures without implementing the remaining
+concerns. See `ALLOCATION_RUNTIME.md`. M22C through M22F remain gated.

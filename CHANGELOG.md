@@ -1,5 +1,27 @@
 # Changelog
 
+## RFC-0022 M22B Allocation Runtime And Registries
+
+Core:
+
+- Added deterministic AllocationSet lifecycle state, immutable runtime views,
+  typed transition validation, terminal-state enforcement, and ordered history.
+- Added canonical immutable registries for Requirements, Requests,
+  AllocationSets, Commitments, runtime views, and reports.
+- Added immutable query and report structures with cross-reference,
+  timestamp, ordering-context, Capacity-evidence, and history validation.
+- Extended the architecture manifest and deterministic stress coverage for
+  100,000 runtime views and 200,000 transition records.
+
+Scope:
+
+- Runtime accepts explicit structural transitions but performs no allocation.
+- No algorithm, Capacity ledger, conflict resolution, provider, Scheduler stage
+  350, persistence, integration, Inventory mutation, Transaction execution,
+  Minecraft integration, or gameplay behavior was added.
+- RFC-0022 M22A and M22B are implemented. M22C through M22F remain separately
+  gated.
+
 ## RFC-0022 M22A Core Allocation Domain
 
 Core:

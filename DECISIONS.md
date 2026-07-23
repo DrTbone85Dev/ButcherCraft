@@ -1291,6 +1291,49 @@ Consequences:
   separate owner authorization and any compatibility decisions required by
   Part V.
 
+## DEC-0077: M22B Establishes Allocation Runtime And Registry Ownership
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0006`, `AI-0007`, `AI-0009`,
+`AI-0010`, `AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and
+`AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22B adds
+deterministic `AllocationSetRuntime` lifecycle state, immutable definition and
+runtime registries, immutable report and history models, and detached query
+surfaces. `AllocationRuntimeService` is the sole public lifecycle mutation
+boundary. Runtime identity remains `AllocationSetId`; no duplicate
+`AllocationRuntimeId` is introduced.
+
+Rationale: later deterministic allocation needs explicit lifecycle,
+cross-reference validation, canonical registries, audit history, and immutable
+read contracts before an algorithm, provider, persistence owner, or Scheduler
+integration can be reviewed. Separating these mechanics prevents future
+selection policy from leaking into runtime ownership.
+
+Consequences:
+
+- The accepted lifecycle is REQUESTED, WAITING, ALLOCATED, ACTIVE, RELEASED,
+  FAILED, and EXPIRED with only the RFC-0022 transitions and irreversible
+  terminal states.
+- Runtime transitions consume caller-supplied simulation ticks and revisions;
+  no clock, randomness, background loop, or Scheduler callback is introduced.
+- ALLOCATED structurally requires exactly one known Commitment per Requirement,
+  but M22B never creates or selects a Commitment.
+- Public registries, runtime views, history, reports, and query results are
+  immutable and canonically ordered.
+- Reports record outcome and evidence structures only. They do not implement
+  conflict resolution, fairness, Capacity ledgers, or Allocation Cycles.
+- The architecture manifest assigns lifecycle, registry, report, and history
+  ownership and declares canonical Allocation registries while preserving all
+  dependency prohibitions and adding no persistence or Scheduler stage.
+- M22B adds no algorithm, provider, resource observation, persistence, stage
+  350, Planning, Production, execution, Inventory, Transaction, Minecraft,
+  NeoForge, command, menu, networking, or gameplay integration.
+- RFC-0022 remains partially implemented. M22C through M22F require separate
+  owner authorization and compatibility decisions required by Part V.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

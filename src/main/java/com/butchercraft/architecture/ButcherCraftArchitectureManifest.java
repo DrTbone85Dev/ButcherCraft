@@ -49,6 +49,12 @@ public final class ButcherCraftArchitectureManifest {
 
     private static final String STAGE_REGISTRY_ID = "butchercraft:simulation_stages";
     private static final String WORK_TYPE_REGISTRY_ID = "butchercraft:simulation_work_types";
+    private static final String ALLOCATION_DEFINITION_REGISTRY_ID =
+            "butchercraft:allocation_definitions";
+    private static final String ALLOCATION_RUNTIME_REGISTRY_ID =
+            "butchercraft:allocation_runtime";
+    private static final String ALLOCATION_REPORT_REGISTRY_ID =
+            "butchercraft:allocation_reports";
 
     private ButcherCraftArchitectureManifest() {
     }
@@ -100,6 +106,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/allocation_requests", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_sets", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_commitments", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_lifecycle", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_registries", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_reports", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_history", ALLOCATION);
 
         contract(
                 builder,
@@ -171,6 +181,34 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.ALLOCATION,
                 "RFC-0022 M22A assigns immutable commitments to the Allocation domain"
         );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_lifecycle",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22B assigns AllocationSet lifecycle state to the Allocation domain"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_registries",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22B assigns canonical definition and runtime registries to Allocation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_reports",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22B assigns immutable cycle reports to the Allocation domain"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_history",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22B assigns immutable lifecycle history to the Allocation domain"
+        );
     }
 
     private static void addDependencies(ValidationContextBuilder builder) {
@@ -230,31 +268,31 @@ public final class ButcherCraftArchitectureManifest {
                 builder,
                 ALLOCATION,
                 PLANNING,
-                "M22A Allocation references Planning artifacts only by stable external identity"
+                "M22A-M22B Allocation references Planning artifacts only by stable external identity"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 PRODUCTION,
-                "M22A Allocation references executable work only by stable external identity"
+                "M22A-M22B Allocation references executable work only by stable external identity"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 SCHEDULER,
-                "M22A does not register or execute Scheduler work"
+                "M22A-M22B does not register or execute Scheduler work"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 INVENTORY,
-                "M22A observes resource capacity without owning inventory quantities"
+                "M22A-M22B models capacity evidence without owning inventory quantities"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 TRANSACTIONS,
-                "M22A defines no economic mutation or transaction path"
+                "M22A-M22B defines no economic mutation or transaction path"
         );
     }
 
@@ -293,6 +331,22 @@ public final class ButcherCraftArchitectureManifest {
                         workType(EconomicPlanningWorkHandler.TYPE.value(), BuiltInSimulationStages.PLANNING.value()),
                         workType(ProductionWorkTypes.PRODUCTION_RUN.value(), BuiltInSimulationStages.EXECUTION.value())
                 ).stream().sorted(Comparator.comparing(RegistryEntryDescriptor::id)).toList()
+        ));
+
+        builder.registry(new RegistryDescriptor(
+                ALLOCATION_DEFINITION_REGISTRY_ID,
+                OrderingPolicy.CANONICAL_ID,
+                List.of()
+        ));
+        builder.registry(new RegistryDescriptor(
+                ALLOCATION_RUNTIME_REGISTRY_ID,
+                OrderingPolicy.CANONICAL_ID,
+                List.of()
+        ));
+        builder.registry(new RegistryDescriptor(
+                ALLOCATION_REPORT_REGISTRY_ID,
+                OrderingPolicy.CANONICAL_ID,
+                List.of()
         ));
     }
 
