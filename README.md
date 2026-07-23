@@ -111,7 +111,10 @@ The RFC-0022 M22A immutable Resource Allocation vocabulary, ownership
 boundaries, exact quantities, structural validation, and deterministic ordering
 are documented in `docs/RESOURCE_ALLOCATION_DOMAIN.md`. M22B lifecycle,
 registries, immutable queries, history, report structures, and deferred
-integration scope are documented in `docs/ALLOCATION_RUNTIME.md`.
+integration scope are documented in `docs/ALLOCATION_RUNTIME.md`. M22C explicit
+cycle input, detached Capacity accounting, deterministic first fit, atomic Set
+evaluation and publication, reports, traces, and replay evidence are documented
+in `docs/ALLOCATION_CYCLE.md`.
 
 The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 

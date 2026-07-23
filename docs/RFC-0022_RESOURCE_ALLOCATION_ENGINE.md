@@ -1,8 +1,8 @@
 # RFC-0022: Resource Allocation Engine
 
-Status: M22A Core Allocation Domain and M22B Allocation Runtime and Registries
-owner-authorized and implemented; M22C through M22F remain proposed and
-separately gated
+Status: M22A Core Allocation Domain, M22B Allocation Runtime and Registries,
+and M22C Deterministic Allocation Cycle owner-authorized and implemented;
+M22D through M22F remain proposed and separately gated
 
 Revision: 2
 
@@ -22,12 +22,14 @@ subsystems own executable definitions and runtime. Allocation owns temporary
 capacity Commitments only.
 
 This RFC remains the architecture contract for the complete engine. DEC-0076
-and DEC-0077 authorize the M22A immutable Core Allocation Domain documented in
+through DEC-0078 authorize the M22A immutable Core Allocation Domain documented in
 [`RESOURCE_ALLOCATION_DOMAIN.md`](RESOURCE_ALLOCATION_DOMAIN.md) and the M22B
 lifecycle, registries, queries, history, and report structures documented in
-[`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md). Algorithms, providers,
-Scheduler, persistence, Planning, Production, and execution integration still
-require later owner-approved decisions listed in Part V.
+[`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md), plus the M22C explicit-input
+Cycle, detached accounting, selection, Commitment construction, and atomic
+publication documented in [`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md).
+Providers, Scheduler, persistence, Planning, Production, and execution
+integration still require later owner-approved decisions listed in Part V.
 
 ## Part I: Philosophy And First Principles
 
@@ -1357,6 +1359,6 @@ Providers own Resources and Capacity.
 ### 151. End RFC-0022 Revision 2
 
 Revision 2 is architecturally reconciled with DEC-0073 and DEC-0074. DEC-0076
-and DEC-0077 authorize M22A-M22B only. Remaining implementation stays
+through DEC-0078 authorize M22A-M22C only. Remaining implementation stays
 prohibited until the ADR and compatibility decisions in section 125 are
 explicitly approved.

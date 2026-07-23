@@ -16,6 +16,15 @@ public final class AllocationSchema {
     public static final int MAXIMUM_REPORT_CAPACITIES = 100_000;
     public static final int MAXIMUM_REPORT_FAILURES = 100_000;
     public static final int MAXIMUM_REPORT_STAGE_COUNTS = 64;
+    public static final int MAXIMUM_CYCLE_RESOURCES = 100_000;
+    public static final int MAXIMUM_CYCLE_CAPACITIES = 100_000;
+    public static final int MAXIMUM_CYCLE_REQUIREMENTS = 100_000;
+    public static final int MAXIMUM_CYCLE_REQUESTS = 100_000;
+    public static final int MAXIMUM_CYCLE_SETS = 100_000;
+    public static final int MAXIMUM_CYCLE_CANDIDATE_SETS = 50_000;
+    public static final int MAXIMUM_CYCLE_RUNTIMES = 100_000;
+    public static final int MAXIMUM_CYCLE_COMMITMENTS = 100_000;
+    public static final int MAXIMUM_TRACE_PHASES = 11;
 
     private AllocationSchema() {
     }

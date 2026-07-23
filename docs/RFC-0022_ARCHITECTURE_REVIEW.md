@@ -1,6 +1,6 @@
 # RFC-0022 Revision 2 Architecture Review
 
-Status: Reconciled architecture; M22A-M22B owner-authorized and implemented,
+Status: Reconciled architecture; M22A-M22C owner-authorized and implemented,
 remaining RFC milestones awaiting separate approval
 
 Reviewed against:
@@ -12,10 +12,12 @@ Reviewed against:
 - [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md)
 
 This review originally changed documentation only. DEC-0076 subsequently
-authorized M22A's immutable Core Allocation Domain, and DEC-0077 authorized
-M22B's lifecycle, registries, immutable queries, history, and report
-structures. It does not authorize algorithms, Capacity ledgers, providers,
-Scheduler, persistence, Planning, Production, or execution integration.
+authorized M22A's immutable Core Allocation Domain, DEC-0077 authorized M22B's
+lifecycle, registries, immutable queries, history, and report structures, and
+DEC-0078 authorized M22C's pure explicit-input Cycle, detached Capacity
+accounting, deterministic selection, and atomic in-memory publication. It does
+not authorize providers, Scheduler, persistence, Planning, Production, or
+execution integration.
 
 ## Executive Finding
 
@@ -357,8 +359,8 @@ not be marked accepted without explicit owner approval.
 ## Review Result
 
 RFC-0022 Revision 2 is internally consistent with the current Constitution,
-Core Principles, DEC-0073, and DEC-0074. DEC-0076 and DEC-0077 authorize
-M22A-M22B only.
+Core Principles, DEC-0073, and DEC-0074. DEC-0076 through DEC-0078 authorize
+M22A-M22C only.
 
 Remaining implementation stays prohibited until the remaining ADR and
 compatibility decisions are explicitly approved.

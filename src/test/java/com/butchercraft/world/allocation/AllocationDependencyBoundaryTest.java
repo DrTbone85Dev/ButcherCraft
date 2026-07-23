@@ -28,7 +28,10 @@ class AllocationDependencyBoundaryTest {
                 "AllocationManager",
                 "System.currentTimeMillis",
                 "System.nanoTime",
+                "java.time.",
+                "Clock.system",
                 "java.util.Random",
+                "RandomGenerator",
                 "ThreadLocalRandom",
                 "java.lang.reflect",
                 "import java.util.HashMap"

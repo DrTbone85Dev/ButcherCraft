@@ -147,16 +147,17 @@ Phase 1 defines these additive categories:
 | `TRANSACTIONS` | Transaction-specific ownership contracts. |
 | `PLANNING` | Planning-specific ownership contracts. |
 | `PRODUCTION` | Production-specific ownership contracts. |
-| `ALLOCATION` | M22A-M22B Allocation definition, lifecycle, registry, report, and history ownership. |
+| `ALLOCATION` | M22A-M22C Allocation definition, lifecycle, Cycle, detached accounting, selection, registry, report, trace, and history ownership. |
 | `EXECUTION` | Runtime execution ownership contracts. |
 | `SIMULATION` | Replay, ordering, stable id, randomness, and bounded-work facts. |
 | `GENERAL` | Framework and component integrity. |
 
-DEC-0076 and DEC-0077 authorize RFC-0022 M22A-M22B. The current manifest
-declares the Allocation package; definition, lifecycle, registry, report, and
-history ownership; and canonical definition, runtime, and report registries.
-It contains no Allocation stage, persistence, provider, or algorithm
-declaration.
+DEC-0076 through DEC-0078 authorize RFC-0022 M22A-M22C. The current manifest
+declares the Allocation package; definition, lifecycle, Cycle, detached
+Capacity accounting, Commitment selection, registry, report, trace, and
+history ownership; and canonical definition, runtime, report, and trace
+registries. It contains no Allocation stage, persistence, live provider, or
+integration declaration.
 
 ## Standard Rules
 
@@ -382,8 +383,8 @@ randomness, and wall-clock APIs from entering the framework package.
 
 Future accepted architecture may add:
 
-- M22C through M22F Allocation algorithm, provider, persistence, integration,
-  and stage contracts;
+- M22D through M22F Allocation provider, persistence, integration, and stage
+  contracts;
 - additional execution-owner contracts;
 - persistence migration declarations;
 - public API compatibility rules;

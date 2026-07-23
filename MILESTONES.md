@@ -4,6 +4,68 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## RFC-0022 Milestone M22C: Deterministic Allocation Cycle
+
+Goal: evaluate explicit immutable Capacity observations through deterministic
+first fit, construct complete Commitment sets, and publish accepted results
+atomically without adding live integration.
+
+Included work:
+
+- Immutable cycle context, input, evaluation, result, summary, typed failures,
+  engineering trace, trace registry, and canonical replay digests.
+- Detached `WorkingCapacityLedger` with exact existing/proposed accounting,
+  shared and exclusive Capacity, private Set branches, and immutable views.
+- Canonical Request/Set ordering, one-Resource-per-Requirement first fit,
+  all-or-none multi-Requirement evaluation, conflict evidence, and deterministic
+  Commitment construction.
+- Candidate-service publication with one final state swap, optimistic runtime
+  validation, duplicate-Cycle rejection, REQUESTED/WAITING to ALLOCATED, and
+  REQUESTED to WAITING.
+- Architecture-manifest ownership and trace-registry declarations plus focused,
+  replay, fault, invariant, and split-scale stress tests.
+
+Excluded work:
+
+- Scheduler stage 350, Scheduler Work, providers, Planning handoff, Production
+  execution gating, ACTIVE or release transitions, persistence, codecs, save
+  migration, Inventory or Transaction integration, Minecraft, NeoForge,
+  networking, commands, menus, and gameplay.
+
+Acceptance criteria:
+
+- Active Commitments reduce observed Capacity exactly once; terminal runtime
+  Commitments do not.
+- Shared Capacity never overcommits, exclusive Resources have one owner, units
+  never convert, and remaining Capacity never becomes negative.
+- A failed Set changes no parent ledger state and receives no Commitment.
+- Equivalent inputs produce equal ordering, Commitments, reports, history,
+  traces, ledgers, and result digests.
+- No Allocation-owned authoritative state changes before a complete validated
+  publication swap.
+- RFC-0022 is described as partially implemented through M22C only.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.AllocationCycle*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22C adds no world hook, visible
+  content, networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- M22C is additive except for the compatible package-confined atomic
+  publication extension to `AllocationRuntimeService`. Removing M22C cycle,
+  ledger, evidence, tests, documentation, and manifest additions restores M22B
+  without changing save data, Scheduler state, or gameplay.
+
 ## RFC-0022 Milestone M22B: Allocation Runtime And Registries
 
 Goal: add deterministic Allocation lifecycle state and immutable registry,

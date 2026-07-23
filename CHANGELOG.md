@@ -1,5 +1,34 @@
 # Changelog
 
+## RFC-0022 M22C Deterministic Allocation Cycle
+
+Core:
+
+- Added explicit immutable Allocation Cycle input, result, summary, typed
+  failures, canonical SHA-256 replay digests, and an eleven-phase engineering
+  trace.
+- Added detached exact Capacity accounting with active-Commitment subtraction,
+  shared and exclusive handling, transactional Set branches, and deterministic
+  Resource-id/Capacity-id first fit.
+- Added atomic complete-Set evaluation and deterministic Commitment
+  construction with no partial success or orphan Commitments.
+- Added atomic candidate-state publication through `AllocationRuntimeService`,
+  legal REQUESTED/WAITING transitions, report/history/trace evidence, duplicate
+  Cycle rejection, and deterministic publication fault coverage.
+- Extended architecture ownership, dependency checks, and split-scale stress
+  coverage for 100,000 observed Capacities, 100,000 existing Commitments, the
+  existing 100,000 Requirements and 50,000 Requests/Sets, and replayed mixed
+  contention.
+
+Scope:
+
+- RFC-0022 M22C Deterministic Allocation Cycle implemented.
+- No Scheduler stage 350, live provider, Planning migration, Production
+  execution gate, persistence, Inventory or Transaction integration,
+  Minecraft, NeoForge, or gameplay behavior was added.
+- RFC-0022 is implemented through M22C only. M22D through M22F remain
+  separately gated.
+
 ## RFC-0022 M22B Allocation Runtime And Registries
 
 Core:
@@ -19,8 +48,8 @@ Scope:
 - No algorithm, Capacity ledger, conflict resolution, provider, Scheduler stage
   350, persistence, integration, Inventory mutation, Transaction execution,
   Minecraft integration, or gameplay behavior was added.
-- RFC-0022 M22A and M22B are implemented. M22C through M22F remain separately
-  gated.
+- This entry completed M22B. M22C is recorded in the later changelog entry;
+  M22D through M22F remain separately gated.
 
 ## RFC-0022 M22A Core Allocation Domain
 

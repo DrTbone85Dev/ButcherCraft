@@ -8,7 +8,10 @@ Capacity, schedule work, reserve Inventory, or execute Transactions.
 
 The governing design remains
 [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md).
-Only M22A and M22B are implemented. M22C through M22F remain separately gated.
+M22A and M22B establish these contracts. M22C now uses them through the
+deterministic Cycle documented in
+[`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md). M22D through M22F remain
+separately gated.
 
 ## Ownership
 
@@ -75,13 +78,18 @@ and status. `AllocationReportRegistry` indexes reports by Allocation Cycle and
 simulation tick. Their lists, maps, streams, and filtered results cannot mutate
 service state.
 
+M22C adds `AllocationCycleTraceRegistry` for canonical immutable engineering
+trace evidence. It does not change M22B definition, runtime, or report
+identity.
+
 The architecture manifest declares:
 
 - `butchercraft:allocation_definitions`;
 - `butchercraft:allocation_runtime`;
-- `butchercraft:allocation_reports`.
+- `butchercraft:allocation_reports`;
+- `butchercraft:allocation_cycle_traces` (added by M22C).
 
-All three use canonical-id ordering. Allocation still has no persistence
+All use canonical-id ordering. Allocation still has no persistence
 descriptor, Scheduler stage, or Work type.
 
 ## Runtime Service
@@ -116,8 +124,8 @@ match their latest history record.
 
 ## Reports
 
-`AllocationReport` is a data structure for a future algorithm to populate. It
-contains:
+`AllocationReport` is the immutable report structure populated by the M22C
+Cycle and available to future integration boundaries. It contains:
 
 - successful, waiting, rejected, failed, released, and expired Set ids;
 - Commitment ids;
@@ -130,8 +138,8 @@ contains:
 Outcome categories are disjoint, references must resolve, Commitments must
 belong to the report Cycle, ordering evidence must match its Request, and exact
 Capacity evidence must use one unit and balance arithmetically. These models do
-not implement a conflict graph, fairness policy, mutable ledger, or Allocation
-Cycle execution.
+not perform allocation themselves. M22C constructs them after deterministic
+evaluation.
 
 ## Validation And Determinism
 
@@ -154,7 +162,7 @@ or filesystem enumeration.
 
 ## Deferred Work
 
-M22B does not implement:
+M22B itself does not implement:
 
 - an allocation algorithm, fairness policy, conflict graph, or Capacity ledger;
 - Allocation Cycle execution or Scheduler stage 350;
@@ -163,4 +171,7 @@ M22B does not implement:
 - persistence, codecs, load orchestration, or runtime publication;
 - Minecraft, NeoForge, gameplay, commands, menus, or networking.
 
-Those concerns require a later owner-authorized M22C through M22F milestone.
+M22C now implements the pure explicit-input Cycle, detached Capacity ledger,
+first-fit Set evaluation, Commitment construction, and atomic in-memory
+publication. Providers, persistence, Scheduler stage 350, Planning handoff,
+Production gating, and gameplay remain M22D through M22F work.

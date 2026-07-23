@@ -34,7 +34,10 @@ class AllocationArchitectureManifestTest {
                 "butchercraft:responsibility/allocation_lifecycle",
                 "butchercraft:responsibility/allocation_registries",
                 "butchercraft:responsibility/allocation_reports",
-                "butchercraft:responsibility/allocation_history"
+                "butchercraft:responsibility/allocation_history",
+                "butchercraft:responsibility/allocation_cycles",
+                "butchercraft:responsibility/allocation_capacity_accounting",
+                "butchercraft:responsibility/allocation_commitment_selection"
         ), owned);
         assertTrue(context.ownershipContracts().stream()
                 .filter(contract -> contract.expectedOwnerId().equals(ALLOCATION))
@@ -61,7 +64,8 @@ class AllocationArchitectureManifestTest {
         assertEquals(Set.of(
                 "butchercraft:allocation_definitions",
                 "butchercraft:allocation_runtime",
-                "butchercraft:allocation_reports"
+                "butchercraft:allocation_reports",
+                "butchercraft:allocation_cycle_traces"
         ), context.registries().stream()
                 .map(registry -> registry.id())
                 .filter(id -> id.startsWith("butchercraft:allocation_"))

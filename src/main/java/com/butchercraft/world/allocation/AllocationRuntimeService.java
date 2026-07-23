@@ -11,6 +11,7 @@ public final class AllocationRuntimeService {
     private AllocationRegistry definitions;
     private final Map<AllocationSetId, AllocationSetRuntime> runtimes = new TreeMap<>();
     private final Map<AllocationCycleId, AllocationReport> reports = new TreeMap<>();
+    private final Map<AllocationCycleId, AllocationCycleTrace> traces = new TreeMap<>();
     private final List<AllocationRuntimeTransitionRecord> historyRecords =
             new ArrayList<>();
 
@@ -23,6 +24,16 @@ public final class AllocationRuntimeService {
             Collection<AllocationRuntimeView> runtimeViews,
             Collection<AllocationReport> reports,
             AllocationHistory history
+    ) {
+        this(definitions, runtimeViews, reports, history, List.of());
+    }
+
+    public AllocationRuntimeService(
+            AllocationRegistry definitions,
+            Collection<AllocationRuntimeView> runtimeViews,
+            Collection<AllocationReport> reports,
+            AllocationHistory history,
+            Collection<AllocationCycleTrace> traces
     ) {
         this.definitions = AllocationValidation.required(definitions, "definitions");
         this.historyRecords.addAll(
@@ -53,6 +64,27 @@ public final class AllocationRuntimeService {
                         AllocationRuntimeFailureCode.DUPLICATE_REGISTRATION,
                         value.allocationCycleId().value(),
                         "Duplicate loaded Allocation report"
+                );
+            }
+        }
+        for (AllocationCycleTrace trace : AllocationValidation.required(
+                traces,
+                "traces"
+        )) {
+            AllocationCycleTrace value = AllocationValidation.required(trace, "trace");
+            AllocationReport report = this.reports.get(value.cycleId());
+            if (report == null || report.simulationTick() != value.simulationTick()) {
+                throw AllocationRuntimeValidation.failure(
+                        AllocationRuntimeFailureCode.INVALID_REPORT,
+                        value.cycleId().value(),
+                        "Loaded Allocation trace has no matching report"
+                );
+            }
+            if (this.traces.putIfAbsent(value.cycleId(), value) != null) {
+                throw AllocationRuntimeValidation.failure(
+                        AllocationRuntimeFailureCode.DUPLICATE_REGISTRATION,
+                        value.cycleId().value(),
+                        "Duplicate loaded Allocation trace"
                 );
             }
         }
@@ -191,6 +223,10 @@ public final class AllocationRuntimeService {
         return AllocationHistory.of(historyRecords);
     }
 
+    public synchronized AllocationCycleTraceRegistry traces() {
+        return AllocationCycleTraceRegistry.of(traces.values());
+    }
+
     public synchronized AllocationQueryService queries() {
         return new AllocationQueryService(
                 definitions,
@@ -198,6 +234,171 @@ public final class AllocationRuntimeService {
                 reports(),
                 history()
         );
+    }
+
+    synchronized AllocationCycleOperationResult<AllocationPublishedCycle> publishCycle(
+            AllocationCyclePublicationPlan plan,
+            AllocationPublicationFault fault
+    ) {
+        try {
+            AllocationCyclePublicationPlan publication = AllocationValidation.required(
+                    plan,
+                    "plan"
+            );
+            AllocationPublicationFault injection = AllocationValidation.required(
+                    fault,
+                    "fault"
+            );
+            AllocationCycleId cycleId = publication.report().allocationCycleId();
+            if (reports.containsKey(cycleId)
+                    || traces.containsKey(cycleId)
+                    || reports.values().stream().anyMatch(report ->
+                    report.simulationTick() == publication.report().simulationTick())) {
+                throw AllocationCycleValidation.failure(
+                        AllocationCycleFailureCode.DUPLICATE_CYCLE,
+                        AllocationCycleFailureScope.PUBLICATION,
+                        cycleId.value(),
+                        "Allocation Cycle is already published"
+                );
+            }
+            validateExpectedState(publication);
+
+            AllocationRuntimeService candidate = new AllocationRuntimeService(
+                    definitions,
+                    runtimes.values().stream()
+                            .map(AllocationSetRuntime::snapshot)
+                            .toList(),
+                    reports.values(),
+                    AllocationHistory.of(historyRecords),
+                    traces.values()
+            );
+            requireAccepted(
+                    candidate.registerCommitments(publication.commitments()),
+                    cycleId
+            );
+            failIfRequested(
+                    injection,
+                    AllocationPublicationFault.AFTER_COMMITMENT_REGISTRATION,
+                    cycleId
+            );
+            for (AllocationRuntimeTransitionRequest transition
+                    : publication.transitions()) {
+                requireAccepted(candidate.transition(transition), cycleId);
+            }
+            failIfRequested(
+                    injection,
+                    AllocationPublicationFault.AFTER_RUNTIME_TRANSITIONS,
+                    cycleId
+            );
+            requireAccepted(candidate.registerReport(publication.report()), cycleId);
+            failIfRequested(
+                    injection,
+                    AllocationPublicationFault.AFTER_REPORT_REGISTRATION,
+                    cycleId
+            );
+            candidate.registerTrace(publication.trace());
+
+            definitions = candidate.definitions;
+            runtimes.clear();
+            runtimes.putAll(candidate.runtimes);
+            reports.clear();
+            reports.putAll(candidate.reports);
+            traces.clear();
+            traces.putAll(candidate.traces);
+            historyRecords.clear();
+            historyRecords.addAll(candidate.historyRecords);
+            return AllocationCycleOperationResult.accepted(new AllocationPublishedCycle(
+                    definitions,
+                    runtimes(),
+                    reports(),
+                    history(),
+                    traces()
+            ));
+        } catch (AllocationCycleValidationException exception) {
+            return AllocationCycleOperationResult.rejected(exception.failures());
+        } catch (RuntimeException exception) {
+            return AllocationCycleOperationResult.rejected(List.of(
+                    new AllocationCycleFailure(
+                            AllocationCycleFailureCode.PUBLICATION_FAILED,
+                            AllocationCycleFailureScope.PUBLICATION,
+                            "allocation_cycle",
+                            exception.getMessage() == null
+                                    ? "Atomic Allocation publication failed"
+                                    : exception.getMessage()
+                    )
+            ));
+        }
+    }
+
+    synchronized AllocationCycleOperationResult<AllocationPublishedCycle> publishCycle(
+            AllocationCyclePublicationPlan plan
+    ) {
+        return publishCycle(plan, AllocationPublicationFault.NONE);
+    }
+
+    private void registerTrace(AllocationCycleTrace trace) {
+        AllocationCycleTrace value = AllocationValidation.required(trace, "trace");
+        AllocationReport report = reports.get(value.cycleId());
+        if (report == null || report.simulationTick() != value.simulationTick()) {
+            throw AllocationRuntimeValidation.failure(
+                    AllocationRuntimeFailureCode.INVALID_REPORT,
+                    value.cycleId().value(),
+                    "Allocation trace requires a matching report"
+            );
+        }
+        if (traces.putIfAbsent(value.cycleId(), value) != null) {
+            throw AllocationRuntimeValidation.failure(
+                    AllocationRuntimeFailureCode.DUPLICATE_REGISTRATION,
+                    value.cycleId().value(),
+                    "Allocation trace is already registered"
+            );
+        }
+    }
+
+    private void validateExpectedState(AllocationCyclePublicationPlan plan) {
+        AllocationRegistry expected = plan.expectedDefinitions();
+        if (!definitions.requirements().equals(expected.requirements())
+                || !definitions.requests().equals(expected.requests())
+                || !definitions.sets().equals(expected.sets())
+                || !definitions.commitments().equals(expected.commitments())
+                || !runtimes().views().equals(plan.expectedRuntimes().views())) {
+            throw AllocationCycleValidation.failure(
+                    AllocationCycleFailureCode.STALE_RUNTIME_STATE,
+                    AllocationCycleFailureScope.PUBLICATION,
+                    plan.report().allocationCycleId().value(),
+                    "Allocation runtime changed after cycle input capture"
+            );
+        }
+    }
+
+    private static void requireAccepted(
+            AllocationRuntimeOperationResult<?> result,
+            AllocationCycleId cycleId
+    ) {
+        if (!result.accepted()) {
+            AllocationRuntimeFailure failure = result.failures().getFirst();
+            throw AllocationCycleValidation.failure(
+                    AllocationCycleFailureCode.PUBLICATION_FAILED,
+                    AllocationCycleFailureScope.PUBLICATION,
+                    cycleId.value(),
+                    failure.code() + ": " + failure.message()
+            );
+        }
+    }
+
+    private static void failIfRequested(
+            AllocationPublicationFault actual,
+            AllocationPublicationFault checkpoint,
+            AllocationCycleId cycleId
+    ) {
+        if (actual == checkpoint) {
+            throw AllocationCycleValidation.failure(
+                    AllocationCycleFailureCode.PUBLICATION_FAILED,
+                    AllocationCycleFailureScope.PUBLICATION,
+                    cycleId.value(),
+                    "Deterministic publication fault at " + checkpoint.name()
+            );
+        }
     }
 
     private void validateCompleteCommitments(

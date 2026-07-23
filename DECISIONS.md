@@ -1331,7 +1331,57 @@ Consequences:
 - M22B adds no algorithm, provider, resource observation, persistence, stage
   350, Planning, Production, execution, Inventory, Transaction, Minecraft,
   NeoForge, command, menu, networking, or gameplay integration.
-- RFC-0022 remains partially implemented. M22C through M22F require separate
+- At this decision point RFC-0022 was implemented through M22B. DEC-0078 later
+  authorizes M22C; M22D through M22F still require separate owner authorization
+  and compatibility decisions required by Part V.
+
+## DEC-0078: M22C Establishes The Deterministic Allocation Cycle
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0006`, `AI-0007`, `AI-0009`,
+`AI-0010`, `AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and
+`AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22C adds one pure
+Java deterministic Allocation Cycle over explicit immutable snapshots.
+Allocation owns detached cycle-local Capacity accounting, canonical first-fit
+selection, complete Commitment construction, and atomic publication through
+`AllocationRuntimeService`. Authoritative providers retain Resource and
+Capacity ownership.
+
+Rationale: M22A and M22B provide stable definitions and lifecycle boundaries,
+but usable arbitration requires one replay-complete pipeline that cannot leak
+partial Commitments or runtime changes. A detached ledger and candidate-state
+service rebuild preserve exact accounting and atomic publication without
+introducing live integration.
+
+Consequences:
+
+- Requests use the accepted horizon, priority, required-by, starvation,
+  Need-creation, sequence, Request-id, and Set-id ordering.
+- Schema 1 selects one Resource/Capacity entry per Requirement by Resource id
+  then Capacity id and does not fragment demand or convert units.
+- Each AllocationSet evaluates on a private ledger branch; all Requirements
+  succeed or no branch mutation and no Commitment survive.
+- ALLOCATED and ACTIVE Commitments reduce observed Capacity exactly once.
+  Terminal runtime does not consume Capacity.
+- Publication builds a complete candidate service and performs one final state
+  swap. Deterministic fault injection proves no partial state is visible.
+- Duplicate Cycle submission is rejected explicitly. It cannot double
+  allocate, duplicate history, or repeat transitions.
+- M22C may transition REQUESTED or WAITING to ALLOCATED and REQUESTED to
+  WAITING. It does not activate execution or perform release or expiration
+  loops.
+- Engineering trace and result digests contain deterministic operation counts,
+  never wall-clock measurements.
+- The architecture manifest adds Cycle, detached accounting, Commitment
+  selection, and trace-registry ownership while preserving every M22B
+  dependency prohibition.
+- M22C adds no Scheduler stage 350, provider, Planning handoff, Production
+  gate, persistence, Inventory or Transaction integration, Minecraft,
+  NeoForge, or gameplay behavior.
+- RFC-0022 remains partially implemented. M22D through M22F require separate
   owner authorization and compatibility decisions required by Part V.
 
 ## Decisions Needing Owner Approval

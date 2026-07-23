@@ -1,7 +1,7 @@
 # Resource Allocation Core Domain
 
-Status: RFC-0022 Revision 2 Milestone M22A implemented; M22B runtime documented
-separately
+Status: RFC-0022 Revision 2 Milestone M22A implemented; M22B runtime and M22C
+Cycle documented separately
 
 Milestone M22A establishes the immutable, pure Java vocabulary for future
 resource allocation. It does not allocate resources, run an Allocation Cycle,
@@ -12,8 +12,9 @@ The governing design is
 [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md).
 M22A is the first bounded implementation milestone of that RFC. M22B lifecycle,
 registry, query, history, and report foundations are documented in
-[`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md). M22C through M22F remain
-separately gated.
+[`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md). M22C Cycle behavior is
+documented in [`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md). M22D through M22F
+remain separately gated.
 
 ## Ownership
 
@@ -301,6 +302,8 @@ M22A itself does not implement:
 - Inventory mutation or Transaction execution;
 - Minecraft, NeoForge, gameplay, commands, networking, menus, or world hooks.
 
-M22B now provides structural AllocationSet lifecycle, registries, immutable
-queries, history, and report data structures without implementing the remaining
-concerns. See `ALLOCATION_RUNTIME.md`. M22C through M22F remain gated.
+M22B provides structural AllocationSet lifecycle, registries, immutable
+queries, history, and report data structures. M22C provides the pure
+explicit-input Cycle, detached ledger, deterministic first fit, atomic Set
+evaluation, and atomic in-memory publication. See `ALLOCATION_RUNTIME.md` and
+`ALLOCATION_CYCLE.md`. M22D through M22F remain gated.

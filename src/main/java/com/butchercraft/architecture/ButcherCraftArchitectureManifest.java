@@ -55,6 +55,8 @@ public final class ButcherCraftArchitectureManifest {
             "butchercraft:allocation_runtime";
     private static final String ALLOCATION_REPORT_REGISTRY_ID =
             "butchercraft:allocation_reports";
+    private static final String ALLOCATION_TRACE_REGISTRY_ID =
+            "butchercraft:allocation_cycle_traces";
 
     private ButcherCraftArchitectureManifest() {
     }
@@ -110,6 +112,9 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/allocation_registries", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_reports", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_history", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_cycles", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_capacity_accounting", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_commitment_selection", ALLOCATION);
 
         contract(
                 builder,
@@ -209,6 +214,27 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.ALLOCATION,
                 "RFC-0022 M22B assigns immutable lifecycle history to the Allocation domain"
         );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_cycles",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22C assigns deterministic Allocation Cycle behavior to Allocation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_capacity_accounting",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22C assigns detached cycle-local Capacity accounting to Allocation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_commitment_selection",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22C assigns deterministic Commitment selection and construction to Allocation"
+        );
     }
 
     private static void addDependencies(ValidationContextBuilder builder) {
@@ -268,31 +294,31 @@ public final class ButcherCraftArchitectureManifest {
                 builder,
                 ALLOCATION,
                 PLANNING,
-                "M22A-M22B Allocation references Planning artifacts only by stable external identity"
+                "M22A-M22C Allocation references Planning artifacts only by stable external identity"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 PRODUCTION,
-                "M22A-M22B Allocation references executable work only by stable external identity"
+                "M22A-M22C Allocation references executable work only by stable external identity"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 SCHEDULER,
-                "M22A-M22B does not register or execute Scheduler work"
+                "M22A-M22C does not register or execute Scheduler work"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 INVENTORY,
-                "M22A-M22B models capacity evidence without owning inventory quantities"
+                "M22A-M22C models capacity evidence without owning inventory quantities"
         );
         forbid(
                 builder,
                 ALLOCATION,
                 TRANSACTIONS,
-                "M22A-M22B defines no economic mutation or transaction path"
+                "M22A-M22C defines no economic mutation or transaction path"
         );
     }
 
@@ -345,6 +371,11 @@ public final class ButcherCraftArchitectureManifest {
         ));
         builder.registry(new RegistryDescriptor(
                 ALLOCATION_REPORT_REGISTRY_ID,
+                OrderingPolicy.CANONICAL_ID,
+                List.of()
+        ));
+        builder.registry(new RegistryDescriptor(
+                ALLOCATION_TRACE_REGISTRY_ID,
                 OrderingPolicy.CANONICAL_ID,
                 List.of()
         ));
