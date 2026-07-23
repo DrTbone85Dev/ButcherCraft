@@ -10,6 +10,7 @@ import com.butchercraft.world.simulation.scheduler.SimulationPipeline;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
 import com.butchercraft.world.simulation.scheduler.SimulationTickReport;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandlerRegistry;
+import com.butchercraft.world.simulation.scheduler.SimulationWorkHandler;
 import com.butchercraft.world.simulation.scheduler.persistence.SimulationSchedulerStorage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -32,7 +33,7 @@ public final class SimulationSchedulerService {
 
     private final SimulationClockService clockService;
     private final OrderContractService orderContractService;
-    private final SimulationWorkHandlerRegistry handlerRegistry;
+    private volatile SimulationWorkHandlerRegistry handlerRegistry;
     private final SimulationExecutionBudget executionBudget;
     private final AtomicReference<ActiveScheduler> activeState = new AtomicReference<>();
 
@@ -89,6 +90,20 @@ public final class SimulationSchedulerService {
     public Optional<SimulationTickReport> lastReport() {
         ActiveScheduler active = activeState.get();
         return active == null ? Optional.empty() : Optional.ofNullable(active.lastReport().get());
+    }
+
+    public synchronized void installHandler(SimulationWorkHandler handler) {
+        Objects.requireNonNull(handler, "handler");
+        if (activeState.get() != null) {
+            throw new IllegalStateException("Scheduler handlers must be installed before world state is loaded");
+        }
+        java.util.List<SimulationWorkHandler> handlers = new java.util.ArrayList<>(
+                handlerRegistry.handlers().stream()
+                        .filter(existing -> !existing.supportedTypeId().equals(handler.supportedTypeId()))
+                        .toList()
+        );
+        handlers.add(handler);
+        handlerRegistry = new SimulationWorkHandlerRegistry(handlers);
     }
 
     private ActiveScheduler load(MinecraftServer server) {

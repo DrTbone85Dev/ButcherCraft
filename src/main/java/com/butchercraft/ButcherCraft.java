@@ -13,9 +13,11 @@ import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
 import com.butchercraft.world.BusinessRuntimeService;
 import com.butchercraft.world.EconomicActorService;
+import com.butchercraft.world.EconomicPlanningService;
 import com.butchercraft.world.GoodService;
 import com.butchercraft.world.InventoryService;
 import com.butchercraft.world.OrderContractService;
+import com.butchercraft.world.ProductionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.TransactionService;
 import com.butchercraft.world.WorkforceService;
@@ -71,9 +73,15 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(TransactionService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(OrderContractService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(OrderContractService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::prepareHandler);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::bindScheduler);
+        NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::advance);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::save);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }

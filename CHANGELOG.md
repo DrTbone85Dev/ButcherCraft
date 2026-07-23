@@ -1,5 +1,35 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 21 - Economic Planning Engine
+
+Core:
+
+- Added immutable schema-1 Planning Observations, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, cycle reports, and submission runtime.
+- Added deterministic open-Order Need detection, existing Production commitment subtraction, compatible Production Opportunity discovery, exact whole-batch Candidate generation, and bounded greedy selection.
+- Added typed, idempotent Approved Plan submission into existing Production and Scheduler authorities without taking ownership of execution or Inventory mutation.
+- Added one persistent Economic Planning Work in the existing PLANNING stage and preserved the Simulation Clock as the only time authority.
+- Added deterministic six-file Planning persistence with complete-set reconstruction, graph and external-reference validation, and fail-visible interruption policy.
+- Added comprehensive domain, algorithm, determinism, ownership, persistence, integration, budget, failure, dependency-boundary, regression, and split-scale stress coverage.
+
+Scope:
+
+- No Inventory reservations, automatic Order creation, purchasing, shipments, maintenance, utilities, inspections, markets, pricing, accounting, forecasting, live industry Processes, gameplay, GUI, networking, ItemStack integration, or workstation changes were added.
+
+## ButcherCraft v0.9.0-alpha.1 Phase 20 - Industry-Neutral Production Framework
+
+Core:
+
+- Added immutable, schema-versioned Production Process and Plan definitions with exact input/output quantities, whole-batch deterministic yield, capabilities, inventory bindings, requirements, policies, tags, and typed metadata.
+- Added separately owned Production Run lifecycle, validation, deterministic indexed registries and queries, exact progress tracking, cancellation, and typed failure behavior.
+- Added one internal Production scheduler handler and world lifecycle service while preserving the Simulation Clock as the sole time authority.
+- Added atomic multi-input and multi-output completion through an APPLIED `PRODUCTION` Economic Transaction with an explicit ordered inventory-change plan.
+- Added deterministic schema-versioned Process, Plan, and Run persistence with complete-set validation before publication.
+- Added comprehensive model, registry, validation, execution, transaction, persistence, integration, dependency-boundary, requirement, regression, and scale coverage.
+
+Scope:
+
+- No live industry Processes, machines, workstation migrations, datapacks, automatic planning, Inventory reservation, logistics, markets, pricing, accounting, gameplay, networking, GUI, or ItemStack integration was added.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 19 - Deterministic Simulation Scheduler & Pipeline
 
 Core:

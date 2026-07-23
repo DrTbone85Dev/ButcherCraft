@@ -59,7 +59,9 @@ Do not claim a command passed unless you actually ran it.
 - Use GameTests when gameplay behavior needs in-game validation.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
+- Keep `com.butchercraft.world.planning` deterministic and independent of Minecraft, NeoForge, ItemStack, wall-clock time, background mutation, and unrestricted manager access.
 - Keep `com.butchercraft.world.simulation.scheduler` pure Java, deterministic, bounded, and dependent on supplied Simulation Clock ticks only. Scheduler handlers must preserve owning-domain validation and transaction boundaries.
+- Keep `com.butchercraft.world.production` pure Java and industry-neutral. Processes and Plans are immutable, Runs own mutable lifecycle, Scheduler owns eligibility, Clock owns time, and every completed quantity change must use one APPLIED Production Transaction.
 - Keep `com.butchercraft.world.goods` definitions, registries, graph validation, and persistence independent of Minecraft, NeoForge, ItemStack, inventory quantities, and gameplay state.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
@@ -113,8 +115,10 @@ Do not claim a command passed unless you actually ran it.
 - Immutable economic actor definitions persist independently in schema-versioned `<world>/butchercraft/economic_actors.json`; actor runtime assignments remain separate and actors must reference Goods by `GoodId`, never by ItemStack.
 - Economic inventory containers, storage nodes, and runtime Good quantities persist independently in schema-versioned `<world>/butchercraft/inventory.json`; the pure inventory package must not import Minecraft inventory, Container, slot, menu, or ItemStack APIs.
 - Runtime economic quantity changes must be submitted through `com.butchercraft.world.transaction`; future systems must not restore direct `InventoryManager` add/remove mutation paths. Transaction history persists independently at `<world>/butchercraft/transactions.json`.
+- Economic Planning owns immutable decision artifacts only. It must submit approved executable intent through typed owning-domain adapters, never reserve or mutate Inventory, submit economic Transactions, fulfill Orders, execute Production, transition Scheduler runtime, or advance time. Its six schema-1 files persist under `<world>/butchercraft/planning_*.json` as one complete validated cycle set.
 - Economic intent and durable obligations belong to `com.butchercraft.world.economy.order`. Orders and Contracts never mutate Inventory or submit Transactions; fulfillment may reference only APPLIED Transactions and persists independently in schema-versioned `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json`.
 - Scheduled simulation Work definitions and separate runtime lifecycles persist at `<world>/butchercraft/simulation_scheduler.json`. Never persist `RUNNING` Work, silently drop unknown Work types, reuse submission sequences, or add automatic catch-up without a documented schema policy.
+- Production Process definitions, Plan definitions, and Run runtime state persist at `<world>/butchercraft/production_processes.json`, `production_plans.json`, and `production_runs.json`. Validate the complete candidate set and scheduler/transaction references before publication; never reserve stock implicitly or mutate Inventory outside the Transaction Framework.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.

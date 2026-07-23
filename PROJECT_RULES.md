@@ -66,6 +66,11 @@ These rules are non-negotiable for ButcherCraft implementation work. They apply 
     - Never claim a build, test, data-generation run, client launch, or server launch succeeded unless it was actually run and succeeded.
     - External owner verification must be reported as external verification.
 
+13. Planning is decision ownership, not execution ownership.
+    - Economic Planning may observe authoritative facts and submit bounded approved intent through typed owning-domain adapters.
+    - Planning must not reserve or mutate Inventory, submit economic Transactions, fulfill Orders, execute Production, transition Scheduler runtime, or advance simulation time.
+    - Planning outcomes must use exact quantities, explicit comparator chains, stable ids, positive budgets, and fail-visible persistence.
+
 ## Definition of Done
 
 A milestone is done only when its included scope is implemented, excluded scope has not leaked in, tests cover important invariants, persistence and duplication risks are handled or explicitly deferred, documentation reflects the result, and the required verification commands have actually succeeded in the verifying environment.

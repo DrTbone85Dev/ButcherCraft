@@ -19,6 +19,13 @@ Inventory -> records current quantities
 
 Orders and Contracts never reserve or mutate Inventory. They never submit Transactions. Fulfillment recording only interprets an already `APPLIED` Transaction.
 
+Phase 21 Economic Planning is a read-only consumer of accepted, fulfillable
+Order lines. It reads exact remaining quantity and subtracts existing
+Order-linked Production commitments before creating a Need. Planning never
+changes Order or line status and never records fulfillment. A completed
+Production Run still requires a separately APPLIED Transaction and an explicit
+Order fulfillment allocation through `OrderManager`.
+
 ## Domain Model
 
 The pure Java domain is `com.butchercraft.world.economy.order`. It has no Minecraft, NeoForge, ItemStack, block entity, menu, networking, or client dependencies.
@@ -151,6 +158,10 @@ Indexes, caches, validation results, scheduler queues, GUI state, networking sta
 
 Load order is Goods, Economic Actors, Inventory, Transactions, then coordinated Contracts and Orders. Contracts load first as a candidate manager; Orders then load and validate both sides of every Contract reference. Neither manager is published by `OrderContractService` until the complete snapshot validates. Malformed JSON, unsupported schemas, duplicate records, missing runtimes, unknown references, illegal lifecycle state, invalid allocation totals, and backward ticks fail visibly.
 
+## Production Context
+
+Phase 20 Production Plans may carry an optional requesting `OrderId` and governing `ContractId`. Registration validates those references, but they are context only. A Production Run does not reserve an Order line, interpret a Contract schedule, allocate its completion Transaction, or change either lifecycle. A separate future fulfillment owner must deliberately allocate an already APPLIED Production Transaction through the existing Order validation path.
+
 ## Subsystem Invariants
 
 - `OC-0001`: An Order definition is immutable after authoritative registration.
@@ -185,7 +196,7 @@ These measurements are environment observations, not universal latency guarantee
 - A processor can submit a supply offer without exposing machine recipes.
 - A restaurant can register a recurring supply Contract whose weekly schedule remains descriptive.
 - A warehouse can request an internal transfer without moving Inventory directly.
-- A future production system can request inputs and later report APPLIED production Transactions.
+- A Production Plan may identify an Order as context and later expose its APPLIED completion Transaction for a separate fulfillment decision.
 - A future carrier Contract can govern delivery Orders without implementing routing.
 - A MineColonies compatibility module can translate bounded external demand into an Order while retaining source-mod ownership.
 
@@ -193,7 +204,7 @@ These are examples only. No built-in Orders, Contracts, actors, goods, automatio
 
 ## Future Extension Points
 
-Future milestones may add reservation ownership, production and logistics consumers, schedule execution, market matching, pricing and accounting systems, public compatibility APIs, and player-facing presentation. Those systems must remain separate owners, use stable ids, submit economic mutations through Transactions, and preserve the distinction between intent, obligation, fact, and current quantity.
+Future milestones may add reservation ownership, automatic Production planning, logistics consumers, schedule execution, fulfillment coordination, market matching, pricing and accounting systems, public compatibility APIs, and player-facing presentation. Those systems must remain separate owners, use stable ids, submit economic mutations through Transactions, and preserve the distinction between intent, obligation, fact, and current quantity.
 
 Schema version 1 does not provide service-only Contract lines, unit conversion, substitution execution, automatic schedule processing, maximum-open-order enforcement, breach logic, rollback, or event-sourced reconstruction.
 
@@ -208,3 +219,4 @@ Schema version 1 does not provide service-only Contract lines, unit conversion, 
 - `docs/ECONOMIC_ACTORS.md`
 - `docs/INVENTORY_FRAMEWORK.md`
 - `docs/TRANSACTION_FRAMEWORK.md`
+- `docs/PRODUCTION_FRAMEWORK.md`

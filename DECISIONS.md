@@ -1156,6 +1156,55 @@ Consequences:
 - The pipeline performs no Inventory mutation, Transaction submission, Contract evaluation, production, logistics, markets, population, pricing, networking, GUI, ItemStack integration, or gameplay behavior.
 - The package remains internal. No public handler API or third-party registration lifecycle is established.
 
+## DEC-0073: Production Is Scheduled Intent Completed By One Economic Transaction
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003` through `AI-0010`, `AI-0012` through `AI-0018`, `AI-0020` through `AI-0028`.
+
+Decision: version 0.9.0 Phase 20 introduces `com.butchercraft.world.production` as the industry-neutral Core owner of executable Production definitions and runtime lifecycle. A `GoodTransformation` remains a descriptive economic relationship. A `ProductionProcessDefinition` describes reusable executable operations, a `ProductionPlanDefinition` is immutable authoritative intent with inventory bindings and scale, and a `ProductionRunRuntime` is the separately owned mutable execution record. The Simulation Scheduler determines eligibility, the Simulation Clock remains the sole time authority, and every completed Run commits all consumed inputs and produced outputs through one atomic APPLIED `PRODUCTION` Economic Transaction.
+
+Rationale: future industries need a common operational contract without duplicating time, Inventory mutation, Goods, business status, workforce requirements, Orders, or transaction history. Separating definition, intent, and runtime preserves singular ownership and deterministic persistence. Revalidating requirements and Inventory state at execution and completion is necessary because schema 1 deliberately introduces no reservation ledger.
+
+Consequences:
+
+- Core Production remains industry-neutral and registers no live industry Process definitions in Phase 20.
+- Processes reference Goods by `GoodId`; they do not embed or rewrite Good definitions.
+- Plans are immutable intent, reserve no Inventory, and bind Process lines to existing actor-owned inventories.
+- One schema-1 Plan owns exactly one mutable Run; terminal Run states are irreversible.
+- Scheduler Work controls execution eligibility only. Run progress belongs to Production and advances only from supplied authoritative simulation ticks.
+- Production never mutates Inventory directly. Completion requires one explicit ordered multi-change plan accepted and atomically applied by the Transaction Framework.
+- A Run becomes completed only after its completion Transaction is present in authoritative history with `APPLIED` status.
+- Requirements are checked against the external Business Runtime and Workforce authorities; Production stores only stable references and policy outcomes.
+- Order and Contract references provide optional context only. Production does not reserve, allocate, or record Order fulfillment.
+- Deterministic whole-batch quantities and yields contain no hidden randomness in schema 1.
+- Processes, Plans, and Runs persist independently in three schema-versioned files and publish only after complete-set validation. Filesystem replacement is per file; schema 1 does not claim an atomic three-file filesystem transaction.
+- `EconomicTransaction` gains an optional additive `inventory_changes` field. Existing schema-1 records without that field remain loadable and preserve their prior behavior.
+- Machine integration, workstation migration, datapack Process loading, and industry gameplay remain future work.
+
+## DEC-0074: Economic Planning Owns Decisions But Never Execution
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003` through `AI-0018`, `AI-0020` through `AI-0028`.
+
+Decision: version 0.9.0 Phase 21 introduces `com.butchercraft.world.planning` as the pure Java Core owner of deterministic economic observations, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, and Planning Cycle runtime. Schema 1 plans business-scale Production only. Planning reads immutable facts from authoritative services, selects bounded intent with exact cycle-local capacity claims, and submits executable approvals through a typed Production adapter. It never advances time, reserves or mutates Inventory, submits economic Transactions, fulfills Orders, executes Production, or owns Scheduler runtime.
+
+Rationale: automated regional behavior needs an explainable decision layer between economic facts and operational execution. Putting selection inside Orders, Production, Inventory, or Scheduler would give those systems conflicting responsibilities and make deterministic replay difficult. Keeping Planning artifacts immutable and separately persisted makes decisions inspectable while reusing existing execution authorities.
+
+Consequences:
+
+- One `butchercraft:economic_planning_cycle` Work runs in the existing PLANNING stage and defers to the next authoritative simulation tick; no second clock or independent tick loop exists.
+- Open accepted Order lines are the only schema-1 Need source. Existing active Production commitments linked to the same Order and output Good are subtracted before a Need is emitted.
+- Later Planning phases consume captured immutable observations and minimal immutable Opportunity process parameters rather than re-reading mutable registries.
+- Need and Candidate comparator chains are explicit. Exact `GoodQuantity`, whole-batch arithmetic, stable ids, and bounded ordered iteration contain no random or floating-point tie breaking.
+- Selection uses detached cycle-local Opportunity and input-capacity ledgers. These claims prevent over-allocation within one cycle but are not durable Inventory reservations.
+- Approved Production intent is submitted only through `ProductionPlanningSubmissionAdapter`. Production atomically registers and schedules an identical Plan, returns existing identical state on replay, rejects identity conflicts, and removes a new unscheduled Plan if Scheduler rejects it.
+- Planning persistence is independently owned at `<world>/butchercraft/planning_observations.json`, `planning_needs.json`, `planning_opportunities.json`, `planning_candidates.json`, `planning_approved_plans.json`, and `planning_runtime.json`.
+- All six files must be present together. Terminal cycle structure, provenance, graph integrity, and external Goods, Orders, Production, Actor, Business, Inventory, and Scheduler references are validated before publication.
+- Persisted interrupted cycles fail initialization visibly. Automatic partial-cycle resume or replay is not claimed in schema 1.
+- Inventory reservations, purchasing, logistics, maintenance, utilities, inspections, markets, pricing, accounting, public provider registration, gameplay, networking, GUI, and ItemStack integration remain future work.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

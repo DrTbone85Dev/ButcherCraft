@@ -19,6 +19,7 @@ ButcherCraft Core is the common platform. It owns concepts that must remain cons
 - Industry-neutral Order intent, Contract obligation, lifecycle, and transaction-allocation contracts.
 - Actor-owned economic inventory quantities, storage hierarchy, and capacity contracts.
 - Universal economic transaction validation, atomic execution, audit, persistence, and replay contracts.
+- Deterministic economic observation, Need detection, constraint evaluation, Opportunity discovery, Candidate selection, and typed Plan submission.
 - Future economy, market, consumer, logistics, utility, and population foundations.
 - Persistence ownership, schema versioning, validation, and migration policy.
 - Content snapshot coordination for shared data-driven definitions.
@@ -29,7 +30,7 @@ Core must not become a collection of industry-specific recipes or machine behavi
 
 ### Current State
 
-Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, the deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, industry-neutral Economic Actor definitions and runtime capabilities, actor-owned Inventory and Storage runtime quantities, the universal economic Transaction Framework, Orders and Contracts, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations. The live Work handler registry is empty.
+Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, the deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, industry-neutral Economic Actor definitions and runtime capabilities, actor-owned Inventory and Storage runtime quantities, the universal economic Transaction Framework, Orders and Contracts, the industry-neutral Production Framework, the Economic Planning Engine, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations. The live Work handler registry contains internal Production Run and Economic Planning Cycle handlers; no live industry Process definitions are registered.
 
 Economy, logistics execution, population simulation, consumers, utilities, and a stable third-party API are planned, not implemented.
 

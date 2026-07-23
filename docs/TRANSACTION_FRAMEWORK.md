@@ -2,7 +2,7 @@
 
 Status: v0.9.0 Phase 17 foundation
 
-The Transaction Framework is ButcherCraft Core's universal pure Java mutation pipeline for runtime economic quantities. Transactions describe a requested change, validation proves that the request is currently valid, and execution applies the accepted change atomically through `InventoryManager`.
+The Transaction Framework is ButcherCraft Core's universal pure Java mutation pipeline for runtime economic quantities. Transactions describe a requested change, validation proves that the request is currently valid, and execution applies the accepted change atomically through `InventoryManager`. Phase 20 extends the existing schema-1 record additively so one Production Transaction can carry a validated multi-input/multi-output change plan.
 
 It defines how simulation state changes, not why a change is requested. It does not implement production, logistics, markets, purchasing, sales, delivery, consumption, spoilage, pricing, accounting, scheduling, AI, networking, GUI, or gameplay.
 
@@ -36,11 +36,14 @@ Transaction schema version 1 contains:
 - non-negative simulation tick
 - `TransactionStatus`
 - immutable typed `TransactionMetadata`
+- optional immutable ordered `inventory_changes`
 - schema version
 
-The four executable Phase 17 types are inventory add, inventory remove, inventory transfer, and inventory adjustment. An adjustment uses exactly one inventory endpoint: a source means removal and a destination means addition.
+The original executable types are inventory add, inventory remove, inventory transfer, and inventory adjustment. An adjustment uses exactly one inventory endpoint: a source means removal and a destination means addition. Phase 20 also executes Production.
 
-Production, purchase, sale, delivery, consumption, spoilage, manual, and system types are additive schema reservations. They are not executable until a focused milestone defines their ownership and invariants.
+A Production Transaction requires a nonempty explicit inventory-change plan. Every listed inventory must belong to the producer Actor when one is present, every Good and unit must resolve, and the entire ordered batch is validated and committed atomically. The legacy top-level Good, quantity, and unit remain a summary for compatibility and audit lookup; the explicit plan is authoritative for Production mutation. Non-Production types reject explicit plans.
+
+Purchase, sale, delivery, consumption, spoilage, manual, and system types remain additive schema reservations. They are not executable until a focused milestone defines their ownership and invariants.
 
 Statuses are pending, validated, applied, rejected, and rolled back. Phase 17 performs pending, validated, applied, and rejected transitions. Rolled back is reserved for future additive behavior; no rollback mechanism or undo stack exists.
 
@@ -69,6 +72,10 @@ Structural and reference validation checks:
 - known optional inventories
 - actor ownership when an actor and inventory are supplied for the same endpoint
 - valid add, remove, transfer, and adjustment endpoint shapes
+- Production-only explicit change-plan use
+- known change-plan inventories and Goods
+- canonical units for every Production change
+- producer ownership of every Production inventory
 
 Runtime validation delegates candidate inventory-state checks to `InventoryManager` and verifies:
 
@@ -86,7 +93,7 @@ Validation returns an immutable `TransactionValidation` containing the transacti
 
 `InventoryManager` no longer exposes direct public add or remove methods. Runtime access returns defensive snapshots. Its authorized batch application validates every source and destination before replacing any runtime entries, then commits affected inventories in deterministic inventory-id order.
 
-This provides atomic add, remove, adjustment, and transfer behavior. Capacity failure, underflow, invalid status, invalid tick, or changed state produces no inventory mutation. Phase 17 does not implement post-commit rollback because deterministic prevalidation leaves no expected commit-time failure point.
+This provides atomic add, remove, adjustment, transfer, and multi-change Production behavior. Capacity failure, underflow, invalid status, invalid tick, changed state, or one invalid Production output produces no inventory mutation. Phase 20 reuses this batch path and does not add a second mutation engine. Post-commit rollback remains unimplemented because the validated batch is replaced as one in-memory commit.
 
 ## Results
 
@@ -114,9 +121,9 @@ Transaction history persists at:
 <world>/butchercraft/transactions.json
 ```
 
-The root and every transaction record use schema version `1`. The file stores complete transaction definitions, final statuses, metadata, and simulation ticks. Optional fields are written explicitly as JSON nulls so the schema shape remains stable.
+The root and every transaction record use schema version `1`. The file stores complete transaction definitions, final statuses, metadata, simulation ticks, and optional ordered `inventory_changes`. Existing schema-1 files without `inventory_changes` load with an empty plan and retain their original behavior. Optional legacy fields are written explicitly as JSON nulls so the schema shape remains stable.
 
-`TransactionStorage` writes deterministic pretty-printed JSON through a temporary file and atomically replaces the active file where supported. Loading rejects duplicate ids, malformed JSON, missing fields, unsupported schemas, unknown enums, invalid quantities, invalid units, unknown Goods, actors, or inventories, and invalid endpoint references.
+`TransactionStorage` writes deterministic pretty-printed JSON through a temporary file and atomically replaces the active file where supported. Loading rejects duplicate ids, malformed JSON, missing required fields, unsupported schemas, unknown enums, invalid quantities, invalid units, unknown Goods, actors, or inventories, invalid endpoint references, and malformed change plans. Inventory entry metadata on Production removals and additions is persisted exactly.
 
 Undo stacks, validation objects, applied-change caches, inventory snapshots, and temporary execution state are not persisted.
 
@@ -140,9 +147,9 @@ A transfer names distinct source and destination inventories, a Good, quantity, 
 
 A destination-only adjustment adds stock. A source-only adjustment removes stock. Metadata should explain the reason and external reference. Adjustment is not a substitute for a future purchase, sale, production, or spoilage transaction once those systems exist.
 
-### Future Production
+### Production
 
-A future production system will submit a production transaction backed by an accepted input/output plan. Phase 17 reserves the type but defines no recipes, yields, workstation integration, or execution behavior.
+The Production Framework submits a `PRODUCTION` transaction only when a Run reaches completion eligibility. Its explicit ordered plan removes every consumed input and adds every output. Transaction validation evaluates the final candidate Inventory state as one batch; only an APPLIED history record permits the Run to become completed. Production semantics, progress, requirements, and Plan ownership remain outside this package. See `docs/PRODUCTION_FRAMEWORK.md`.
 
 ### Future Sale
 
@@ -168,7 +175,7 @@ A future spoilage system will determine when and why inventory changes. It will 
 
 ## Out Of Scope
 
-- production and workstation execution
+- industry Process definitions, planning, progress, requirements, and workstation execution
 - markets, prices, accounting, payments, orders, and contracts
 - logistics, transportation, routing, delivery, and custody simulation
 - consumption and spoilage logic
