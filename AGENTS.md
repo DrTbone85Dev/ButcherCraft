@@ -59,6 +59,9 @@ Do not claim a command passed unless you actually ran it.
 - Use GameTests when gameplay behavior needs in-game validation.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
+- Keep `com.butchercraft.architecture.validation` pure Java, deterministic, explicit, and free of reflection, runtime scanning, hidden clocks, and mutable global state.
+- Update the explicit architecture manifest and validation tests when an owner-approved decision changes ownership, dependency direction, persistence, Scheduler stages, registries, or simulation invariants.
+- Keep `com.butchercraft.world.allocation` pure Java, immutable, and independent of Planning, Production, Scheduler, Inventory, Transactions, Minecraft, and NeoForge. M22A defines structural Requests, Sets, Commitments, quantities, references, and observations only; do not add runtime, providers, persistence, algorithms, or execution gates without a later owner-authorized milestone.
 - Keep `com.butchercraft.world.planning` deterministic and independent of Minecraft, NeoForge, ItemStack, wall-clock time, background mutation, and unrestricted manager access.
 - Keep `com.butchercraft.world.simulation.scheduler` pure Java, deterministic, bounded, and dependent on supplied Simulation Clock ticks only. Scheduler handlers must preserve owning-domain validation and transaction boundaries.
 - Keep `com.butchercraft.world.production` pure Java and industry-neutral. Processes and Plans are immutable, Runs own mutable lifecycle, Scheduler owns eligibility, Clock owns time, and every completed quantity change must use one APPLIED Production Transaction.

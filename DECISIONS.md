@@ -1205,6 +1205,92 @@ Consequences:
 - Persisted interrupted cycles fail initialization visibly. Automatic partial-cycle resume or replay is not claimed in schema 1.
 - Inventory reservations, purchasing, logistics, maintenance, utilities, inspections, markets, pricing, accounting, public provider registration, gameplay, networking, GUI, and ItemStack integration remain future work.
 
+## DEC-0075: Architecture Validation Uses Explicit Immutable Manifests
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0009`, `AI-0010`,
+`AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and `AI-0028`.
+
+Decision: BCSE Architecture Validation Framework Phase 1 introduces
+`com.butchercraft.architecture.validation` as a pure Java validation layer over
+explicit immutable architecture manifests. Rules are registered explicitly,
+ordered canonically, and produce structured deterministic results. The
+framework uses no reflection, runtime scanning, hidden clocks, random sources,
+or mutable global state. It observes accepted ownership, dependency, registry,
+persistence, Scheduler, Transaction, Planning, Production, Execution, and
+simulation contracts without changing them.
+
+Rationale: constitutional and accepted architecture contracts need executable
+regression protection, but runtime discovery would make ordering, coverage, and
+failure behavior implicit. An explicit manifest makes the validated facts
+reviewable and keeps the validator independent from subsystem managers and
+platform lifecycle.
+
+Consequences:
+
+- `ButcherCraftArchitectureManifest` declares the accepted current architecture
+  and is validated through automated tests.
+- Validation descriptors and reports are immutable; candidate violations remain
+  representable so rules can report them.
+- Rule exceptions, null results, and inconsistent result metadata become
+  explicit deterministic failures.
+- Execution time is caller-supplied report metadata; the validator does not read
+  a wall clock.
+- Existing source dependency-boundary tests remain responsible for concrete
+  package-text checks; the framework does not scan Java source or classpaths.
+- Passing validation does not approve an ADR, accept a proposed RFC, migrate a
+  schema, or transfer ownership.
+- The Allocation category is additive only. RFC-0022 remains proposed and no
+  Allocation implementation is authorized by this decision.
+- No simulation, persistence, registry, Scheduler, Transaction, Planning,
+  Production, gameplay, networking, asset, or workstation behavior changes.
+
+## DEC-0076: M22A Establishes The Immutable Core Allocation Domain
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0006`, `AI-0007`, `AI-0009`,
+`AI-0010`, `AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and
+`AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22A introduces
+`com.butchercraft.world.allocation` as a pure Java immutable structural domain.
+Allocation owns canonical Requests, structurally atomic AllocationSets, and
+immutable Commitment definitions. Authoritative providers continue to own
+Resources and Capacity. Planning, Production, Scheduler, Transactions, and
+Inventory retain their accepted authorities.
+
+Rationale: later deterministic allocation requires one stable,
+industry-neutral vocabulary before any provider, algorithm, runtime,
+persistence, or integration is introduced. Establishing exact quantities,
+external references, immutable observed facts, canonical ordering, and typed
+validation first makes those later decisions reviewable without changing
+simulation behavior.
+
+Consequences:
+
+- Stable Allocation identities use canonical namespaced values and
+  deterministic structural hashing.
+- Capacity quantities use exact bounded decimal arithmetic and open typed unit
+  identities with no implicit conversion.
+- Schema-1 Workforce observations represent aggregate position, role, or shift
+  capacity, never individual workers.
+- Allocation references execution work, Planning artifacts, Resources,
+  Capacity, and observations only through stable external identities.
+- The architecture manifest assigns Allocation Request, Set, and Commitment
+  ownership and forbids M22A dependency directions toward Planning,
+  Production, Scheduler, Inventory, and Transactions.
+- M22A adds no algorithm, cycle runtime, manager, provider, persistence file,
+  Scheduler stage 350, Work type, execution gate, Inventory mutation,
+  Transaction execution, Minecraft integration, or gameplay.
+- Domain codecs are deferred with persistence ownership. M22A exposes canonical
+  primitive values, schema fields, and ordered collections without freezing an
+  unapproved file or network contract.
+- RFC-0022 remains only partially implemented. M22B through M22F require
+  separate owner authorization and any compatibility decisions required by
+  Part V.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

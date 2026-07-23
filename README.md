@@ -105,6 +105,13 @@ The industry-neutral Production Process, Plan, and Run schemas, scheduler integr
 
 The deterministic Observation-to-Approved-Plan pipeline, ownership rules, exact allocation policy, Production submission adapter, six-file persistence contract, and deferred scope are documented in `docs/ECONOMIC_PLANNING_ENGINE.md`.
 
+The pure Java architecture manifest, deterministic rule registry, validation categories, structured reports, and extension constraints are documented in `docs/ARCHITECTURE_VALIDATION_FRAMEWORK.md`.
+
+The RFC-0022 M22A immutable Resource Allocation vocabulary, ownership
+boundaries, exact quantities, structural validation, deterministic ordering,
+and deferred runtime scope are documented in
+`docs/RESOURCE_ALLOCATION_DOMAIN.md`.
+
 The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 
 Development environment verified on VS Code.

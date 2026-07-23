@@ -1,6 +1,7 @@
 # RFC-0022 Revision 2 Architecture Review
 
-Status: Reconciled architecture, awaiting owner approval
+Status: Reconciled architecture; M22A owner-authorized and implemented,
+remaining RFC milestones awaiting separate approval
 
 Reviewed against:
 
@@ -10,9 +11,9 @@ Reviewed against:
 - RFC-0022 Revision 1 Parts I-VI
 - [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md)
 
-This review changes documentation only. It does not accept an ADR, authorize
-implementation, alter constitutional invariants, or change Java, persistence,
-registries, tests, assets, or gameplay.
+This review originally changed documentation only. DEC-0076 subsequently
+authorized M22A's immutable Core Allocation Domain. It does not authorize
+Scheduler, runtime, persistence, Planning, Production, or execution integration.
 
 ## Executive Finding
 

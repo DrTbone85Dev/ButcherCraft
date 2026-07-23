@@ -4,6 +4,121 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## RFC-0022 Milestone M22A: Core Allocation Domain
+
+Goal: establish the immutable, industry-neutral Resource Allocation vocabulary
+without performing allocation or changing simulation behavior.
+
+Included work:
+
+- Canonical Allocation, Resource, Capacity, Requirement, Request, Set,
+  Commitment, Provider, Policy, and unit identities.
+- Exact bounded `AllocationQuantity`, open Resource categories and Capacity
+  units, typed metadata, external authority references, and immutable observed
+  Resource and Capacity snapshots.
+- Immutable Requirements, replay-complete ordering contexts, Allocation
+  Requests, structurally atomic AllocationSets, and evidence-backed immutable
+  Commitments.
+- Typed structural failures, deterministic SHA-256 identity derivation,
+  canonical comparators and collections, Architecture Validation manifest
+  ownership, package-boundary tests, and `docs/RESOURCE_ALLOCATION_DOMAIN.md`.
+- Bounded repeat stress coverage for 100,000 identities, quantities, and
+  Requirements plus 50,000 Requests and AllocationSets.
+
+Excluded work:
+
+- Allocation algorithms, cycles, ledgers, runtime, managers, providers,
+  persistence, Scheduler stage 350, Planning and Production integration,
+  execution gating, Commitment lifecycle, Inventory or Transaction mutation,
+  Minecraft integration, and gameplay.
+
+Acceptance criteria:
+
+- The domain remains pure Java and depends on no concrete provider or execution
+  subsystem.
+- Equivalent explicit inputs produce equal identities, ordering, validation,
+  and immutable structures.
+- Architecture validation declares Allocation ownership but no persistence,
+  Scheduler stage, runtime hook, or dependency on Planning, Production,
+  Scheduler, Inventory, or Transactions.
+- RFC-0022 is described as partially implemented through M22A only.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22A has no runtime, visible content,
+  networking, assets, or gameplay integration.
+
+Rollback considerations:
+
+- M22A is additive. Removing the Allocation package, tests, documentation, and
+  manifest entries restores the prior architecture without changing save data,
+  registries, Scheduler state, or gameplay.
+
+## BCSE Architecture Validation Framework Phase 1
+
+Goal: make accepted architectural contracts executable through a pure Java,
+deterministic validation framework without changing any observed subsystem.
+
+Included work:
+
+- Immutable architecture components, ownership assignments and contracts,
+  dependency facts and constraints, registry descriptors, persistence
+  descriptors, Scheduler stage descriptors, and simulation invariant facts.
+- Canonical immutable rule registration, modular validation, typed severity and
+  status, structured reports, category summaries, and explicit malformed-rule
+  failures.
+- Standard Ownership, Dependencies, Persistence, Scheduler, Registries,
+  Transactions, Planning, Production, Allocation, Execution, Simulation, and
+  General categories.
+- An explicit manifest of accepted current ButcherCraft architecture.
+- Comprehensive success, violation, duplicate, malformed, null, ordering,
+  reference, replay, extensibility, dependency-boundary, and stress tests.
+- `docs/ARCHITECTURE_VALIDATION_FRAMEWORK.md`.
+
+Excluded work:
+
+- Runtime or classpath scanning, reflection, dynamic rule discovery, world-load
+  validation hooks, simulation execution, gameplay, and any change to
+  ownership, registries, persistence formats, Scheduler behavior, Transactions,
+  Planning, Production, or proposed Allocation architecture.
+
+Acceptance criteria:
+
+- Equivalent contexts and rule sets produce equal ordered reports.
+- Framework code imports neither Minecraft nor NeoForge and samples no hidden
+  clock or random source.
+- Duplicate ids, unknown references, forbidden dependencies, graph cycles,
+  mixed persistence authority, unsupported schemas, Scheduler gaps, and
+  unsatisfied replay declarations fail visibly.
+- The explicit current manifest passes every standard rule.
+- At Phase 1 delivery, RFC-0022 remained proposed and unimplemented. M22A was
+  authorized and implemented later under DEC-0076.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because the framework has no runtime, visible,
+  networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- The milestone is additive. Removing the architecture packages, tests,
+  documentation, and references restores the prior codebase without changing
+  save data, registries, Scheduler state, or gameplay.
+
 ## Milestone 0.9.0 Phase 21: Economic Planning Engine
 
 Goal: add one pure Java, deterministic, bounded decision pipeline that compiles authoritative economic facts into approved Production intent without taking ownership of execution, Inventory, Orders, Transactions, Scheduler runtime, or time.

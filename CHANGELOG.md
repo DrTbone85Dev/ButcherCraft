@@ -1,5 +1,49 @@
 # Changelog
 
+## RFC-0022 M22A Core Allocation Domain
+
+Core:
+
+- Added a pure Java, immutable Resource Allocation vocabulary with canonical
+  ids, extensible capacity units and categories, exact quantities, external
+  authority references, and observed Resource and Capacity snapshots.
+- Added immutable Requirements, replay-complete request ordering contexts,
+  Allocation Requests, atomic structural AllocationSets, and evidence-backed
+  Allocation Commitments.
+- Added typed structural validation, deterministic identity derivation,
+  canonical collection ordering, architecture-manifest ownership, boundary
+  checks, and bounded repeat stress coverage.
+
+Scope:
+
+- No allocation algorithm, mutable runtime, persistence, provider, Scheduler
+  stage, Planning or Production integration, Inventory mutation, Transaction
+  execution, Minecraft integration, or gameplay behavior was added.
+- RFC-0022 M22A is implemented. M22B through M22F remain separately gated.
+
+## BCSE Architecture Validation Framework Phase 1
+
+Core:
+
+- Added immutable architecture component, ownership, dependency, registry,
+  persistence, Scheduler, and simulation-invariant descriptors.
+- Added a deterministic rule registry, validator, structured results, category
+  summaries, and explicit malformed-rule failures.
+- Added standard rules for ownership, dependencies, registries, persistence,
+  Scheduler topology, Transactions, Planning, Production, Execution, and
+  simulation replay contracts.
+- Added an explicit current ButcherCraft architecture manifest validated by
+  automated tests without reflection or runtime scanning.
+- Added comprehensive success, failure, duplicate, ordering, reference,
+  malformed-rule, null, replay, extensibility, boundary, and scale coverage.
+
+Scope:
+
+- No simulation, Planning, Production, Transaction, persistence, registry,
+  Scheduler, gameplay, networking, asset, or workstation behavior changed.
+- RFC-0022 remains proposed; no Allocation owner, stage, persistence, or
+  runtime was implemented.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 21 - Economic Planning Engine
 
 Core:

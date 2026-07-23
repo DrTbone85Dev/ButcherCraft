@@ -1,6 +1,7 @@
 # RFC-0022: Resource Allocation Engine
 
-Status: Proposed architecture, awaiting owner approval
+Status: M22A Core Allocation Domain owner-authorized and implemented; M22B
+through M22F remain proposed and separately gated
 
 Revision: 2
 
@@ -19,9 +20,12 @@ ownership. Planning owns Candidate Plans and Approved Plans. Execution
 subsystems own executable definitions and runtime. Allocation owns temporary
 capacity Commitments only.
 
-This RFC is an architecture contract. It does not authorize implementation.
-Implementation requires the owner-approved ADR and compatibility decisions
-listed in Part V.
+This RFC remains the architecture contract for the complete engine. DEC-0076
+and the owner-authorized M22A implementation prompt authorize only the
+immutable Core Allocation Domain documented in
+[`RESOURCE_ALLOCATION_DOMAIN.md`](RESOURCE_ALLOCATION_DOMAIN.md). Runtime,
+Scheduler, persistence, Planning, Production, and execution integration still
+require the later owner-approved decisions listed in Part V.
 
 ## Part I: Philosophy And First Principles
 
