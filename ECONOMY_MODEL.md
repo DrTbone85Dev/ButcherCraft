@@ -2,7 +2,7 @@
 
 Status: future concepts only; no economy implementation
 
-This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, and Phase 16 provides actor-owned Inventory and Storage runtime quantities; no production, logistics, market, or pricing behavior exists.
+This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, Phase 16 provides actor-owned Inventory and Storage runtime quantities, and Phase 17 provides their validated mutation and audit pipeline; no production, logistics, market, accounting, or pricing behavior exists.
 
 All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
@@ -43,6 +43,10 @@ Production turns inputs into outputs through declared transformations, recipes, 
 Warehousing provides location, capacity, custody, condition, and availability for goods between production and consumption. Phase 16 now provides actor-owned inventory containers, hierarchical storage locations, exact quantities, and capacity validation. Warehouse operations, custody transfers, reservations, condition, availability, and logistics remain future systems.
 
 Inventory is never a universal collection owned by the economy. Each container belongs to an explicit Economic Actor and exists at an explicit Storage Node. See `docs/INVENTORY_FRAMEWORK.md`.
+
+## Transactions
+
+Every future cause of runtime economic quantity change must submit an immutable transaction rather than modifying inventory directly. The common pipeline validates stable Good, Actor, and Inventory references, canonical units, endpoint shape, underflow, status, tick, and capacity before atomic execution. Transaction history is an audit of accepted or rejected structurally valid submissions, not a replacement for accounting, orders, contracts, pricing, or scheduling. See `docs/TRANSACTION_FRAMEWORK.md`.
 
 ## Transportation
 

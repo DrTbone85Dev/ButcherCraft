@@ -23,8 +23,21 @@ class InventoryStorageTest {
 
     @Test
     void storageRoundTripsDefinitionsRuntimeQuantitiesAndTypedMetadata() {
-        InventoryManager manager = manager();
-        manager.requireRuntime(GRAIN_INVENTORY).transitionTo(InventoryStatus.LOCKED, 30L);
+        InventoryManager source = manager();
+        InventoryManager manager = new InventoryManager(
+                source.registry(),
+                source.runtimes().stream()
+                        .map(runtime -> runtime.inventoryId().equals(GRAIN_INVENTORY)
+                                ? new InventoryRuntime(
+                                        runtime.inventoryId(),
+                                        InventoryStatus.LOCKED,
+                                        runtime.entries(),
+                                        30L,
+                                        runtime.schemaVersion()
+                                )
+                                : runtime)
+                        .toList()
+        );
         InventoryStorage storage = storage("inventory.json");
 
         storage.save(manager);

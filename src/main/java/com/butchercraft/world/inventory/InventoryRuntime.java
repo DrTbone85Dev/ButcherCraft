@@ -85,25 +85,29 @@ public final class InventoryRuntime {
         return total;
     }
 
-    public synchronized void transitionTo(InventoryStatus nextStatus, long simulationTick) {
+    public synchronized InventoryRuntime snapshot() {
+        return new InventoryRuntime(inventoryId, status, entries, lastSimulationTick, schemaVersion);
+    }
+
+    synchronized void transitionTo(InventoryStatus nextStatus, long simulationTick) {
         requireCurrentOrFutureTick(simulationTick);
         status = Objects.requireNonNull(nextStatus, "nextStatus");
         lastSimulationTick = simulationTick;
     }
 
-    public synchronized void addEntry(InventoryEntry addition, long simulationTick) {
+    synchronized void addEntry(InventoryEntry addition, long simulationTick) {
         requireCurrentOrFutureTick(simulationTick);
         entries = entriesAfterAdding(entries, addition);
         lastSimulationTick = simulationTick;
     }
 
-    public synchronized void removeEntry(InventoryEntry removal, long simulationTick) {
+    synchronized void removeEntry(InventoryEntry removal, long simulationTick) {
         requireCurrentOrFutureTick(simulationTick);
         entries = entriesAfterRemoving(entries, removal);
         lastSimulationTick = simulationTick;
     }
 
-    public synchronized void replaceEntries(Collection<InventoryEntry> nextEntries, long simulationTick) {
+    synchronized void replaceEntries(Collection<InventoryEntry> nextEntries, long simulationTick) {
         requireCurrentOrFutureTick(simulationTick);
         entries = copyEntries(nextEntries);
         lastSimulationTick = simulationTick;

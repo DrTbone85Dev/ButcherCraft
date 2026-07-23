@@ -42,20 +42,35 @@ class InventoryManagerTest {
     }
 
     @Test
-    void managerUpdatesQuantitiesWithoutExceedingCapacity() {
+    void runtimeAccessReturnsDefensiveSnapshots() {
+        InventoryManager manager = manager();
+        InventoryRuntime snapshot = manager.requireRuntime(BEEF_INVENTORY);
+
+        snapshot.addEntry(new InventoryEntry(BEEF, 5L, UnitOfMeasure.POUND), 26L);
+        snapshot.transitionTo(InventoryStatus.LOCKED, 27L);
+
+        assertEquals(20L, manager.quantityIn(BEEF_INVENTORY, BEEF));
+        assertEquals(InventoryStatus.ACTIVE, manager.requireRuntime(BEEF_INVENTORY).status());
+        assertEquals(25L, manager.requireRuntime(BEEF_INVENTORY).lastSimulationTick());
+    }
+
+    @Test
+    void managerValidatesCandidateChangesWithoutMutatingRuntimeState() {
         InventoryManager manager = manager();
 
-        manager.addEntry(GRAIN_INVENTORY, new InventoryEntry(GRAIN, 40, UnitOfMeasure.BUSHEL), 26L);
-        assertEquals(50L, manager.quantityIn(GRAIN_INVENTORY, GRAIN));
-        assertThrows(IllegalArgumentException.class, () -> manager.addEntry(
+        assertTrue(manager.validateChanges(List.of(InventoryChange.add(
                 GRAIN_INVENTORY,
-                new InventoryEntry(GRAIN, 1, UnitOfMeasure.BUSHEL),
-                27L
-        ));
-        assertEquals(50L, manager.quantityIn(GRAIN_INVENTORY, GRAIN));
-
-        manager.removeEntry(GRAIN_INVENTORY, new InventoryEntry(GRAIN, 5, UnitOfMeasure.BUSHEL), 27L);
-        assertEquals(45L, manager.quantityIn(GRAIN_INVENTORY, GRAIN));
+                new InventoryEntry(GRAIN, 40, UnitOfMeasure.BUSHEL)
+        )), 26L).isAllowed());
+        assertEquals(InventoryChangeCode.CAPACITY_EXCEEDED, manager.validateChanges(List.of(InventoryChange.add(
+                GRAIN_INVENTORY,
+                new InventoryEntry(GRAIN, 41, UnitOfMeasure.BUSHEL)
+        )), 26L).code());
+        assertTrue(manager.validateChanges(List.of(InventoryChange.remove(
+                GRAIN_INVENTORY,
+                manager.requireRuntime(GRAIN_INVENTORY).entries().getFirst().withQuantity(5)
+        )), 26L).isAllowed());
+        assertEquals(10L, manager.quantityIn(GRAIN_INVENTORY, GRAIN));
     }
 
     @Test
@@ -68,33 +83,30 @@ class InventoryManagerTest {
                 Optional.of(ActorId.of("test:missing"))
         );
 
-        assertThrows(IllegalArgumentException.class, () -> manager.addEntry(
+        assertEquals(InventoryChangeCode.UNKNOWN_GOOD, manager.validateChanges(List.of(InventoryChange.add(
                 GRAIN_INVENTORY,
-                new InventoryEntry(GoodId.of("test:missing"), 1, UnitOfMeasure.EACH),
-                26L
-        ));
-        assertThrows(IllegalArgumentException.class, () -> manager.addEntry(
+                new InventoryEntry(GoodId.of("test:missing"), 1, UnitOfMeasure.EACH)
+        )), 26L).code());
+        assertEquals(InventoryChangeCode.INVALID_UNIT, manager.validateChanges(List.of(InventoryChange.add(
                 GRAIN_INVENTORY,
-                new InventoryEntry(GRAIN, 1, UnitOfMeasure.POUND),
-                26L
-        ));
-        assertThrows(IllegalArgumentException.class, () -> manager.addEntry(
+                new InventoryEntry(GRAIN, 1, UnitOfMeasure.POUND)
+        )), 26L).code());
+        assertEquals(InventoryChangeCode.INVALID_METADATA, manager.validateChanges(List.of(InventoryChange.add(
                 GRAIN_INVENTORY,
-                new InventoryEntry(GRAIN, 1, UnitOfMeasure.BUSHEL, unknownOrigin),
-                26L
-        ));
+                new InventoryEntry(GRAIN, 1, UnitOfMeasure.BUSHEL, unknownOrigin)
+        )), 26L).code());
 
-        manager.requireRuntime(GRAIN_INVENTORY).transitionTo(InventoryStatus.LOCKED, 26L);
-        assertThrows(IllegalArgumentException.class, () -> manager.addEntry(
+        InventoryManager lockedManager = managerWithStatus(GRAIN_INVENTORY, InventoryStatus.LOCKED);
+        assertEquals(InventoryChangeCode.INVENTORY_UNAVAILABLE, lockedManager.validateChanges(List.of(
+                InventoryChange.add(
                 GRAIN_INVENTORY,
-                new InventoryEntry(GRAIN, 1, UnitOfMeasure.BUSHEL),
-                27L
-        ));
-        assertThrows(IllegalArgumentException.class, () -> manager.removeEntry(
+                new InventoryEntry(GRAIN, 1, UnitOfMeasure.BUSHEL)
+        )), 27L).code());
+        assertEquals(InventoryChangeCode.INVENTORY_UNAVAILABLE, lockedManager.validateChanges(List.of(
+                InventoryChange.remove(
                 GRAIN_INVENTORY,
-                new InventoryEntry(GRAIN, 1, UnitOfMeasure.BUSHEL),
-                27L
-        ));
+                lockedManager.requireRuntime(GRAIN_INVENTORY).entries().getFirst().withQuantity(1)
+        )), 27L).code());
     }
 
     @Test
@@ -142,9 +154,11 @@ class InventoryManagerTest {
         assertEquals(InventoryMovementCode.INSUFFICIENT_QUANTITY, manager.validateMovement(
                 GRAIN_INVENTORY, BEEF_INVENTORY, movement.withQuantity(11)
         ).code());
-        manager.requireRuntime(BEEF_INVENTORY).transitionTo(InventoryStatus.MAINTENANCE, 26L);
-        InventoryMovementValidation unavailable = manager.validateMovement(
-                GRAIN_INVENTORY, BEEF_INVENTORY, movement
+        InventoryManager unavailableManager = managerWithStatus(BEEF_INVENTORY, InventoryStatus.MAINTENANCE);
+        InventoryEntry unavailableMovement = unavailableManager.requireRuntime(GRAIN_INVENTORY)
+                .entries().getFirst().withQuantity(5);
+        InventoryMovementValidation unavailable = unavailableManager.validateMovement(
+                GRAIN_INVENTORY, BEEF_INVENTORY, unavailableMovement
         );
         assertFalse(unavailable.isAllowed());
         assertEquals(InventoryMovementCode.TARGET_UNAVAILABLE, unavailable.code());
@@ -209,5 +223,21 @@ class InventoryManagerTest {
                 0L,
                 InventorySchema.CURRENT_VERSION
         );
+    }
+
+    private static InventoryManager managerWithStatus(InventoryId inventoryId, InventoryStatus status) {
+        InventoryManager source = manager();
+        List<InventoryRuntime> runtimes = source.runtimes().stream()
+                .map(runtime -> runtime.inventoryId().equals(inventoryId)
+                        ? new InventoryRuntime(
+                                runtime.inventoryId(),
+                                status,
+                                runtime.entries(),
+                                runtime.lastSimulationTick(),
+                                runtime.schemaVersion()
+                        )
+                        : runtime)
+                .toList();
+        return new InventoryManager(source.registry(), runtimes);
     }
 }

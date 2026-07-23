@@ -35,13 +35,14 @@ Delivered platform work includes:
 
 ## Era III: Economic Engine
 
-Status: common Goods, Economic Actor, and Inventory foundations implemented; economic behavior future
+Status: common Goods, Economic Actor, Inventory, and Transaction foundations implemented; economic behavior future
 
 Planned domains:
 
 - Commodity and product identity foundation (implemented in Phase 14).
 - Economic participant identity and capability foundation (implemented in Phase 15).
 - Inventory ownership, storage hierarchy, and runtime quantity foundation (implemented in Phase 16).
+- Universal validation, atomic mutation, audit, persistence, and replay pipeline (implemented in Phase 17).
 - Supply.
 - Demand.
 - Transportation.

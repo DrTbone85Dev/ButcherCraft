@@ -23,22 +23,22 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
-final class InventoryTestFixtures {
-    static final GoodId GRAIN = GoodId.of("test:grain");
-    static final GoodId BEEF = GoodId.of("test:beef");
-    static final GoodId BOX = GoodId.of("test:box");
-    static final ActorId WAREHOUSE_ACTOR = ActorId.of("test:warehouse_actor");
-    static final ActorId FARM_ACTOR = ActorId.of("test:farm_actor");
-    static final StorageNodeId DISTRIBUTION_CENTER = StorageNodeId.of("test:distribution_center");
-    static final StorageNodeId WAREHOUSE = StorageNodeId.of("test:warehouse");
-    static final StorageNodeId COOLER = StorageNodeId.of("test:cooler");
-    static final InventoryId GRAIN_INVENTORY = InventoryId.of("test:grain_inventory");
-    static final InventoryId BEEF_INVENTORY = InventoryId.of("test:beef_inventory");
+public final class InventoryTestFixtures {
+    public static final GoodId GRAIN = GoodId.of("test:grain");
+    public static final GoodId BEEF = GoodId.of("test:beef");
+    public static final GoodId BOX = GoodId.of("test:box");
+    public static final ActorId WAREHOUSE_ACTOR = ActorId.of("test:warehouse_actor");
+    public static final ActorId FARM_ACTOR = ActorId.of("test:farm_actor");
+    public static final StorageNodeId DISTRIBUTION_CENTER = StorageNodeId.of("test:distribution_center");
+    public static final StorageNodeId WAREHOUSE = StorageNodeId.of("test:warehouse");
+    public static final StorageNodeId COOLER = StorageNodeId.of("test:cooler");
+    public static final InventoryId GRAIN_INVENTORY = InventoryId.of("test:grain_inventory");
+    public static final InventoryId BEEF_INVENTORY = InventoryId.of("test:beef_inventory");
 
     private InventoryTestFixtures() {
     }
 
-    static GoodRegistry goods() {
+    public static GoodRegistry goods() {
         return GoodRegistry.of(
                 List.of(
                         commodity(GRAIN, "Grain", UnitOfMeasure.BUSHEL, StorageRequirement.AMBIENT),
@@ -50,7 +50,7 @@ final class InventoryTestFixtures {
         );
     }
 
-    static EconomicActorRegistry actors() {
+    public static EconomicActorRegistry actors() {
         GoodRegistry goods = goods();
         EconomicActorDefinition warehouse = EconomicActorDefinition.builder()
                 .id(WAREHOUSE_ACTOR)
@@ -73,7 +73,7 @@ final class InventoryTestFixtures {
         return EconomicActorRegistry.of(List.of(warehouse, farm), goods, BuiltInIndustryCatalog.all());
     }
 
-    static List<StorageNode> storageNodes() {
+    public static List<StorageNode> storageNodes() {
         StorageNode distributionCenter = StorageNode.builder()
                 .id(DISTRIBUTION_CENTER)
                 .displayName("Distribution Center")
@@ -109,7 +109,7 @@ final class InventoryTestFixtures {
         return List.of(cooler, warehouse, distributionCenter);
     }
 
-    static List<InventoryContainer> containers() {
+    public static List<InventoryContainer> containers() {
         InventoryContainer grain = InventoryContainer.builder()
                 .id(GRAIN_INVENTORY)
                 .displayName("Grain Inventory")
@@ -135,12 +135,12 @@ final class InventoryTestFixtures {
         return List.of(grain, beef);
     }
 
-    static InventoryRegistry registry() {
+    public static InventoryRegistry registry() {
         EconomicActorRegistry actors = actors();
         return InventoryRegistry.of(containers(), storageNodes(), actors.goodRegistry(), actors);
     }
 
-    static InventoryManager manager() {
+    public static InventoryManager manager() {
         InventoryEntryMetadata grainMetadata = new InventoryEntryMetadata(
                 Optional.of("LOT-001"),
                 OptionalLong.of(500L),

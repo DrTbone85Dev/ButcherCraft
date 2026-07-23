@@ -1,5 +1,21 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 17 - Transaction Framework
+
+### Core
+
+- Added the pure Java universal economic transaction schema, validation pipeline, executor, manager, audit registry, results, and typed metadata.
+- Added atomic inventory add, remove, transfer, and adjustment execution through the transaction framework.
+- Restricted inventory quantity mutation to executor-authorized validated batches and changed runtime access to defensive snapshots.
+- Added independent schema-versioned transaction history at `<world>/butchercraft/transactions.json`.
+- Added `TransactionService` lifecycle integration after the Inventory service.
+
+### Stability
+
+- Added explicit failures for duplicate ids, unknown references, invalid units and endpoints, invalid statuses, underflow, capacity violations, malformed persistence, and unsupported schemas.
+- Added deterministic replay and automated coverage for a 1,000,000-transaction audit registry.
+- Preserved all existing Goods, Economic Actors, inventory data, processing, ItemStack, workstation, content registry, and gameplay behavior.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 16 - Inventory And Storage Framework
 
 ### Core

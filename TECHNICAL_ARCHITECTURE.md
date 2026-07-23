@@ -206,6 +206,7 @@ Required boundaries:
 - Workforce definitions are organizational structure, not employee records. They persist separately at `<world>/butchercraft/workforce_definitions.json`, reference businesses by `BusinessId`, reference Business Runtime shift ids, and resolve required positions for a current shift without assigning workers.
 - Economic Actors define participants, not economic behavior. Immutable definitions persist separately at `<world>/butchercraft/economic_actors.json`, reference goods by `GoodId`, and keep mutable runtime status and optional Business Runtime/Workforce assignments outside definition persistence.
 - Economic Inventory defines ownership, location, capacity, and runtime quantities, not movement or production. Containers reference actors and storage nodes, entries reference Goods by `GoodId`, and the pure domain remains independent from Minecraft inventory representation.
+- Economic Transactions define the universal runtime quantity-mutation pipeline. Future causes submit immutable requests; validation creates accepted change plans; execution alone applies atomic changes; audit history preserves deterministic submission order.
 
 Any future public interface under `com.butchercraft.api` must document data ownership, persistence behavior, and server/client expectations before an expansion depends on it.
 
@@ -269,6 +270,7 @@ Additional persistence ownership rules:
 - Economic good definitions and transformation relationships persist in schema-versioned JSON at `<world>/butchercraft/goods.json`. The file stores immutable definitions only; future inventory, warehouse, market, order, shipment, and production quantities require separate runtime owners.
 - Economic actor definitions and relationship metadata persist in schema-versioned JSON at `<world>/butchercraft/economic_actors.json`. Runtime actor status and assignments are in-memory Phase 15 state; future durable runtime ownership requires a separate schema and must not rewrite immutable definitions.
 - Economic inventory containers, storage nodes, runtime statuses, exact quantities, canonical units, and typed entry metadata persist in schema-versioned JSON at `<world>/butchercraft/inventory.json`. Minecraft inventory, ItemStack, slot, menu, GUI, routing, order, and production state must not be duplicated into this file.
+- Economic transaction definitions, final statuses, typed metadata, and simulation ticks persist in schema-versioned JSON at `<world>/butchercraft/transactions.json`. Validation objects, undo stacks, runtime snapshots, and execution caches are not persisted.
 - Work-order queues use `SavedData` only when queued or reserved work must survive save/load; transient station progress remains on the relevant block entity.
 - Facility-level cleanliness summaries may use `SavedData`; local station cleanliness remains on block entities unless a chunk or zone attachment is explicitly introduced.
 - Refrigeration room registries and durable room summaries may use `SavedData`; active thermal caches remain on controllers or runtime services and must be rebuildable.
@@ -325,11 +327,25 @@ Phase 16 introduces `com.butchercraft.world.inventory` as the universal runtime 
 
 `StorageCapacity` provides optional weight, volume, discrete-unit, and distinct-Good limits. Validation uses exact deterministic unit conversion for supported weight and volume units. Container limits and aggregate storage-node/ancestor limits are validated before manager additions commit.
 
-`InventoryRegistry` is immutable and deterministic. It validates duplicate ids, owner and storage references, capacity nesting, missing parents, and hierarchy cycles. `InventoryManager` owns runtime records, validates Good, unit, actor, metadata, and capacity references, and provides quantity, ownership, and storage-hierarchy queries. Movement validation evaluates atomic source-removal and target-addition candidates but performs no movement, routing, reservation, or scheduling.
+`InventoryRegistry` is immutable and deterministic. It validates duplicate ids, owner and storage references, capacity nesting, missing parents, and hierarchy cycles. `InventoryManager` owns runtime records, validates Good, unit, actor, metadata, and capacity references, and provides quantity, ownership, and storage-hierarchy queries. Runtime access returns defensive snapshots. Candidate change validation is public, but mutation requires executor-only transaction authority and applies complete validated batches atomically.
 
 `InventoryService` depends on `EconomicActorService`, loads only after Goods and Actors are active, and owns world lifecycle persistence at `<world>/butchercraft/inventory.json`. The inventory package remains pure Java; only the service imports Minecraft and NeoForge APIs. Phase 16 registers no built-in inventories or storage nodes and creates no ItemStack bridge.
 
-Future production, order, warehouse-operation, logistics, market, spoilage, and compatibility systems must identify inventory by `InventoryId`, preserve server authority, and use explicit transactions. Minecraft inventory adapters must remain outside the pure inventory domain.
+Future production, order, warehouse-operation, logistics, market, spoilage, and compatibility systems must identify inventory by `InventoryId`, preserve server authority, and submit explicit economic transactions. Minecraft inventory adapters must remain outside the pure inventory domain.
+
+## Economic Transaction Architecture
+
+Phase 17 introduces `com.butchercraft.world.transaction` as the universal state-mutation pipeline for economic inventory quantities.
+
+`EconomicTransaction` is an immutable schema-versioned request containing stable transaction, actor, inventory, and Good references; exact quantity and canonical unit; simulation tick; status; and typed audit metadata. Schema version 1 executes inventory add, remove, transfer, and direction-explicit adjustment. Other additive transaction types are reserved but non-executable.
+
+`TransactionValidator` owns reference, endpoint, status, underflow, capacity, and current-state validation without mutation. Accepted validation records contain the exact inventory changes authorized for one transaction. `TransactionExecutor` requires the matching accepted record and a `VALIDATED` transaction, rechecks current state, and applies the complete batch through `InventoryManager`. Failed batches do not change any inventory.
+
+`TransactionRegistry` stores audit history in authoritative submission order, rejects duplicate ids, preserves position during status replacement, and provides lookup and type/status queries. `TransactionManager` owns submit, validate, execute, query, history, and explicit replay orchestration. Replay applies only historical `APPLIED` records to a supplied compatible baseline and fails visibly on divergence.
+
+`TransactionService` depends on `InventoryService` and owns world lifecycle persistence at `<world>/butchercraft/transactions.json`. The transaction package remains pure Java; only the service imports Minecraft and NeoForge APIs. Phase 17 adds no automatic history reconstruction, rollback, production, logistics, market, accounting, networking, GUI, or gameplay behavior.
+
+Future systems decide why a change is requested, then submit a transaction. They must not mutate `InventoryRuntime` or inventory quantities directly. See `docs/TRANSACTION_FRAMEWORK.md` for the schema, pipelines, audit rules, persistence contract, and examples.
 
 ## Item Data-Component Strategy
 

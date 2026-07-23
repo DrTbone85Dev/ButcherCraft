@@ -3,6 +3,7 @@ package com.butchercraft.world.inventory;
 import com.butchercraft.world.economy.actor.ActorId;
 import com.butchercraft.world.goods.GoodDefinition;
 import com.butchercraft.world.goods.GoodId;
+import com.butchercraft.world.transaction.TransactionExecutionAuthority;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +30,7 @@ public final class InventoryManager {
         Objects.requireNonNull(loadedRuntimes, "loadedRuntimes");
         for (InventoryRuntime runtime : loadedRuntimes) {
             Objects.requireNonNull(runtime, "runtime");
-            InventoryRuntime previous = runtimes.putIfAbsent(runtime.inventoryId(), runtime);
+            InventoryRuntime previous = runtimes.putIfAbsent(runtime.inventoryId(), runtime.snapshot());
             if (previous != null) {
                 throw new IllegalArgumentException("Duplicate inventory runtime: " + runtime.inventoryId().value());
             }
@@ -64,7 +65,8 @@ public final class InventoryManager {
     }
 
     public synchronized Optional<InventoryRuntime> runtimeFor(InventoryId inventoryId) {
-        return Optional.ofNullable(runtimes.get(Objects.requireNonNull(inventoryId, "inventoryId")));
+        return Optional.ofNullable(runtimes.get(Objects.requireNonNull(inventoryId, "inventoryId")))
+                .map(InventoryRuntime::snapshot);
     }
 
     public synchronized InventoryRuntime requireRuntime(InventoryId inventoryId) {
@@ -117,27 +119,134 @@ public final class InventoryManager {
         return total;
     }
 
-    public synchronized void addEntry(InventoryId inventoryId, InventoryEntry entry, long simulationTick) {
-        InventoryRuntime runtime = requireRuntime(inventoryId);
-        if (!runtime.status().canReceive()) {
-            throw new IllegalArgumentException("Inventory cannot receive Goods while "
-                    + runtime.status().serializedName() + ": " + inventoryId.value());
+    public synchronized InventoryChangeValidation validateChanges(
+            Collection<InventoryChange> changes,
+            long simulationTick
+    ) {
+        Objects.requireNonNull(changes, "changes");
+        if (changes.isEmpty()) {
+            return InventoryChangeValidation.rejected(
+                    InventoryChangeCode.EMPTY_CHANGE_SET,
+                    "Inventory change set cannot be empty"
+            );
         }
-        validateEntry(entry, inventoryId);
-        List<InventoryEntry> candidate = InventoryRuntime.entriesAfterAdding(runtime.entries(), entry);
-        validateWithOverride(inventoryId, candidate);
-        runtime.replaceEntries(candidate, simulationTick);
+        if (simulationTick < 0L) {
+            return InventoryChangeValidation.rejected(
+                    InventoryChangeCode.INVALID_TICK,
+                    "Inventory change simulation tick must not be negative"
+            );
+        }
+
+        Map<InventoryId, List<InventoryEntry>> overrides = new LinkedHashMap<>();
+        for (InventoryChange change : changes) {
+            if (change == null) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.INVALID_QUANTITY,
+                        "Inventory change cannot be null"
+                );
+            }
+            InventoryRuntime runtime = runtimes.get(change.inventoryId());
+            if (runtime == null) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.UNKNOWN_INVENTORY,
+                        "Unknown inventory: " + change.inventoryId().value()
+                );
+            }
+            if (simulationTick < runtime.lastSimulationTick()) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.INVALID_TICK,
+                        "Inventory simulation tick must not move backward: " + change.inventoryId().value()
+                );
+            }
+            if (change.entry().quantity() <= 0L) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.INVALID_QUANTITY,
+                        "Inventory change quantity must be positive"
+                );
+            }
+            if (change.type() == InventoryChangeType.ADD && !runtime.status().canReceive()) {
+                return unavailable(change, runtime);
+            }
+            if (change.type() == InventoryChangeType.REMOVE && !runtime.status().canRelease()) {
+                return unavailable(change, runtime);
+            }
+
+            GoodDefinition definition = registry.goodRegistry().find(change.entry().goodId()).orElse(null);
+            if (definition == null) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.UNKNOWN_GOOD,
+                        "Inventory change references unknown Good: " + change.entry().goodId().value()
+                );
+            }
+            if (definition.unitOfMeasure() != change.entry().unitOfMeasure()) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.INVALID_UNIT,
+                        "Inventory change unit does not match the Good definition"
+                );
+            }
+            if (change.entry().metadata().originActorId().isPresent()
+                    && !registry.actorRegistry().contains(change.entry().metadata().originActorId().orElseThrow())) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.INVALID_METADATA,
+                        "Inventory change origin actor is unknown"
+                );
+            }
+
+            List<InventoryEntry> current = overrides.getOrDefault(change.inventoryId(), runtime.entries());
+            try {
+                List<InventoryEntry> candidate = change.type() == InventoryChangeType.ADD
+                        ? InventoryRuntime.entriesAfterAdding(current, change.entry())
+                        : InventoryRuntime.entriesAfterRemoving(current, change.entry());
+                overrides.put(change.inventoryId(), candidate);
+            } catch (ArithmeticException exception) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.ARITHMETIC_OVERFLOW,
+                        "Inventory quantity overflow"
+                );
+            } catch (IllegalArgumentException exception) {
+                return InventoryChangeValidation.rejected(
+                        InventoryChangeCode.INSUFFICIENT_QUANTITY,
+                        exception.getMessage() == null ? "Inventory quantity is insufficient" : exception.getMessage()
+                );
+            }
+        }
+
+        try {
+            validateWithOverrides(overrides);
+        } catch (IllegalArgumentException | ArithmeticException exception) {
+            return InventoryChangeValidation.rejected(
+                    InventoryChangeCode.CAPACITY_EXCEEDED,
+                    exception.getMessage() == null ? "Inventory capacity validation failed" : exception.getMessage()
+            );
+        }
+        return InventoryChangeValidation.allowed();
     }
 
-    public synchronized void removeEntry(InventoryId inventoryId, InventoryEntry entry, long simulationTick) {
-        InventoryRuntime runtime = requireRuntime(inventoryId);
-        if (!runtime.status().canRelease()) {
-            throw new IllegalArgumentException("Inventory cannot release Goods while "
-                    + runtime.status().serializedName() + ": " + inventoryId.value());
+    public synchronized List<InventoryChange> applyValidatedChanges(
+            TransactionExecutionAuthority authority,
+            Collection<InventoryChange> changes,
+            long simulationTick
+    ) {
+        Objects.requireNonNull(authority, "authority");
+        List<InventoryChange> orderedChanges = List.copyOf(Objects.requireNonNull(changes, "changes"));
+        InventoryChangeValidation validation = validateChanges(orderedChanges, simulationTick);
+        if (!validation.isAllowed()) {
+            throw new IllegalStateException("Inventory changes were not valid at execution: " + validation.message());
         }
-        validateEntry(entry, inventoryId);
-        List<InventoryEntry> candidate = InventoryRuntime.entriesAfterRemoving(runtime.entries(), entry);
-        runtime.replaceEntries(candidate, simulationTick);
+
+        Map<InventoryId, List<InventoryEntry>> candidates = new LinkedHashMap<>();
+        for (InventoryChange change : orderedChanges) {
+            InventoryRuntime runtime = requireMutableRuntime(change.inventoryId());
+            List<InventoryEntry> current = candidates.getOrDefault(change.inventoryId(), runtime.entries());
+            List<InventoryEntry> candidate = change.type() == InventoryChangeType.ADD
+                    ? InventoryRuntime.entriesAfterAdding(current, change.entry())
+                    : InventoryRuntime.entriesAfterRemoving(current, change.entry());
+            candidates.put(change.inventoryId(), candidate);
+        }
+        candidates.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> requireMutableRuntime(entry.getKey()).replaceEntries(entry.getValue(), simulationTick));
+        return orderedChanges;
     }
 
     public synchronized InventoryMovementValidation validateMovement(
@@ -208,6 +317,7 @@ public final class InventoryManager {
     public synchronized List<InventoryRuntime> runtimes() {
         return runtimes.values().stream()
                 .sorted(Comparator.comparing(InventoryRuntime::inventoryId))
+                .map(InventoryRuntime::snapshot)
                 .toList();
     }
 
@@ -225,10 +335,6 @@ public final class InventoryManager {
         }
         validateAllEntries(Map.of());
         validateAllCapacities(Map.of());
-    }
-
-    private void validateWithOverride(InventoryId inventoryId, List<InventoryEntry> entries) {
-        validateWithOverrides(Map.of(inventoryId, entries));
     }
 
     private void validateWithOverrides(Map<InventoryId, List<InventoryEntry>> overrides) {
@@ -283,7 +389,23 @@ public final class InventoryManager {
             Map<InventoryId, List<InventoryEntry>> overrides
     ) {
         List<InventoryEntry> override = overrides.get(inventoryId);
-        return override != null ? override : requireRuntime(inventoryId).entries();
+        return override != null ? override : requireMutableRuntime(inventoryId).entries();
+    }
+
+    private InventoryRuntime requireMutableRuntime(InventoryId inventoryId) {
+        InventoryRuntime runtime = runtimes.get(Objects.requireNonNull(inventoryId, "inventoryId"));
+        if (runtime == null) {
+            throw new IllegalArgumentException("Unknown inventory runtime: " + inventoryId.value());
+        }
+        return runtime;
+    }
+
+    private static InventoryChangeValidation unavailable(InventoryChange change, InventoryRuntime runtime) {
+        return InventoryChangeValidation.rejected(
+                InventoryChangeCode.INVENTORY_UNAVAILABLE,
+                "Inventory cannot " + change.type().name().toLowerCase(java.util.Locale.ROOT)
+                        + " Goods while " + runtime.status().serializedName() + ": " + change.inventoryId().value()
+        );
     }
 
     private static InventoryMovementValidation rejected(InventoryMovementCode code, String message) {

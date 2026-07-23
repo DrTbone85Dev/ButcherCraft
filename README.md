@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic regional world simulation platform. Industry modules participate in one shared simulation; Meat Processing is the flagship implementation and retains the existing product, workstation, packaging, and facility-management direction.
 
-Registered content remains limited to the existing development fixtures, Grinder, Bandsaw, Packaging Table, retail-product proof, and Packaging Supplies. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, a pure Java economic Goods Framework, an industry-neutral Economic Actor Framework, and an actor-owned Inventory and Storage Framework. Phase 16 defines runtime Good quantities, ownership, storage hierarchy, capacity validation, and independent persistence only; it adds no production, logistics, markets, Minecraft inventory integration, or gameplay system.
+Registered content remains limited to the existing development fixtures, Grinder, Bandsaw, Packaging Table, retail-product proof, and Packaging Supplies. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, and a universal Transaction Framework. Phase 17 routes runtime economic quantity changes through deterministic validation, atomic execution, audit history, persistence, and replay; it adds no production, logistics, markets, accounting, Minecraft inventory integration, or gameplay system.
 
 ## Project Identity
 
@@ -94,6 +94,8 @@ The immutable economic goods language and its separation from processing product
 The industry-neutral participant model, actor capabilities, Good relationships, runtime boundary, and definition persistence are documented in `docs/ECONOMIC_ACTORS.md`.
 
 The actor-owned runtime quantity model, storage hierarchy, capacity rules, and separation from Minecraft inventories are documented in `docs/INVENTORY_FRAMEWORK.md`.
+
+The universal economic mutation pipeline, validation and execution contract, audit history, persistence, and replay philosophy are documented in `docs/TRANSACTION_FRAMEWORK.md`.
 
 The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 

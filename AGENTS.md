@@ -111,6 +111,7 @@ Do not claim a command passed unless you actually ran it.
 - Immutable economic good definitions and relationships persist independently in schema-versioned `<world>/butchercraft/goods.json`; runtime quantities must belong to future inventory or economy owners.
 - Immutable economic actor definitions persist independently in schema-versioned `<world>/butchercraft/economic_actors.json`; actor runtime assignments remain separate and actors must reference Goods by `GoodId`, never by ItemStack.
 - Economic inventory containers, storage nodes, and runtime Good quantities persist independently in schema-versioned `<world>/butchercraft/inventory.json`; the pure inventory package must not import Minecraft inventory, Container, slot, menu, or ItemStack APIs.
+- Runtime economic quantity changes must be submitted through `com.butchercraft.world.transaction`; future systems must not restore direct `InventoryManager` add/remove mutation paths. Transaction history persists independently at `<world>/butchercraft/transactions.json`.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.

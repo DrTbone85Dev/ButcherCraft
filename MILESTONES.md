@@ -4,6 +4,50 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 17: Transaction Framework
+
+Goal: establish the universal validation and execution pipeline for runtime economic quantity mutations without implementing production, logistics, markets, accounting, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.transaction` domain with immutable transaction ids, definitions, typed metadata, statuses, results, failure codes, and applied-change summaries.
+- Deterministic submission-ordered `TransactionRegistry` with lookup, status replacement, type/status queries, audit history, and replay ordering.
+- Separate `TransactionValidator`, `TransactionExecutor`, and `TransactionManager` responsibilities.
+- Atomic executor-authorized inventory add, remove, transfer, and direction-explicit adjustment execution.
+- Defensive inventory runtime snapshots and removal of direct public `InventoryManager` quantity mutation methods.
+- Schema-versioned deterministic persistence at `<world>/butchercraft/transactions.json` with atomic replacement.
+- `TransactionService` lifecycle integration after `InventoryService`.
+- Automated definition, registry, validation, execution, atomic failure, replay, persistence, lifecycle, dependency-boundary, inventory-regression, and 1,000,000-transaction stress coverage.
+- Architecture documentation in `docs/TRANSACTION_FRAMEWORK.md`.
+
+Excluded work:
+
+- Production, purchasing, sales, delivery, consumption, spoilage, markets, pricing, accounting, orders, contracts, scheduling, AI, gameplay, networking, GUI, logistics, transportation, and rollback implementation.
+
+Acceptance criteria:
+
+- Inventory quantities cannot be changed through a public direct add/remove API.
+- Execution requires the matching previously accepted validation.
+- Transfers validate and apply source and destination changes atomically.
+- Structurally valid accepted and rejected submissions retain deterministic audit history.
+- Applied history replays deterministically into a compatible baseline inventory.
+- Duplicate ids, unknown references, invalid units, invalid statuses, underflow, capacity violations, malformed persistence, and unsupported schemas fail explicitly.
+- A registry of 1,000,000 transactions preserves deterministic history and lookup behavior.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 17 adds no visible content, Minecraft inventory integration, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Remove the transaction package, `TransactionService`, lifecycle registration, `transactions.json`, tests, and documentation. Restore the Phase 16 direct inventory mutation API only if reverting the universal transaction rule as one deliberate architectural rollback.
+
 ## Milestone 0.9.0 Phase 16: Inventory And Storage Framework
 
 Goal: establish the universal runtime ownership and location model for economic Goods without implementing production, logistics, markets, Minecraft inventories, or gameplay.

@@ -63,6 +63,10 @@ Distribution will move goods between producers, warehouses, retailers, restauran
 
 Economic Actors own immutable inventory-container identities. Each container is located at a hierarchical Storage Node and has separate mutable runtime entries containing exact Good quantities. Capacity validation constrains candidate runtime states, but Inventory does not schedule, route, reserve, produce, consume, spoil, price, or render Goods.
 
+## Transactions
+
+Economic transactions are the universal mutation boundary for runtime Good quantities. Future systems decide why a change is requested, then submit an immutable transaction. Validation proves references, endpoints, status, underflow, and capacity before atomic execution. Applied and rejected audit records retain deterministic submission order and can support explicit replay from a compatible baseline. Transactions do not decide production, demand, logistics, markets, or gameplay.
+
 ## Consumers
 
 Consumers will convert population and business needs into bounded demand. They may be represented by aggregate cohorts, institutions, businesses, players, or compatible mods. Consumer demand must be explainable and must not require per-tick simulation of every resident.
@@ -96,8 +100,9 @@ Runtime records reference identity by stable id. They do not edit historical ide
 1. The authoritative Simulation Clock advances on the server.
 2. The scheduler emits due events in deterministic order.
 3. Focused services evaluate only the state they own.
-4. Proposed changes are validated before commit.
-5. Committed state is persisted by its owning service.
+4. Proposed economic quantity changes are submitted as immutable transactions.
+5. Accepted transaction changes execute atomically in deterministic order.
+6. Committed state and audit history are persisted by their owning services.
 6. Downstream facts are published as narrow events or immutable summaries.
 
 This model avoids one global tick method that scans and mutates every subsystem.

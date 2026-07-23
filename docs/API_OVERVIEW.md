@@ -122,7 +122,7 @@ Possible extension points:
 
 ### Warehouse
 
-Provides custody and capacity summaries for stored goods. Phase 16's internal `com.butchercraft.world.inventory` package now provides actor-owned container ids, hierarchical storage-node ids, exact runtime quantities, typed capacity metadata, and validation-only movement candidates. It is not yet a public API.
+Provides custody and capacity summaries for stored goods. Phase 16's internal `com.butchercraft.world.inventory` package provides actor-owned container ids, hierarchical storage-node ids, exact runtime quantities, typed capacity metadata, and candidate validation. Phase 17's internal `com.butchercraft.world.transaction` package now owns validated atomic quantity mutation and audit history. Neither package is yet a public API.
 
 Possible extension points:
 

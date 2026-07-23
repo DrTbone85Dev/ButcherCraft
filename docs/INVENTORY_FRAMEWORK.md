@@ -85,7 +85,7 @@ Child and container capacity declarations may not exceed a comparable finite par
 
 Statuses are active, locked, in transit, maintenance, and disabled. Active and in-transit inventories may currently receive and release quantities. Other statuses reject quantity changes and proposed movements.
 
-Runtime transitions reject simulation ticks that move backward. Entry additions merge identical Good, unit, and metadata keys with overflow-checked arithmetic. Removals reject missing or insufficient quantities and remove zeroed entries.
+Runtime transitions reject simulation ticks that move backward. Entry additions merge identical Good, unit, and metadata keys with overflow-checked arithmetic. Removals reject missing or insufficient quantities and remove zeroed entries. As of Phase 17, these mutations are internal implementation details reached only through executor-authorized economic transaction batches.
 
 ## Inventory Entries
 
@@ -109,11 +109,13 @@ The entry unit must exactly match the registered Good definition. No implicit co
 - inventory and storage lookup
 - ownership and location queries
 - quantity queries by inventory, owner, and storage hierarchy
-- validated entry additions and removals
+- validation of candidate entry additions, removals, and atomic batches
 - complete Good, actor, unit, metadata, hierarchy, and capacity validation
 - validation-only movement checks
 
 `validateMovement` produces an explicit `InventoryMovementValidation` result. It checks source and target existence, statuses, quantity, Good and unit validity, metadata, source availability, and target/container/storage capacity using an atomic source-removal and target-addition candidate. It does not commit the movement, schedule work, select a route, or transfer custody.
+
+Phase 17 removes direct public manager add/remove methods. Runtime lookup returns defensive snapshots, and `TransactionExecutor` is the only holder of the authorization needed to apply a validated batch. See `docs/TRANSACTION_FRAMEWORK.md`.
 
 ## Persistence
 
@@ -175,7 +177,7 @@ Future focused systems may build on `InventoryId`, `StorageNodeId`, and validate
 
 - reservations and custody
 - warehouse operations
-- production input and output transactions
+- production input and output transaction extensions
 - orders and contracts
 - transport and logistics
 - spoilage and condition
@@ -194,4 +196,3 @@ Those systems must preserve server authority, use explicit transactions, and kee
 - pricing, markets, and economy simulation
 - AI, automation, networking, GUI, and gameplay
 - Minecraft inventories, containers, slots, and ItemStack conversion
-

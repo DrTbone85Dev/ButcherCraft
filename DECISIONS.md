@@ -1088,6 +1088,27 @@ Consequences:
 - No built-in inventories or storage nodes are registered in Phase 16.
 - Production, spoilage, logistics, transportation, orders, contracts, scheduling, pricing, markets, AI, automation, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
 
+## DEC-0070: Economic Runtime Mutations Use Validated Transactions
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 17 introduces `com.butchercraft.world.transaction` as the universal mutation pipeline for runtime economic quantities. Future systems submit immutable transaction definitions, validation produces an accepted deterministic change plan, and `TransactionExecutor` is the only holder of the authority required to apply inventory quantity changes.
+
+Rationale: direct inventory mutation would scatter validation, atomicity, audit, replay, debugging, and multiplayer-ordering rules across production, logistics, retail, compatibility, and player systems. One explicit pipeline gives every future cause of change the same state-transition contract without making the transaction framework responsible for business decisions.
+
+Consequences:
+
+- `InventoryManager` remains the invariant-owning execution target but no longer exposes direct public add/remove methods.
+- Inventory runtime access returns defensive snapshots; mutable runtime records remain internally owned.
+- Phase 17 executes inventory add, remove, transfer, and direction-explicit adjustment transactions only.
+- Production, purchase, sale, delivery, consumption, spoilage, manual, and system transaction values are schema reservations and have no Phase 17 execution behavior.
+- Execution requires a matching previously accepted validation and applies all inventory changes atomically.
+- Structurally valid submitted transactions retain deterministic audit history in authoritative submission order.
+- Applied history can replay into an explicitly supplied compatible baseline; automatic startup reconstruction is not implemented.
+- Transaction history persists independently at `<world>/butchercraft/transactions.json` with schema version 1.
+- `TransactionService` depends on `InventoryService`, preserving Goods -> Actors -> Inventory -> Transactions dependency direction.
+- Rollback, production, markets, pricing, accounting, orders, logistics, scheduling, AI, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.
