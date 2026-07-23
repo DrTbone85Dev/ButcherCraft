@@ -4,6 +4,50 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 18: Orders And Contracts Framework
+
+Goal: establish the industry-neutral language of economic intent and durable obligation without implementing markets, pricing, production, logistics, automation, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.economy.order` definitions, stable ids, exact quantities, typed line metadata, schedules, terms, statuses, failure codes, and detached runtime snapshots.
+- Separate immutable definitions and mutable manager-owned Order, line, and Contract lifecycle records.
+- Deterministic insertion-ordered registries and indexed Actor, Good, type, Contract, schedule, and industry queries.
+- Explicit Order and Contract lifecycle transition tables with monotonic Simulation Clock ticks and irreversible terminal states.
+- Atomic multi-Order fulfillment allocation against previously APPLIED Transactions, with global duplicate and over-allocation prevention and no Inventory mutation.
+- Coordinated cross-reference validation against Goods, Economic Actors, Inventory, Transactions, Orders, and Contracts.
+- Deterministic schema-versioned persistence at `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json` with temporary-file atomic replacement.
+- `OrderContractService` lifecycle integration after `TransactionService`.
+- Definition, registry, lifecycle, allocation, atomic failure, persistence, dependency-boundary, integration, regression, and required split-scale stress coverage.
+- Architecture documentation in `docs/ORDERS_AND_CONTRACTS.md`.
+
+Excluded work:
+
+- Pricing, currency, accounting, invoices, taxes, markets, supplier selection, automatic Order generation, schedule execution, reservation, production, logistics, routing, Inventory mutation, Transaction submission, AI, gameplay, networking, GUI, commands, datapacks, and ItemStack integration.
+
+Acceptance criteria:
+
+- Orders represent intent, Contracts represent obligations, Transactions record facts, and Inventory records current quantities.
+- Definitions remain immutable while runtime lifecycle and fulfillment remain separately owned.
+- Only APPLIED Transactions can contribute exact fulfillment quantities, and a failed multi-allocation operation changes no Order state.
+- Duplicate ids, unknown references, incompatible units, illegal transitions, backward ticks, duplicate allocations, over-allocation, over-fulfillment, malformed persistence, and unsupported schemas fail explicitly.
+- Registries and queries preserve authoritative insertion order and expose immutable views.
+- 100,000 Orders with 1,000,000 lines, 25,000 Contracts with 250,000 lines, and 1,000,000 allocations validate in deterministic split stress scenarios.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 18 adds no visible content, interaction, Minecraft inventory integration, networking, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 18 is additive. Removing the order domain, `OrderContractService`, lifecycle registration, two persistence files, tests, and documentation restores Phase 17 without changing Goods, Actors, Inventory, Transactions, ItemStacks, assets, or gameplay schemas.
+
 ## Milestone 0.9.0 Phase 17: Transaction Framework
 
 Goal: establish the universal validation and execution pipeline for runtime economic quantity mutations without implementing production, logistics, markets, accounting, or gameplay.

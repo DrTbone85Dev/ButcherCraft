@@ -2,6 +2,8 @@
 
 Status: initial architecture decision log
 
+`CONSTITUTION.md` is the governing authority for architectural decisions. Records that affect a permanent architectural invariant must cite its `AI-####` identifier, document compatibility and migration consequences, and receive explicit owner approval before implementation.
+
 Decision statuses:
 
 - Proposed: recommended but needs owner approval or prototype confirmation.
@@ -1108,6 +1110,27 @@ Consequences:
 - Transaction history persists independently at `<world>/butchercraft/transactions.json` with schema version 1.
 - `TransactionService` depends on `InventoryService`, preserving Goods -> Actors -> Inventory -> Transactions dependency direction.
 - Rollback, production, markets, pricing, accounting, orders, logistics, scheduling, AI, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
+
+## DEC-0071: Orders Express Intent And Contracts Govern Obligations
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 18 introduces `com.butchercraft.world.economy.order` as the industry-neutral owner of economic intent and durable obligation. Orders request outcomes, Contracts govern zero or more Orders, Transactions remain authoritative mutation facts, and Inventory remains authoritative current quantity. Orders and Contracts never mutate Inventory or submit Transactions.
+
+Rationale: production, logistics, markets, retailers, warehouses, utilities, and compatibility modules need one deterministic vocabulary for requests and obligations without gaining access to another subsystem's mutable state. Keeping definitions immutable, lifecycle runtime separate, and fulfillment linked to completed Transactions prevents Orders from becoming a second inventory or transaction engine.
+
+Consequences:
+
+- Authoritative Orders begin at `SUBMITTED`; draft editing remains outside persisted world state.
+- Stable Order, line, Contract, and Contract-line ids use the existing canonical namespaced identity pattern.
+- `GoodQuantity` uses normalized exact decimal values with canonical persistence; schema version 1 performs no unit conversion.
+- Fulfillment recording accepts only APPLIED Transactions, validates Good, unit, quantity, tick, duplicate, and aggregate allocation rules, and stages multi-line/multi-Order operations atomically.
+- One Transaction may explicitly contribute to multiple lines or Orders, but its total allocation cannot exceed its authoritative quantity.
+- Immutable registries preserve authoritative insertion order while managers separately own runtime lifecycles and expose defensive snapshots.
+- Contract schedules, priorities, commitment periods, substitutions, and maximum-open-order terms are metadata only and execute no obligations.
+- Definitions and runtime state persist independently at `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json`, both schema version 1.
+- `OrderContractService` initializes after `TransactionService` and publishes managers only after coordinated Actor, Good, Inventory, Transaction, Order, and Contract reference validation succeeds.
+- No pricing, currency, accounting, reservations, markets, production, logistics, automatic scheduling, AI, networking, GUI, ItemStack integration, or gameplay is added.
 
 ## Decisions Needing Owner Approval
 

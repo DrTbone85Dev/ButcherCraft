@@ -3,7 +3,7 @@
 Status: canonical project architecture document
 Target: Minecraft 1.21.1, NeoForge, Java 21
 
-This document records ButcherCraft's current architecture, planned system boundaries, and accepted technical constraints. Supporting design documents may expand individual systems, but this root file is the canonical Technical Architecture document.
+This document records ButcherCraft's current architecture, planned system boundaries, and accepted technical constraints. Supporting design documents may expand individual systems, but this root file is the canonical Technical Architecture document. `CONSTITUTION.md` remains the higher governing authority for architectural philosophy and permanent invariants.
 
 ## Platform Orientation
 
@@ -15,6 +15,7 @@ Phase 13 changes documentation and architectural direction only. It does not add
 
 Canonical platform documents:
 
+- `CONSTITUTION.md`: highest-level philosophy, permanent invariants, and architectural change process.
 - `VISION.md`: long-term living-world purpose and player experience.
 - `CORE_PRINCIPLES.md`: constitutional architecture principles.
 - `MODULES.md`: Core, industry, and compatibility responsibilities.
@@ -38,7 +39,8 @@ Industry catalog
   -> immutable Good definitions + relationship graph
   -> immutable Economic Actor definitions + in-memory runtime capabilities
   -> actor-owned Inventory containers + hierarchical Storage Nodes + runtime quantities
-  -> future production, logistics, consumers, and markets by GoodId, ActorId, and InventoryId
+  -> Orders and Contracts express intent and obligations by stable ids
+  -> future production, logistics, consumers, and markets consume those contracts
 
 Datapack resources
   -> validated Product + Packaging + Transformation candidate registries
@@ -346,6 +348,18 @@ Phase 17 introduces `com.butchercraft.world.transaction` as the universal state-
 `TransactionService` depends on `InventoryService` and owns world lifecycle persistence at `<world>/butchercraft/transactions.json`. The transaction package remains pure Java; only the service imports Minecraft and NeoForge APIs. Phase 17 adds no automatic history reconstruction, rollback, production, logistics, market, accounting, networking, GUI, or gameplay behavior.
 
 Future systems decide why a change is requested, then submit a transaction. They must not mutate `InventoryRuntime` or inventory quantities directly. See `docs/TRANSACTION_FRAMEWORK.md` for the schema, pipelines, audit rules, persistence contract, and examples.
+
+## Orders And Contracts Architecture
+
+Phase 18 introduces `com.butchercraft.world.economy.order` as the industry-neutral economic intent and obligation domain. `EconomicOrderDefinition` and `EconomicContractDefinition` are immutable schema-versioned definitions. `EconomicOrderRuntime`, per-line runtime records, and `EconomicContractRuntime` remain separately owned mutable lifecycle state exposed only through defensive snapshots.
+
+`OrderRegistry` and `ContractRegistry` preserve authoritative insertion order and build immutable deterministic indexes for common Actor, Good, type, Contract, schedule, and industry queries. `OrderManager` and `ContractManager` own explicit transition tables, monotonic Simulation Clock ticks, typed rejection outcomes, and coordinated reference validation.
+
+Fulfillment recording stages all requested line allocations against detached runtime copies. Only existing APPLIED Transactions with matching Good, unit, quantity, and tick may contribute. Aggregate allocation cannot exceed a Transaction's authoritative quantity. A failed batch changes no Order state, and the framework never mutates Inventory or submits Transactions.
+
+`OrderContractService` depends on `TransactionService`. It loads Contracts and Orders as one validated world-bound state before publishing either manager, then persists separate schema-versioned documents at `<world>/butchercraft/contracts.json` and `<world>/butchercraft/orders.json`. The domain and persistence packages remain pure Java; only the lifecycle service imports Minecraft and NeoForge.
+
+Contract schedules, commitment periods, priorities, substitutions, and future-facing types are descriptive metadata. Phase 18 does not generate Orders, execute schedules, reserve Goods, price trade, run production or logistics, expose gameplay, or create a public API. See `docs/ORDERS_AND_CONTRACTS.md` for lifecycle tables, exact quantity rules, allocation validation, persistence, queries, invariants, and limitations.
 
 ## Item Data-Component Strategy
 

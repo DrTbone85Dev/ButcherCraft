@@ -1,8 +1,8 @@
 # ButcherCraft Core Principles
 
-Status: authoritative and immutable without an explicit owner decision
+Status: authoritative summary governed by `CONSTITUTION.md`
 
-These principles are the constitutional rules for ButcherCraft Core, industry modules, and compatibility modules. `PROJECT_RULES.md` contains operational engineering invariants and remains authoritative alongside this document. Accepted records in `DECISIONS.md` explain how individual choices apply these principles.
+`CONSTITUTION.md` is the highest-level architectural authority for ButcherCraft Core, industry modules, and compatibility modules. This document is its concise principles companion. `PROJECT_RULES.md` applies those principles as operational engineering invariants, and accepted records in `DECISIONS.md` explain how individual choices conform to them. If wording conflicts, the Constitution governs unless formally amended.
 
 ## 1. Deterministic Simulation
 
@@ -57,5 +57,4 @@ Stable ids, persisted schemas, data contracts, and public APIs are compatibility
 
 ## Change Control
 
-Changing a core principle requires an explicit owner-approved decision in `DECISIONS.md`, an explanation of compatibility consequences, and updates to affected architecture, roadmap, and rules documents. Ordinary feature milestones may apply these principles but may not silently redefine them.
-
+Changing a core principle requires the constitutional ADR process, explicit owner approval, an explanation of compatibility consequences, and updates to affected architecture, roadmap, and rules documents. Ordinary feature milestones may apply these principles but may not silently redefine them.

@@ -67,6 +67,12 @@ Economic Actors own immutable inventory-container identities. Each container is 
 
 Economic transactions are the universal mutation boundary for runtime Good quantities. Future systems decide why a change is requested, then submit an immutable transaction. Validation proves references, endpoints, status, underflow, and capacity before atomic execution. Applied and rejected audit records retain deterministic submission order and can support explicit replay from a compatible baseline. Transactions do not decide production, demand, logistics, markets, or gameplay.
 
+## Orders And Contracts
+
+Orders are explicit economic intent between Economic Actors. Contracts are durable agreements that may govern Orders. Runtime lifecycles and exact line fulfillment remain separate from immutable definitions. Fulfillment records reference APPLIED Transactions and therefore interpret completed economic facts without becoming a second Inventory mutation path.
+
+Contract schedule metadata does not execute obligations. Future production, logistics, markets, and compatibility systems may consume these contracts, but Phase 18 adds no automatic behavior or gameplay.
+
 ## Consumers
 
 Consumers will convert population and business needs into bounded demand. They may be represented by aggregate cohorts, institutions, businesses, players, or compatible mods. Consumer demand must be explainable and must not require per-tick simulation of every resident.
@@ -121,4 +127,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, and economic Inventory/Storage runtime quantities exist. Population, regional production, active distribution behavior, consumers, markets, and the economy remain conceptual future work.
+World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders, and Contracts exist. Population, regional production, active distribution behavior, consumers, markets, and pricing remain future work.

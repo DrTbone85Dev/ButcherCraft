@@ -1,8 +1,8 @@
 # ButcherCraft Project Rules
 
-Status: authoritative project invariants
+Status: authoritative operational rules governed by `CONSTITUTION.md`
 
-These rules are non-negotiable for ButcherCraft implementation work. They define project invariants, not command instructions. `CORE_PRINCIPLES.md` is the constitutional platform-level companion to these operational rules; neither document overrides the other.
+These rules are non-negotiable for ButcherCraft implementation work. They apply the permanent invariants in `CONSTITUTION.md`, which is the project's highest-level architectural authority. `CORE_PRINCIPLES.md` provides a concise companion summary. If wording conflicts, the Constitution governs unless formally amended through its architectural decision process.
 
 ## Platform Principles
 

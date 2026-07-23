@@ -15,6 +15,7 @@ import com.butchercraft.world.BusinessRuntimeService;
 import com.butchercraft.world.EconomicActorService;
 import com.butchercraft.world.GoodService;
 import com.butchercraft.world.InventoryService;
+import com.butchercraft.world.OrderContractService;
 import com.butchercraft.world.TransactionService;
 import com.butchercraft.world.WorkforceService;
 import com.butchercraft.world.WorldIdentityService;
@@ -67,6 +68,8 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(InventoryService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(TransactionService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(TransactionService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(OrderContractService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(OrderContractService.INSTANCE::save);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }

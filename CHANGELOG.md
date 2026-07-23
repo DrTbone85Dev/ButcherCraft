@@ -1,5 +1,19 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 18 - Orders And Contracts Framework
+
+Core:
+
+- Added immutable industry-neutral Order and Contract definitions with separate manager-owned runtime lifecycles.
+- Added exact decimal quantities, deterministic registries, typed validation failures, and bounded query APIs.
+- Added atomic allocation of APPLIED Transactions across one or more Order lines without mutating Inventory or submitting Transactions.
+- Added schema-versioned `orders.json` and `contracts.json` persistence with coordinated cross-reference validation after the Transaction service.
+- Added definition, lifecycle, registry, fulfillment, persistence, integration, dependency-boundary, regression, and regional-scale stress coverage.
+
+Scope:
+
+- No pricing, currency, accounting, markets, production, logistics, reservation, automatic scheduling, AI, networking, GUI, ItemStack integration, or gameplay was added.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 17 - Transaction Framework
 
 ### Core

@@ -1,8 +1,8 @@
 # ButcherCraft Economy Model
 
-Status: future concepts only; no economy implementation
+Status: shared vocabulary and implemented foundations; active economy behavior future
 
-This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, Phase 16 provides actor-owned Inventory and Storage runtime quantities, and Phase 17 provides their validated mutation and audit pipeline; no production, logistics, market, accounting, or pricing behavior exists.
+This document defines vocabulary and boundaries for the regional economy foundations. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, Phase 16 provides actor-owned Inventory and Storage runtime quantities, Phase 17 provides their validated mutation and audit pipeline, and Phase 18 provides industry-neutral Orders and Contracts; no production, logistics, market, accounting, or pricing behavior exists.
 
 All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
@@ -47,6 +47,12 @@ Inventory is never a universal collection owned by the economy. Each container b
 ## Transactions
 
 Every future cause of runtime economic quantity change must submit an immutable transaction rather than modifying inventory directly. The common pipeline validates stable Good, Actor, and Inventory references, canonical units, endpoint shape, underflow, status, tick, and capacity before atomic execution. Transaction history is an audit of accepted or rejected structurally valid submissions, not a replacement for accounting, orders, contracts, pricing, or scheduling. See `docs/TRANSACTION_FRAMEWORK.md`.
+
+## Orders And Contracts
+
+Orders express requested or offered economic outcomes. Contracts describe durable obligations that may govern zero or more Orders. Both use Economic Actors, Goods, exact quantities, canonical units, and authoritative Simulation Clock ticks. Their immutable definitions remain separate from lifecycle and fulfillment runtime state.
+
+Fulfillment is business meaning attached to an already APPLIED Transaction. Recording that meaning never changes Inventory and never submits another Transaction. Contract schedules are descriptive only and create no work automatically. See `docs/ORDERS_AND_CONTRACTS.md`.
 
 ## Transportation
 
