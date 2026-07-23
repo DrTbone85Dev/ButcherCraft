@@ -46,6 +46,8 @@ public final class ButcherCraftArchitectureManifest {
     private static final ArchitectureId PRODUCTION = id("butchercraft:production");
     private static final ArchitectureId PLANNING = id("butchercraft:planning");
     private static final ArchitectureId ALLOCATION = id("butchercraft:allocation");
+    private static final ArchitectureId RESOURCE_AUTHORITIES =
+            id("butchercraft:resource_authorities");
 
     private static final String STAGE_REGISTRY_ID = "butchercraft:simulation_stages";
     private static final String WORK_TYPE_REGISTRY_ID = "butchercraft:simulation_work_types";
@@ -57,6 +59,8 @@ public final class ButcherCraftArchitectureManifest {
             "butchercraft:allocation_reports";
     private static final String ALLOCATION_TRACE_REGISTRY_ID =
             "butchercraft:allocation_cycle_traces";
+    private static final String ALLOCATION_PROVIDER_REGISTRY_ID =
+            "butchercraft:allocation_providers";
 
     private ButcherCraftArchitectureManifest() {
     }
@@ -87,6 +91,11 @@ public final class ButcherCraftArchitectureManifest {
         builder.component(component(PRODUCTION, "Production", "com.butchercraft.world.production"));
         builder.component(component(PLANNING, "Economic Planning", "com.butchercraft.world.planning"));
         builder.component(component(ALLOCATION, "Resource Allocation", "com.butchercraft.world.allocation"));
+        builder.component(component(
+                RESOURCE_AUTHORITIES,
+                "External Resource Authorities",
+                "external.resource.authorities"
+        ));
     }
 
     private static void addOwnership(ValidationContextBuilder builder) {
@@ -115,6 +124,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/allocation_cycles", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_capacity_accounting", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_commitment_selection", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_observation_snapshots", ALLOCATION);
+        own(builder, "butchercraft:responsibility/allocation_provider_framework", ALLOCATION);
+        own(builder, "butchercraft:responsibility/resource_definitions", RESOURCE_AUTHORITIES);
+        own(builder, "butchercraft:responsibility/capacity_definitions", RESOURCE_AUTHORITIES);
 
         contract(
                 builder,
@@ -235,6 +248,34 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.ALLOCATION,
                 "RFC-0022 M22C assigns deterministic Commitment selection and construction to Allocation"
         );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_observation_snapshots",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22D assigns immutable generic observation snapshots to Allocation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/allocation_provider_framework",
+                ALLOCATION,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22D assigns provider contracts and observation aggregation to Allocation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/resource_definitions",
+                RESOURCE_AUTHORITIES,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22D preserves external authority over Resource definitions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/capacity_definitions",
+                RESOURCE_AUTHORITIES,
+                ValidationCategory.ALLOCATION,
+                "RFC-0022 M22D preserves external authority over Capacity definitions"
+        );
     }
 
     private static void addDependencies(ValidationContextBuilder builder) {
@@ -320,12 +361,19 @@ public final class ButcherCraftArchitectureManifest {
                 TRANSACTIONS,
                 "M22A-M22C defines no economic mutation or transaction path"
         );
+        forbid(
+                builder,
+                ALLOCATION,
+                RESOURCE_AUTHORITIES,
+                "M22D provider adapters translate external authority without a concrete Allocation dependency"
+        );
     }
 
     private static void addRegistries(ValidationContextBuilder builder) {
         List<RegistryEntryDescriptor> components = List.of(
                 WORLD_IDENTITY, SIMULATION, BUSINESS_RUNTIME, WORKFORCE, GOODS, ACTORS,
-                INVENTORY, TRANSACTIONS, ORDERS, SCHEDULER, PRODUCTION, PLANNING, ALLOCATION
+                INVENTORY, TRANSACTIONS, ORDERS, SCHEDULER, PRODUCTION, PLANNING,
+                ALLOCATION, RESOURCE_AUTHORITIES
         ).stream()
                 .sorted()
                 .map(componentId -> RegistryEntryDescriptor.of(componentId.value()))
@@ -376,6 +424,11 @@ public final class ButcherCraftArchitectureManifest {
         ));
         builder.registry(new RegistryDescriptor(
                 ALLOCATION_TRACE_REGISTRY_ID,
+                OrderingPolicy.CANONICAL_ID,
+                List.of()
+        ));
+        builder.registry(new RegistryDescriptor(
+                ALLOCATION_PROVIDER_REGISTRY_ID,
                 OrderingPolicy.CANONICAL_ID,
                 List.of()
         ));

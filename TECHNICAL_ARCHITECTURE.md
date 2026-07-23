@@ -458,12 +458,35 @@ state once. Duplicate Cycles and stale runtime snapshots fail before mutation.
 Canonical digests cover input, ordering, ledgers, Commitments, reports,
 publication, trace, and complete results.
 
-M22A-M22C declare no provider, persistence file, Scheduler stage or Work type,
+M22D adds `AllocationResourceProvider`, immutable provider descriptors, an
+explicit canonical `AllocationProviderRegistry`, immutable observation
+contexts and requests, typed provider results, deterministic failure isolation,
+and `AllocationObservationService`. Provider adapters translate their own
+authoritative state into the existing M22A snapshots. Allocation never receives
+a concrete owner-domain object and never becomes Resource or Capacity
+authority.
+
+The observation service invokes providers once in provider-id order, validates
+tick, schema, owner, category, Capacity type/unit, Resource references, and
+duplicate identities, then returns an immutable `AllocationObservationBundle`.
+Bundles are explicitly COMPLETE, INCOMPLETE, or UNUSABLE; only COMPLETE is
+safe for a future orchestration layer to combine with definitions and runtime
+as `AllocationCycleInput`. The provider framework never invokes the Cycle,
+publishes Commitments, or mutates Allocation runtime.
+
+The architecture manifest declares an empty canonical
+`butchercraft:allocation_providers` registry and external Resource/Capacity
+authority. No production-grade provider instance is registered in M22D.
+Canonical SHA-256 digests cover descriptors, registry, request, snapshots,
+results, failures, warnings, reports, and bundles.
+
+M22A-M22D declare no Allocation persistence file, Scheduler stage or Work type,
 Planning handoff, Production execution gate, Inventory mutation, Transaction
 path, Minecraft hook, or gameplay behavior. The existing six-stage Scheduler
 and simulation behavior are unchanged. See
 `docs/RESOURCE_ALLOCATION_DOMAIN.md`, `docs/ALLOCATION_RUNTIME.md`, and
-`docs/ALLOCATION_CYCLE.md`.
+`docs/ALLOCATION_CYCLE.md`, plus
+`docs/ALLOCATION_PROVIDER_FRAMEWORK.md`.
 
 ## Architecture Validation Framework
 

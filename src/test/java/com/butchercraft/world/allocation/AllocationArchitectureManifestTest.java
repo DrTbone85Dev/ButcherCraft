@@ -37,7 +37,9 @@ class AllocationArchitectureManifestTest {
                 "butchercraft:responsibility/allocation_history",
                 "butchercraft:responsibility/allocation_cycles",
                 "butchercraft:responsibility/allocation_capacity_accounting",
-                "butchercraft:responsibility/allocation_commitment_selection"
+                "butchercraft:responsibility/allocation_commitment_selection",
+                "butchercraft:responsibility/allocation_observation_snapshots",
+                "butchercraft:responsibility/allocation_provider_framework"
         ), owned);
         assertTrue(context.ownershipContracts().stream()
                 .filter(contract -> contract.expectedOwnerId().equals(ALLOCATION))
@@ -45,7 +47,7 @@ class AllocationArchitectureManifestTest {
     }
 
     @Test
-    void manifestRecordsM22BBoundariesAndRegistriesWithoutPersistenceOrStage() {
+    void manifestRecordsM22DBoundariesAndRegistriesWithoutPersistenceOrStage() {
         var context = ButcherCraftArchitectureManifest.current();
         Set<String> forbiddenProviders = context.dependencyConstraints().stream()
                 .filter(constraint -> constraint.consumerId().equals(ALLOCATION))
@@ -57,7 +59,8 @@ class AllocationArchitectureManifestTest {
                 "butchercraft:production",
                 "butchercraft:simulation_scheduler",
                 "butchercraft:inventory",
-                "butchercraft:transactions"
+                "butchercraft:transactions",
+                "butchercraft:resource_authorities"
         ), forbiddenProviders);
         assertFalse(context.dependencies().stream()
                 .anyMatch(dependency -> dependency.consumerId().equals(ALLOCATION)));
@@ -65,7 +68,8 @@ class AllocationArchitectureManifestTest {
                 "butchercraft:allocation_definitions",
                 "butchercraft:allocation_runtime",
                 "butchercraft:allocation_reports",
-                "butchercraft:allocation_cycle_traces"
+                "butchercraft:allocation_cycle_traces",
+                "butchercraft:allocation_providers"
         ), context.registries().stream()
                 .map(registry -> registry.id())
                 .filter(id -> id.startsWith("butchercraft:allocation_"))
@@ -82,6 +86,20 @@ class AllocationArchitectureManifestTest {
                 .flatMap(scheduler -> scheduler.stages().stream())
                 .anyMatch(stage -> stage.id().equals("butchercraft:allocation")
                         || stage.executionOrder() == 350));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals(
+                        "butchercraft:responsibility/resource_definitions"
+                )
+                        && assignment.ownerId().value().equals(
+                        "butchercraft:resource_authorities"
+                )));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals(
+                        "butchercraft:responsibility/capacity_definitions"
+                )
+                        && assignment.ownerId().value().equals(
+                        "butchercraft:resource_authorities"
+                )));
     }
 
     @Test

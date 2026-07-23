@@ -25,7 +25,7 @@ class AllocationCycleArchitectureTest {
     }
 
     @Test
-    void m22cIntroducesNoSchedulerStageProviderPersistenceOrIntegrationOwner()
+    void allocationCycleIntroducesNoSchedulerStagePersistenceOrIntegrationOwner()
             throws IOException {
         Path allocation = TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/world/allocation"
@@ -35,9 +35,6 @@ class AllocationCycleArchitectureTest {
                 "executionOrder() == 350",
                 "SavedData",
                 "Persistence",
-                "SnapshotProvider",
-                "ResourceProvider",
-                "CapacityProvider",
                 "WorkHandler",
                 "WorkSubmission",
                 "ProductionRun",

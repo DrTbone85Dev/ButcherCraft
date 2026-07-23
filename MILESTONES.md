@@ -4,6 +4,69 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## RFC-0022 Milestone M22D: Resource And Capacity Provider Framework
+
+Goal: let externally authoritative subsystems expose immutable Resource and
+Capacity observations through one deterministic, industry-neutral provider
+contract without allocating or changing runtime behavior.
+
+Included work:
+
+- Stable provider identity, immutable provider descriptors, owner and
+  capability declarations, explicit registration, canonical ordering, bounded
+  immutable registry views, and registry digests.
+- Explicit immutable observation contexts and requests with tick, filters,
+  metadata, provider selection, deterministic limits, and schema version.
+- Typed immutable provider results, failures, warnings, snapshot validation,
+  provider exception conversion, and provider-local failure isolation.
+- Sequential canonical observation aggregation, duplicate/conflicting Resource
+  and Capacity detection, complete/incomplete/unusable bundle status, immutable
+  reports, exact quantity preservation, and replay digests.
+- Architecture-manifest ownership and empty provider-registry declarations
+  plus focused, replay, integration-contract, purity, and bounded stress tests.
+
+Excluded work:
+
+- Production-grade concrete providers, Scheduler stage 350, Scheduler Work,
+  automatic Allocation Cycle invocation, Allocation runtime mutation, Planning
+  handoff, Production execution gating, persistence, codecs, save migration,
+  Inventory or Transaction integration, Minecraft, NeoForge, networking,
+  commands, menus, and gameplay.
+
+Acceptance criteria:
+
+- Provider subsystems retain Resource and Capacity authority; Allocation owns
+  immutable observation facts and aggregation only.
+- Equivalent registries and observations produce equal provider order,
+  snapshots, failures, reports, bundles, and canonical digests.
+- Provider-local failure preserves unrelated successful observations but marks
+  the bundle incomplete; cross-provider conflicts mark it unusable.
+- Only a complete bundle is safe for future `AllocationCycleInput`
+  construction, and the provider framework never invokes the Cycle itself.
+- No live concrete provider, persistence descriptor, or Scheduler stage 350
+  exists.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.AllocationProvider*" --tests "com.butchercraft.world.allocation.AllocationObservation*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22D adds no world hook, lifecycle
+  binding, visible content, networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- M22D is additive except for architecture-manifest and documentation status
+  updates. Removing its provider contracts, observation service, tests,
+  documentation, and manifest declarations restores M22C without changing save
+  data, Scheduler state, Allocation runtime, or gameplay.
+
 ## RFC-0022 Milestone M22C: Deterministic Allocation Cycle
 
 Goal: evaluate explicit immutable Capacity observations through deterministic
@@ -43,7 +106,8 @@ Acceptance criteria:
   traces, ledgers, and result digests.
 - No Allocation-owned authoritative state changes before a complete validated
   publication swap.
-- RFC-0022 is described as partially implemented through M22C only.
+- This milestone entry remains bounded to M22C even when later authorized
+  entries extend RFC-0022.
 
 Automated verification:
 

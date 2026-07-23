@@ -1,5 +1,33 @@
 # Changelog
 
+## RFC-0022 M22D Resource And Capacity Provider Framework
+
+Core:
+
+- Added immutable provider descriptors, explicit provider registration,
+  canonical provider ordering, capability declarations, and stable registry
+  digests.
+- Added explicit observation contexts and requests, immutable typed provider
+  results, deterministic failures and warnings, and bounded result validation.
+- Added sequential observation aggregation with provider-failure isolation,
+  duplicate Resource and Capacity detection, explicit bundle usability, and
+  immutable reports.
+- Added canonical SHA-256 digests for provider registries, requests, snapshots,
+  results, failures, reports, and complete observation bundles.
+- Extended architecture ownership and bounded replay coverage for 20,000
+  providers, 100,000 Resource snapshots, 100,000 Capacity snapshots, and
+  high-conflict provider input.
+
+Scope:
+
+- RFC-0022 M22D Resource and Capacity Provider Framework implemented.
+- No production-grade concrete provider, Allocation Cycle invocation,
+  Allocation runtime mutation, Scheduler stage 350, Planning migration,
+  Production execution gate, persistence, Minecraft, NeoForge, or gameplay
+  behavior was added.
+- RFC-0022 is implemented through M22D only. M22E and M22F remain separately
+  gated.
+
 ## RFC-0022 M22C Deterministic Allocation Cycle
 
 Core:
@@ -26,8 +54,8 @@ Scope:
 - No Scheduler stage 350, live provider, Planning migration, Production
   execution gate, persistence, Inventory or Transaction integration,
   Minecraft, NeoForge, or gameplay behavior was added.
-- RFC-0022 is implemented through M22C only. M22D through M22F remain
-  separately gated.
+- This entry completed M22C. M22D is recorded in the later changelog entry;
+  M22E and M22F remain separately gated.
 
 ## RFC-0022 M22B Allocation Runtime And Registries
 
@@ -49,7 +77,8 @@ Scope:
   350, persistence, integration, Inventory mutation, Transaction execution,
   Minecraft integration, or gameplay behavior was added.
 - This entry completed M22B. M22C is recorded in the later changelog entry;
-  M22D through M22F remain separately gated.
+  M22D is recorded in the later changelog entry; M22E and M22F remain
+  separately gated.
 
 ## RFC-0022 M22A Core Allocation Domain
 

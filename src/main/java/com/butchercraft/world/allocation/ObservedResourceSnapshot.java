@@ -57,4 +57,8 @@ public record ObservedResourceSnapshot(
     public int compareTo(ObservedResourceSnapshot other) {
         return ORDER.compare(this, AllocationValidation.required(other, "other"));
     }
+
+    public String canonicalDigest() {
+        return AllocationProviderDigestSupport.resource(this);
+    }
 }

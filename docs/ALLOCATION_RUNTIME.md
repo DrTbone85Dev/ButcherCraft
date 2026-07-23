@@ -10,8 +10,10 @@ The governing design remains
 [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md).
 M22A and M22B establish these contracts. M22C now uses them through the
 deterministic Cycle documented in
-[`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md). M22D through M22F remain
-separately gated.
+[`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md). Later milestones are tracked
+separately: M22D provider observation is documented in
+[`ALLOCATION_PROVIDER_FRAMEWORK.md`](ALLOCATION_PROVIDER_FRAMEWORK.md), while
+M22E and M22F remain gated.
 
 ## Ownership
 
@@ -82,12 +84,18 @@ M22C adds `AllocationCycleTraceRegistry` for canonical immutable engineering
 trace evidence. It does not change M22B definition, runtime, or report
 identity.
 
+M22D adds a separate explicit immutable `AllocationProviderRegistry`. It stores
+provider adapters and captured descriptors only; it contains no authoritative
+Resource or Capacity state and is not owned by `AllocationRuntimeService`.
+
 The architecture manifest declares:
 
 - `butchercraft:allocation_definitions`;
 - `butchercraft:allocation_runtime`;
 - `butchercraft:allocation_reports`;
 - `butchercraft:allocation_cycle_traces` (added by M22C).
+- `butchercraft:allocation_providers` (added by M22D and empty in the current
+  architecture manifest).
 
 All use canonical-id ordering. Allocation still has no persistence
 descriptor, Scheduler stage, or Work type.
@@ -171,7 +179,8 @@ M22B itself does not implement:
 - persistence, codecs, load orchestration, or runtime publication;
 - Minecraft, NeoForge, gameplay, commands, menus, or networking.
 
-M22C now implements the pure explicit-input Cycle, detached Capacity ledger,
+M22C implements the pure explicit-input Cycle, detached Capacity ledger,
 first-fit Set evaluation, Commitment construction, and atomic in-memory
-publication. Providers, persistence, Scheduler stage 350, Planning handoff,
-Production gating, and gameplay remain M22D through M22F work.
+publication. M22D implements the generic provider observation framework
+without a concrete provider. Persistence, Scheduler stage 350, Planning
+handoff, Production gating, and gameplay remain deferred.

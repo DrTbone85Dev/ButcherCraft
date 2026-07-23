@@ -1,6 +1,6 @@
 # RFC-0022 Revision 2 Architecture Review
 
-Status: Reconciled architecture; M22A-M22C owner-authorized and implemented,
+Status: Reconciled architecture; M22A-M22D owner-authorized and implemented,
 remaining RFC milestones awaiting separate approval
 
 Reviewed against:
@@ -15,9 +15,11 @@ This review originally changed documentation only. DEC-0076 subsequently
 authorized M22A's immutable Core Allocation Domain, DEC-0077 authorized M22B's
 lifecycle, registries, immutable queries, history, and report structures, and
 DEC-0078 authorized M22C's pure explicit-input Cycle, detached Capacity
-accounting, deterministic selection, and atomic in-memory publication. It does
-not authorize providers, Scheduler, persistence, Planning, Production, or
-execution integration.
+accounting, deterministic selection, and atomic in-memory publication.
+DEC-0079 authorized M22D's generic immutable provider registry, canonical
+observation service, failure isolation, and observation bundles. It does not
+authorize production-grade concrete providers, Scheduler, persistence,
+Planning, Production, or execution integration.
 
 ## Executive Finding
 
@@ -321,11 +323,11 @@ No constitutional invariant requires amendment.
 
 ## Implementation Impact Summary
 
-Once approved, implementation will require:
+M22A-M22D now provide the pure Allocation domain, runtime, Cycle, and generic
+provider observation framework. Remaining integration will require:
 
-- a pure `com.butchercraft.world.allocation` domain;
-- provider adapters for aggregate Workforce, Inventory storage, and Production
-  Capacity proven by schema-1 execution;
+- production-grade provider adapters for aggregate Workforce, Inventory
+  storage, and Production Capacity proven by schema-1 execution;
 - Scheduler stage and schema migration;
 - Allocation handler and service lifecycle integration;
 - Planning submission changes that create Allocation provenance and schedule
@@ -341,7 +343,7 @@ industry-specific resource semantics.
 
 ## Remaining ADR Requirements
 
-Before implementation, the owner must accept an ADR that:
+Before M22E-M22F integration, the owner must accept an ADR that:
 
 1. Declares Allocation the sole owner of execution-capacity Commitments.
 2. Preserves Planning ownership of Candidate and Approved Plans.
@@ -359,8 +361,8 @@ not be marked accepted without explicit owner approval.
 ## Review Result
 
 RFC-0022 Revision 2 is internally consistent with the current Constitution,
-Core Principles, DEC-0073, and DEC-0074. DEC-0076 through DEC-0078 authorize
-M22A-M22C only.
+Core Principles, DEC-0073, and DEC-0074. DEC-0076 through DEC-0079 authorize
+M22A-M22D only.
 
 Remaining implementation stays prohibited until the remaining ADR and
 compatibility decisions are explicitly approved.

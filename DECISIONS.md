@@ -1332,8 +1332,8 @@ Consequences:
   350, Planning, Production, execution, Inventory, Transaction, Minecraft,
   NeoForge, command, menu, networking, or gameplay integration.
 - At this decision point RFC-0022 was implemented through M22B. DEC-0078 later
-  authorizes M22C; M22D through M22F still require separate owner authorization
-  and compatibility decisions required by Part V.
+  authorizes M22C. At that decision point M22D through M22F still required
+  separate owner authorization; DEC-0079 later authorizes M22D.
 
 ## DEC-0078: M22C Establishes The Deterministic Allocation Cycle
 
@@ -1381,8 +1381,62 @@ Consequences:
 - M22C adds no Scheduler stage 350, provider, Planning handoff, Production
   gate, persistence, Inventory or Transaction integration, Minecraft,
   NeoForge, or gameplay behavior.
-- RFC-0022 remains partially implemented. M22D through M22F require separate
-  owner authorization and compatibility decisions required by Part V.
+- At this decision point RFC-0022 was implemented through M22C. DEC-0079 later
+  authorizes M22D; M22E and M22F still require separate owner authorization
+  and compatibility decisions required by Part V.
+
+## DEC-0079: M22D Establishes The Resource And Capacity Provider Framework
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0009`, `AI-0010`, `AI-0015`,
+`AI-0016`, `AI-0020`, `AI-0021`, `AI-0023`, `AI-0025`, `AI-0026`,
+`AI-0027`, and `AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22D adds one pure
+Java, industry-neutral Resource and Capacity provider framework. Provider
+adapters retain access to their own narrow authoritative collaborators and
+translate current facts into M22A immutable snapshots. Allocation owns only the
+generic provider contracts, explicit immutable registry, observation
+validation, canonical aggregation, typed evidence, reports, and bundles.
+Resource and Capacity definitions and runtime remain externally authoritative.
+
+Rationale: the deterministic M22C Cycle requires replay-complete observed
+snapshots, but directly querying Workforce, Production, Inventory, or future
+provider domains would reverse dependencies and create hidden environmental
+input. An explicit adapter contract and canonical sequential observation
+service preserve singular ownership while giving future orchestration one
+validated immutable input surface.
+
+Consequences:
+
+- `AllocationProviderId` remains the stable provider identity and remains
+  distinct from the owner subsystem identity in `ExternalReference`.
+- Provider descriptors declare authorized owner ids, Resource categories,
+  Capacity types, Capacity units, metadata, and schema version.
+- `AllocationProviderRegistry` is explicit, immutable, bounded, duplicate
+  rejecting, provider-id ordered, and free of reflection or runtime discovery.
+- Providers receive an immutable observation context, run sequentially in
+  canonical order, and return immutable successful, empty, or typed-failure
+  results.
+- Provider-local failure preserves unrelated successful results but marks the
+  bundle incomplete. Cross-provider duplicate or conflicting Resource and
+  Capacity claims make the bundle unusable.
+- Only a COMPLETE observation bundle is safe for future explicit
+  `AllocationCycleInput` construction. The provider framework never invokes
+  the Cycle, publishes Commitments, or mutates Allocation runtime.
+- Exact `AllocationQuantity` and `CapacityUnitId` facts are preserved without
+  conversion, arithmetic aggregation, prediction, or estimation.
+- Canonical SHA-256 digests cover provider descriptors, registries, requests,
+  snapshots, results, failures, reports, and bundles.
+- The architecture manifest assigns provider aggregation and immutable
+  observation snapshots to Allocation, keeps Resource and Capacity definitions
+  externally owned, and declares an empty canonical provider registry.
+- M22D adds no production-grade concrete provider, persistence, Scheduler
+  stage 350, Planning handoff, Production execution gate, Inventory mutation,
+  Transaction execution, Minecraft, NeoForge, or gameplay integration.
+- RFC-0022 remains partially implemented. M22E and M22F require separate owner
+  authorization and the compatibility decisions required by Part V.
 
 ## Decisions Needing Owner Approval
 

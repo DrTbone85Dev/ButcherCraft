@@ -25,6 +25,15 @@ public final class AllocationSchema {
     public static final int MAXIMUM_CYCLE_RUNTIMES = 100_000;
     public static final int MAXIMUM_CYCLE_COMMITMENTS = 100_000;
     public static final int MAXIMUM_TRACE_PHASES = 11;
+    public static final int MAXIMUM_PROVIDERS = 20_000;
+    public static final int MAXIMUM_PROVIDER_OWNER_SUBSYSTEMS = 64;
+    public static final int MAXIMUM_PROVIDER_CAPABILITY_DECLARATIONS = 256;
+    public static final int MAXIMUM_PROVIDER_RESOURCES = 100_000;
+    public static final int MAXIMUM_PROVIDER_CAPACITIES = 100_000;
+    public static final int MAXIMUM_OBSERVATION_RESOURCES = 100_000;
+    public static final int MAXIMUM_OBSERVATION_CAPACITIES = 100_000;
+    public static final int MAXIMUM_PROVIDER_FAILURES = 100_000;
+    public static final int MAXIMUM_PROVIDER_WARNINGS = 100_000;
 
     private AllocationSchema() {
     }

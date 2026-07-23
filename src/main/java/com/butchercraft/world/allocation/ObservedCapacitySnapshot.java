@@ -53,4 +53,8 @@ public record ObservedCapacitySnapshot(
     public int compareTo(ObservedCapacitySnapshot other) {
         return ORDER.compare(this, AllocationValidation.required(other, "other"));
     }
+
+    public String canonicalDigest() {
+        return AllocationProviderDigestSupport.capacity(this);
+    }
 }

@@ -9,8 +9,11 @@ approved results atomically through `AllocationRuntimeService`.
 
 The governing design remains
 [`RFC-0022_RESOURCE_ALLOCATION_ENGINE.md`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md).
-M22A definitions and M22B runtime remain compatible. Scheduler, provider,
+M22A definitions and M22B runtime remain compatible. Scheduler, live provider,
 persistence, Planning, Production, and gameplay integration remain deferred.
+M22D now provides a separate generic observation framework documented in
+[`ALLOCATION_PROVIDER_FRAMEWORK.md`](ALLOCATION_PROVIDER_FRAMEWORK.md); the
+Cycle still consumes only explicit snapshots and performs no provider lookup.
 
 ## Ownership Boundaries
 
@@ -289,7 +292,7 @@ The architecture manifest now assigns Allocation ownership of:
 It also declares the canonical `butchercraft:allocation_cycle_traces`
 registry. Dependency-boundary tests continue to reject Scheduler, Planning,
 Production, Inventory, Transaction, Minecraft, NeoForge, persistence,
-provider, wall-clock, and randomness dependencies.
+concrete provider-domain, wall-clock, and randomness dependencies.
 
 ## Explicit Exclusions
 
@@ -304,5 +307,6 @@ M22C does not add:
 - Minecraft, NeoForge, gameplay, commands, menus, networking, or assets;
 - Logistics, Workforce simulation, Utilities, or Maintenance behavior.
 
-M22D through M22F remain separately gated for providers, persistence,
+M22D provides generic providers and observation aggregation only. M22E and
+M22F remain separately gated for persistence,
 Scheduler/Planning/Production integration, and execution gating.

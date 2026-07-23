@@ -69,7 +69,7 @@ class AllocationDependencyBoundaryTest {
     }
 
     @Test
-    void allocationDomainIntroducesNoManagerPersistenceCodecProviderOrAlgorithmOwners()
+    void allocationDomainIntroducesNoManagerPersistenceCodecOrAlternateAlgorithmOwners()
             throws IOException {
         Path root = TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/world/allocation"
@@ -81,9 +81,6 @@ class AllocationDependencyBoundaryTest {
                         return name.contains("Manager")
                                 || name.contains("Persistence")
                                 || name.contains("Codec")
-                                || name.contains("SnapshotProvider")
-                                || name.contains("ResourceProvider")
-                                || name.contains("CapacityProvider")
                                 || name.equals("AllocationCycle.java")
                                 || name.equals("AllocationAlgorithm.java")
                                 || name.equals("CapacityLedger.java")

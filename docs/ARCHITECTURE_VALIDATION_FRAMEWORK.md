@@ -350,6 +350,13 @@ the explicit current manifest with the standard rule set. Phase 1 invokes this
 through automated tests. It is not registered on server startup, reload,
 simulation ticks, commands, menus, networking, or gameplay.
 
+RFC-0022 M22D extends the manifest with external Resource/Capacity authority,
+Allocation-owned observation and provider-framework responsibilities, and the
+empty canonical `butchercraft:allocation_providers` registry. The empty entry
+is deliberate evidence that the generic framework exists while no
+production-grade concrete provider is active. Allocation still has no
+persistence descriptor or Scheduler stage 350.
+
 This build-time integration is deliberate:
 
 - validation cannot change world behavior;
@@ -383,8 +390,8 @@ randomness, and wall-clock APIs from entering the framework package.
 
 Future accepted architecture may add:
 
-- M22D through M22F Allocation provider, persistence, integration, and stage
-  contracts;
+- M22E through M22F Allocation persistence, integration, and stage contracts;
+- concrete owner-domain adapters through the M22D provider contract;
 - additional execution-owner contracts;
 - persistence migration declarations;
 - public API compatibility rules;

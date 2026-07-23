@@ -1,7 +1,7 @@
 # Resource Allocation Core Domain
 
-Status: RFC-0022 Revision 2 Milestone M22A implemented; M22B runtime and M22C
-Cycle documented separately
+Status: RFC-0022 Revision 2 Milestone M22A implemented; M22B runtime, M22C
+Cycle, and M22D provider framework documented separately
 
 Milestone M22A establishes the immutable, pure Java vocabulary for future
 resource allocation. It does not allocate resources, run an Allocation Cycle,
@@ -13,8 +13,10 @@ The governing design is
 M22A is the first bounded implementation milestone of that RFC. M22B lifecycle,
 registry, query, history, and report foundations are documented in
 [`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md). M22C Cycle behavior is
-documented in [`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md). M22D through M22F
-remain separately gated.
+documented in [`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md). Later milestones
+are tracked separately; M22D is documented in
+[`ALLOCATION_PROVIDER_FRAMEWORK.md`](ALLOCATION_PROVIDER_FRAMEWORK.md), while
+M22E and M22F remain gated.
 
 ## Ownership
 
@@ -254,7 +256,7 @@ deterministic order.
 M22A deliberately adds no Mojang `Codec`, `StreamCodec`, Gson adapter, or
 persistence DTO. Existing world domains introduce JSON adapters with their
 persistence owner. M22A has no persistence owner, and adding a codec now would
-implicitly freeze an unapproved M22D file contract. A later authorized
+implicitly freeze an unapproved persistence file contract. A later authorized
 serialization milestone can map these canonical primitives without changing
 the domain model.
 
@@ -305,5 +307,7 @@ M22A itself does not implement:
 M22B provides structural AllocationSet lifecycle, registries, immutable
 queries, history, and report data structures. M22C provides the pure
 explicit-input Cycle, detached ledger, deterministic first fit, atomic Set
-evaluation, and atomic in-memory publication. See `ALLOCATION_RUNTIME.md` and
-`ALLOCATION_CYCLE.md`. M22D through M22F remain gated.
+evaluation, and atomic in-memory publication. M22D provides explicit immutable
+provider contracts, canonical observation, failure isolation, and observation
+bundles. See `ALLOCATION_RUNTIME.md`, `ALLOCATION_CYCLE.md`, and
+`ALLOCATION_PROVIDER_FRAMEWORK.md`. M22E and M22F remain gated.
