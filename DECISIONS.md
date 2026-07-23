@@ -1156,6 +1156,32 @@ Consequences:
 - The pipeline performs no Inventory mutation, Transaction submission, Contract evaluation, production, logistics, markets, population, pricing, networking, GUI, ItemStack integration, or gameplay behavior.
 - The package remains internal. No public handler API or third-party registration lifecycle is established.
 
+## DEC-0073: Production Is Scheduled Intent Completed By One Economic Transaction
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003` through `AI-0010`, `AI-0012` through `AI-0018`, `AI-0020` through `AI-0028`.
+
+Decision: version 0.9.0 Phase 20 introduces `com.butchercraft.world.production` as the industry-neutral Core owner of executable Production definitions and runtime lifecycle. A `GoodTransformation` remains a descriptive economic relationship. A `ProductionProcessDefinition` describes reusable executable operations, a `ProductionPlanDefinition` is immutable authoritative intent with inventory bindings and scale, and a `ProductionRunRuntime` is the separately owned mutable execution record. The Simulation Scheduler determines eligibility, the Simulation Clock remains the sole time authority, and every completed Run commits all consumed inputs and produced outputs through one atomic APPLIED `PRODUCTION` Economic Transaction.
+
+Rationale: future industries need a common operational contract without duplicating time, Inventory mutation, Goods, business status, workforce requirements, Orders, or transaction history. Separating definition, intent, and runtime preserves singular ownership and deterministic persistence. Revalidating requirements and Inventory state at execution and completion is necessary because schema 1 deliberately introduces no reservation ledger.
+
+Consequences:
+
+- Core Production remains industry-neutral and registers no live industry Process definitions in Phase 20.
+- Processes reference Goods by `GoodId`; they do not embed or rewrite Good definitions.
+- Plans are immutable intent, reserve no Inventory, and bind Process lines to existing actor-owned inventories.
+- One schema-1 Plan owns exactly one mutable Run; terminal Run states are irreversible.
+- Scheduler Work controls execution eligibility only. Run progress belongs to Production and advances only from supplied authoritative simulation ticks.
+- Production never mutates Inventory directly. Completion requires one explicit ordered multi-change plan accepted and atomically applied by the Transaction Framework.
+- A Run becomes completed only after its completion Transaction is present in authoritative history with `APPLIED` status.
+- Requirements are checked against the external Business Runtime and Workforce authorities; Production stores only stable references and policy outcomes.
+- Order and Contract references provide optional context only. Production does not reserve, allocate, or record Order fulfillment.
+- Deterministic whole-batch quantities and yields contain no hidden randomness in schema 1.
+- Processes, Plans, and Runs persist independently in three schema-versioned files and publish only after complete-set validation. Filesystem replacement is per file; schema 1 does not claim an atomic three-file filesystem transaction.
+- `EconomicTransaction` gains an optional additive `inventory_changes` field. Existing schema-1 records without that field remain loadable and preserve their prior behavior.
+- Machine integration, workstation migration, datapack Process loading, and industry gameplay remain future work.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

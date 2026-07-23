@@ -3,8 +3,11 @@ package com.butchercraft.world.transaction;
 import com.butchercraft.world.economy.actor.ActorId;
 import com.butchercraft.world.goods.GoodId;
 import com.butchercraft.world.goods.UnitOfMeasure;
+import com.butchercraft.world.inventory.InventoryChange;
 import com.butchercraft.world.inventory.InventoryId;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -21,6 +24,7 @@ public final class EconomicTransaction {
     private final long simulationTick;
     private final TransactionStatus status;
     private final TransactionMetadata metadata;
+    private final List<InventoryChange> inventoryChangePlan;
     private final int schemaVersion;
 
     public EconomicTransaction(
@@ -36,6 +40,28 @@ public final class EconomicTransaction {
             long simulationTick,
             TransactionStatus status,
             TransactionMetadata metadata,
+            int schemaVersion
+    ) {
+        this(
+                id, type, sourceActorId, destinationActorId, sourceInventoryId, destinationInventoryId,
+                goodId, quantity, unitOfMeasure, simulationTick, status, metadata, List.of(), schemaVersion
+        );
+    }
+
+    public EconomicTransaction(
+            TransactionId id,
+            TransactionType type,
+            Optional<ActorId> sourceActorId,
+            Optional<ActorId> destinationActorId,
+            Optional<InventoryId> sourceInventoryId,
+            Optional<InventoryId> destinationInventoryId,
+            GoodId goodId,
+            long quantity,
+            UnitOfMeasure unitOfMeasure,
+            long simulationTick,
+            TransactionStatus status,
+            TransactionMetadata metadata,
+            List<InventoryChange> inventoryChangePlan,
             int schemaVersion
     ) {
         this.id = Objects.requireNonNull(id, "id");
@@ -56,6 +82,9 @@ public final class EconomicTransaction {
         this.simulationTick = simulationTick;
         this.status = Objects.requireNonNull(status, "status");
         this.metadata = Objects.requireNonNull(metadata, "metadata");
+        this.inventoryChangePlan = Objects.requireNonNull(inventoryChangePlan, "inventoryChangePlan").stream()
+                .map(change -> Objects.requireNonNull(change, "inventoryChange"))
+                .toList();
         if (schemaVersion != TransactionSchema.CURRENT_VERSION) {
             throw new IllegalArgumentException("Unsupported transaction schema version: " + schemaVersion);
         }
@@ -114,6 +143,10 @@ public final class EconomicTransaction {
         return metadata;
     }
 
+    public List<InventoryChange> inventoryChangePlan() {
+        return inventoryChangePlan;
+    }
+
     public int schemaVersion() {
         return schemaVersion;
     }
@@ -132,6 +165,7 @@ public final class EconomicTransaction {
                 simulationTick,
                 nextStatus,
                 metadata,
+                inventoryChangePlan,
                 schemaVersion
         );
     }
@@ -156,7 +190,8 @@ public final class EconomicTransaction {
                 && goodId.equals(other.goodId)
                 && unitOfMeasure == other.unitOfMeasure
                 && status == other.status
-                && metadata.equals(other.metadata);
+                && metadata.equals(other.metadata)
+                && inventoryChangePlan.equals(other.inventoryChangePlan);
     }
 
     @Override
@@ -174,6 +209,7 @@ public final class EconomicTransaction {
                 simulationTick,
                 status,
                 metadata,
+                inventoryChangePlan,
                 schemaVersion
         );
     }
@@ -196,6 +232,7 @@ public final class EconomicTransaction {
         private long simulationTick;
         private TransactionStatus status = TransactionStatus.PENDING;
         private TransactionMetadata metadata = TransactionMetadata.empty();
+        private final List<InventoryChange> inventoryChangePlan = new ArrayList<>();
         private int schemaVersion = TransactionSchema.CURRENT_VERSION;
 
         private Builder() {
@@ -261,6 +298,17 @@ public final class EconomicTransaction {
             return this;
         }
 
+        public Builder inventoryChange(InventoryChange value) {
+            inventoryChangePlan.add(Objects.requireNonNull(value, "inventoryChange"));
+            return this;
+        }
+
+        public Builder inventoryChangePlan(List<InventoryChange> value) {
+            inventoryChangePlan.clear();
+            inventoryChangePlan.addAll(Objects.requireNonNull(value, "inventoryChangePlan"));
+            return this;
+        }
+
         public Builder schemaVersion(int value) {
             schemaVersion = value;
             return this;
@@ -280,6 +328,7 @@ public final class EconomicTransaction {
                     simulationTick,
                     status,
                     metadata,
+                    inventoryChangePlan,
                     schemaVersion
             );
         }

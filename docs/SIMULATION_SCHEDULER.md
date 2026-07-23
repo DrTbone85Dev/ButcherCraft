@@ -93,7 +93,7 @@ Persisting `RUNNING` work is forbidden. Save refuses it, and load rejects it. Sc
 
 A handler validates its payload, receives an immutable `SimulationExecutionContext`, performs bounded work through its explicitly supplied dependencies, and returns a typed `SimulationWorkResult`. It cannot receive mutable scheduler internals, control the clock, or mutate scheduler registries.
 
-Persisted Work whose type has no registered handler rejects the whole scheduler load. It is never discarded. The Phase 19 live service intentionally registers no handlers and starts with no queued work.
+Persisted Work whose type has no registered handler rejects the whole scheduler load. It is never discarded. Phase 20 installs the internal `butchercraft:production_run` handler before scheduler loading so persisted Production Work can resolve. The service still creates no Work automatically, and no public handler registration lifecycle is established.
 
 The scheduler cannot roll back arbitrary external side effects. Handlers must validate before mutation, and economic quantity mutations must continue through the Transaction Framework. Unexpected handler exceptions become explicit failed Work records and reports.
 
@@ -211,19 +211,19 @@ server stop -> reject any RUNNING state -> write temporary JSON -> atomic replac
 server start -> load all records -> validate handlers and invariants -> publish manager
 ```
 
-### Descriptive Future Flows
+### Current And Descriptive Flows
 
-These examples reserve no behavior and register no Phase 19 handlers:
+Production Run execution is the first live internal handler. The other examples remain descriptive:
 
 ```text
 Future Contract service -> OBLIGATION_EVALUATION Work -> future Order decision
-Future Production planner -> PLANNING Work -> future bounded production request
-Future Production executor -> EXECUTION Work -> future validated Transaction submission
+Future Production planner -> PLANNING Work -> future bounded Production Plan request
+Production Run handler -> EXECUTION Work -> Production progress or atomic Transaction completion
 Future Logistics service -> EXECUTION Work -> future shipment progress fact
 Future Market observer -> OBSERVATION Work -> future immutable market observation
 ```
 
-Future handlers must retain the ownership boundaries of Orders, Contracts, Inventory, Transactions, Goods, Actors, and their own domain state.
+The Production handler retains these boundaries: Scheduler owns eligibility, Production owns Run state, Clock owns time, Transaction owns quantity mutation, and Inventory owns quantities. Future handlers must preserve the same focused ownership discipline.
 
 ## Scheduler Invariants
 
@@ -263,7 +263,7 @@ The million-record definition/runtime scale is intentionally split from combined
 ## Known Limitations And Extension Points
 
 - Schema 1 has no catch-up, partial-tick resume, migration, crash recovery, or automatic reconciliation with a mismatched clock.
-- The live registry has no handlers and queued Work is empty; no economy or gameplay executes.
+- The live registry contains only the internal Production Run handler. No Work is generated automatically, no live industry Process is registered, and no gameplay executes.
 - Reports are transient and no profiling/audit UI exists.
 - The scheduler cannot provide global rollback for side effects performed outside transaction-backed handlers.
 - Handler registration is internal and not a stable public API.

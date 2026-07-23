@@ -2,7 +2,7 @@
 
 Status: shared vocabulary and implemented foundations; active economy behavior future
 
-This document defines vocabulary and boundaries for the regional economy foundations. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, Phase 16 provides actor-owned Inventory and Storage runtime quantities, Phase 17 provides their validated mutation and audit pipeline, and Phase 18 provides industry-neutral Orders and Contracts; no production, logistics, market, accounting, or pricing behavior exists.
+This document defines vocabulary and boundaries for the regional economy foundations. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, Phase 16 provides actor-owned Inventory and Storage runtime quantities, Phase 17 provides their validated mutation and audit pipeline, Phase 18 provides industry-neutral Orders and Contracts, Phase 19 provides deterministic Work orchestration, and Phase 20 provides industry-neutral Production execution. No live industry Processes, logistics, market, accounting, or pricing behavior exists.
 
 All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
@@ -36,7 +36,7 @@ Consumption resolves fulfilled demand and removes or uses goods through an expli
 
 ## Production
 
-Production turns inputs into outputs through declared transformations, recipes, schedules, capacity, and industry rules. Regional production planning will build on transaction-safe local execution but remains a separate future service.
+Production turns inputs into outputs through declared operational Processes, immutable Plans, mutable Runs, authoritative simulation time, and atomic Transactions. Phase 20 provides this industry-neutral execution foundation with exact deterministic whole-batch quantities and requirement checks against existing authorities. It does not register live industry Processes, reserve stock, plan work automatically, execute machines, or integrate workstation gameplay. See `docs/PRODUCTION_FRAMEWORK.md`.
 
 ## Warehousing
 
@@ -56,7 +56,7 @@ Fulfillment is business meaning attached to an already APPLIED Transaction. Reco
 
 ## Simulation Work Orchestration
 
-The deterministic scheduler provides stable eligibility, stage ordering, budgets, retries, and persistence for future economic Work without owning economic meaning. Phase 19 registers no economic handlers: it does not evaluate Contracts, create Orders, plan production, progress logistics, observe markets, or submit Transactions. Future handlers must use the owning domain's validation and mutation authority. See `docs/SIMULATION_SCHEDULER.md`.
+The deterministic scheduler provides stable eligibility, stage ordering, budgets, retries, and persistence for economic Work without owning economic meaning. Phase 20 installs one internal Production Run handler. It advances only already-registered Runs through the Production authority and does not evaluate Contracts, create Orders or Plans, progress logistics, observe markets, or mutate Inventory itself. Future handlers must use the owning domain's validation and mutation authority. See `docs/SIMULATION_SCHEDULER.md`.
 
 ## Transportation
 

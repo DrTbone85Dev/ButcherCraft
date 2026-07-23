@@ -60,6 +60,7 @@ Do not claim a command passed unless you actually ran it.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
 - Keep `com.butchercraft.world.simulation.scheduler` pure Java, deterministic, bounded, and dependent on supplied Simulation Clock ticks only. Scheduler handlers must preserve owning-domain validation and transaction boundaries.
+- Keep `com.butchercraft.world.production` pure Java and industry-neutral. Processes and Plans are immutable, Runs own mutable lifecycle, Scheduler owns eligibility, Clock owns time, and every completed quantity change must use one APPLIED Production Transaction.
 - Keep `com.butchercraft.world.goods` definitions, registries, graph validation, and persistence independent of Minecraft, NeoForge, ItemStack, inventory quantities, and gameplay state.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
@@ -115,6 +116,7 @@ Do not claim a command passed unless you actually ran it.
 - Runtime economic quantity changes must be submitted through `com.butchercraft.world.transaction`; future systems must not restore direct `InventoryManager` add/remove mutation paths. Transaction history persists independently at `<world>/butchercraft/transactions.json`.
 - Economic intent and durable obligations belong to `com.butchercraft.world.economy.order`. Orders and Contracts never mutate Inventory or submit Transactions; fulfillment may reference only APPLIED Transactions and persists independently in schema-versioned `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json`.
 - Scheduled simulation Work definitions and separate runtime lifecycles persist at `<world>/butchercraft/simulation_scheduler.json`. Never persist `RUNNING` Work, silently drop unknown Work types, reuse submission sequences, or add automatic catch-up without a documented schema policy.
+- Production Process definitions, Plan definitions, and Run runtime state persist at `<world>/butchercraft/production_processes.json`, `production_plans.json`, and `production_runs.json`. Validate the complete candidate set and scheduler/transaction references before publication; never reserve stock implicitly or mutate Inventory outside the Transaction Framework.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.

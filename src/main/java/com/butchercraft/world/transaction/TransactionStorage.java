@@ -3,6 +3,10 @@ package com.butchercraft.world.transaction;
 import com.butchercraft.world.economy.actor.ActorId;
 import com.butchercraft.world.goods.GoodId;
 import com.butchercraft.world.goods.UnitOfMeasure;
+import com.butchercraft.world.inventory.InventoryChange;
+import com.butchercraft.world.inventory.InventoryChangeType;
+import com.butchercraft.world.inventory.InventoryEntry;
+import com.butchercraft.world.inventory.InventoryEntryMetadata;
 import com.butchercraft.world.inventory.InventoryId;
 import com.butchercraft.world.inventory.InventoryManager;
 import com.google.gson.Gson;
@@ -25,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 public final class TransactionStorage {
     private static final Gson GSON = new GsonBuilder()
@@ -52,6 +58,13 @@ public final class TransactionStorage {
     private static final String USER = "user";
     private static final String EXTERNAL_SYSTEM = "external_system";
     private static final String COMMENTS = "comments";
+    private static final String INVENTORY_CHANGES = "inventory_changes";
+    private static final String INVENTORY_ID = "inventory_id";
+    private static final String CHANGE_TYPE = "change_type";
+    private static final String LOT_NUMBER = "lot_number";
+    private static final String EXPIRATION_TICK = "expiration_simulation_tick";
+    private static final String QUALITY_BASIS_POINTS = "quality_basis_points";
+    private static final String ORIGIN_ACTOR_ID = "origin_actor_id";
 
     private final Path filePath;
     private final InventoryManager inventoryManager;
@@ -138,6 +151,9 @@ public final class TransactionStorage {
         object.addProperty(SIMULATION_TICK, transaction.simulationTick());
         object.addProperty(STATUS, transaction.status().serializedName());
         object.add(METADATA, serializeMetadata(transaction.metadata()));
+        JsonArray changes = new JsonArray();
+        transaction.inventoryChangePlan().forEach(change -> changes.add(serializeInventoryChange(change)));
+        object.add(INVENTORY_CHANGES, changes);
         return object;
     }
 
@@ -159,8 +175,68 @@ public final class TransactionStorage {
                 requireLong(object, SIMULATION_TICK),
                 TransactionStatus.fromSerializedName(requireString(object, STATUS)),
                 deserializeMetadata(requireObject(requireField(object, METADATA), "transaction metadata")),
+                deserializeInventoryChanges(object),
                 schemaVersion
         );
+    }
+
+    private JsonObject serializeInventoryChange(InventoryChange change) {
+        JsonObject object = new JsonObject();
+        object.addProperty(INVENTORY_ID, change.inventoryId().value());
+        object.addProperty(CHANGE_TYPE, change.type().name().toLowerCase(java.util.Locale.ROOT));
+        object.addProperty(GOOD_ID, change.entry().goodId().value());
+        object.addProperty(QUANTITY, change.entry().quantity());
+        object.addProperty(UNIT, change.entry().unitOfMeasure().serializedName());
+        InventoryEntryMetadata metadata = change.entry().metadata();
+        addOptionalString(object, LOT_NUMBER, metadata.lotNumber());
+        if (metadata.expirationSimulationTick().isPresent()) {
+            object.addProperty(EXPIRATION_TICK, metadata.expirationSimulationTick().orElseThrow());
+        } else {
+            object.add(EXPIRATION_TICK, JsonNull.INSTANCE);
+        }
+        if (metadata.qualityBasisPoints().isPresent()) {
+            object.addProperty(QUALITY_BASIS_POINTS, metadata.qualityBasisPoints().orElseThrow());
+        } else {
+            object.add(QUALITY_BASIS_POINTS, JsonNull.INSTANCE);
+        }
+        addOptionalString(object, ORIGIN_ACTOR_ID, metadata.originActorId().map(ActorId::value));
+        return object;
+    }
+
+    private List<InventoryChange> deserializeInventoryChanges(JsonObject transaction) {
+        JsonElement element = transaction.get(INVENTORY_CHANGES);
+        if (element == null) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            throw new IllegalArgumentException("Transaction field must be an array: " + INVENTORY_CHANGES);
+        }
+        List<InventoryChange> changes = new ArrayList<>();
+        for (JsonElement changeElement : element.getAsJsonArray()) {
+            JsonObject object = requireObject(changeElement, "transaction inventory change");
+            InventoryEntry entry = new InventoryEntry(
+                    GoodId.of(requireString(object, GOOD_ID)),
+                    requireLong(object, QUANTITY),
+                    UnitOfMeasure.fromSerializedName(requireString(object, UNIT)),
+                    new InventoryEntryMetadata(
+                            optionalString(object, LOT_NUMBER),
+                            optionalLong(object, EXPIRATION_TICK),
+                            optionalInt(object, QUALITY_BASIS_POINTS),
+                            optionalString(object, ORIGIN_ACTOR_ID).map(ActorId::of)
+                    )
+            );
+            InventoryChangeType type = switch (requireString(object, CHANGE_TYPE)) {
+                case "add" -> InventoryChangeType.ADD;
+                case "remove" -> InventoryChangeType.REMOVE;
+                default -> throw new IllegalArgumentException("Unknown inventory change type");
+            };
+            changes.add(new InventoryChange(
+                    InventoryId.of(requireString(object, INVENTORY_ID)),
+                    type,
+                    entry
+            ));
+        }
+        return List.copyOf(changes);
     }
 
     private JsonObject serializeMetadata(TransactionMetadata metadata) {
@@ -202,6 +278,23 @@ public final class TransactionStorage {
     private static Optional<String> optionalString(JsonObject object, String fieldName) {
         JsonElement element = requireField(object, fieldName);
         return element.isJsonNull() ? Optional.empty() : Optional.of(requireString(element, fieldName));
+    }
+
+    private static OptionalLong optionalLong(JsonObject object, String fieldName) {
+        JsonElement element = requireField(object, fieldName);
+        return element.isJsonNull() ? OptionalLong.empty() : OptionalLong.of(requireLong(object, fieldName));
+    }
+
+    private static OptionalInt optionalInt(JsonObject object, String fieldName) {
+        JsonElement element = requireField(object, fieldName);
+        if (element.isJsonNull()) {
+            return OptionalInt.empty();
+        }
+        long value = requireLong(object, fieldName);
+        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Transaction field must be an exact integer: " + fieldName);
+        }
+        return OptionalInt.of((int) value);
     }
 
     private static JsonObject requireObject(JsonElement element, String label) {

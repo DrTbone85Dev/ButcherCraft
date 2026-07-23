@@ -152,6 +152,8 @@ Phase 14 does not register items, map existing products, read inventories, or gu
 
 It describes a directed relationship only. It does not execute production, consume inputs, create outputs, schedule work, or mutate inventory.
 
+Phase 20 preserves this boundary. `ProductionProcessDefinition` may describe a richer executable multi-input/multi-output operation and reference Goods by `GoodId`, but it neither embeds nor rewrites `GoodDefinition` or `GoodTransformation`. The Production Framework owns Plans and Runs; Goods remains the authoritative definition catalog.
+
 `GoodRegistry` validates the complete graph with an iterative topological check. Self-cycles and multi-node cycles are rejected. Transformation inputs and outputs must resolve to registered goods, and the owning industry must be known.
 
 ## Registry And Manager
@@ -217,7 +219,7 @@ Those systems must own their own quantities and mutable runtime state. They must
 - pricing, markets, and economy execution
 - orders and demand
 - transportation and shipments
-- production, recipes, machines, and transformations execution
+- industry-specific production content, recipes, machines, and workstation execution
 - spoilage and utility simulation
 - ItemStack conversion
 - datapack loading

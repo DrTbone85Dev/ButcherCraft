@@ -50,6 +50,10 @@ public final class TransactionValidator {
         if (!inventoryValidation.accepted()) {
             return inventoryValidation;
         }
+        TransactionValidation changePlanValidation = validateChangePlan(transaction);
+        if (!changePlanValidation.accepted()) {
+            return changePlanValidation;
+        }
         return validateEndpointShape(transaction);
     }
 
@@ -184,6 +188,59 @@ public final class TransactionValidator {
         };
     }
 
+    private TransactionValidation validateChangePlan(EconomicTransaction transaction) {
+        if (transaction.type() == TransactionType.PRODUCTION && transaction.inventoryChangePlan().isEmpty()) {
+            return rejected(
+                    transaction,
+                    TransactionFailureCode.VALIDATION_FAILED,
+                    "Production transactions require an atomic inventory change plan"
+            );
+        }
+        if (transaction.type() != TransactionType.PRODUCTION && !transaction.inventoryChangePlan().isEmpty()) {
+            return rejected(
+                    transaction,
+                    TransactionFailureCode.VALIDATION_FAILED,
+                    "Only production transactions may declare an explicit inventory change plan"
+            );
+        }
+        ActorId producer = transaction.sourceActorId().orElse(null);
+        for (InventoryChange change : transaction.inventoryChangePlan()) {
+            InventoryContainer container = inventoryManager.find(change.inventoryId()).orElse(null);
+            if (container == null) {
+                return rejected(
+                        transaction,
+                        TransactionFailureCode.UNKNOWN_INVENTORY,
+                        "Production change plan references an unknown inventory: " + change.inventoryId().value()
+                );
+            }
+            if (producer != null && !container.ownerActorId().equals(producer)) {
+                return rejected(
+                        transaction,
+                        TransactionFailureCode.VALIDATION_FAILED,
+                        "Production inventory is not owned by the producer actor: " + change.inventoryId().value()
+                );
+            }
+            GoodDefinition definition = inventoryManager.registry().goodRegistry()
+                    .find(change.entry().goodId())
+                    .orElse(null);
+            if (definition == null) {
+                return rejected(
+                        transaction,
+                        TransactionFailureCode.UNKNOWN_GOOD,
+                        "Production change plan references an unknown Good: " + change.entry().goodId().value()
+                );
+            }
+            if (definition.unitOfMeasure() != change.entry().unitOfMeasure()) {
+                return rejected(
+                        transaction,
+                        TransactionFailureCode.VALIDATION_FAILED,
+                        "Production change plan unit does not match the Good definition"
+                );
+            }
+        }
+        return TransactionValidation.accepted(transaction.id(), List.of());
+    }
+
     private List<InventoryChange> inventoryChanges(EconomicTransaction transaction) {
         InventoryEntry entry = new InventoryEntry(
                 transaction.goodId(),
@@ -206,6 +263,7 @@ public final class TransactionValidator {
             case INVENTORY_ADJUSTMENT -> transaction.sourceInventoryId().isPresent()
                     ? List.of(InventoryChange.remove(transaction.sourceInventoryId().orElseThrow(), entry))
                     : List.of(InventoryChange.add(transaction.destinationInventoryId().orElseThrow(), entry));
+            case PRODUCTION -> transaction.inventoryChangePlan();
             default -> List.of();
         };
     }

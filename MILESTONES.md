@@ -4,6 +4,47 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 20: Industry-Neutral Production Framework
+
+Goal: establish the pure Java operational framework that executes declared Good transformations through authoritative simulation time and atomic economic Transactions without adding industry content or gameplay.
+
+Included work:
+
+- Immutable schema-1 Production Process and Plan definitions with stable ids, exact input/output lines, deterministic whole-batch yield, duration, capabilities, requirements, inventory bindings, policies, tags, and typed metadata.
+- Separate mutable Production Run lifecycle with exact progress, typed blocking/failure behavior, cancellation, terminal-state protection, immutable snapshots, and deterministic indexed queries.
+- Validation against authoritative Goods, Actors, Inventory, Business Runtime, Workforce, Orders/Contracts, Scheduler, and Transaction services without duplicating their state.
+- One internal `butchercraft:production_run` execution-stage scheduler handler; the Simulation Clock remains the only time authority.
+- Atomic multi-input and multi-output completion through an APPLIED `PRODUCTION` Economic Transaction with an explicit ordered inventory-change plan.
+- Deterministic schema-1 persistence at `<world>/butchercraft/production_processes.json`, `production_plans.json`, and `production_runs.json`, with complete-set cross-reference validation before publication.
+- Comprehensive model, registry, validation, execution, transaction, persistence, dependency-boundary, integration, requirement, regression, and scale coverage plus `docs/PRODUCTION_FRAMEWORK.md`.
+
+Excluded work:
+
+- Live meat, agriculture, manufacturing, utility, or other industry Process registrations; machines; workstation migration; datapacks; automatic planning; Inventory reservation; logistics; markets; pricing; accounting; AI; GUI; networking; and gameplay.
+
+Acceptance criteria:
+
+- Process and Plan definitions remain immutable and industry-neutral; one Plan owns exactly one Run in schema 1.
+- Scheduler Work controls eligibility only, while the Run owns progress and lifecycle and the Clock owns time.
+- A Run becomes completed only after its entire input/output change plan is committed by one APPLIED Production Transaction.
+- Missing requirements, stock, capacity, references, and transaction failures remain explicit and produce no partial Inventory mutation.
+- Save/load preserves definitions, plans, run state, scheduler references, transaction references, and deterministic ordering.
+- Scale coverage exercises at least 100,000 Processes, 250,000 Plans, 250,000 Runs, bounded execution, and representative persistence.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 20 adds no visible content, networking, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 20 is additive apart from the compatible Production Transaction change-plan extension and scheduler handler installation hook. Removing the Production package, service lifecycle, handler, additive transaction field, tests, and documentation restores Phase 19 without changing existing content, ItemStack, workstation, or gameplay schemas.
+
 ## Milestone 0.9.0 Phase 19: Deterministic Simulation Scheduler & Pipeline
 
 Goal: provide one pure Java, industry-neutral, bounded execution pipeline for future simulation work without implementing any economic or gameplay behavior.

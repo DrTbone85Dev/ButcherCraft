@@ -53,7 +53,7 @@ Workforce definitions describe positions, qualifications, shifts, and staffing r
 
 ## Production
 
-Production will transform inputs into outputs under industry rules, facility capacity, workforce, utilities, schedules, and transaction guarantees. Existing workstation transformations prove local product execution but are not yet a regional production scheduler.
+The Phase 20 Production Framework now provides industry-neutral immutable Process and Plan definitions, separately owned Run lifecycle, exact deterministic progress, one execution-stage scheduler handler, and atomic multi-input/multi-output completion through the Transaction Framework. It registers no live industry Processes and does not connect existing workstation gameplay. Industry rules, equipment, utilities, planning, and player interaction remain future module responsibilities.
 
 ## Distribution
 
@@ -77,7 +77,7 @@ Contract schedule metadata does not execute obligations. Future production, logi
 
 The Phase 19 scheduler provides one bounded industry-neutral execution order for future subsystem Work. The authoritative Simulation Clock supplies time; the scheduler never advances it. Immutable Work definitions and separately owned runtime lifecycle records move through preparation, obligation evaluation, planning, execution, observation, and finalization stages using stable ordering and explicit budgets.
 
-The live pipeline has no handlers and creates no economic behavior. Future focused handlers may call only their authorized domain managers. Inventory quantity changes must still use Transactions, and Contract metadata remains inert until a later milestone deliberately schedules evaluation.
+The live pipeline now has one internal `butchercraft:production_run` handler. It advances only explicitly registered Production Runs and calls their authorized domain manager; it does not create Plans, choose industry work, or interpret Contract schedules. Inventory quantity changes still use Transactions, and Contract metadata remains inert until a later milestone deliberately schedules evaluation.
 
 ## Consumers
 
@@ -134,4 +134,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders, and Contracts exist. The scheduler's live handler registry is empty. Population, regional production, active distribution behavior, consumers, markets, and pricing remain future work.
+World Identity, Runtime Player Identity, Simulation Clock, deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders and Contracts, and the industry-neutral Production Framework exist. No live industry Process definitions are registered. Population, automatic production planning, active distribution behavior, consumers, markets, and pricing remain future work.

@@ -68,7 +68,7 @@ Possible extension points:
 
 ### Recipe
 
-Represents a declared production or transformation process. Existing transformation and processing definitions are current internal foundations; a cross-industry public contract is not yet selected.
+Represents a declared production or transformation process. Phase 20's internal `com.butchercraft.world.production` package now provides an industry-neutral Process, Plan, and Run contract for regional economic execution. Existing workstation transformation and processing definitions remain the local gameplay foundations. Neither system is a public API.
 
 Possible extension points:
 
@@ -76,6 +76,9 @@ Possible extension points:
 - Inputs, outputs, duration, yield, and constraints.
 - Deterministic evaluation.
 - Atomic execution results.
+- Immutable Plan submission and read-only Run lifecycle views.
+
+Phase 20 establishes no third-party registration lifecycle, datapack schema, machine adapter, or binary compatibility promise. Industry modules cannot yet contribute live Processes through a supported public boundary.
 
 ### Consumer
 
@@ -120,7 +123,7 @@ Possible extension points:
 - Acceptance, rejection, fulfillment-allocation, cancellation, and completion facts.
 - Read-only query and summary contracts for future compatibility consumers.
 
-Reservations, automatic schedule execution, pricing, production, and logistics are not part of the Phase 18 domain and must not be inferred from the current internal classes.
+Reservations, automatic schedule execution, pricing, production execution, and logistics are not part of the Phase 18 Order domain and must not be inferred from its internal classes. Phase 20 may carry Order and Contract ids as Production context, but it neither reserves their quantities nor records fulfillment.
 
 ### Simulation Work
 
@@ -133,7 +136,7 @@ Possible future extension points:
 - Immutable submission, cancellation, result, and report views.
 - Compatibility validation and missing-provider behavior.
 
-No third-party registration lifecycle, binary compatibility promise, datapack schema, event API, or service locator is established by Phase 19.
+Phase 20 installs one internal Production Run handler through a pre-load service hook. No third-party registration lifecycle, binary compatibility promise, datapack schema, event API, or service locator is established.
 
 ### Warehouse
 

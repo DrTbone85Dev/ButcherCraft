@@ -1,5 +1,20 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 20 - Industry-Neutral Production Framework
+
+Core:
+
+- Added immutable, schema-versioned Production Process and Plan definitions with exact input/output quantities, whole-batch deterministic yield, capabilities, inventory bindings, requirements, policies, tags, and typed metadata.
+- Added separately owned Production Run lifecycle, validation, deterministic indexed registries and queries, exact progress tracking, cancellation, and typed failure behavior.
+- Added one internal Production scheduler handler and world lifecycle service while preserving the Simulation Clock as the sole time authority.
+- Added atomic multi-input and multi-output completion through an APPLIED `PRODUCTION` Economic Transaction with an explicit ordered inventory-change plan.
+- Added deterministic schema-versioned Process, Plan, and Run persistence with complete-set validation before publication.
+- Added comprehensive model, registry, validation, execution, transaction, persistence, integration, dependency-boundary, requirement, regression, and scale coverage.
+
+Scope:
+
+- No live industry Processes, machines, workstation migrations, datapacks, automatic planning, Inventory reservation, logistics, markets, pricing, accounting, gameplay, networking, GUI, or ItemStack integration was added.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 19 - Deterministic Simulation Scheduler & Pipeline
 
 Core:
