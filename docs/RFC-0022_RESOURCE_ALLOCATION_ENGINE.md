@@ -1,6 +1,9 @@
 # RFC-0022: Resource Allocation Engine
 
-Status: Proposed architecture, awaiting owner approval
+Status: M22A Core Allocation Domain, M22B Allocation Runtime and Registries,
+M22C Deterministic Allocation Cycle, and M22D Resource and Capacity Provider
+Framework owner-authorized and implemented; M22E and M22F remain proposed and
+separately gated
 
 Revision: 2
 
@@ -19,9 +22,18 @@ ownership. Planning owns Candidate Plans and Approved Plans. Execution
 subsystems own executable definitions and runtime. Allocation owns temporary
 capacity Commitments only.
 
-This RFC is an architecture contract. It does not authorize implementation.
-Implementation requires the owner-approved ADR and compatibility decisions
-listed in Part V.
+This RFC remains the architecture contract for the complete engine. DEC-0076
+through DEC-0079 authorize the M22A immutable Core Allocation Domain documented in
+[`RESOURCE_ALLOCATION_DOMAIN.md`](RESOURCE_ALLOCATION_DOMAIN.md) and the M22B
+lifecycle, registries, queries, history, and report structures documented in
+[`ALLOCATION_RUNTIME.md`](ALLOCATION_RUNTIME.md), plus the M22C explicit-input
+Cycle, detached accounting, selection, Commitment construction, and atomic
+publication documented in [`ALLOCATION_CYCLE.md`](ALLOCATION_CYCLE.md), and the
+M22D generic provider observation framework documented in
+[`ALLOCATION_PROVIDER_FRAMEWORK.md`](ALLOCATION_PROVIDER_FRAMEWORK.md).
+Production-grade concrete providers, Scheduler, persistence, Planning,
+Production, and execution integration still require later owner-approved
+decisions listed in Part V.
 
 ## Part I: Philosophy And First Principles
 
@@ -575,6 +587,12 @@ Registered read-only providers return ordered `ObservedResourceSnapshot` and
 `ObservedCapacitySnapshot` values for the submitted execution references.
 Providers declare stable ids, supported categories, deterministic limits, and
 typed failures.
+
+M22D implements this generic observation boundary through an explicit immutable
+provider registry, immutable context/request/result contracts, canonical
+sequential invocation, typed failure isolation, duplicate/conflict validation,
+reports, bundles, and SHA-256 replay digests. M22D registers no production-grade
+concrete provider and does not invoke the Allocation Cycle automatically.
 
 ### 52. Existing Commitments
 
@@ -1350,6 +1368,7 @@ Providers own Resources and Capacity.
 
 ### 151. End RFC-0022 Revision 2
 
-Revision 2 is architecturally reconciled with DEC-0073 and DEC-0074. It is
-ready for owner review, but implementation remains prohibited until the ADR and
-compatibility decisions in section 125 are explicitly approved.
+Revision 2 is architecturally reconciled with DEC-0073 and DEC-0074. DEC-0076
+through DEC-0078 authorize M22A-M22C only. Remaining implementation stays
+prohibited until the ADR and compatibility decisions in section 125 are
+explicitly approved.

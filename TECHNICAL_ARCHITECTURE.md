@@ -123,6 +123,8 @@ Packages that already exist describe current ownership. Entries for packages not
 | Package | Owner responsibility |
 | --- | --- |
 | `com.butchercraft` | Mod entry point, constants, top-level setup. |
+| `com.butchercraft.architecture` | Explicit current architecture manifest and build-time validation entry point. |
+| `com.butchercraft.architecture.validation` | Pure Java immutable architecture descriptors, deterministic rule registry, validator, and structured reports. |
 | `com.butchercraft.engine` | Minecraft-independent product, quality, quantity, modifier, operation, context, validation, evaluation, result, and transaction domain rules. |
 | `com.butchercraft.transformation` | Minecraft-independent generic material-transformation ids, material amounts, definitions, contexts, evaluations, evaluators, and compatibility adapters. |
 | `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, supply-reference serialization, datapack validation, and registry access. |
@@ -148,6 +150,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
 | `com.butchercraft.world.inventory` | Pure actor-owned inventory containers, hierarchical storage nodes, capacity metadata, exact runtime Good quantities, typed entry metadata, deterministic registry, manager validation, and JSON persistence. |
 | `com.butchercraft.world.planning` | Pure immutable Planning artifacts, exact Needs and capacity claims, deterministic candidate evaluation and selection, typed Production submission, cycle reports, and six-file JSON persistence. |
+| `com.butchercraft.world.allocation` | Pure Resource Allocation definitions, deterministic AllocationSet lifecycle and Cycle execution, detached Capacity accounting, atomic Commitment publication, immutable registries, views, history, queries, reports, traces, and typed validation. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -176,6 +179,7 @@ The current package layout already aligns with the platform direction and requir
 - `com.butchercraft.world.economy.actor` owns immutable participant definitions and separate in-memory runtime status. Actors reference Goods, Business Runtime, and Workforce only through stable ids and store no inventory, production, pricing, transport, or ItemStack state.
 - `com.butchercraft.world.inventory` owns economic quantity and location state independently from Minecraft inventories. It references actors, Goods, and storage nodes by stable ids and imports no Minecraft, NeoForge, Container, menu, slot, or ItemStack APIs.
 - `com.butchercraft.world.production` owns industry-neutral executable Process and Plan definitions plus separately owned Run runtime state. It references other authorities by stable ids, advances only through supplied simulation ticks, and never mutates Inventory directly.
+- `com.butchercraft.world.allocation` owns immutable Requests, AllocationSets, and Commitments; AllocationSet lifecycle; the explicit deterministic Allocation Cycle; detached cycle-local Capacity accounting; atomic Commitment publication; and immutable registries, reports, traces, history, and queries. Authoritative providers retain Resource and Capacity ownership. Allocation references other subsystems only by stable external identity and has no persistence, Scheduler stage, live provider, Planning handoff, or Production execution gate.
 - `com.butchercraft.engine`, `transformation`, `product.definition`, `packaging.definition`, and their serialization models remain pure Java foundations.
 - `com.butchercraft.content` coordinates validated immutable content snapshots.
 - `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
@@ -402,6 +406,115 @@ Schema 1 observes accepted open Order lines, subtracts matching active Productio
 Approved executable Production intent crosses one typed boundary, `ProductionPlanningSubmissionAdapter`. It calls the idempotent `ProductionManager.registerAndSchedulePlan` operation, which returns existing identical state, rejects identity conflicts, and removes a newly registered unscheduled Plan after Scheduler rejection. Planning never executes a Run, mutates Inventory, submits Transactions, records Order fulfillment, advances time, or transitions Scheduler runtime.
 
 `EconomicPlanningService` installs its handler before Scheduler load, initializes after Production and Scheduler binding, loads six complete-set files, and ensures one continuation Work exists in the PLANNING stage. Interrupted cycles, malformed or partial files, invalid provenance graphs, and missing external references fail visibly. See `docs/ECONOMIC_PLANNING_ENGINE.md` for the schemas, pipeline, ownership boundaries, persistence, invariants, measured scale, and deferred scope.
+
+## Resource Allocation Domain And Runtime
+
+RFC-0022 M22A introduces `com.butchercraft.world.allocation` as a pure Java
+structural domain. Canonical namespaced identities, exact bounded
+`AllocationQuantity`, open Capacity unit and Resource category identities,
+typed immutable metadata, and generic `ExternalReference` values make the
+domain industry-neutral and independent of concrete provider models.
+
+Provider-supplied `ObservedResourceSnapshot` and `ObservedCapacitySnapshot`
+records capture explicit simulation-tick facts without querying world state.
+Schema 1 represents Workforce only as aggregate position, role, or shift
+capacity and rejects the individual-worker reference concept.
+
+Immutable `RequirementDefinition` records belong to one externally owned
+executable work reference and one future atomic `AllocationSetDefinition`.
+`AllocationOrderingContext` captures every replay input for horizon, priority,
+required-by, starvation age, Need age, stable sequence, and final Request-id
+ordering. `AllocationRequestDefinition`, `AllocationSetDefinition`, and
+`AllocationCommitmentDefinition` validate canonical identity, association,
+unit, tick, evidence, duplicate, and immutable collection contracts.
+
+M22B adds one mutable `AllocationSetRuntime` per Set behind
+`AllocationRuntimeService`. Runtime identity remains `AllocationSetId`.
+Explicit requests move state through REQUESTED, WAITING, ALLOCATED, ACTIVE,
+RELEASED, FAILED, and EXPIRED while enforcing monotonic simulation ticks,
+revisions, complete Commitment structure, and terminal states. Every public
+read is an immutable `AllocationRuntimeView`.
+
+Canonical immutable registries index definitions, runtime views, and reports.
+`AllocationHistory` validates complete transition chains, and
+`AllocationQueryService` provides detached lookup by definition, association,
+status, Planning Cycle reference, Resource, work reference, Cycle, tick, and
+history range. Immutable reports carry outcome, Commitment, conflict, Capacity,
+ordering, work-bound, failure, policy, tick, and schema evidence without
+running an algorithm.
+
+M22C adds `AllocationCycleExecutor` over explicit immutable input. It subtracts
+supplied ALLOCATED and ACTIVE Commitments into a detached
+`WorkingCapacityLedger`, orders eligible Sets through the accepted Request
+comparator, evaluates each Set on a private ledger branch, and selects the first
+complete Resource-id/Capacity-id match for each Requirement. Successful Sets
+merge all exact quantities and privately construct one deterministic Commitment
+per Requirement; waiting or failed Sets leave the parent ledger unchanged.
+
+Publication rebuilds a complete candidate `AllocationRuntimeService`, registers
+Commitments, applies only REQUESTED/WAITING to ALLOCATED and REQUESTED to
+WAITING transitions, validates report and trace evidence, and swaps candidate
+state once. Duplicate Cycles and stale runtime snapshots fail before mutation.
+Canonical digests cover input, ordering, ledgers, Commitments, reports,
+publication, trace, and complete results.
+
+M22D adds `AllocationResourceProvider`, immutable provider descriptors, an
+explicit canonical `AllocationProviderRegistry`, immutable observation
+contexts and requests, typed provider results, deterministic failure isolation,
+and `AllocationObservationService`. Provider adapters translate their own
+authoritative state into the existing M22A snapshots. Allocation never receives
+a concrete owner-domain object and never becomes Resource or Capacity
+authority.
+
+The observation service invokes providers once in provider-id order, validates
+tick, schema, owner, category, Capacity type/unit, Resource references, and
+duplicate identities, then returns an immutable `AllocationObservationBundle`.
+Bundles are explicitly COMPLETE, INCOMPLETE, or UNUSABLE; only COMPLETE is
+safe for a future orchestration layer to combine with definitions and runtime
+as `AllocationCycleInput`. The provider framework never invokes the Cycle,
+publishes Commitments, or mutates Allocation runtime.
+
+The architecture manifest declares an empty canonical
+`butchercraft:allocation_providers` registry and external Resource/Capacity
+authority. No production-grade provider instance is registered in M22D.
+Canonical SHA-256 digests cover descriptors, registry, request, snapshots,
+results, failures, warnings, reports, and bundles.
+
+M22A-M22D declare no Allocation persistence file, Scheduler stage or Work type,
+Planning handoff, Production execution gate, Inventory mutation, Transaction
+path, Minecraft hook, or gameplay behavior. The existing six-stage Scheduler
+and simulation behavior are unchanged. See
+`docs/RESOURCE_ALLOCATION_DOMAIN.md`, `docs/ALLOCATION_RUNTIME.md`, and
+`docs/ALLOCATION_CYCLE.md`, plus
+`docs/ALLOCATION_PROVIDER_FRAMEWORK.md`.
+
+## Architecture Validation Framework
+
+BCSE Architecture Validation Phase 1 introduces
+`com.butchercraft.architecture.validation` as a pure Java observer of explicit
+architectural declarations. Immutable contexts describe components, ownership,
+dependencies, registries, persistence surfaces, Scheduler stages, and
+simulation invariants. A canonical immutable rule registry produces structured
+pass, failure, warning, and informational results without reflection, runtime
+scanning, hidden randomness, wall-clock sampling, or subsystem mutation.
+
+`ButcherCraftArchitectureManifest` is the explicit current manifest.
+`ButcherCraftArchitectureValidation` validates it during automated tests. The
+framework is not registered into server startup, reload, Scheduler execution,
+commands, networking, or gameplay. It does not become an owner of any
+described datum and does not make proposed RFCs effective.
+
+Rule categories include Ownership, Dependencies, Persistence, Scheduler,
+Registries, Transactions, Planning, Production, Allocation, Execution,
+Simulation, and General. The manifest declares M22A-M22C Allocation artifact,
+lifecycle, Cycle, detached Capacity accounting, Commitment selection, registry,
+report, trace, and history ownership plus forbidden dependency directions and
+canonical definition, runtime, report, and trace registries. It deliberately
+declares no Allocation stage, persistence, provider, or executable Work.
+
+See `docs/ARCHITECTURE_VALIDATION_FRAMEWORK.md` for rule authoring, descriptor
+contracts, deterministic reporting, current integration, tests, and extension
+constraints.
 
 ## Item Data-Component Strategy
 

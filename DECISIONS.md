@@ -1205,6 +1205,239 @@ Consequences:
 - Persisted interrupted cycles fail initialization visibly. Automatic partial-cycle resume or replay is not claimed in schema 1.
 - Inventory reservations, purchasing, logistics, maintenance, utilities, inspections, markets, pricing, accounting, public provider registration, gameplay, networking, GUI, and ItemStack integration remain future work.
 
+## DEC-0075: Architecture Validation Uses Explicit Immutable Manifests
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0009`, `AI-0010`,
+`AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and `AI-0028`.
+
+Decision: BCSE Architecture Validation Framework Phase 1 introduces
+`com.butchercraft.architecture.validation` as a pure Java validation layer over
+explicit immutable architecture manifests. Rules are registered explicitly,
+ordered canonically, and produce structured deterministic results. The
+framework uses no reflection, runtime scanning, hidden clocks, random sources,
+or mutable global state. It observes accepted ownership, dependency, registry,
+persistence, Scheduler, Transaction, Planning, Production, Execution, and
+simulation contracts without changing them.
+
+Rationale: constitutional and accepted architecture contracts need executable
+regression protection, but runtime discovery would make ordering, coverage, and
+failure behavior implicit. An explicit manifest makes the validated facts
+reviewable and keeps the validator independent from subsystem managers and
+platform lifecycle.
+
+Consequences:
+
+- `ButcherCraftArchitectureManifest` declares the accepted current architecture
+  and is validated through automated tests.
+- Validation descriptors and reports are immutable; candidate violations remain
+  representable so rules can report them.
+- Rule exceptions, null results, and inconsistent result metadata become
+  explicit deterministic failures.
+- Execution time is caller-supplied report metadata; the validator does not read
+  a wall clock.
+- Existing source dependency-boundary tests remain responsible for concrete
+  package-text checks; the framework does not scan Java source or classpaths.
+- Passing validation does not approve an ADR, accept a proposed RFC, migrate a
+  schema, or transfer ownership.
+- The Allocation category is additive only. RFC-0022 remains proposed and no
+  Allocation implementation is authorized by this decision.
+- No simulation, persistence, registry, Scheduler, Transaction, Planning,
+  Production, gameplay, networking, asset, or workstation behavior changes.
+
+## DEC-0076: M22A Establishes The Immutable Core Allocation Domain
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0006`, `AI-0007`, `AI-0009`,
+`AI-0010`, `AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and
+`AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22A introduces
+`com.butchercraft.world.allocation` as a pure Java immutable structural domain.
+Allocation owns canonical Requests, structurally atomic AllocationSets, and
+immutable Commitment definitions. Authoritative providers continue to own
+Resources and Capacity. Planning, Production, Scheduler, Transactions, and
+Inventory retain their accepted authorities.
+
+Rationale: later deterministic allocation requires one stable,
+industry-neutral vocabulary before any provider, algorithm, runtime,
+persistence, or integration is introduced. Establishing exact quantities,
+external references, immutable observed facts, canonical ordering, and typed
+validation first makes those later decisions reviewable without changing
+simulation behavior.
+
+Consequences:
+
+- Stable Allocation identities use canonical namespaced values and
+  deterministic structural hashing.
+- Capacity quantities use exact bounded decimal arithmetic and open typed unit
+  identities with no implicit conversion.
+- Schema-1 Workforce observations represent aggregate position, role, or shift
+  capacity, never individual workers.
+- Allocation references execution work, Planning artifacts, Resources,
+  Capacity, and observations only through stable external identities.
+- The architecture manifest assigns Allocation Request, Set, and Commitment
+  ownership and forbids M22A dependency directions toward Planning,
+  Production, Scheduler, Inventory, and Transactions.
+- M22A adds no algorithm, cycle runtime, manager, provider, persistence file,
+  Scheduler stage 350, Work type, execution gate, Inventory mutation,
+  Transaction execution, Minecraft integration, or gameplay.
+- Domain codecs are deferred with persistence ownership. M22A exposes canonical
+  primitive values, schema fields, and ordered collections without freezing an
+  unapproved file or network contract.
+- RFC-0022 remains only partially implemented. M22B through M22F require
+  separate owner authorization and any compatibility decisions required by
+  Part V.
+
+## DEC-0077: M22B Establishes Allocation Runtime And Registry Ownership
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0006`, `AI-0007`, `AI-0009`,
+`AI-0010`, `AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and
+`AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22B adds
+deterministic `AllocationSetRuntime` lifecycle state, immutable definition and
+runtime registries, immutable report and history models, and detached query
+surfaces. `AllocationRuntimeService` is the sole public lifecycle mutation
+boundary. Runtime identity remains `AllocationSetId`; no duplicate
+`AllocationRuntimeId` is introduced.
+
+Rationale: later deterministic allocation needs explicit lifecycle,
+cross-reference validation, canonical registries, audit history, and immutable
+read contracts before an algorithm, provider, persistence owner, or Scheduler
+integration can be reviewed. Separating these mechanics prevents future
+selection policy from leaking into runtime ownership.
+
+Consequences:
+
+- The accepted lifecycle is REQUESTED, WAITING, ALLOCATED, ACTIVE, RELEASED,
+  FAILED, and EXPIRED with only the RFC-0022 transitions and irreversible
+  terminal states.
+- Runtime transitions consume caller-supplied simulation ticks and revisions;
+  no clock, randomness, background loop, or Scheduler callback is introduced.
+- ALLOCATED structurally requires exactly one known Commitment per Requirement,
+  but M22B never creates or selects a Commitment.
+- Public registries, runtime views, history, reports, and query results are
+  immutable and canonically ordered.
+- Reports record outcome and evidence structures only. They do not implement
+  conflict resolution, fairness, Capacity ledgers, or Allocation Cycles.
+- The architecture manifest assigns lifecycle, registry, report, and history
+  ownership and declares canonical Allocation registries while preserving all
+  dependency prohibitions and adding no persistence or Scheduler stage.
+- M22B adds no algorithm, provider, resource observation, persistence, stage
+  350, Planning, Production, execution, Inventory, Transaction, Minecraft,
+  NeoForge, command, menu, networking, or gameplay integration.
+- At this decision point RFC-0022 was implemented through M22B. DEC-0078 later
+  authorizes M22C. At that decision point M22D through M22F still required
+  separate owner authorization; DEC-0079 later authorizes M22D.
+
+## DEC-0078: M22C Establishes The Deterministic Allocation Cycle
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0006`, `AI-0007`, `AI-0009`,
+`AI-0010`, `AI-0016` through `AI-0021`, `AI-0023`, `AI-0025`, `AI-0027`, and
+`AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22C adds one pure
+Java deterministic Allocation Cycle over explicit immutable snapshots.
+Allocation owns detached cycle-local Capacity accounting, canonical first-fit
+selection, complete Commitment construction, and atomic publication through
+`AllocationRuntimeService`. Authoritative providers retain Resource and
+Capacity ownership.
+
+Rationale: M22A and M22B provide stable definitions and lifecycle boundaries,
+but usable arbitration requires one replay-complete pipeline that cannot leak
+partial Commitments or runtime changes. A detached ledger and candidate-state
+service rebuild preserve exact accounting and atomic publication without
+introducing live integration.
+
+Consequences:
+
+- Requests use the accepted horizon, priority, required-by, starvation,
+  Need-creation, sequence, Request-id, and Set-id ordering.
+- Schema 1 selects one Resource/Capacity entry per Requirement by Resource id
+  then Capacity id and does not fragment demand or convert units.
+- Each AllocationSet evaluates on a private ledger branch; all Requirements
+  succeed or no branch mutation and no Commitment survive.
+- ALLOCATED and ACTIVE Commitments reduce observed Capacity exactly once.
+  Terminal runtime does not consume Capacity.
+- Publication builds a complete candidate service and performs one final state
+  swap. Deterministic fault injection proves no partial state is visible.
+- Duplicate Cycle submission is rejected explicitly. It cannot double
+  allocate, duplicate history, or repeat transitions.
+- M22C may transition REQUESTED or WAITING to ALLOCATED and REQUESTED to
+  WAITING. It does not activate execution or perform release or expiration
+  loops.
+- Engineering trace and result digests contain deterministic operation counts,
+  never wall-clock measurements.
+- The architecture manifest adds Cycle, detached accounting, Commitment
+  selection, and trace-registry ownership while preserving every M22B
+  dependency prohibition.
+- M22C adds no Scheduler stage 350, provider, Planning handoff, Production
+  gate, persistence, Inventory or Transaction integration, Minecraft,
+  NeoForge, or gameplay behavior.
+- At this decision point RFC-0022 was implemented through M22C. DEC-0079 later
+  authorizes M22D; M22E and M22F still require separate owner authorization
+  and compatibility decisions required by Part V.
+
+## DEC-0079: M22D Establishes The Resource And Capacity Provider Framework
+
+Status: Accepted
+
+Constitutional basis: `AI-0001`, `AI-0003`, `AI-0009`, `AI-0010`, `AI-0015`,
+`AI-0016`, `AI-0020`, `AI-0021`, `AI-0023`, `AI-0025`, `AI-0026`,
+`AI-0027`, and `AI-0028`.
+
+Decision: owner-authorized RFC-0022 Revision 2 Milestone M22D adds one pure
+Java, industry-neutral Resource and Capacity provider framework. Provider
+adapters retain access to their own narrow authoritative collaborators and
+translate current facts into M22A immutable snapshots. Allocation owns only the
+generic provider contracts, explicit immutable registry, observation
+validation, canonical aggregation, typed evidence, reports, and bundles.
+Resource and Capacity definitions and runtime remain externally authoritative.
+
+Rationale: the deterministic M22C Cycle requires replay-complete observed
+snapshots, but directly querying Workforce, Production, Inventory, or future
+provider domains would reverse dependencies and create hidden environmental
+input. An explicit adapter contract and canonical sequential observation
+service preserve singular ownership while giving future orchestration one
+validated immutable input surface.
+
+Consequences:
+
+- `AllocationProviderId` remains the stable provider identity and remains
+  distinct from the owner subsystem identity in `ExternalReference`.
+- Provider descriptors declare authorized owner ids, Resource categories,
+  Capacity types, Capacity units, metadata, and schema version.
+- `AllocationProviderRegistry` is explicit, immutable, bounded, duplicate
+  rejecting, provider-id ordered, and free of reflection or runtime discovery.
+- Providers receive an immutable observation context, run sequentially in
+  canonical order, and return immutable successful, empty, or typed-failure
+  results.
+- Provider-local failure preserves unrelated successful results but marks the
+  bundle incomplete. Cross-provider duplicate or conflicting Resource and
+  Capacity claims make the bundle unusable.
+- Only a COMPLETE observation bundle is safe for future explicit
+  `AllocationCycleInput` construction. The provider framework never invokes
+  the Cycle, publishes Commitments, or mutates Allocation runtime.
+- Exact `AllocationQuantity` and `CapacityUnitId` facts are preserved without
+  conversion, arithmetic aggregation, prediction, or estimation.
+- Canonical SHA-256 digests cover provider descriptors, registries, requests,
+  snapshots, results, failures, reports, and bundles.
+- The architecture manifest assigns provider aggregation and immutable
+  observation snapshots to Allocation, keeps Resource and Capacity definitions
+  externally owned, and declares an empty canonical provider registry.
+- M22D adds no production-grade concrete provider, persistence, Scheduler
+  stage 350, Planning handoff, Production execution gate, Inventory mutation,
+  Transaction execution, Minecraft, NeoForge, or gameplay integration.
+- RFC-0022 remains partially implemented. M22E and M22F require separate owner
+  authorization and the compatibility decisions required by Part V.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

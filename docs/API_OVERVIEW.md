@@ -101,6 +101,29 @@ datapack planning policy, thread-safety promise, or binary compatibility
 contract. External code must not call internal managers or use Planning as an
 Inventory reservation or execution path.
 
+### Resource And Capacity Observation Provider
+
+Represents a future owning-domain or compatibility adapter that translates
+authoritative Resource and Capacity facts into immutable Allocation snapshots.
+RFC-0022 M22D provides the internal pure Java
+`AllocationResourceProvider`, descriptor, explicit registry, request/result,
+failure, report, and bundle contracts.
+
+Current extension points:
+
+- Stable `AllocationProviderId` identity.
+- Declared owner-subsystem, Resource-category, Capacity-type, and Capacity-unit
+  scope.
+- Immutable explicit observation context.
+- Typed successful, empty, warning, and failed observation results.
+- Canonical sequential invocation and immutable bundle/report views.
+
+M22D is not a stable third-party API. It provides no reflective discovery,
+service loader, global registration lifecycle, concrete provider, asynchronous
+execution, persistence, Scheduler binding, Minecraft adapter, or binary
+compatibility promise. Provider adapters retain source authority and may not
+allocate, publish Commitments, or mutate Allocation runtime.
+
 ### Consumer
 
 Provides bounded demand for products or services. Consumers may represent population cohorts, institutions, businesses, players, or compatible mods.

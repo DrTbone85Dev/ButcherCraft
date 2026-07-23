@@ -1,5 +1,129 @@
 # Changelog
 
+## RFC-0022 M22D Resource And Capacity Provider Framework
+
+Core:
+
+- Added immutable provider descriptors, explicit provider registration,
+  canonical provider ordering, capability declarations, and stable registry
+  digests.
+- Added explicit observation contexts and requests, immutable typed provider
+  results, deterministic failures and warnings, and bounded result validation.
+- Added sequential observation aggregation with provider-failure isolation,
+  duplicate Resource and Capacity detection, explicit bundle usability, and
+  immutable reports.
+- Added canonical SHA-256 digests for provider registries, requests, snapshots,
+  results, failures, reports, and complete observation bundles.
+- Extended architecture ownership and bounded replay coverage for 20,000
+  providers, 100,000 Resource snapshots, 100,000 Capacity snapshots, and
+  high-conflict provider input.
+
+Scope:
+
+- RFC-0022 M22D Resource and Capacity Provider Framework implemented.
+- No production-grade concrete provider, Allocation Cycle invocation,
+  Allocation runtime mutation, Scheduler stage 350, Planning migration,
+  Production execution gate, persistence, Minecraft, NeoForge, or gameplay
+  behavior was added.
+- RFC-0022 is implemented through M22D only. M22E and M22F remain separately
+  gated.
+
+## RFC-0022 M22C Deterministic Allocation Cycle
+
+Core:
+
+- Added explicit immutable Allocation Cycle input, result, summary, typed
+  failures, canonical SHA-256 replay digests, and an eleven-phase engineering
+  trace.
+- Added detached exact Capacity accounting with active-Commitment subtraction,
+  shared and exclusive handling, transactional Set branches, and deterministic
+  Resource-id/Capacity-id first fit.
+- Added atomic complete-Set evaluation and deterministic Commitment
+  construction with no partial success or orphan Commitments.
+- Added atomic candidate-state publication through `AllocationRuntimeService`,
+  legal REQUESTED/WAITING transitions, report/history/trace evidence, duplicate
+  Cycle rejection, and deterministic publication fault coverage.
+- Extended architecture ownership, dependency checks, and split-scale stress
+  coverage for 100,000 observed Capacities, 100,000 existing Commitments, the
+  existing 100,000 Requirements and 50,000 Requests/Sets, and replayed mixed
+  contention.
+
+Scope:
+
+- RFC-0022 M22C Deterministic Allocation Cycle implemented.
+- No Scheduler stage 350, live provider, Planning migration, Production
+  execution gate, persistence, Inventory or Transaction integration,
+  Minecraft, NeoForge, or gameplay behavior was added.
+- This entry completed M22C. M22D is recorded in the later changelog entry;
+  M22E and M22F remain separately gated.
+
+## RFC-0022 M22B Allocation Runtime And Registries
+
+Core:
+
+- Added deterministic AllocationSet lifecycle state, immutable runtime views,
+  typed transition validation, terminal-state enforcement, and ordered history.
+- Added canonical immutable registries for Requirements, Requests,
+  AllocationSets, Commitments, runtime views, and reports.
+- Added immutable query and report structures with cross-reference,
+  timestamp, ordering-context, Capacity-evidence, and history validation.
+- Extended the architecture manifest and deterministic stress coverage for
+  100,000 runtime views and 200,000 transition records.
+
+Scope:
+
+- Runtime accepts explicit structural transitions but performs no allocation.
+- No algorithm, Capacity ledger, conflict resolution, provider, Scheduler stage
+  350, persistence, integration, Inventory mutation, Transaction execution,
+  Minecraft integration, or gameplay behavior was added.
+- This entry completed M22B. M22C is recorded in the later changelog entry;
+  M22D is recorded in the later changelog entry; M22E and M22F remain
+  separately gated.
+
+## RFC-0022 M22A Core Allocation Domain
+
+Core:
+
+- Added a pure Java, immutable Resource Allocation vocabulary with canonical
+  ids, extensible capacity units and categories, exact quantities, external
+  authority references, and observed Resource and Capacity snapshots.
+- Added immutable Requirements, replay-complete request ordering contexts,
+  Allocation Requests, atomic structural AllocationSets, and evidence-backed
+  Allocation Commitments.
+- Added typed structural validation, deterministic identity derivation,
+  canonical collection ordering, architecture-manifest ownership, boundary
+  checks, and bounded repeat stress coverage.
+
+Scope:
+
+- No allocation algorithm, mutable runtime, persistence, provider, Scheduler
+  stage, Planning or Production integration, Inventory mutation, Transaction
+  execution, Minecraft integration, or gameplay behavior was added.
+- RFC-0022 M22A is implemented. M22B through M22F remain separately gated.
+
+## BCSE Architecture Validation Framework Phase 1
+
+Core:
+
+- Added immutable architecture component, ownership, dependency, registry,
+  persistence, Scheduler, and simulation-invariant descriptors.
+- Added a deterministic rule registry, validator, structured results, category
+  summaries, and explicit malformed-rule failures.
+- Added standard rules for ownership, dependencies, registries, persistence,
+  Scheduler topology, Transactions, Planning, Production, Execution, and
+  simulation replay contracts.
+- Added an explicit current ButcherCraft architecture manifest validated by
+  automated tests without reflection or runtime scanning.
+- Added comprehensive success, failure, duplicate, ordering, reference,
+  malformed-rule, null, replay, extensibility, boundary, and scale coverage.
+
+Scope:
+
+- No simulation, Planning, Production, Transaction, persistence, registry,
+  Scheduler, gameplay, networking, asset, or workstation behavior changed.
+- RFC-0022 remains proposed; no Allocation owner, stage, persistence, or
+  runtime was implemented.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 21 - Economic Planning Engine
 
 Core:

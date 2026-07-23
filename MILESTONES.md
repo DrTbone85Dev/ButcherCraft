@@ -4,6 +4,305 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## RFC-0022 Milestone M22D: Resource And Capacity Provider Framework
+
+Goal: let externally authoritative subsystems expose immutable Resource and
+Capacity observations through one deterministic, industry-neutral provider
+contract without allocating or changing runtime behavior.
+
+Included work:
+
+- Stable provider identity, immutable provider descriptors, owner and
+  capability declarations, explicit registration, canonical ordering, bounded
+  immutable registry views, and registry digests.
+- Explicit immutable observation contexts and requests with tick, filters,
+  metadata, provider selection, deterministic limits, and schema version.
+- Typed immutable provider results, failures, warnings, snapshot validation,
+  provider exception conversion, and provider-local failure isolation.
+- Sequential canonical observation aggregation, duplicate/conflicting Resource
+  and Capacity detection, complete/incomplete/unusable bundle status, immutable
+  reports, exact quantity preservation, and replay digests.
+- Architecture-manifest ownership and empty provider-registry declarations
+  plus focused, replay, integration-contract, purity, and bounded stress tests.
+
+Excluded work:
+
+- Production-grade concrete providers, Scheduler stage 350, Scheduler Work,
+  automatic Allocation Cycle invocation, Allocation runtime mutation, Planning
+  handoff, Production execution gating, persistence, codecs, save migration,
+  Inventory or Transaction integration, Minecraft, NeoForge, networking,
+  commands, menus, and gameplay.
+
+Acceptance criteria:
+
+- Provider subsystems retain Resource and Capacity authority; Allocation owns
+  immutable observation facts and aggregation only.
+- Equivalent registries and observations produce equal provider order,
+  snapshots, failures, reports, bundles, and canonical digests.
+- Provider-local failure preserves unrelated successful observations but marks
+  the bundle incomplete; cross-provider conflicts mark it unusable.
+- Only a complete bundle is safe for future `AllocationCycleInput`
+  construction, and the provider framework never invokes the Cycle itself.
+- No live concrete provider, persistence descriptor, or Scheduler stage 350
+  exists.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.AllocationProvider*" --tests "com.butchercraft.world.allocation.AllocationObservation*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22D adds no world hook, lifecycle
+  binding, visible content, networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- M22D is additive except for architecture-manifest and documentation status
+  updates. Removing its provider contracts, observation service, tests,
+  documentation, and manifest declarations restores M22C without changing save
+  data, Scheduler state, Allocation runtime, or gameplay.
+
+## RFC-0022 Milestone M22C: Deterministic Allocation Cycle
+
+Goal: evaluate explicit immutable Capacity observations through deterministic
+first fit, construct complete Commitment sets, and publish accepted results
+atomically without adding live integration.
+
+Included work:
+
+- Immutable cycle context, input, evaluation, result, summary, typed failures,
+  engineering trace, trace registry, and canonical replay digests.
+- Detached `WorkingCapacityLedger` with exact existing/proposed accounting,
+  shared and exclusive Capacity, private Set branches, and immutable views.
+- Canonical Request/Set ordering, one-Resource-per-Requirement first fit,
+  all-or-none multi-Requirement evaluation, conflict evidence, and deterministic
+  Commitment construction.
+- Candidate-service publication with one final state swap, optimistic runtime
+  validation, duplicate-Cycle rejection, REQUESTED/WAITING to ALLOCATED, and
+  REQUESTED to WAITING.
+- Architecture-manifest ownership and trace-registry declarations plus focused,
+  replay, fault, invariant, and split-scale stress tests.
+
+Excluded work:
+
+- Scheduler stage 350, Scheduler Work, providers, Planning handoff, Production
+  execution gating, ACTIVE or release transitions, persistence, codecs, save
+  migration, Inventory or Transaction integration, Minecraft, NeoForge,
+  networking, commands, menus, and gameplay.
+
+Acceptance criteria:
+
+- Active Commitments reduce observed Capacity exactly once; terminal runtime
+  Commitments do not.
+- Shared Capacity never overcommits, exclusive Resources have one owner, units
+  never convert, and remaining Capacity never becomes negative.
+- A failed Set changes no parent ledger state and receives no Commitment.
+- Equivalent inputs produce equal ordering, Commitments, reports, history,
+  traces, ledgers, and result digests.
+- No Allocation-owned authoritative state changes before a complete validated
+  publication swap.
+- This milestone entry remains bounded to M22C even when later authorized
+  entries extend RFC-0022.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.AllocationCycle*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22C adds no world hook, visible
+  content, networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- M22C is additive except for the compatible package-confined atomic
+  publication extension to `AllocationRuntimeService`. Removing M22C cycle,
+  ledger, evidence, tests, documentation, and manifest additions restores M22B
+  without changing save data, Scheduler state, or gameplay.
+
+## RFC-0022 Milestone M22B: Allocation Runtime And Registries
+
+Goal: add deterministic Allocation lifecycle state and immutable registry,
+query, history, and report surfaces without performing allocation.
+
+Included work:
+
+- Schema-1 `AllocationSetRuntime` lifecycle with immutable views, explicit
+  transition requests, typed failures, monotonic ticks and revisions, and
+  terminal-state enforcement.
+- Canonically ordered definition, runtime, and report registries with immutable
+  public collections and validated cross-references.
+- Detached query service, ordered lifecycle history, and immutable report,
+  conflict-evidence, Capacity-evidence, ordering, and work-summary structures.
+- Architecture-manifest lifecycle, registry, report, and history ownership plus
+  canonical Allocation registry descriptors.
+- Bounded repeat stress coverage for 100,000 runtime views and 200,000 history
+  records.
+
+Excluded work:
+
+- Allocation algorithms, Capacity ledgers, conflict resolution, fairness,
+  Allocation Cycle execution, Scheduler stage 350, providers, persistence,
+  Planning, Production, execution, Inventory, Transaction, Minecraft, NeoForge,
+  networking, command, menu, or gameplay integration.
+
+Acceptance criteria:
+
+- Only `AllocationRuntimeService` exposes structural runtime mutation.
+- Illegal transitions, terminal transitions, duplicate registration, unknown
+  references, malformed timestamps, incomplete Commitment sets, inconsistent
+  reports, and invalid history fail explicitly.
+- Equivalent inputs produce equal canonical registries, history, queries, and
+  reports regardless of registration order.
+- Architecture validation declares M22B ownership and registries while
+  retaining all forbidden dependency directions and no Allocation persistence
+  or Scheduler stage.
+- RFC-0022 is described as partially implemented through M22B only.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22B adds no world hook, visible content,
+  networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- M22B is additive. Removing its runtime, registry, query, report, history,
+  tests, documentation, and manifest additions restores M22A without changing
+  save data, Scheduler state, or gameplay.
+
+## RFC-0022 Milestone M22A: Core Allocation Domain
+
+Goal: establish the immutable, industry-neutral Resource Allocation vocabulary
+without performing allocation or changing simulation behavior.
+
+Included work:
+
+- Canonical Allocation, Resource, Capacity, Requirement, Request, Set,
+  Commitment, Provider, Policy, and unit identities.
+- Exact bounded `AllocationQuantity`, open Resource categories and Capacity
+  units, typed metadata, external authority references, and immutable observed
+  Resource and Capacity snapshots.
+- Immutable Requirements, replay-complete ordering contexts, Allocation
+  Requests, structurally atomic AllocationSets, and evidence-backed immutable
+  Commitments.
+- Typed structural failures, deterministic SHA-256 identity derivation,
+  canonical comparators and collections, Architecture Validation manifest
+  ownership, package-boundary tests, and `docs/RESOURCE_ALLOCATION_DOMAIN.md`.
+- Bounded repeat stress coverage for 100,000 identities, quantities, and
+  Requirements plus 50,000 Requests and AllocationSets.
+
+Excluded work:
+
+- Allocation algorithms, cycles, ledgers, runtime, managers, providers,
+  persistence, Scheduler stage 350, Planning and Production integration,
+  execution gating, Commitment lifecycle, Inventory or Transaction mutation,
+  Minecraft integration, and gameplay.
+
+Acceptance criteria:
+
+- The domain remains pure Java and depends on no concrete provider or execution
+  subsystem.
+- Equivalent explicit inputs produce equal identities, ordering, validation,
+  and immutable structures.
+- Architecture validation declares Allocation ownership but no persistence,
+  Scheduler stage, runtime hook, or dependency on Planning, Production,
+  Scheduler, Inventory, or Transactions.
+- RFC-0022 is described as partially implemented through M22A only.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.world.allocation.*"`
+- `.\gradlew.bat --no-daemon test --tests "com.butchercraft.architecture.*"`
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because M22A has no runtime, visible content,
+  networking, assets, or gameplay integration.
+
+Rollback considerations:
+
+- M22A is additive. Removing the Allocation package, tests, documentation, and
+  manifest entries restores the prior architecture without changing save data,
+  registries, Scheduler state, or gameplay.
+
+## BCSE Architecture Validation Framework Phase 1
+
+Goal: make accepted architectural contracts executable through a pure Java,
+deterministic validation framework without changing any observed subsystem.
+
+Included work:
+
+- Immutable architecture components, ownership assignments and contracts,
+  dependency facts and constraints, registry descriptors, persistence
+  descriptors, Scheduler stage descriptors, and simulation invariant facts.
+- Canonical immutable rule registration, modular validation, typed severity and
+  status, structured reports, category summaries, and explicit malformed-rule
+  failures.
+- Standard Ownership, Dependencies, Persistence, Scheduler, Registries,
+  Transactions, Planning, Production, Allocation, Execution, Simulation, and
+  General categories.
+- An explicit manifest of accepted current ButcherCraft architecture.
+- Comprehensive success, violation, duplicate, malformed, null, ordering,
+  reference, replay, extensibility, dependency-boundary, and stress tests.
+- `docs/ARCHITECTURE_VALIDATION_FRAMEWORK.md`.
+
+Excluded work:
+
+- Runtime or classpath scanning, reflection, dynamic rule discovery, world-load
+  validation hooks, simulation execution, gameplay, and any change to
+  ownership, registries, persistence formats, Scheduler behavior, Transactions,
+  Planning, Production, or proposed Allocation architecture.
+
+Acceptance criteria:
+
+- Equivalent contexts and rule sets produce equal ordered reports.
+- Framework code imports neither Minecraft nor NeoForge and samples no hidden
+  clock or random source.
+- Duplicate ids, unknown references, forbidden dependencies, graph cycles,
+  mixed persistence authority, unsupported schemas, Scheduler gaps, and
+  unsatisfied replay declarations fail visibly.
+- The explicit current manifest passes every standard rule.
+- At Phase 1 delivery, RFC-0022 remained proposed and unimplemented. M22A was
+  authorized and implemented later under DEC-0076.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because the framework has no runtime, visible,
+  networking, asset, or gameplay integration.
+
+Rollback considerations:
+
+- The milestone is additive. Removing the architecture packages, tests,
+  documentation, and references restores the prior codebase without changing
+  save data, registries, Scheduler state, or gameplay.
+
 ## Milestone 0.9.0 Phase 21: Economic Planning Engine
 
 Goal: add one pure Java, deterministic, bounded decision pipeline that compiles authoritative economic facts into approved Production intent without taking ownership of execution, Inventory, Orders, Transactions, Scheduler runtime, or time.
