@@ -13,11 +13,11 @@ Expected layout after project initialization:
 - `src/generated/resources/` - generated data, if configured by the MDK.
 - `src/test/java/` - Java tests, if test infrastructure is enabled.
 - `docs/` - additional long-form design notes, if needed.
-- Root planning files - keep `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, `TECHNICAL_ARCHITECTURE.md`, `MODULE_PLAN.md`, `MILESTONES.md`, `DECISIONS.md`, `KNOWN_LIMITATIONS.md`, `PROJECT_RULES.md`, and `AGENTS.md` current.
+- Root planning files - keep `CONSTITUTION.md`, `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, `TECHNICAL_ARCHITECTURE.md`, `MODULE_PLAN.md`, `MILESTONES.md`, `DECISIONS.md`, `KNOWN_LIMITATIONS.md`, `PROJECT_RULES.md`, and `AGENTS.md` current.
 
 If an owner later changes the approved mod id or Java package, update these docs and code together.
 
-Before implementation work, read `PROJECT_RULES.md` and follow it as the authoritative list of ButcherCraft invariants.
+Before implementation work, read `CONSTITUTION.md` first, then `PROJECT_RULES.md`. The Constitution is the highest-level architectural authority; Project Rules apply its invariants to day-to-day engineering work.
 
 ## Build Commands
 
@@ -59,6 +59,7 @@ Do not claim a command passed unless you actually ran it.
 - Use GameTests when gameplay behavior needs in-game validation.
 - Add pure Java tests for deterministic services such as quality calculation, cleanliness aggregation, refrigeration capacity summaries, order acceptance, and inspection escalation.
 - Add pure Java tests for `com.butchercraft.engine` domain logic without importing Minecraft or NeoForge.
+- Keep `com.butchercraft.world.simulation.scheduler` pure Java, deterministic, bounded, and dependent on supplied Simulation Clock ticks only. Scheduler handlers must preserve owning-domain validation and transaction boundaries.
 - Keep `com.butchercraft.world.goods` definitions, registries, graph validation, and persistence independent of Minecraft, NeoForge, ItemStack, inventory quantities, and gameplay state.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
@@ -112,6 +113,8 @@ Do not claim a command passed unless you actually ran it.
 - Immutable economic actor definitions persist independently in schema-versioned `<world>/butchercraft/economic_actors.json`; actor runtime assignments remain separate and actors must reference Goods by `GoodId`, never by ItemStack.
 - Economic inventory containers, storage nodes, and runtime Good quantities persist independently in schema-versioned `<world>/butchercraft/inventory.json`; the pure inventory package must not import Minecraft inventory, Container, slot, menu, or ItemStack APIs.
 - Runtime economic quantity changes must be submitted through `com.butchercraft.world.transaction`; future systems must not restore direct `InventoryManager` add/remove mutation paths. Transaction history persists independently at `<world>/butchercraft/transactions.json`.
+- Economic intent and durable obligations belong to `com.butchercraft.world.economy.order`. Orders and Contracts never mutate Inventory or submit Transactions; fulfillment may reference only APPLIED Transactions and persists independently in schema-versioned `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json`.
+- Scheduled simulation Work definitions and separate runtime lifecycles persist at `<world>/butchercraft/simulation_scheduler.json`. Never persist `RUNNING` Work, silently drop unknown Work types, reuse submission sequences, or add automatic catch-up without a documented schema policy.
 - Entity-specific employee state should use attachments.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.
@@ -121,6 +124,7 @@ Do not claim a command passed unless you actually ran it.
 
 Update planning docs when behavior changes:
 
+- `CONSTITUTION.md` only through the formal architectural decision process when governing philosophy or permanent invariants change.
 - `PROJECT_VISION.md` for player-facing direction.
 - `GAMEPLAY_DESIGN.md` for system rules and interactions.
 - `TECHNICAL_ARCHITECTURE.md` for package ownership, persistence, APIs, networking, and performance.

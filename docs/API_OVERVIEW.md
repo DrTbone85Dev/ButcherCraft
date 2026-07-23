@@ -111,14 +111,29 @@ Possible extension points:
 
 ### Order
 
-Represents a request and its lifecycle without granting direct access to inventories or business state.
+Represents a request and its lifecycle without granting direct access to inventories or business state. Phase 18's internal `com.butchercraft.world.economy.order` package now provides immutable Order and Contract definitions, exact quantities, deterministic registries, explicit lifecycle managers, APPLIED-Transaction fulfillment allocation, and schema-versioned persistence. It is not yet a public API.
 
 Possible extension points:
 
-- Parties, lines, quantities, time windows, and status.
-- Acceptance and rejection results.
-- Reservation, fulfillment, cancellation, and completion facts.
-- Stable references to products, businesses, warehouses, and shipments.
+- Stable Actor, Good, Inventory, Transaction, Order, and Contract ids.
+- Parties, lines, exact quantities, canonical units, time windows, and status.
+- Acceptance, rejection, fulfillment-allocation, cancellation, and completion facts.
+- Read-only query and summary contracts for future compatibility consumers.
+
+Reservations, automatic schedule execution, pricing, production, and logistics are not part of the Phase 18 domain and must not be inferred from the current internal classes.
+
+### Simulation Work
+
+Represents bounded work submitted to the shared deterministic pipeline. Phase 19's internal `com.butchercraft.world.simulation.scheduler` package proves stable ids, immutable definitions, separate lifecycle runtime, typed handlers/results, deterministic stage ordering, budgets, atomic generated batches, and persistence. It is not a public registration API.
+
+Possible future extension points:
+
+- Stable Work type and stage contribution contracts.
+- Explicit handler dependency binding and side-effect declarations.
+- Immutable submission, cancellation, result, and report views.
+- Compatibility validation and missing-provider behavior.
+
+No third-party registration lifecycle, binary compatibility promise, datapack schema, event API, or service locator is established by Phase 19.
 
 ### Warehouse
 
@@ -165,7 +180,7 @@ Possible extension points:
 
 ## Existing Internal Foundations
 
-The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, workforce, goods, economic actor, and inventory packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
+The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, workforce, goods, economic actor, inventory, transaction, and order packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
 
 There is currently no stable `com.butchercraft.api` contract. Internal classes must not be treated as public compatibility guarantees merely because they are accessible on the classpath.
 

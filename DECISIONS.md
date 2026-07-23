@@ -2,6 +2,8 @@
 
 Status: initial architecture decision log
 
+`CONSTITUTION.md` is the governing authority for architectural decisions. Records that affect a permanent architectural invariant must cite its `AI-####` identifier, document compatibility and migration consequences, and receive explicit owner approval before implementation.
+
 Decision statuses:
 
 - Proposed: recommended but needs owner approval or prototype confirmation.
@@ -1108,6 +1110,51 @@ Consequences:
 - Transaction history persists independently at `<world>/butchercraft/transactions.json` with schema version 1.
 - `TransactionService` depends on `InventoryService`, preserving Goods -> Actors -> Inventory -> Transactions dependency direction.
 - Rollback, production, markets, pricing, accounting, orders, logistics, scheduling, AI, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
+
+## DEC-0071: Orders Express Intent And Contracts Govern Obligations
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 18 introduces `com.butchercraft.world.economy.order` as the industry-neutral owner of economic intent and durable obligation. Orders request outcomes, Contracts govern zero or more Orders, Transactions remain authoritative mutation facts, and Inventory remains authoritative current quantity. Orders and Contracts never mutate Inventory or submit Transactions.
+
+Rationale: production, logistics, markets, retailers, warehouses, utilities, and compatibility modules need one deterministic vocabulary for requests and obligations without gaining access to another subsystem's mutable state. Keeping definitions immutable, lifecycle runtime separate, and fulfillment linked to completed Transactions prevents Orders from becoming a second inventory or transaction engine.
+
+Consequences:
+
+- Authoritative Orders begin at `SUBMITTED`; draft editing remains outside persisted world state.
+- Stable Order, line, Contract, and Contract-line ids use the existing canonical namespaced identity pattern.
+- `GoodQuantity` uses normalized exact decimal values with canonical persistence; schema version 1 performs no unit conversion.
+- Fulfillment recording accepts only APPLIED Transactions, validates Good, unit, quantity, tick, duplicate, and aggregate allocation rules, and stages multi-line/multi-Order operations atomically.
+- One Transaction may explicitly contribute to multiple lines or Orders, but its total allocation cannot exceed its authoritative quantity.
+- Immutable registries preserve authoritative insertion order while managers separately own runtime lifecycles and expose defensive snapshots.
+- Contract schedules, priorities, commitment periods, substitutions, and maximum-open-order terms are metadata only and execute no obligations.
+- Definitions and runtime state persist independently at `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json`, both schema version 1.
+- `OrderContractService` initializes after `TransactionService` and publishes managers only after coordinated Actor, Good, Inventory, Transaction, Order, and Contract reference validation succeeds.
+- No pricing, currency, accounting, reservations, markets, production, logistics, automatic scheduling, AI, networking, GUI, ItemStack integration, or gameplay is added.
+
+## DEC-0072: One Deterministic Pipeline Orchestrates Simulation Work
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 19 introduces `com.butchercraft.world.simulation.scheduler` as the single industry-neutral owner of scheduled simulation Work eligibility, lifecycle, ordering, and bounded execution. The authoritative `SimulationClock` remains the sole owner of time. Immutable Work definitions are separated from manager-owned runtime state, and only the manager assigns persisted monotonic submission sequences. Six broad stages execute in stable explicit order. Handlers are runtime behavior, return typed outcomes, declare side-effect contracts, and never receive mutable scheduler internals.
+
+Rationale: future Contract evaluation, production, logistics, markets, population, maintenance, and compatibility systems need one deterministic orchestration boundary. Independent subsystem tick handlers would duplicate scheduling, weaken ordering and failure guarantees, and encourage unbounded or hidden background mutation. A pure scheduler can define when Work runs without deciding the economic or gameplay meaning of that Work.
+
+Consequences:
+
+- The scheduler receives authoritative simulation ticks and never advances time or uses wall-clock scheduling for outcomes.
+- Schema 1 requires exactly sequential ticks; duplicate, backward, and skipped ticks fail visibly because automatic catch-up and resume are not implemented.
+- Execution order is stage, scheduled tick, descending priority, submission sequence, then Work id.
+- Positive item, stage, work-unit, generation, same-tick, retry, and depth budgets preserve unexecuted Work for later ticks.
+- Same-tick generated batches are atomic and may execute only in a later unstarted stage that explicitly allows them.
+- Work definitions remain immutable; runtime transitions are explicit and terminal states are irreversible.
+- Retry delays use simulation ticks only and contain no jitter or hidden randomness.
+- Handler exceptions and invalid results become explicit failures governed by stage policy; the scheduler does not claim rollback of arbitrary external side effects.
+- Unknown persisted Work types and persisted `RUNNING` state reject initialization instead of disappearing or rerunning silently.
+- Scheduler state persists independently at `<world>/butchercraft/simulation_scheduler.json` with schema version 1.
+- `SimulationSchedulerService` initializes after `OrderContractService`, executes after the clock's post-tick listener, and registers no live handlers or Work in Phase 19.
+- The pipeline performs no Inventory mutation, Transaction submission, Contract evaluation, production, logistics, markets, population, pricing, networking, GUI, ItemStack integration, or gameplay behavior.
+- The package remains internal. No public handler API or third-party registration lifecycle is established.
 
 ## Decisions Needing Owner Approval
 

@@ -4,6 +4,90 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 19: Deterministic Simulation Scheduler & Pipeline
+
+Goal: provide one pure Java, industry-neutral, bounded execution pipeline for future simulation work without implementing any economic or gameplay behavior.
+
+Included work:
+
+- Six stable broad stages, immutable Work definitions, separately owned runtime lifecycles, typed payloads/origins/references, deterministic handler registration, and manager-assigned monotonic submission sequences.
+- Exact ordering by stage, due tick, priority, sequence, and Work id; immutable indexed queries; explicit cancellation, expiration, retries, failure policies, reports, and non-reentrancy.
+- Positive count/unit/generation/retry/depth budgets and atomic generated batches with bounded later-stage same-tick execution.
+- Strict sequential authoritative-clock integration with no second clock and no automatic catch-up.
+- Deterministic schema-1 persistence at `<world>/butchercraft/simulation_scheduler.json`; unknown handlers and persisted `RUNNING` work fail visibly.
+- `SimulationSchedulerService` lifecycle integration after `OrderContractService`, with an intentionally empty live handler registry and Work queue.
+- Comprehensive pure Java and split-scale stress tests plus `docs/SIMULATION_SCHEDULER.md`.
+
+Excluded work:
+
+- Contract evaluation, automatic Orders, production, logistics, shipments, markets, population, pricing, demand, spoilage, maintenance, AI, gameplay, networking, GUI, ItemStacks, datapacks, background mutation, and public APIs.
+
+Acceptance criteria:
+
+- The Simulation Clock remains the sole time authority; one supplied tick executes at most once and gaps fail explicitly.
+- Eligible Work ordering is deterministic and budget exhaustion preserves every unexecuted record.
+- Same-tick generation is atomic, later-stage-only, and bounded by count and depth.
+- Save/load preserves definitions, runtimes, sequence, and finalized tick; interrupted `RUNNING` state and unknown types reject the load.
+- Stress coverage includes 1,000,000 definition/runtime constructions, 100,000 retained eligible items, 100,000 retry-wait and terminal records, bounded batches, same-tick limits, and representative persistence.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 19 adds no visible content, networking, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 19 is additive. Removing the scheduler package, `SimulationSchedulerService` lifecycle registration, scheduler persistence file, tests, and documentation restores Phase 18 without changing Clock, Order, Contract, Transaction, Inventory, ItemStack, asset, or gameplay schemas.
+
+## Milestone 0.9.0 Phase 18: Orders And Contracts Framework
+
+Goal: establish the industry-neutral language of economic intent and durable obligation without implementing markets, pricing, production, logistics, automation, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.economy.order` definitions, stable ids, exact quantities, typed line metadata, schedules, terms, statuses, failure codes, and detached runtime snapshots.
+- Separate immutable definitions and mutable manager-owned Order, line, and Contract lifecycle records.
+- Deterministic insertion-ordered registries and indexed Actor, Good, type, Contract, schedule, and industry queries.
+- Explicit Order and Contract lifecycle transition tables with monotonic Simulation Clock ticks and irreversible terminal states.
+- Atomic multi-Order fulfillment allocation against previously APPLIED Transactions, with global duplicate and over-allocation prevention and no Inventory mutation.
+- Coordinated cross-reference validation against Goods, Economic Actors, Inventory, Transactions, Orders, and Contracts.
+- Deterministic schema-versioned persistence at `<world>/butchercraft/orders.json` and `<world>/butchercraft/contracts.json` with temporary-file atomic replacement.
+- `OrderContractService` lifecycle integration after `TransactionService`.
+- Definition, registry, lifecycle, allocation, atomic failure, persistence, dependency-boundary, integration, regression, and required split-scale stress coverage.
+- Architecture documentation in `docs/ORDERS_AND_CONTRACTS.md`.
+
+Excluded work:
+
+- Pricing, currency, accounting, invoices, taxes, markets, supplier selection, automatic Order generation, schedule execution, reservation, production, logistics, routing, Inventory mutation, Transaction submission, AI, gameplay, networking, GUI, commands, datapacks, and ItemStack integration.
+
+Acceptance criteria:
+
+- Orders represent intent, Contracts represent obligations, Transactions record facts, and Inventory records current quantities.
+- Definitions remain immutable while runtime lifecycle and fulfillment remain separately owned.
+- Only APPLIED Transactions can contribute exact fulfillment quantities, and a failed multi-allocation operation changes no Order state.
+- Duplicate ids, unknown references, incompatible units, illegal transitions, backward ticks, duplicate allocations, over-allocation, over-fulfillment, malformed persistence, and unsupported schemas fail explicitly.
+- Registries and queries preserve authoritative insertion order and expose immutable views.
+- 100,000 Orders with 1,000,000 lines, 25,000 Contracts with 250,000 lines, and 1,000,000 allocations validate in deterministic split stress scenarios.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 18 adds no visible content, interaction, Minecraft inventory integration, networking, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 18 is additive. Removing the order domain, `OrderContractService`, lifecycle registration, two persistence files, tests, and documentation restores Phase 17 without changing Goods, Actors, Inventory, Transactions, ItemStacks, assets, or gameplay schemas.
+
 ## Milestone 0.9.0 Phase 17: Transaction Framework
 
 Goal: establish the universal validation and execution pipeline for runtime economic quantity mutations without implementing production, logistics, markets, accounting, or gameplay.

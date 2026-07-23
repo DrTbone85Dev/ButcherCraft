@@ -43,13 +43,15 @@ Planned domains:
 - Economic participant identity and capability foundation (implemented in Phase 15).
 - Inventory ownership, storage hierarchy, and runtime quantity foundation (implemented in Phase 16).
 - Universal validation, atomic mutation, audit, persistence, and replay pipeline (implemented in Phase 17).
+- Industry-neutral Orders, Contracts, lifecycle, transaction-linked fulfillment, and persistence (implemented in Phase 18).
+- One deterministic, bounded, persistent simulation Work scheduler and six-stage pipeline (implemented in Phase 19; live handlers intentionally empty).
 - Supply.
 - Demand.
 - Transportation.
 - Warehousing.
 - Consumers.
 - Markets and price formation.
-- Orders, fulfillment, and custody transitions.
+- Automated order generation, reservation, fulfillment execution, and custody transitions.
 
 Era III must preserve deterministic ordering, bounded simulation, atomic inventory movement, independent persistence ownership, and identity/runtime separation.
 
