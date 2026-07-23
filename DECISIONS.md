@@ -1029,6 +1029,86 @@ Consequences:
 - Existing package names, public registry ids, schemas, save files, assets, datapacks, and gameplay behavior remain unchanged.
 - Phase 13 implements no economy, production, employees, AI, logistics, markets, pricing, transportation, utilities, compatibility adapter, or gameplay system.
 
+## DEC-0067: Economic Goods Are Independent From ItemStacks And Processing Products
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 14 introduces `com.butchercraft.world.goods` as the immutable economic language for commodities, manufactured products, and directed transformation relationships. Economic goods use stable `GoodId` values and typed metadata. They do not store quantities and do not depend on Minecraft ItemStacks. The economic `ProductDefinition` remains separate from the existing `com.butchercraft.product.definition.ProductDefinition` used by processing content.
+
+Rationale: every future industry, market, warehouse, producer, consumer, logistics service, and compatibility module needs a common identity for what moves through the economy. Making ItemStacks or the existing meat-processing product schema the economic authority would couple regional simulation to Minecraft inventory representation and industry-specific content concerns.
+
+Consequences:
+
+- Every economic good is exactly one commodity or product.
+- `GoodRegistry` is an immutable deterministic snapshot and validates known industries, references, duplicates, and cycles.
+- `GoodTransformation` records relationships and exact yield metadata only; it does not execute production.
+- Economic definitions persist independently at `<world>/butchercraft/goods.json` with schema version 1.
+- Informational item mappings use pure identifier metadata and do not resolve or register Minecraft items.
+- Existing product definitions, datapack content, transformations, ItemStack adapters, and workstation behavior are unchanged.
+- No built-in economic goods are registered in Phase 14; a future mapping or migration milestone must resolve overlap with existing processing products deliberately.
+- Inventory, quantities, warehousing, prices, markets, orders, production, transportation, utilities, networking, GUI, and gameplay remain out of scope.
+
+## DEC-0068: Economic Actors Define Participants Without Owning Economic Behavior
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 15 introduces `com.butchercraft.world.economy.actor` as the universal participant model for future economic systems. Immutable actor definitions identify a participant's type, primary industry, capabilities, Good relationships, supported industries, and optional dependency metadata. Mutable actor runtime state is separate, references Business Runtime and Workforce through stable ids, and is not persisted with actor definitions.
+
+Rationale: producers, consumers, warehouses, carriers, markets, utilities, services, compatible mods, NPC organizations, and player businesses need one industry-neutral identity and capability contract. Making ItemStacks, block entities, businesses, or industry-specific machines the participant authority would fragment the regional economy and couple economic simulation to gameplay representation.
+
+Consequences:
+
+- Actors relate to economic goods only through `GoodId`; the actor package does not import Minecraft, NeoForge, or ItemStack APIs.
+- `EconomicActorRegistry` is immutable and deterministic and validates known industries, known goods, dependencies, duplicate relationships, and dependency cycles.
+- Relationship metadata may describe supported industries but does not execute production, consumption, storage, or transportation.
+- `EconomicActorRuntime` stores only status, enabled/operational flags, optional stable Business Runtime and Workforce references, and the last simulation tick.
+- Immutable definitions persist independently at `<world>/butchercraft/economic_actors.json` with schema version 1; runtime state is not persisted in Phase 15.
+- `EconomicActorService` depends on `GoodService`, preserving the direction Goods -> Actors.
+- No built-in actors are registered in Phase 15.
+- Inventory, quantities, warehousing behavior, orders, contracts, scheduling, pricing, markets, production, AI, transportation, logistics, employment, networking, GUI, and gameplay remain out of scope.
+
+## DEC-0069: Economic Inventory Is Independent From Minecraft Inventory
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 16 introduces `com.butchercraft.world.inventory` as the universal runtime ownership and location model for economic Goods. Economic Actors own immutable inventory-container identities, containers reference immutable hierarchical Storage Nodes, and separate mutable runtime records store exact quantities by `GoodId` and canonical `UnitOfMeasure`. Minecraft inventories, containers, slots, ItemStacks, and menus are not part of this domain.
+
+Rationale: regional warehouses, coolers, vehicles, retailers, processors, utilities, player businesses, and compatibility modules need quantities that exist independently from loaded chunks and Minecraft item representation. Using block-entity slots as the economic authority would couple world simulation to gameplay containers, prevent aggregate off-screen simulation, and fragment ownership across industries.
+
+Consequences:
+
+- Inventory ownership references Economic Actors by `ActorId`; entries reference Goods by `GoodId`.
+- Storage Nodes provide nested physical-location and capacity metadata without implementing logistics or environmental simulation.
+- `InventoryRegistry` is immutable and deterministic; `InventoryManager` owns runtime records and validated quantity updates.
+- Capacity validation covers containers and aggregate ancestor-node usage with deterministic typed unit conversion.
+- Proposed movements validate atomic source-removal and target-addition candidates but do not execute transfers.
+- Inventory definitions and runtime quantities persist at `<world>/butchercraft/inventory.json` with schema version 1.
+- Typed lot, expiration, quality, and origin metadata is persisted but has no Phase 16 behavior.
+- `InventoryService` depends on `EconomicActorService`, preserving Goods -> Actors -> Inventory dependency direction.
+- No built-in inventories or storage nodes are registered in Phase 16.
+- Production, spoilage, logistics, transportation, orders, contracts, scheduling, pricing, markets, AI, automation, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
+
+## DEC-0070: Economic Runtime Mutations Use Validated Transactions
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 17 introduces `com.butchercraft.world.transaction` as the universal mutation pipeline for runtime economic quantities. Future systems submit immutable transaction definitions, validation produces an accepted deterministic change plan, and `TransactionExecutor` is the only holder of the authority required to apply inventory quantity changes.
+
+Rationale: direct inventory mutation would scatter validation, atomicity, audit, replay, debugging, and multiplayer-ordering rules across production, logistics, retail, compatibility, and player systems. One explicit pipeline gives every future cause of change the same state-transition contract without making the transaction framework responsible for business decisions.
+
+Consequences:
+
+- `InventoryManager` remains the invariant-owning execution target but no longer exposes direct public add/remove methods.
+- Inventory runtime access returns defensive snapshots; mutable runtime records remain internally owned.
+- Phase 17 executes inventory add, remove, transfer, and direction-explicit adjustment transactions only.
+- Production, purchase, sale, delivery, consumption, spoilage, manual, and system transaction values are schema reservations and have no Phase 17 execution behavior.
+- Execution requires a matching previously accepted validation and applies all inventory changes atomically.
+- Structurally valid submitted transactions retain deterministic audit history in authoritative submission order.
+- Applied history can replay into an explicitly supplied compatible baseline; automatic startup reconstruction is not implemented.
+- Transaction history persists independently at `<world>/butchercraft/transactions.json` with schema version 1.
+- `TransactionService` depends on `InventoryService`, preserving Goods -> Actors -> Inventory -> Transactions dependency direction.
+- Rollback, production, markets, pricing, accounting, orders, logistics, scheduling, AI, networking, GUI, ItemStack conversion, and gameplay remain out of scope.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

@@ -57,7 +57,15 @@ Production will transform inputs into outputs under industry rules, facility cap
 
 ## Distribution
 
-Distribution will move goods between producers, warehouses, retailers, restaurants, and other consumers. Historical supply relationships already provide identity context; active transport, inventory movement, and logistics are future systems.
+Distribution will move goods between producers, warehouses, retailers, restaurants, and other consumers. Historical supply relationships already provide identity context, and Inventory now records current ownership and location. Active transport, inventory movement, routing, and logistics remain future systems.
+
+## Inventory And Storage
+
+Economic Actors own immutable inventory-container identities. Each container is located at a hierarchical Storage Node and has separate mutable runtime entries containing exact Good quantities. Capacity validation constrains candidate runtime states, but Inventory does not schedule, route, reserve, produce, consume, spoil, price, or render Goods.
+
+## Transactions
+
+Economic transactions are the universal mutation boundary for runtime Good quantities. Future systems decide why a change is requested, then submit an immutable transaction. Validation proves references, endpoints, status, underflow, and capacity before atomic execution. Applied and rejected audit records retain deterministic submission order and can support explicit replay from a compatible baseline. Transactions do not decide production, demand, logistics, markets, or gameplay.
 
 ## Consumers
 
@@ -70,6 +78,8 @@ Markets will reconcile available supply, active demand, location, time, and cons
 ## Economy
 
 The economy is the resulting network of production, consumption, trade, services, capacity, competition, and change. No single manager should own all economic behavior. The economy emerges from focused services exchanging explicit records and events.
+
+Economic Actors now provide the immutable identity, capabilities, Good relationships, and separate in-memory runtime status for future participants. They define who may participate, not how supply, demand, production, storage, transport, trade, or pricing behaves.
 
 ## Identity And Runtime Separation
 
@@ -90,8 +100,9 @@ Runtime records reference identity by stable id. They do not edit historical ide
 1. The authoritative Simulation Clock advances on the server.
 2. The scheduler emits due events in deterministic order.
 3. Focused services evaluate only the state they own.
-4. Proposed changes are validated before commit.
-5. Committed state is persisted by its owning service.
+4. Proposed economic quantity changes are submitted as immutable transactions.
+5. Accepted transaction changes execute atomically in deterministic order.
+6. Committed state and audit history are persisted by their owning services.
 6. Downstream facts are published as narrow events or immutable summaries.
 
 This model avoids one global tick method that scans and mutates every subsystem.
@@ -110,5 +121,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, and Workforce definitions exist. Population, regional production, active distribution, consumers, markets, and the economy remain conceptual future work.
-
+World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, and economic Inventory/Storage runtime quantities exist. Population, regional production, active distribution behavior, consumers, markets, and the economy remain conceptual future work.

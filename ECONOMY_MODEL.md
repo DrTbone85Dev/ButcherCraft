@@ -2,13 +2,21 @@
 
 Status: future concepts only; no economy implementation
 
-This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, persistence schemas, public Java APIs, or gameplay.
+This document defines the intended vocabulary and boundaries for a future regional economy. It does not define formulas, prices, balancing constants, public Java APIs, or gameplay. Phase 14 provides immutable schema-versioned Goods definitions, Phase 15 provides Economic Actor definitions, Phase 16 provides actor-owned Inventory and Storage runtime quantities, and Phase 17 provides their validated mutation and audit pipeline; no production, logistics, market, accounting, or pricing behavior exists.
+
+All future supply, demand, inventory, production, warehousing, transport, consumption, and market state must identify goods through `GoodId`. Commodities and products are defined in `docs/GOODS_FRAMEWORK.md` independently from Minecraft ItemStacks.
 
 ## Economic Philosophy
 
 The economy exists independently of the player. Players, NPCs, businesses, industry modules, and compatible mods participate under shared rules. No participant receives a private parallel market simply because it comes from a different module.
 
 Economic outcomes should be explainable from supply, demand, capacity, location, time, contracts, and explicit events. Hidden random price movement is not an acceptable substitute for modeled causes.
+
+## Economic Actors
+
+Economic Actors are the common participant identity for future producers, consumers, warehouses, carriers, markets, processors, utilities, services, compatibility modules, NPC organizations, and player businesses. Actors relate to economic goods through `GoodId`, advertise typed capabilities, and may reference Business Runtime and Workforce through stable ids.
+
+Actor definitions do not own inventory, quantities, production, orders, prices, transport, employment, or gameplay. Those focused future systems will identify participants by `ActorId` and retain their own state and transactions. See `docs/ECONOMIC_ACTORS.md`.
 
 ## Supply
 
@@ -32,7 +40,13 @@ Production turns inputs into outputs through declared transformations, recipes, 
 
 ## Warehousing
 
-Warehousing provides location, capacity, custody, condition, and availability for goods between production and consumption. Warehouses should not become universal inventories owned by the economy. Inventory remains owned by a business, facility, shipment, or other explicit participant.
+Warehousing provides location, capacity, custody, condition, and availability for goods between production and consumption. Phase 16 now provides actor-owned inventory containers, hierarchical storage locations, exact quantities, and capacity validation. Warehouse operations, custody transfers, reservations, condition, availability, and logistics remain future systems.
+
+Inventory is never a universal collection owned by the economy. Each container belongs to an explicit Economic Actor and exists at an explicit Storage Node. See `docs/INVENTORY_FRAMEWORK.md`.
+
+## Transactions
+
+Every future cause of runtime economic quantity change must submit an immutable transaction rather than modifying inventory directly. The common pipeline validates stable Good, Actor, and Inventory references, canonical units, endpoint shape, underflow, status, tick, and capacity before atomic execution. Transaction history is an audit of accepted or rejected structurally valid submissions, not a replacement for accounting, orders, contracts, pricing, or scheduling. See `docs/TRANSACTION_FRAMEWORK.md`.
 
 ## Transportation
 
@@ -86,4 +100,3 @@ The following remain undecided until implementation milestones provide evidence:
 - Multiplayer market partitioning.
 - Cross-mod product equivalence.
 - Persistence schemas and migration paths.
-

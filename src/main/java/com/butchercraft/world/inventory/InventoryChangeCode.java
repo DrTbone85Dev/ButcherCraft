@@ -1,0 +1,16 @@
+package com.butchercraft.world.inventory;
+
+public enum InventoryChangeCode {
+    ALLOWED,
+    EMPTY_CHANGE_SET,
+    UNKNOWN_INVENTORY,
+    INVALID_QUANTITY,
+    INVENTORY_UNAVAILABLE,
+    UNKNOWN_GOOD,
+    INVALID_UNIT,
+    INVALID_METADATA,
+    INSUFFICIENT_QUANTITY,
+    CAPACITY_EXCEEDED,
+    INVALID_TICK,
+    ARITHMETIC_OVERFLOW
+}

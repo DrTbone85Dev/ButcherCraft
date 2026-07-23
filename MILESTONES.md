@@ -4,6 +4,182 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 17: Transaction Framework
+
+Goal: establish the universal validation and execution pipeline for runtime economic quantity mutations without implementing production, logistics, markets, accounting, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.transaction` domain with immutable transaction ids, definitions, typed metadata, statuses, results, failure codes, and applied-change summaries.
+- Deterministic submission-ordered `TransactionRegistry` with lookup, status replacement, type/status queries, audit history, and replay ordering.
+- Separate `TransactionValidator`, `TransactionExecutor`, and `TransactionManager` responsibilities.
+- Atomic executor-authorized inventory add, remove, transfer, and direction-explicit adjustment execution.
+- Defensive inventory runtime snapshots and removal of direct public `InventoryManager` quantity mutation methods.
+- Schema-versioned deterministic persistence at `<world>/butchercraft/transactions.json` with atomic replacement.
+- `TransactionService` lifecycle integration after `InventoryService`.
+- Automated definition, registry, validation, execution, atomic failure, replay, persistence, lifecycle, dependency-boundary, inventory-regression, and 1,000,000-transaction stress coverage.
+- Architecture documentation in `docs/TRANSACTION_FRAMEWORK.md`.
+
+Excluded work:
+
+- Production, purchasing, sales, delivery, consumption, spoilage, markets, pricing, accounting, orders, contracts, scheduling, AI, gameplay, networking, GUI, logistics, transportation, and rollback implementation.
+
+Acceptance criteria:
+
+- Inventory quantities cannot be changed through a public direct add/remove API.
+- Execution requires the matching previously accepted validation.
+- Transfers validate and apply source and destination changes atomically.
+- Structurally valid accepted and rejected submissions retain deterministic audit history.
+- Applied history replays deterministically into a compatible baseline inventory.
+- Duplicate ids, unknown references, invalid units, invalid statuses, underflow, capacity violations, malformed persistence, and unsupported schemas fail explicitly.
+- A registry of 1,000,000 transactions preserves deterministic history and lookup behavior.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 17 adds no visible content, Minecraft inventory integration, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Remove the transaction package, `TransactionService`, lifecycle registration, `transactions.json`, tests, and documentation. Restore the Phase 16 direct inventory mutation API only if reverting the universal transaction rule as one deliberate architectural rollback.
+
+## Milestone 0.9.0 Phase 16: Inventory And Storage Framework
+
+Goal: establish the universal runtime ownership and location model for economic Goods without implementing production, logistics, markets, Minecraft inventories, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.inventory` domain with stable inventory and storage-node ids, immutable container and node definitions, typed inventory classifications and statuses, exact entries, typed metadata, and mutable runtime state.
+- Deterministic weight, volume, discrete-unit, and distinct-Good capacity metadata and validation.
+- Nested storage-node hierarchy with parent, child, descendant, ancestor, missing-parent, and cycle validation.
+- Deterministic immutable `InventoryRegistry`, registration builder, and `InventoryManager` ownership, storage, quantity, update, capacity, and validation-only movement paths.
+- Good, canonical unit, owner actor, origin actor, storage-node, runtime-set, quantity, capacity, hierarchy, schema, and persistence validation.
+- Schema-versioned `InventoryStorage` persistence at `<world>/butchercraft/inventory.json` with deterministic JSON and atomic replacement.
+- `InventoryService` lifecycle integration after `EconomicActorService`, outside the pure inventory package.
+- Automated model, runtime, registry, manager, persistence, lifecycle, dependency-boundary, and 100,000-container/1,000,000-entry stress coverage.
+- Architecture documentation in `docs/INVENTORY_FRAMEWORK.md`.
+
+Excluded work:
+
+- Production, spoilage, logistics, transportation, orders, contracts, reservations, scheduling, pricing, markets, AI, automation, networking, GUI, Minecraft inventories, ItemStack conversion, and gameplay.
+
+Acceptance criteria:
+
+- Every inventory references one known Economic Actor and one known Storage Node.
+- Every runtime entry references a known Good and uses its canonical unit.
+- Runtime quantities persist independently from Minecraft inventory state.
+- Container and hierarchical storage capacities reject invalid candidate states before manager commits.
+- Movement validation evaluates atomic source and target candidates without executing movement.
+- Invalid references, duplicate ids, missing runtimes, negative quantities, corrupt persistence, capacity violations, and storage cycles fail visibly.
+- A catalog of 100,000 containers and 1,000,000 runtime entries validates deterministically.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 16 adds no visible content, Minecraft inventory integration, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 16 is additive. Removing the inventory package, `InventoryService`, lifecycle registration, independent `inventory.json` file, tests, and documentation restores Phase 15 without changing Goods, Economic Actors, Business Runtime, Workforce, product content, ItemStacks, or gameplay schemas.
+
+## Milestone 0.9.0 Phase 15: Economic Actor Framework
+
+Goal: define the universal participants that may relate to economic Goods without implementing inventory, production, pricing, logistics, employment, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.economy.actor` domain with immutable actor definitions, stable ids, typed actor classifications, additive capabilities, good roles, and relationship metadata.
+- Immutable actor-to-good relationships with optional dependency actors and cross-industry support metadata.
+- Mutable in-memory `EconomicActorRuntime` state with explicit status, enabled/operational flags, stable Business Runtime and Workforce references, and monotonic simulation ticks.
+- Deterministic immutable `EconomicActorRegistry`, registration builder, and `EconomicActorManager` lookup, relationship-query, runtime-access, and validation paths.
+- Duplicate actor, duplicate relationship, unknown industry, unknown good, unknown actor, malformed definition, capability mismatch, and circular dependency validation.
+- Schema-versioned `EconomicActorStorage` persistence at `<world>/butchercraft/economic_actors.json` with deterministic JSON and atomic replacement.
+- `EconomicActorService` lifecycle integration after `GoodService`, outside the pure actor package.
+- Automated model, registry, manager, persistence, lifecycle, dependency-boundary, and 100,000-actor/10,000-relationship stress coverage.
+- Architecture documentation in `docs/ECONOMIC_ACTORS.md`.
+
+Excluded work:
+
+- Inventory, quantities, warehousing behavior, orders, contracts, scheduling, pricing, markets, production, AI, transportation, logistics, employment, networking, GUI, and gameplay.
+
+Acceptance criteria:
+
+- Every participant is expressible through stable actor identity, type, industry, capabilities, and immutable relationship metadata.
+- Actors relate to Goods only by `GoodId` and never through ItemStacks.
+- Definitions and relationships are deterministic, schema-versioned, and independent of Minecraft and NeoForge.
+- Runtime state remains independent and is not written into immutable actor definition persistence.
+- Invalid enum values, unknown references, duplicate ids and relationships, corrupt persistence, and dependency cycles fail visibly.
+- A catalog of 100,000 definitions and 10,000 relationships loads deterministically.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 15 adds no visible content, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 15 is additive. Removing the actor package, `EconomicActorService`, lifecycle registration, independent `economic_actors.json` file, tests, and documentation restores Phase 14 without changing Goods, World Identity, Simulation, Business Runtime, Workforce, product content, or ItemStack schemas.
+
+## Milestone 0.9.0 Phase 14: Commodity And Product Framework
+
+Goal: establish a universal immutable language for economic goods without implementing inventory, pricing, production, logistics, or gameplay.
+
+Included work:
+
+- Pure Java `com.butchercraft.world.goods` domain with sealed `GoodDefinition`, `CommodityDefinition`, and economic `ProductDefinition` models.
+- Stable `GoodId` and `IndustryId` values plus a built-in platform industry catalog.
+- Typed good category, commodity type, product stage, unit, stackability, economic flag, storage, and transport metadata.
+- Informational provider/item mapping metadata without Minecraft or ItemStack resolution.
+- Immutable `GoodTransformation` relationships with exact yield ratios and owning industries.
+- Deterministic immutable `GoodRegistry`, `GoodRegistryBuilder`, and synchronized `GoodManager` lookup and registration paths.
+- Duplicate id, duplicate relationship, unknown industry, unknown good reference, malformed definition, and circular graph validation.
+- Schema-versioned `GoodStorage` persistence at `<world>/butchercraft/goods.json` with deterministic JSON and atomic replacement.
+- `GoodService` lifecycle integration outside the pure goods package.
+- Automated model, registry, manager, persistence, graph, lifecycle, dependency-boundary, and 100,000-definition stress coverage.
+- Architecture documentation in `docs/GOODS_FRAMEWORK.md`.
+
+Excluded work:
+
+- Built-in economic good catalogs, migration of existing processing products, inventory, quantities, warehousing, pricing, economy, markets, orders, transportation, production, recipes, machines, spoilage, utility simulation, networking, GUI, and gameplay.
+
+Acceptance criteria:
+
+- Every economic definition is exactly one commodity or product.
+- Definitions and relationships are immutable, deterministic, schema-versioned, and independent of Minecraft and NeoForge.
+- Existing processing `ProductDefinition` and ItemStack behavior remain unchanged.
+- Unknown industries, invalid enum values, corrupt persistence, duplicate ids, unresolved transformations, and circular graphs fail visibly.
+- The manager and registry store no runtime quantities.
+- A catalog of 100,000 definitions loads deterministically without duplicate ids.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 14 adds no visible content, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 14 is additive. Removing the goods package, lifecycle service, independent `goods.json` file, tests, and documentation restores Phase 13 without changing World Identity, Simulation, Business Runtime, Workforce, product content, or ItemStack schemas.
+
 ## Milestone 0.9.0 Phase 13: Core Platform Reorientation
 
 Goal: establish ButcherCraft Core as a modular deterministic regional world simulation platform while preserving Meat Processing as the flagship implementation and adding no gameplay or economy system.

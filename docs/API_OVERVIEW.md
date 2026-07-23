@@ -45,14 +45,26 @@ Possible extension points:
 
 ### Product
 
-Identifies goods and their descriptive definitions independently from Minecraft ItemStacks. Existing product definitions, registries, serialized schemas, and ItemStack adapters provide the current internal foundation.
+Identifies goods and their descriptive definitions independently from Minecraft ItemStacks. Phase 14's internal `com.butchercraft.world.goods` package now provides stable good and industry ids, immutable commodity and economic product definitions, units, typed handling metadata, and relationship graphs. It is not yet a public API.
 
 Possible extension points:
 
-- Product ids and definitions.
-- Categories, quantity units, tags, and typed metadata.
+- Good ids and commodity/product definitions.
+- Industries, categories, units, stages, and typed handling metadata.
 - Product equivalence or compatibility tags.
 - ItemStack conversion at the Minecraft boundary.
+
+### Economic Actor Provider
+
+Identifies a participant independently from its Minecraft representation or industry implementation. Phase 15's internal `com.butchercraft.world.economy.actor` package provides stable actor ids, immutable classifications, typed capabilities, Good relationships, cross-industry support metadata, and separate in-memory runtime status. It is not yet a public API.
+
+Possible extension points:
+
+- Actor identity and classification.
+- Capability declarations.
+- Relationships to stable Good ids.
+- Bounded runtime status summaries.
+- Compatibility-module actor contribution after lifecycle and registration contracts are proven.
 
 ### Recipe
 
@@ -110,7 +122,7 @@ Possible extension points:
 
 ### Warehouse
 
-Provides custody and capacity summaries for stored goods.
+Provides custody and capacity summaries for stored goods. Phase 16's internal `com.butchercraft.world.inventory` package provides actor-owned container ids, hierarchical storage-node ids, exact runtime quantities, typed capacity metadata, and candidate validation. Phase 17's internal `com.butchercraft.world.transaction` package now owns validated atomic quantity mutation and audit history. Neither package is yet a public API.
 
 Possible extension points:
 
@@ -118,6 +130,7 @@ Possible extension points:
 - Capacity and handling capabilities.
 - Validated deposit, reservation, and withdrawal requests.
 - Inventory summaries rather than mutable collections.
+- Stable inventory and storage-node references.
 
 ### Transport
 
@@ -152,7 +165,7 @@ Possible extension points:
 
 ## Existing Internal Foundations
 
-The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, and workforce packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
+The current product, transformation, processing, packaging, content snapshot, world identity, simulation, business runtime, workforce, goods, economic actor, and inventory packages provide implementation evidence. They remain internal unless explicitly promoted through a later accepted API decision.
 
 There is currently no stable `com.butchercraft.api` contract. Internal classes must not be treated as public compatibility guarantees merely because they are accessible on the classpath.
 
@@ -169,4 +182,3 @@ There is currently no stable `com.butchercraft.api` contract. Internal classes m
 ## Out Of Scope
 
 This milestone adds no API classes, service loader, event registration, network protocol, datapack type, compatibility adapter, economy service, or gameplay behavior.
-

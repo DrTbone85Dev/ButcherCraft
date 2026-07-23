@@ -1,5 +1,68 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 17 - Transaction Framework
+
+### Core
+
+- Added the pure Java universal economic transaction schema, validation pipeline, executor, manager, audit registry, results, and typed metadata.
+- Added atomic inventory add, remove, transfer, and adjustment execution through the transaction framework.
+- Restricted inventory quantity mutation to executor-authorized validated batches and changed runtime access to defensive snapshots.
+- Added independent schema-versioned transaction history at `<world>/butchercraft/transactions.json`.
+- Added `TransactionService` lifecycle integration after the Inventory service.
+
+### Stability
+
+- Added explicit failures for duplicate ids, unknown references, invalid units and endpoints, invalid statuses, underflow, capacity violations, malformed persistence, and unsupported schemas.
+- Added deterministic replay and automated coverage for a 1,000,000-transaction audit registry.
+- Preserved all existing Goods, Economic Actors, inventory data, processing, ItemStack, workstation, content registry, and gameplay behavior.
+
+## ButcherCraft v0.9.0-alpha.1 Phase 16 - Inventory And Storage Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.inventory` foundation for actor-owned Good quantities and physical storage locations.
+- Added immutable inventory containers, nested storage nodes, typed capacities, exact entries, typed future metadata, and mutable runtime status and quantities.
+- Added deterministic inventory registration, ownership and storage queries, capacity validation, runtime quantity updates, and validation-only atomic movement candidates.
+- Added independent schema-versioned persistence at `<world>/butchercraft/inventory.json`.
+- Added `InventoryService` lifecycle integration after the Economic Actor service.
+
+### Stability
+
+- Added validation for duplicate ids, unknown Goods, actors, and storage nodes, mismatched units, negative quantities, malformed metadata, missing runtimes, capacity violations, malformed persistence, unsupported schemas, and circular storage hierarchies.
+- Added automated coverage for deterministic validation of 100,000 inventory containers and 1,000,000 runtime entries.
+- Preserved all existing Goods, Economic Actors, Business Runtime, Workforce, processing, ItemStack, workstation, content registry, and gameplay behavior.
+
+## ButcherCraft v0.9.0-alpha.1 Phase 15 - Economic Actor Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.economy.actor` foundation for universal economic participants.
+- Added immutable actor definitions with stable ids, typed classifications, capabilities, Good relationships, cross-industry support metadata, and dependency metadata.
+- Added mutable in-memory actor runtime state with stable Business Runtime and Workforce references and no inventory or production state.
+- Added deterministic actor registration, lookup, relationship queries, validation, and independent schema-versioned persistence at `<world>/butchercraft/economic_actors.json`.
+- Added `EconomicActorService` lifecycle integration after the Goods service.
+
+### Stability
+
+- Added validation for duplicate actors and relationships, unknown industries, goods, actors, types, and capabilities, capability-role mismatches, malformed persistence, unsupported schemas, and circular dependency chains.
+- Added automated coverage for deterministic loading of 100,000 actor definitions and 10,000 relationships.
+- Preserved all existing Goods, Business Runtime, Workforce, processing, ItemStack, workstation, content registry, and gameplay behavior.
+
+## ButcherCraft v0.9.0-alpha.1 Phase 14 - Commodity And Product Framework
+
+### Core
+
+- Added the pure Java `com.butchercraft.world.goods` foundation for universal economic-good definitions.
+- Added immutable commodity and economic product definitions with typed units, stages, economic flags, storage requirements, transport requirements, and informational item mappings.
+- Added deterministic goods registration, lookup, industry validation, and transformation graph relationships without runtime quantities.
+- Added independent schema-versioned persistence at `<world>/butchercraft/goods.json`.
+
+### Stability
+
+- Added validation for duplicate ids, duplicate transformations, unknown industries, unknown good references, malformed definitions, invalid persisted enum values, unsupported schemas, corrupt JSON, and circular transformations.
+- Added automated coverage for deterministic loading and 100,000 immutable good definitions.
+- Preserved all existing processing products, ItemStack integration, workstation behavior, content registries, and save schemas.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 13 - Core Platform Reorientation
 
 ### Architecture
