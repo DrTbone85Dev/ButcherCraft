@@ -73,6 +73,12 @@ Orders are explicit economic intent between Economic Actors. Contracts are durab
 
 Contract schedule metadata does not execute obligations. Future production, logistics, markets, and compatibility systems may consume these contracts, but Phase 18 adds no automatic behavior or gameplay.
 
+## Deterministic Work Pipeline
+
+The Phase 19 scheduler provides one bounded industry-neutral execution order for future subsystem Work. The authoritative Simulation Clock supplies time; the scheduler never advances it. Immutable Work definitions and separately owned runtime lifecycle records move through preparation, obligation evaluation, planning, execution, observation, and finalization stages using stable ordering and explicit budgets.
+
+The live pipeline has no handlers and creates no economic behavior. Future focused handlers may call only their authorized domain managers. Inventory quantity changes must still use Transactions, and Contract metadata remains inert until a later milestone deliberately schedules evaluation.
+
 ## Consumers
 
 Consumers will convert population and business needs into bounded demand. They may be represented by aggregate cohorts, institutions, businesses, players, or compatible mods. Consumer demand must be explainable and must not require per-tick simulation of every resident.
@@ -104,12 +110,13 @@ Runtime records reference identity by stable id. They do not edit historical ide
 ## Event Flow
 
 1. The authoritative Simulation Clock advances on the server.
-2. The scheduler emits due events in deterministic order.
-3. Focused services evaluate only the state they own.
-4. Proposed economic quantity changes are submitted as immutable transactions.
-5. Accepted transaction changes execute atomically in deterministic order.
-6. Committed state and audit history are persisted by their owning services.
-6. Downstream facts are published as narrow events or immutable summaries.
+2. The Work scheduler promotes a bounded due prefix and executes stable stages.
+3. Registered focused handlers evaluate only the state they own.
+4. The clock's calendar scheduler emits due rollover events in deterministic order.
+5. Proposed economic quantity changes are submitted as immutable transactions.
+6. Accepted transaction changes execute atomically in deterministic order.
+7. Committed state and audit history are persisted by their owning services.
+8. Downstream facts are published as narrow events or immutable summaries.
 
 This model avoids one global tick method that scans and mutates every subsystem.
 
@@ -127,4 +134,4 @@ This model avoids one global tick method that scans and mutates every subsystem.
 
 ## Current Boundary
 
-World Identity, Runtime Player Identity, Simulation Clock, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders, and Contracts exist. Population, regional production, active distribution behavior, consumers, markets, and pricing remain future work.
+World Identity, Runtime Player Identity, Simulation Clock, deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, Economic Actor definitions/runtime capabilities, economic Inventory/Storage runtime quantities, Transactions, Orders, and Contracts exist. The scheduler's live handler registry is empty. Population, regional production, active distribution behavior, consumers, markets, and pricing remain future work.

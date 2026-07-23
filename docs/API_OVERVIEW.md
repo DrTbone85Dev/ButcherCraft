@@ -122,6 +122,19 @@ Possible extension points:
 
 Reservations, automatic schedule execution, pricing, production, and logistics are not part of the Phase 18 domain and must not be inferred from the current internal classes.
 
+### Simulation Work
+
+Represents bounded work submitted to the shared deterministic pipeline. Phase 19's internal `com.butchercraft.world.simulation.scheduler` package proves stable ids, immutable definitions, separate lifecycle runtime, typed handlers/results, deterministic stage ordering, budgets, atomic generated batches, and persistence. It is not a public registration API.
+
+Possible future extension points:
+
+- Stable Work type and stage contribution contracts.
+- Explicit handler dependency binding and side-effect declarations.
+- Immutable submission, cancellation, result, and report views.
+- Compatibility validation and missing-provider behavior.
+
+No third-party registration lifecycle, binary compatibility promise, datapack schema, event API, or service locator is established by Phase 19.
+
 ### Warehouse
 
 Provides custody and capacity summaries for stored goods. Phase 16's internal `com.butchercraft.world.inventory` package provides actor-owned container ids, hierarchical storage-node ids, exact runtime quantities, typed capacity metadata, and candidate validation. Phase 17's internal `com.butchercraft.world.transaction` package now owns validated atomic quantity mutation and audit history. Neither package is yet a public API.

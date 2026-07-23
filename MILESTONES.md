@@ -4,6 +4,46 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## Milestone 0.9.0 Phase 19: Deterministic Simulation Scheduler & Pipeline
+
+Goal: provide one pure Java, industry-neutral, bounded execution pipeline for future simulation work without implementing any economic or gameplay behavior.
+
+Included work:
+
+- Six stable broad stages, immutable Work definitions, separately owned runtime lifecycles, typed payloads/origins/references, deterministic handler registration, and manager-assigned monotonic submission sequences.
+- Exact ordering by stage, due tick, priority, sequence, and Work id; immutable indexed queries; explicit cancellation, expiration, retries, failure policies, reports, and non-reentrancy.
+- Positive count/unit/generation/retry/depth budgets and atomic generated batches with bounded later-stage same-tick execution.
+- Strict sequential authoritative-clock integration with no second clock and no automatic catch-up.
+- Deterministic schema-1 persistence at `<world>/butchercraft/simulation_scheduler.json`; unknown handlers and persisted `RUNNING` work fail visibly.
+- `SimulationSchedulerService` lifecycle integration after `OrderContractService`, with an intentionally empty live handler registry and Work queue.
+- Comprehensive pure Java and split-scale stress tests plus `docs/SIMULATION_SCHEDULER.md`.
+
+Excluded work:
+
+- Contract evaluation, automatic Orders, production, logistics, shipments, markets, population, pricing, demand, spoilage, maintenance, AI, gameplay, networking, GUI, ItemStacks, datapacks, background mutation, and public APIs.
+
+Acceptance criteria:
+
+- The Simulation Clock remains the sole time authority; one supplied tick executes at most once and gaps fail explicitly.
+- Eligible Work ordering is deterministic and budget exhaustion preserves every unexecuted record.
+- Same-tick generation is atomic, later-stage-only, and bounded by count and depth.
+- Save/load preserves definitions, runtimes, sequence, and finalized tick; interrupted `RUNNING` state and unknown types reject the load.
+- Stress coverage includes 1,000,000 definition/runtime constructions, 100,000 retained eligible items, 100,000 retry-wait and terminal records, bounded batches, same-tick limits, and representative persistence.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test`
+- `.\gradlew.bat --no-daemon build`
+- `git diff --check`
+
+Manual verification:
+
+- No client launch is required because Phase 19 adds no visible content, networking, interaction, or gameplay behavior.
+
+Rollback considerations:
+
+- Phase 19 is additive. Removing the scheduler package, `SimulationSchedulerService` lifecycle registration, scheduler persistence file, tests, and documentation restores Phase 18 without changing Clock, Order, Contract, Transaction, Inventory, ItemStack, asset, or gameplay schemas.
+
 ## Milestone 0.9.0 Phase 18: Orders And Contracts Framework
 
 Goal: establish the industry-neutral language of economic intent and durable obligation without implementing markets, pricing, production, logistics, automation, or gameplay.

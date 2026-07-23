@@ -1,5 +1,18 @@
 # Changelog
 
+## ButcherCraft v0.9.0-alpha.1 Phase 19 - Deterministic Simulation Scheduler & Pipeline
+
+Core:
+
+- Added the pure Java six-stage deterministic Work scheduler, separate immutable definitions and runtime lifecycle, monotonic submission sequencing, typed handler/results, retries, cancellation, expiration, and immutable query snapshots.
+- Added bounded pipeline execution with stable ordering, explicit stage failure policies, atomic generated batches, and later-stage-only same-tick generation.
+- Added schema-versioned `simulation_scheduler.json` persistence and `SimulationSchedulerService` lifecycle integration after the authoritative clock and Orders/Contracts services.
+- Added model, lifecycle, registry, ordering, budget, handler, generation, persistence, dependency-boundary, integration, regression, and split-scale stress coverage.
+
+Scope:
+
+- The live handler registry and Work queue are empty. No production, logistics, markets, population, pricing, automatic Order/Contract behavior, gameplay, networking, GUI, or ItemStack integration was added.
+
 ## ButcherCraft v0.9.0-alpha.1 Phase 18 - Orders And Contracts Framework
 
 Core:

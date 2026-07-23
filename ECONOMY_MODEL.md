@@ -54,6 +54,10 @@ Orders express requested or offered economic outcomes. Contracts describe durabl
 
 Fulfillment is business meaning attached to an already APPLIED Transaction. Recording that meaning never changes Inventory and never submits another Transaction. Contract schedules are descriptive only and create no work automatically. See `docs/ORDERS_AND_CONTRACTS.md`.
 
+## Simulation Work Orchestration
+
+The deterministic scheduler provides stable eligibility, stage ordering, budgets, retries, and persistence for future economic Work without owning economic meaning. Phase 19 registers no economic handlers: it does not evaluate Contracts, create Orders, plan production, progress logistics, observe markets, or submit Transactions. Future handlers must use the owning domain's validation and mutation authority. See `docs/SIMULATION_SCHEDULER.md`.
+
 ## Transportation
 
 Transportation moves goods or provides movement capacity between locations. Future transport decisions may consider routes, travel time, capacity, handling requirements, cost, reliability, and infrastructure. Movement must preserve custody and prevent duplication or loss.

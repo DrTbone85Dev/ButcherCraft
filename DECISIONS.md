@@ -1132,6 +1132,30 @@ Consequences:
 - `OrderContractService` initializes after `TransactionService` and publishes managers only after coordinated Actor, Good, Inventory, Transaction, Order, and Contract reference validation succeeds.
 - No pricing, currency, accounting, reservations, markets, production, logistics, automatic scheduling, AI, networking, GUI, ItemStack integration, or gameplay is added.
 
+## DEC-0072: One Deterministic Pipeline Orchestrates Simulation Work
+
+Status: Accepted
+
+Decision: version 0.9.0 Phase 19 introduces `com.butchercraft.world.simulation.scheduler` as the single industry-neutral owner of scheduled simulation Work eligibility, lifecycle, ordering, and bounded execution. The authoritative `SimulationClock` remains the sole owner of time. Immutable Work definitions are separated from manager-owned runtime state, and only the manager assigns persisted monotonic submission sequences. Six broad stages execute in stable explicit order. Handlers are runtime behavior, return typed outcomes, declare side-effect contracts, and never receive mutable scheduler internals.
+
+Rationale: future Contract evaluation, production, logistics, markets, population, maintenance, and compatibility systems need one deterministic orchestration boundary. Independent subsystem tick handlers would duplicate scheduling, weaken ordering and failure guarantees, and encourage unbounded or hidden background mutation. A pure scheduler can define when Work runs without deciding the economic or gameplay meaning of that Work.
+
+Consequences:
+
+- The scheduler receives authoritative simulation ticks and never advances time or uses wall-clock scheduling for outcomes.
+- Schema 1 requires exactly sequential ticks; duplicate, backward, and skipped ticks fail visibly because automatic catch-up and resume are not implemented.
+- Execution order is stage, scheduled tick, descending priority, submission sequence, then Work id.
+- Positive item, stage, work-unit, generation, same-tick, retry, and depth budgets preserve unexecuted Work for later ticks.
+- Same-tick generated batches are atomic and may execute only in a later unstarted stage that explicitly allows them.
+- Work definitions remain immutable; runtime transitions are explicit and terminal states are irreversible.
+- Retry delays use simulation ticks only and contain no jitter or hidden randomness.
+- Handler exceptions and invalid results become explicit failures governed by stage policy; the scheduler does not claim rollback of arbitrary external side effects.
+- Unknown persisted Work types and persisted `RUNNING` state reject initialization instead of disappearing or rerunning silently.
+- Scheduler state persists independently at `<world>/butchercraft/simulation_scheduler.json` with schema version 1.
+- `SimulationSchedulerService` initializes after `OrderContractService`, executes after the clock's post-tick listener, and registers no live handlers or Work in Phase 19.
+- The pipeline performs no Inventory mutation, Transaction submission, Contract evaluation, production, logistics, markets, population, pricing, networking, GUI, ItemStack integration, or gameplay behavior.
+- The package remains internal. No public handler API or third-party registration lifecycle is established.
+
 ## Decisions Needing Owner Approval
 
 - First basic meat product and input source.

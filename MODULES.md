@@ -11,7 +11,7 @@ ButcherCraft Core is the common platform. It owns concepts that must remain cons
 ### Responsibilities
 
 - World simulation identity and stable regional references.
-- Simulation Clock, calendar, scheduler, and event publication.
+- Simulation Clock, calendar events, and the deterministic bounded Work scheduler/pipeline.
 - Business identity and mutable business runtime foundations.
 - Shared workforce structure and future cross-industry worker contracts.
 - Immutable commodity and product identities shared across industries.
@@ -29,7 +29,7 @@ Core must not become a collection of industry-specific recipes or machine behavi
 
 ### Current State
 
-Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, Business Runtime, Workforce definitions, immutable economic Goods definitions, industry-neutral Economic Actor definitions and runtime capabilities, actor-owned Inventory and Storage runtime quantities, the universal economic Transaction Framework, Orders and Contracts, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations.
+Implemented Core foundations include deterministic World Identity, player identity, the Simulation Clock and Event Framework, the deterministic Work scheduler/pipeline, Business Runtime, Workforce definitions, immutable economic Goods definitions, industry-neutral Economic Actor definitions and runtime capabilities, actor-owned Inventory and Storage runtime quantities, the universal economic Transaction Framework, Orders and Contracts, generic processing product and transformation domains, atomic content snapshots, and transaction-safe workstation foundations. The live Work handler registry is empty.
 
 Economy, logistics execution, population simulation, consumers, utilities, and a stable third-party API are planned, not implemented.
 
@@ -182,6 +182,7 @@ The existing layout already supports the platform direction:
 | --- | --- |
 | `com.butchercraft.world.identity` | Immutable regional identity. |
 | `com.butchercraft.world.simulation` | Shared clock, scheduler, and event framework. |
+| `com.butchercraft.world.simulation.scheduler` | Pure stable-stage Work scheduling, lifecycle, bounded execution, and persistence. |
 | `com.butchercraft.world.business` | Immutable business identity. |
 | `com.butchercraft.world.business.runtime` | Mutable business operations. |
 | `com.butchercraft.world.workforce` | Cross-industry staffing structure. |

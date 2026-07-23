@@ -33,7 +33,8 @@ Immutable World Identity
   -> Business Runtime
        -> Workforce Definitions
 
-Simulation Clock -> Scheduler -> Event Bus -> Focused runtime services
+Simulation Clock -> deterministic Work scheduler/pipeline -> focused handlers
+                 -> calendar Event Bus -> focused rollover listeners
 
 Industry catalog
   -> immutable Good definitions + relationship graph
@@ -137,6 +138,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.player` | Pure player legacy template domain, career profiles, starting scenarios, and scenario registry. |
 | `com.butchercraft.world.player.runtime` | Runtime player identity creation, immutable player identity registry, independent player identity persistence, and server-login initialization. |
 | `com.butchercraft.world.simulation` | Simulation clock, configurable calendar, event scheduler, event bus, independent simulation-state persistence, and server tick lifecycle integration. |
+| `com.butchercraft.world.simulation.scheduler` | Pure immutable simulation Work definitions, separate runtime lifecycle, stable stages, handler contracts, deterministic indexes, bounded pipeline, reports, and schema-versioned persistence. |
 | `com.butchercraft.world.business.runtime` | Pure business runtime state, hours, shifts, operational status, runtime registry, manager transitions, event listener, validation, and JSON persistence. |
 | `com.butchercraft.world.workforce` | Pure workforce definitions, positions, staffing rules, shift assignments, skill levels, certifications, registry, manager lookup, validation, and JSON persistence. |
 | `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
@@ -360,6 +362,16 @@ Fulfillment recording stages all requested line allocations against detached run
 `OrderContractService` depends on `TransactionService`. It loads Contracts and Orders as one validated world-bound state before publishing either manager, then persists separate schema-versioned documents at `<world>/butchercraft/contracts.json` and `<world>/butchercraft/orders.json`. The domain and persistence packages remain pure Java; only the lifecycle service imports Minecraft and NeoForge.
 
 Contract schedules, commitment periods, priorities, substitutions, and future-facing types are descriptive metadata. Phase 18 does not generate Orders, execute schedules, reserve Goods, price trade, run production or logistics, expose gameplay, or create a public API. See `docs/ORDERS_AND_CONTRACTS.md` for lifecycle tables, exact quantity rules, allocation validation, persistence, queries, invariants, and limitations.
+
+## Deterministic Simulation Scheduler Architecture
+
+Phase 19 introduces `com.butchercraft.world.simulation.scheduler` as the pure Java orchestration domain for future simulation Work. It does not replace `SimulationClock` or the existing calendar-event scheduler. The clock remains the sole time authority; the Work pipeline receives the already-advanced authoritative tick and enforces strict sequential execution with no automatic catch-up.
+
+Six stable broad stages order immutable `ScheduledSimulationWork` records. `SimulationSchedulerManager` alone assigns monotonic persisted submission sequences and owns separate `SimulationWorkRuntime` records plus deterministic status/due indexes. Ordering is stage, scheduled tick, descending priority, sequence, then Work id. Runtime snapshots and queries are immutable.
+
+`SimulationPipeline` executes a bounded prefix using positive item, stage, work-unit, generation, same-tick, retry, and depth budgets. Handler failures are typed and isolated by stage policy. Generated requests commit atomically and may run in the same tick only in a later unstarted stage that permits enqueue. The scheduler never mutates Inventory or interprets Orders, Contracts, production, logistics, or markets.
+
+`SimulationSchedulerService` initializes after `OrderContractService`, executes after the Simulation Clock's post-tick listener, and persists schema-1 state at `<world>/butchercraft/simulation_scheduler.json`. Unknown persisted Work types, mismatched clock ticks, and persisted `RUNNING` state fail visibly. The live handler registry and Work queue remain empty in Phase 19. See `docs/SIMULATION_SCHEDULER.md` for schemas, lifecycle, ordering, invariants, measured scale, and limitations.
 
 ## Item Data-Component Strategy
 
