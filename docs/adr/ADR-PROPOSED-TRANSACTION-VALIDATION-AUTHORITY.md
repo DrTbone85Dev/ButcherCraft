@@ -1,13 +1,21 @@
-# Proposed ADR: Transaction Validation Authority
+# ADR-03: Transaction Validation Authority
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
 
-Decision identifier: Unassigned
+Decision identifier: AH-1-ADR-03
 
 Package: BCSE Architecture Hardening AH-1
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted Decision process.
+Authority: Owner-ratified architecture direction. This document authorizes
+documentation alignment only. It does not authorize implementation, migration,
+schema changes, runtime behavior, gameplay behavior, or RFC-0023 edits.
+
+Canonical platform reference:
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+Platform-wide vocabulary, identity classes, invariant ownership, recovery,
+replay, failure-state, cancellation, operator-authority, World Identity, and
+Platform Determinism Manifest definitions are canonical there and are not
+redefined here.
 
 ## Context
 
@@ -22,12 +30,13 @@ The current lower-level `TransactionExecutor` checks that:
 - validation's `TransactionId` equals the Transaction's id.
 
 `TransactionValidation` contains the accepted Inventory changes but no
-canonical Transaction content digest, Inventory revision, validation issuance
-identity, or consumption state. Current `TransactionManager` validates and
-executes in a synchronized immediate path, which limits ordinary exposure.
-The lower-level contract remains weaker than the stated invariant.
+canonical Transaction proposal digest, Inventory Freshness Identity,
+validation issuance identity, or consumption state. Current
+`TransactionManager` validates and executes in an immediate serialized path,
+which limits ordinary exposure. The lower-level contract remains weaker than
+the stated invariant.
 
-This proposal responds to
+This decision responds to
 [BCSE-AUDIT-003](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-003-accepted-transaction-validation-is-bound-only-by-id).
 
 ## Problem
@@ -53,15 +62,15 @@ The contract must also reject:
 - Inventory stages all accepted changes before commit.
 - Structurally valid submissions remain in deterministic history.
 - Replay creates fresh validation against an explicitly supplied baseline.
-- No Inventory-wide authoritative revision is part of validation.
+- No Inventory Freshness Identity is part of validation.
 - Validation is an ordinary immutable public value and is not single-use.
 
-This proposal does not change Transaction code, API visibility, or runtime
+This decision does not change Transaction code, API visibility, or runtime
 behavior.
 
 ## Architectural Constraints
 
-The proposal is governed by:
+The decision is governed by:
 
 - `AI-0001` Deterministic Simulation;
 - `AI-0006` Universal Economic Transactions;
@@ -77,12 +86,17 @@ The proposal is governed by:
 Additional constraints:
 
 - Transaction remains mutation authority;
-- Inventory remains quantity and revision authority;
+- Inventory remains quantity and freshness-identity authority;
 - validation authority is issued only by `TransactionManager`;
 - adapters submit proposals and receive results, not mutation capability;
 - no random token or wall-clock expiry;
 - exact proposal identity is canonical and replay-stable; and
 - implementation requires separate owner authorization.
+
+Transaction Validation remains owned exclusively by the Transaction subsystem.
+It does not own Inventory, Production, Scheduler, Checkpoint Recovery,
+Evidence Lifecycle, Execution, Allocation, or persistence-generation
+selection.
 
 ## Options Considered
 
@@ -103,25 +117,25 @@ Disadvantages:
 - a copied accepted validation can still be reused;
 - digest schema becomes a public compatibility contract.
 
-### Option 2: Opaque Single-Use Manager Authority
+### Option 2: Runtime Validation Consumption Authority
 
-Return an opaque authority object issued and consumed only by
-`TransactionManager`.
+Use private runtime authority issued and consumed only by the Transaction
+owner.
 
 Advantages:
 
 - prevents direct executor use and duplicate consumption;
-- keeps execution authority inside the owner.
+- keeps validation consumption authority inside the owner.
 
 Disadvantages:
 
-- opaque runtime identity alone is not replayable;
+- runtime authority identity alone is not replayable;
 - restart invalidates all authorities;
 - without a digest, diagnostics cannot prove exact proposal binding.
 
 ### Option 3: One Synchronized Manager Critical Section
 
-Make validation valid only inside the synchronized submit method.
+Make validation valid only inside the serialized submit boundary.
 
 Advantages:
 
@@ -136,10 +150,10 @@ Disadvantages:
 - public lower-level objects remain forgeable;
 - does not identify exact starting Inventory state.
 
-### Option 4: Transaction Digest Plus Inventory Revision
+### Option 4: Transaction Digest Plus Inventory Freshness Identity
 
 Bind validation to both canonical Transaction content and the authoritative
-Inventory starting revision.
+Inventory state examined by validation.
 
 Advantages:
 
@@ -149,7 +163,7 @@ Advantages:
 
 Disadvantages:
 
-- Inventory needs a global or scoped revision contract;
+- Inventory needs a complete freshness identity contract;
 - reusable accepted evidence remains possible unless consumption is owned.
 
 ### Option 5: Composite Authority
@@ -157,10 +171,10 @@ Disadvantages:
 Combine:
 
 - canonical Transaction digest;
-- authoritative Inventory starting revision;
+- authoritative Inventory Freshness Identity;
 - deterministic validation plan digest;
-- manager-issued opaque single-use authority; and
-- one manager-owned execution critical section.
+- manager-issued single-use Validation Consumption Authority; and
+- one Serialized Transaction-owner Boundary.
 
 Advantages:
 
@@ -170,15 +184,15 @@ Advantages:
 Disadvantages:
 
 - largest API and migration change;
-- requires Inventory revision and canonical serialization contracts.
+- requires Inventory freshness and canonical serialization contracts.
 
-## Decision Proposed
+## Decision
 
 Adopt **Option 5: composite validation authority**.
 
-### Canonical Transaction Digest
+### Proposal Digest
 
-Every submitted Transaction has a SHA-256 digest over canonical schema bytes
+Every submitted Transaction has a Proposal Digest over canonical schema bytes
 that include:
 
 - Transaction schema version;
@@ -201,24 +215,20 @@ behavior.
 Canonical serialization must be versioned, documented, and tested. Unknown
 fields cannot be ignored when they can affect execution.
 
-### Inventory Revision
+### Inventory Freshness Identity
 
-Inventory owns a monotonically increasing `InventoryStateRevision` for each
-authoritative Inventory manager/world.
+Inventory owns the Inventory Freshness Identity. The identity shall uniquely
+and deterministically represent all authoritative Inventory state examined by
+validation.
 
-Schema-1 rules:
+The implementation may later use a global revision, scoped revisions, revision
+vectors, digest-backed snapshots, or another deterministic representation,
+provided the identity completely covers every Inventory state dependency
+examined during validation.
 
-- initial validated loaded state has revision zero or its persisted revision;
-- one successfully APPLIED Transaction increments the revision exactly once;
-- a failed or rejected Transaction does not increment it;
-- a multi-change Transaction has one starting and one ending revision;
-- revision arithmetic is checked;
-- replay against a compatible baseline reproduces the same revision sequence;
-  and
-- revision is part of the coordinated checkpoint.
-
-The revision is not an Inventory quantity and cannot be set by Transactions or
-adapters.
+The freshness identity is not an Inventory quantity and cannot be set by
+Transactions or adapters. It is part of the coordinated checkpoint and the
+Platform Determinism Manifest policy identity when relevant.
 
 ### Validation Plan Digest
 
@@ -226,19 +236,28 @@ Accepted validation contains immutable evidence:
 
 - Transaction id;
 - Transaction proposal digest;
-- Inventory starting revision;
+- Inventory Freshness Identity;
 - ordered staged Inventory changes;
 - canonical validation-plan digest;
 - accepted simulation tick;
 - validator schema version; and
 - validation diagnostics.
 
-The plan digest covers the proposal digest, starting revision, and ordered
-staged changes.
+The plan digest covers the proposal digest, Inventory Freshness Identity, and
+ordered staged changes.
 
-### Opaque Execution Authority
+Once validation succeeds, the approved validation plan and its identity are
+immutable. Any proposal, context, freshness identity, or plan change requires a
+new validation result.
 
-`TransactionManager` issues an opaque `TransactionValidationAuthority` only
+Validation must not depend on hidden runtime context. Every fact required to
+reproduce or verify the decision must be represented by the proposal, explicit
+validation inputs, Inventory Freshness Identity, validation plan, or resulting
+evidence.
+
+### Validation Consumption Authority
+
+The Transaction owner issues a private Validation Consumption Authority only
 after accepted validation. The exact Java name remains subject to
 implementation review.
 
@@ -247,7 +266,7 @@ The authority is:
 - manager-instance scoped;
 - world scoped;
 - bound to one proposal digest;
-- bound to one starting Inventory revision;
+- bound to one Inventory Freshness Identity;
 - bound to one validation-plan digest;
 - single-use;
 - non-serializable;
@@ -256,12 +275,12 @@ The authority is:
 - invalid after manager restart or checkpoint reload.
 
 Possession of immutable `TransactionValidation` evidence alone does not grant
-execution authority.
+mutation authority.
 
-### Manager-Owned Critical Section
+### Serialized Transaction-owner Boundary
 
-Validation, authority issuance, final revision check, authority consumption,
-and execution occur inside one `TransactionManager` critical section.
+Validation, authority issuance, final freshness check, authority consumption,
+and execution occur inside one serialized Transaction-owner boundary.
 
 Immediately before applying staged changes, the manager/executor verifies:
 
@@ -270,7 +289,8 @@ Immediately before applying staged changes, the manager/executor verifies:
 3. supplied Transaction digest matches;
 4. validation proposal digest matches;
 5. validation plan digest matches;
-6. Inventory current revision equals starting revision;
+6. Inventory current freshness identity equals the validated freshness
+   identity;
 7. Transaction status is `VALIDATED`; and
 8. Transaction id has no conflicting accepted or applied digest.
 
@@ -284,9 +304,8 @@ An authoritative Transaction result records:
 
 - Transaction id;
 - proposal digest;
+- Inventory Freshness Identity;
 - validation plan digest;
-- starting Inventory revision;
-- ending Inventory revision, when applied;
 - final Transaction status;
 - application simulation tick;
 - ordered applied-change digest;
@@ -296,12 +315,15 @@ An authoritative Transaction result records:
 Future Execution observes this evidence. It never infers application from
 `TransactionId` or status alone.
 
+Relevant resulting Inventory freshness evidence is recorded when the
+Transaction applies. The exact representation remains owned by Inventory.
+
 ### Validation Lifetime
 
 Accepted authority remains valid only:
 
 - inside the issuing manager instance;
-- while Inventory remains at the starting revision;
+- while Inventory remains at the validated freshness identity;
 - until first execution attempt;
 - before checkpoint restart/reload; and
 - while no same-id conflict exists.
@@ -312,24 +334,25 @@ There is no wall-clock expiry.
 
 For a Transaction ID already known:
 
-- same canonical proposal digest and APPLIED result returns immutable existing
-  result evidence without reapplying Inventory changes;
-- same canonical proposal digest in a terminal failed/rejected state returns
-  that existing terminal evidence unless an explicit future resubmission
-  contract permits otherwise;
-- different digest returns `TRANSACTION_IDENTITY_CONFLICT`; and
-- concurrent identical submission is serialized by the manager.
+- same Transaction ID and same canonical Proposal Identity observes the
+  existing authoritative result without reapplying Inventory changes;
+- same Transaction ID and different canonical Proposal Identity is an
+  explicit architectural conflict;
+- a conflicting proposal must not overwrite, reinterpret, retry, or reuse the
+  existing Transaction ID;
+- a materially new attempt requires a new Transaction ID; and
+- concurrent identical submission is serialized by the Transaction owner.
 
 ### Replay
 
-Replay does not persist or reuse opaque authority. It:
+Replay does not persist or reuse runtime authority tokens. It:
 
-1. starts from an explicitly identified compatible Inventory revision;
+1. starts from an explicitly identified recovered baseline;
 2. verifies the historical Transaction proposal digest;
 3. performs fresh deterministic validation;
 4. verifies that the new validation plan digest equals historical evidence;
 5. executes through a replay-owned manager authority; and
-6. verifies ending revision and application digest.
+6. verifies resulting freshness evidence and application digest.
 
 Replay divergence fails explicitly.
 
@@ -343,11 +366,15 @@ Neither adapter nor Execution receives:
 
 - `TransactionExecutor`;
 - `InventoryManager` mutation capability;
-- opaque validation authority; or
+- Validation Consumption Authority; or
 - accepted staged Inventory changes as an executable capability.
 
 Execution receives only immutable authoritative Transaction result evidence
 bound to the exact proposal digest it submitted.
+
+Checkpoint Recovery may consume immutable Transaction snapshots and coordinate
+their publication. It must not define Transaction validation rules, issue
+Transaction authority, or mutate Transaction-owned state.
 
 ## Rationale
 
@@ -358,9 +385,10 @@ No single option except the composite contract closes all four boundaries:
 - capability ownership; and
 - replay evidence.
 
-The manager critical section preserves the current simple synchronous path.
-Digest and revision evidence make the contract explicit enough for future
-Execution without granting the adapter a mutation token.
+The Serialized Transaction-owner Boundary preserves the current simple
+synchronous path without prescribing a Java locking mechanism. Digest and
+freshness evidence make the contract explicit enough for future Execution
+without granting the adapter a mutation token.
 
 ## Consequences
 
@@ -377,20 +405,19 @@ Execution without granting the adapter a mutation token.
 ### Negative Consequences
 
 - Canonical Transaction serialization becomes a compatibility contract.
-- Inventory gains a persisted revision.
-- Transaction history/result schema gains digests and revisions.
+- Inventory gains a persisted freshness identity.
+- Transaction history/result schema gains digests and freshness evidence.
 - Lower-level executor APIs must be restricted or changed.
-- Existing history requires digest/revision migration.
+- Existing history requires digest/freshness migration.
 - A manager restart invalidates pending accepted validation.
 
 ## Compatibility
 
-This strengthens DEC-0070 without changing its ownership decision. It requires
-a new accepted Decision because it changes Transaction validation and public
-contract semantics.
+This strengthens DEC-0070 without changing its ownership decision.
 
 Existing Transaction IDs remain stable. Existing Transaction records without
-digests/revisions remain migration inputs, not fully bound evidence.
+digests or freshness evidence remain migration inputs, not fully bound
+evidence.
 
 ## Migration
 
@@ -398,14 +425,15 @@ Migration must:
 
 1. load and validate current Inventory and Transaction history together inside
    one checkpoint migration;
-2. establish a deterministic baseline Inventory revision;
+2. establish a deterministic baseline Inventory Freshness Identity;
 3. replay or validate ordered APPLIED history against an explicit compatible
    baseline when available;
 4. calculate canonical proposal and application digests;
-5. assign starting/ending revisions in authoritative application order;
+5. assign or derive starting/ending freshness evidence in authoritative
+   application order;
 6. mark unverifiable legacy history explicitly rather than fabricating proof;
 7. publish Inventory and Transaction migration in one checkpoint generation;
-8. persist no opaque validation authorities; and
+8. persist no Validation Consumption Authority; and
 9. leave legacy files unchanged if reconciliation fails.
 
 If current Inventory cannot be reconciled with retained APPLIED history,
@@ -421,28 +449,33 @@ Proposed explicit outcomes:
 - `TRANSACTION_STALE_VALIDATION`;
 - `TRANSACTION_VALIDATION_AUTHORITY_INVALID`;
 - `TRANSACTION_VALIDATION_AUTHORITY_CONSUMED`;
-- `TRANSACTION_INVENTORY_REVISION_MISMATCH`;
+- `TRANSACTION_INVENTORY_FRESHNESS_MISMATCH`;
 - `TRANSACTION_IDENTITY_CONFLICT`;
 - `TRANSACTION_DUPLICATE_APPLIED`;
 - `TRANSACTION_APPLICATION_DIGEST_MISMATCH`;
-- `TRANSACTION_REVISION_OVERFLOW`; and
+- `TRANSACTION_FRESHNESS_IDENTITY_INVALID`; and
 - `TRANSACTION_LEGACY_BINDING_UNVERIFIABLE`.
 
-Failure-code names are proposed contract names.
+Failure-code names are architectural contract names, not implemented
+constants.
 
 Validation failure leaves Inventory unchanged. An unexpected failure after
 authority consumption cannot reuse the authority. If Inventory commit
 published before result publication failed, coordinated checkpoint/recovery
-must reconcile the authoritative Inventory revision and application evidence;
-the caller cannot retry by ID alone.
+must reconcile the authoritative Inventory freshness evidence and application
+evidence; the caller cannot retry by ID alone.
+
+Once mutation authority has been consumed, any failure before a complete
+authoritative result is published must be explicit, recoverable through the
+accepted checkpoint model, and must never permit silent reapplication.
 
 ## Replay Implications
 
-Proposal digest, validation-plan digest, and Inventory revisions become
-required replay inputs and outputs. Replay is stronger because it proves
-equivalent content and state, not only equivalent IDs.
+Proposal digest, Inventory Freshness Identity, and validation-plan digest
+become required replay inputs and outputs. Replay is stronger because it
+proves equivalent content and state, not only equivalent IDs.
 
-The opaque runtime authority is deliberately absent from replay and
+Runtime validation authority is deliberately absent from replay and
 persistence.
 
 ## Security And Integrity Implications
@@ -450,7 +483,7 @@ persistence.
 - A forged immutable validation record grants no mutation capability.
 - A client cannot acquire manager authority.
 - Same-ID substitution is rejected by digest.
-- Stale-state execution is rejected by revision.
+- Stale-state execution is rejected by freshness identity.
 - Single-use authority blocks repeated application.
 - Canonical digest validation detects field omission or reordering.
 - SHA-256 is an integrity primitive, not identity secrecy or authentication.
@@ -464,59 +497,59 @@ Required automated tests:
 - metadata canonical ordering;
 - same ID/different body rejection;
 - accepted validation with different Transaction rejection;
-- stale Inventory revision rejection;
+- stale Inventory freshness rejection;
 - authority from another manager/world rejection;
 - authority reuse rejection;
 - authority invalid after restart;
-- exactly one revision increment for a multi-change Transaction;
-- no revision increment on rejection/failure;
+- one coherent resulting freshness identity for a multi-change Transaction;
+- no freshness advancement on rejection/failure;
 - duplicate identical applied submission returns existing result;
 - concurrent duplicate submission;
-- checked revision overflow;
+- invalid freshness identity rejection;
 - plan-digest tampering;
 - result evidence bound to exact proposal;
 - Execution handoff receives no authority;
-- replay digest and revision equivalence;
+- replay digest and freshness equivalence;
 - replay divergence;
 - migration from legacy history;
 - unverifiable migration remains fail-visible; and
-- checkpoint Transaction/Inventory revision agreement.
+- checkpoint Transaction/Inventory freshness agreement.
 
 ## Alternatives Rejected By This Proposal
 
 - **Digest only:** rejected because it permits stale and reusable validation.
-- **Opaque authority only:** rejected because it provides insufficient durable
+- **Runtime authority only:** rejected because it provides insufficient durable
   and replay evidence.
-- **Critical section only:** rejected because the exact accepted proposal and
-  state remain implicit.
-- **Digest plus Inventory revision without authority:** rejected because an
+- **Serialized boundary only:** rejected because the exact accepted proposal
+  and state remain implicit.
+- **Digest plus Inventory freshness without authority:** rejected because an
   immutable accepted value can still be presented repeatedly.
 
-## Unresolved Questions
+## Ratification Notes
 
-Owner decisions required:
+Owner ratification approved Transaction Validation Authority with the
+revisions incorporated above:
 
-1. Approve a global Inventory revision or choose scoped per-inventory
-   revisions.
-2. Approve SHA-256 and canonical Transaction schema as the binding contract.
-3. Confirm whether failed post-consumption authority creates a terminal
-   Transaction failure or a recovery-required state.
-4. Confirm migration behavior when the original Inventory baseline is absent.
-5. Confirm whether same-digest terminal failure may ever be resubmitted under a
-   new Transaction ID only.
-6. Confirm lower-level `TransactionExecutor` visibility after implementation.
+1. Transaction validation binds three independent identities: Proposal Digest,
+   Inventory Freshness Identity, and Validation Plan Digest.
+2. The architecture does not ratify a global Inventory counter. Inventory may
+   later implement freshness by any deterministic representation that covers
+   every authoritative Inventory dependency examined by validation.
+3. Validation and application occur within a Serialized Transaction-owner
+   Boundary without prescribing a Java lock mechanism.
+4. Runtime Validation Consumption Authority is private, single-use,
+   Transaction-owned, non-persisted, and invalid after rollback or restart.
+5. Immutable validation evidence alone grants no mutation authority.
+6. Duplicate Transaction ID behavior is identity-bound: identical proposal
+   observes the existing authoritative result; conflicting proposal is an
+   architectural conflict; a materially new attempt requires a new
+   Transaction ID.
+7. Once validation succeeds, the approved validation plan and identity are
+   immutable, and validation may not depend on hidden runtime context.
+8. Post-consumption failure semantics are limited to the invariant that silent
+   reapplication is prohibited and recovery must use the accepted checkpoint
+   model.
 
-## Owner Approval Checklist
-
-- [ ] Approve composite validation authority.
-- [ ] Approve canonical Transaction digest fields.
-- [ ] Approve Inventory revision ownership.
-- [ ] Approve validation-plan digest.
-- [ ] Approve manager-scoped single-use authority.
-- [ ] Approve duplicate and stale behavior.
-- [ ] Approve Execution handoff boundary.
-- [ ] Approve checkpoint and migration requirements.
-- [ ] Approve failure codes and tests.
-- [ ] Authorize creation of an accepted Decision record.
-- [ ] Separately authorize implementation.
-
+Implementation, migration, Java API changes, lower-level executor visibility
+changes, RFC-0023 reconciliation, Execution integration, Allocation
+integration, and gameplay remain separately gated.

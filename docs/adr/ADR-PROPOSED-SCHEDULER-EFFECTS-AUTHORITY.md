@@ -1,13 +1,21 @@
-# Proposed ADR: Scheduler Handler Effects And Execution Authority
+# ADR-05: Scheduler Handler Effects And Scheduler Runtime Authority
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
 
-Decision identifier: Unassigned
+Decision identifier: AH-1-ADR-05
 
 Package: BCSE Architecture Hardening AH-1
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted Decision process.
+Authority: Owner-ratified architecture direction. This document authorizes
+documentation alignment only. It does not authorize implementation, migration,
+schema changes, runtime behavior, gameplay behavior, or RFC-0023 edits.
+
+Canonical platform reference:
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+Platform-wide vocabulary, identity classes, invariant ownership, recovery,
+replay, failure-state, cancellation, operator-authority, World Identity, and
+Platform Determinism Manifest definitions are canonical there and are not
+redefined here.
 
 ## Context
 
@@ -28,7 +36,7 @@ publication, or recovery behavior based on that declaration.
 guard. The live composition currently constructs one effective path, but the
 authority invariant is not encoded at the shared manager/service boundary.
 
-This proposal responds to
+This decision responds to
 [BCSE-AUDIT-004](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-004-scheduler-effect-types-are-descriptive-not-enforced)
 and
 [BCSE-AUDIT-006](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-006-reentrancy-guards-are-scoped-to-executor-instances).
@@ -46,9 +54,9 @@ know:
 - what evidence must publish; and
 - how crash recovery treats an invocation.
 
-BCSE also needs one explicit execution authority per world. Multiple pipeline
-objects must not bypass a per-instance guard and target the same authoritative
-manager concurrently.
+BCSE also needs one explicit Scheduler Runtime Authority per world. Multiple
+pipeline objects must not bypass a per-instance guard and target the same
+authoritative manager concurrently.
 
 ## Current Behavior
 
@@ -63,12 +71,12 @@ manager concurrently.
 - Scheduler schema 1 is sequential and package-internal.
 - No public third-party handler registration lifecycle exists.
 
-This proposal does not reclassify handlers, restrict constructors, or change
+This decision does not reclassify handlers, restrict constructors, or change
 Scheduler/Allocation behavior.
 
 ## Architectural Constraints
 
-The proposal is governed by:
+The decision is governed by:
 
 - `AI-0001` Deterministic Simulation;
 - `AI-0006` Universal Economic Transactions;
@@ -89,7 +97,9 @@ Additional constraints:
 - schema 1 remains single-threaded and sequential;
 - no automatic retry occurs after an unknown non-repeatable effect;
 - all effect and invocation identities are deterministic;
-- Allocation authority remains separate from Scheduler authority; and
+- Allocation remains separate from Scheduler authority;
+- Scheduler observes domain effects but does not infer or own domain results;
+- Execution remains independent of Allocation; and
 - implementation requires separate owner authorization.
 
 ## Options Considered
@@ -120,23 +130,25 @@ runtime into Transactions and violate singular ownership.
 
 Define permitted effects, retries, evidence, and recovery for each existing
 effect type. Move reentrancy protection to one authoritative world-scoped
-owner while keeping Scheduler and Allocation authorities separate.
+Scheduler Runtime Authority while keeping Scheduler and Allocation authorities
+separate.
 
 This adds policy and migration complexity but preserves existing owner
 boundaries and makes each label testable.
 
-## Decision Proposed
+## Decision
 
 Adopt **Option 4: enforce type-specific policy and owner-level execution
 authority**.
 
-The proposed semantics below do not become active until owner approval and a
-separately authorized implementation milestone.
+The semantics below do not become active until a separately authorized
+implementation milestone.
 
 ## Effect Identity
 
-Every handler invocation has a deterministic `HandlerInvocationId` derived
-from:
+Invocation Identity and Effect Identity follow the
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#3-platform-identity-model).
+Every handler invocation has a deterministic identity derived from:
 
 - world/checkpoint lineage identity;
 - Scheduler Work id;
@@ -147,9 +159,9 @@ from:
 - canonical payload digest; and
 - schema version.
 
-Every external effect has an `EffectId` derived from the invocation id and a
-handler-declared effect ordinal/type. No UUID, wall clock, or random value is
-used.
+Every external effect has an Effect Identity derived from the invocation
+identity and a handler-declared effect ordinal/type. No UUID, wall clock, or
+random value is used.
 
 The exact Java names are implementation details after approval.
 
@@ -199,7 +211,7 @@ Crash recovery:
 Permitted:
 
 - one or more owner-authorized side effects that are guaranteed to converge to
-  the same state when repeated with the same `EffectId`;
+  the same state when repeated with the same Effect Identity;
 - generated Work after the owner confirms effect outcome;
 - `COMPLETED`, `DEFERRED`, `RETRY`, or `FAILED` when registration policy
   permits each outcome.
@@ -207,17 +219,18 @@ Permitted:
 Required contract:
 
 - handler registration names the owner adapter and idempotency mechanism;
-- the owner stores or recognizes `EffectId`;
-- same `EffectId` and same content returns existing outcome;
-- same `EffectId` and different content fails explicitly;
+- the owner stores or recognizes Effect Identity;
+- same Effect Identity and same content returns existing outcome;
+- same Effect Identity and different content fails explicitly;
 - duplicate invocation cannot repeat quantity, payment, or lifecycle change;
   and
 - effect result is immutable and digest-bound.
 
 Retry:
 
-- automatic retry is allowed only with the identical `EffectId` and content;
-- an unknown outcome is queried by `EffectId` before reinvocation; and
+- automatic retry is allowed only with the identical Effect Identity and
+  content;
+- an Unknown Outcome is resolved by Effect Identity before reinvocation; and
 - exception retry follows registration and stage policy.
 
 Crash recovery:
@@ -238,7 +251,7 @@ Permitted:
 Required contract:
 
 - every consequential economic mutation uses Transactions;
-- proposal and result are bound under the proposed Transaction-validation ADR;
+- proposal and result are bound under the Transaction Validation Authority ADR;
 - no direct Inventory mutation exists;
 - invocation evidence records exact proposal digest and Transaction result;
 - duplicate submission uses Transaction idempotency rules; and
@@ -271,7 +284,7 @@ Permitted:
 
 Registration requirements:
 
-- explicit owner approval for the handler type;
+- explicit architectural approval for the handler type;
 - reason other effect types are insufficient;
 - durable invocation-start and effect-outcome evidence;
 - no automatic retry policy;
@@ -292,7 +305,7 @@ Retry and deferral:
 
 Crash recovery:
 
-- a recovered unknown invocation is quarantined and cannot run automatically;
+- a recovered Unknown Outcome cannot run automatically;
 - operator or owner-specific deterministic reconciliation must classify it as
   not applied, applied, or irrecoverably conflicting;
 - no inference from absence of Scheduler completion evidence alone.
@@ -305,14 +318,14 @@ mutable handler.
 | Rule | READ_ONLY | IDEMPOTENT | TRANSACTION_BACKED | NON_REPEATABLE |
 |---|---|---|---|---|
 | Authoritative domain side effect | No | Owner-idempotent only | Through Transaction plus owner publication | Exceptional owner effect |
-| Automatic retry | Allowed by policy | Allowed with same EffectId | Only after known Transaction outcome | Prohibited |
+| Automatic retry | Allowed by policy | Allowed with same Effect Identity | Only after known Transaction outcome | Prohibited |
 | Exception retry | Allowed by stage policy | Only after effect lookup | Only after Transaction/result lookup | Prohibited |
 | `DEFERRED` | Allowed | Allowed with known effect state | Allowed with known Transaction state | Conditional durable continuation only |
 | Generated Work | Allowed in validated result | After effect outcome | After Transaction/result outcome | After durable outcome only |
 | Transaction required | No | No, unless economic mutation | Yes for economic mutation | No, but cannot bypass Transaction rules |
-| Duplicate invocation | No external effect | Same result by EffectId | Same result by Transaction/effect identity | Quarantine/conflict |
+| Duplicate invocation | No external effect | Same result by Effect Identity | Same result by Transaction/effect identity | Unknown Outcome/conflict |
 | Persistence requirement | Scheduler evidence | Owner effect evidence | Checkpoint-correlated Transaction and owner evidence | Durable start/outcome/recovery evidence |
-| Unknown crash outcome | Safe to reinvoke | Resolve by EffectId | Resolve by Transaction/effect evidence | Never reinvoke automatically |
+| Unknown crash outcome | Safe to reinvoke | Resolve by Effect Identity | Resolve by Transaction/effect evidence | Never reinvoke automatically |
 
 ## Registration Validation
 
@@ -340,8 +353,8 @@ Registration rejects:
 - missing owner;
 - retry-enabled `NON_REPEATABLE`;
 - `TRANSACTION_BACKED` without Transaction evidence contract;
-- `IDEMPOTENT` without EffectId contract;
-- generated Work after an unknown effect;
+- `IDEMPOTENT` without Effect Identity contract;
+- generated Work after an Unknown Outcome;
 - policy incompatible with stage failure rules; and
 - unknown effect schema.
 
@@ -349,21 +362,21 @@ The Architecture Manifest declares the policy for every built-in handler.
 Architecture Validation checks the declaration. Runtime registration checks
 the candidate handler against it.
 
-## Simulation Execution Authority
+## Scheduler Runtime Authority
 
 ### One Authority Per World
 
-Exactly one authoritative Scheduler execution authority exists per loaded
-world. It owns:
+Exactly one authoritative Scheduler Runtime Authority exists per loaded world.
+It owns:
 
 - `SimulationSchedulerManager`;
 - `SimulationPipeline`;
 - handler registry snapshot;
-- global execution/reentrancy guard;
+- global Scheduler runtime/reentrancy guard;
 - current invocation identity;
 - current stage/tick;
 - checkpoint quiescence participation; and
-- execution diagnostics.
+- Scheduler execution diagnostics.
 
 The authority is created and retained by the world lifecycle composition
 service. Other modules receive submission/query contracts, not a pipeline
@@ -396,35 +409,25 @@ After implementation authorization:
   decision; and
 - no static mutable global authority is introduced.
 
-## Allocation Execution Authority
+## Allocation Separation
 
-Allocation remains a separate owner and does not merge into Scheduler.
+Allocation remains a separate owner and does not merge into Scheduler. This
+ADR does not define Allocation runtime authority, Allocation Cycle execution,
+provider behavior, stage 350 behavior, activation, release, expiration, or
+M22E-M22F integration.
 
-Exactly one `AllocationExecutionAuthority` per world owns:
-
-- `AllocationRuntimeService`;
-- `AllocationCycleExecutor`;
-- provider observation snapshot used for the cycle;
-- global Allocation Cycle reentrancy guard;
-- current cycle identity; and
-- checkpoint quiescence participation.
-
-Schema 1 rules:
-
-- one Allocation Cycle at a time per world;
-- no recursive Allocation Cycle;
-- no second executor against the same runtime authority;
-- provider callbacks never invoke the cycle;
-- Scheduler stage 350 may request one bounded cycle through the authority after
-  M22E-M22F approval; and
-- Scheduler does not acquire Allocation mutation ownership.
+When a later owner-approved Allocation integration exists, Scheduler may
+dispatch Scheduler Work that requests bounded Allocation activity through the
+approved Allocation boundary. Scheduler does not acquire Allocation mutation
+ownership, infer Allocation results, repair Allocation state, or create
+Commitments.
 
 ## Current Handler Compatibility Review
 
 ### Production
 
-Current Production declares `TRANSACTION_BACKED`. The proposed semantics align
-with DEC-0073 but require:
+Current Production declares `TRANSACTION_BACKED`. These semantics align with
+DEC-0073 but require:
 
 - exact Transaction proposal/result binding;
 - checkpoint-correlated Production/Scheduler/Transaction evidence; and
@@ -433,7 +436,7 @@ with DEC-0073 but require:
 ### Economic Planning
 
 Current Planning declares `NON_REPEATABLE` and returns `DEFERRED` every tick.
-It does not yet meet the proposed durable continuation contract.
+It does not yet meet the durable continuation contract.
 
 Before this ADR can be implemented, owner review must choose one migration:
 
@@ -443,7 +446,7 @@ Before this ADR can be implemented, owner review must choose one migration:
    evidence under coordinated checkpointing; or
 3. introduce a narrower accepted effect category through a separate amendment.
 
-This proposal recommends **Option 1** after the proposed Planning cadence makes
+This decision recommends **Option 1** after the Planning Cadence ADR makes
 each cycle a distinct stable invocation. Same cycle identity with identical
 input must return existing published result; different input must conflict.
 No reclassification occurs in this task.
@@ -451,7 +454,7 @@ No reclassification occurs in this task.
 ## Rationale
 
 The four labels are useful only when they constrain runtime behavior. The
-proposed matrix permits safe automation for read-only, idempotent, and
+effect matrix permits safe automation for read-only, idempotent, and
 Transaction-backed work while treating unknown non-repeatable effects as an
 operator-visible integrity condition.
 
@@ -475,14 +478,14 @@ assumption into a testable invariant without merging Scheduler and Allocation.
 - Handler registration gains policy metadata and validation.
 - Current Planning classification needs migration.
 - Some exceptions that currently become ordinary failure will require
-  quarantine/reconciliation.
+- Unknown Outcome reconciliation.
 - Constructors and tests need authority factories.
 - Durable effect evidence depends on checkpoint implementation.
 - Third-party handler registration remains blocked.
 
 ## Compatibility
 
-The proposal strengthens DEC-0072's declared side-effect contracts and
+The decision strengthens DEC-0072's declared side-effect contracts and
 single-pipeline intent. It requires a new accepted Decision before behavior or
 API visibility changes.
 
@@ -496,7 +499,8 @@ Migration must:
 
 1. register immutable effect policy for each existing handler;
 2. verify current Production Work against `TRANSACTION_BACKED`;
-3. resolve Planning classification through owner approval;
+3. apply the ratified Planning migration to `IDEMPOTENT` when the prerequisite
+   cadence identity exists;
 4. persist effect policy schema/digest in the coordinated checkpoint;
 5. migrate Work attempt/effect identity state;
 6. ensure one authority owns each loaded manager;
@@ -524,7 +528,8 @@ Proposed explicit outcomes:
 - `ALLOCATION_AUTHORITY_ALREADY_EXECUTING`; and
 - `ALLOCATION_AUTHORITY_MISMATCH`.
 
-Failure-code names are proposed contract names.
+Failure-code names are architectural contract names, not implemented
+constants.
 
 No failure after an unknown external effect permits automatic reinvocation.
 
@@ -541,13 +546,13 @@ non-repeatable replay consumes recorded outcome evidence only.
 
 ## Security And Integrity Implications
 
-- Modules cannot acquire pipeline execution authority through public
+- Modules cannot acquire Scheduler Runtime Authority through public
   constructors.
 - A handler cannot claim `READ_ONLY` while registering mutation permissions.
 - Transaction-backed mutation cannot bypass Transaction evidence.
 - Effect identity prevents duplicate replay/submission.
 - Clients cannot select effect policy or trigger retries.
-- Unknown outcome quarantine prevents duplicate consequential effects.
+- Unknown Outcome handling prevents duplicate consequential effects.
 
 ## Testing Requirements
 
@@ -556,8 +561,8 @@ Required automated tests:
 - registration validation for every effect type;
 - every prohibited policy combination;
 - READ_ONLY retry and duplicate invocation;
-- IDEMPOTENT same-EffectId replay;
-- same-EffectId/different-content conflict;
+- IDEMPOTENT same-Effect Identity replay;
+- same-Effect Identity/different-content conflict;
 - TRANSACTION_BACKED rejection without exact result evidence;
 - applied Transaction duplicate-safe recovery;
 - NON_REPEATABLE automatic retry rejection;
@@ -587,36 +592,33 @@ Required automated tests:
   non-economic owner runtime do not belong to Transactions.
 - **Allow per-instance guards:** rejected because multiple instances can target
   one authority.
-- **Merge Scheduler and Allocation execution ownership:** rejected because they
-  own different lifecycle and mutation responsibilities.
+- **Merge Scheduler and Allocation ownership:** rejected because Scheduler and
+  Allocation own different lifecycle and mutation responsibilities.
 
-## Unresolved Questions
+## Ratification Notes
 
-Owner decisions required:
+Owner ratification approved Scheduler Effects Authority with the revisions
+incorporated above:
 
-1. Approve the effect matrix.
-2. Approve the proposed Planning migration to `IDEMPOTENT`, or select another
-   listed migration.
-3. Confirm whether any schema-1 `NON_REPEATABLE` handler is permitted.
-4. Confirm whether `READ_ONLY` handlers may produce owner-neutral external
-   telemetry outside deterministic evidence.
-5. Define the exact retry response to a Transaction timeout with no observed
-   result.
-6. Confirm constructor/API restriction approach.
-7. Confirm whether future public handler registration requires a signed
-   manifest or only explicit server startup registration.
+1. Scheduler owns Scheduler Work lifecycle, ordered dispatch, effect-policy
+   enforcement, invocation identity, Scheduler publication, and one Scheduler
+   Runtime Authority per world.
+2. Scheduler observes domain effects and authoritative results. It does not
+   infer or own Planning, Production, Transaction, Inventory, Allocation, or
+   future Execution results.
+3. The four effect types, invocation/effect identity model, effect policy,
+   retry/deferral/generated Work boundaries, and no automatic reinvocation
+   after Unknown Outcome are approved architectural direction.
+4. Current Planning should migrate to `IDEMPOTENT` after Planning cadence gives
+   each Planning Cycle a stable identity and duplicate-compatible result
+   observation.
+5. Detailed Allocation authority, stage 350 behavior, provider behavior,
+   activation, release, expiration, and M22E-M22F integration remain outside
+   this ADR.
+6. Execution remains independent of Allocation. Scheduler Effects must not
+   create an Execution-to-Allocation dependency.
 
-## Owner Approval Checklist
-
-- [ ] Approve semantics for all four effect types.
-- [ ] Approve invocation and effect identities.
-- [ ] Approve registration policy validation.
-- [ ] Approve retry, deferral, generated Work, and exception rules.
-- [ ] Approve one Scheduler authority per world.
-- [ ] Approve one separate Allocation authority per world.
-- [ ] Approve schema-1 no-parallel/no-recursion rules.
-- [ ] Resolve current Planning handler classification.
-- [ ] Approve checkpoint, evidence, and Transaction dependencies.
-- [ ] Approve migration and tests.
-- [ ] Authorize creation of an accepted Decision record.
-- [ ] Separately authorize implementation.
+Implementation, constructor/API visibility changes, Scheduler runtime changes,
+effect-policy persistence, Planning handler reclassification, checkpoint code,
+RFC-0023 reconciliation, Allocation integration, Execution implementation, and
+gameplay remain separately gated.

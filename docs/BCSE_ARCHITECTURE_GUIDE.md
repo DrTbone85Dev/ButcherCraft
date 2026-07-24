@@ -13,9 +13,11 @@ When documents differ, use this authority order:
 
 1. [`CONSTITUTION.md`](../CONSTITUTION.md)
 2. Accepted records in [`DECISIONS.md`](../DECISIONS.md)
-3. [`TECHNICAL_ARCHITECTURE.md`](../TECHNICAL_ARCHITECTURE.md)
-4. Accepted RFC scope and focused subsystem documents
-5. This guide
+3. Ratified architecture hardening ADRs and
+   [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
+4. [`TECHNICAL_ARCHITECTURE.md`](../TECHNICAL_ARCHITECTURE.md)
+5. Accepted RFC scope and focused subsystem documents
+6. This guide
 
 A draft RFC does not become current architecture merely because this guide
 mentions it.
@@ -83,7 +85,7 @@ object graph.
 | Planning | Implemented deterministic Production planning and Scheduler integration |
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
-| Generic Execution | Specified by RFC-0023 Draft 1 only; not accepted or implemented |
+| Generic Execution | Specified by RFC-0023 Draft 2 only; not accepted or implemented |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 The live Scheduler currently contains Production and Economic Planning
@@ -131,7 +133,7 @@ that architecture.
 | Planning | Observations used by a cycle, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, cycle evidence, and submission state | Execution, Inventory mutation, Transactions, Scheduler runtime, durable Capacity reservations | Implemented |
 | Providers | Their source-domain Resources, Capacity, and current facts | Planning decisions, Allocation Commitments, execution, or cross-domain mutation | Generic Allocation provider contract implemented; concrete providers deferred |
 | Allocation | Requirements, Requests, AllocationSets, Commitments, set runtime, detached accounting, Cycle reports, traces, and observation aggregation | Source Resources, source Capacity, Planning artifacts, executable definitions, Transactions, or Inventory | M22A-M22D implemented; live integration deferred |
-| Execution | Generic execution runtime, attempts, progress, lifecycle, Reports, History, and Trace | Plans, Commitments, Resources, Capacity, Transactions, Inventory, or domain semantics | RFC-0023 Draft 1 only |
+| Execution | Generic execution runtime, attempts, progress, lifecycle, Reports, History, and Trace | Plans, Commitments, Resources, Capacity, Transactions, Inventory, or domain semantics | RFC-0023 Draft 2 only |
 | Transactions | Economic mutation validation, accepted change plans, atomic execution, audit history, and replay orchestration | Business decisions, production semantics, planning, scheduling, or source-domain policy | Implemented |
 | Inventory | Economic quantities, inventory runtime, storage hierarchy, and capacity invariants | The reason a quantity changes, Production policy, Orders, or market behavior | Implemented |
 | Architecture Validation | Immutable architecture descriptions, rules, deterministic validation, and reports | Any described subsystem state, architecture approval, runtime discovery, or simulation behavior | Implemented build-time framework |
@@ -174,7 +176,7 @@ an external domain adapter, observes any required Transaction result, and
 publishes runtime and evidence atomically.
 
 Execution does not decide, allocate, interpret industry semantics, or mutate
-authoritative state. This contract is documented by RFC-0023 Draft 1 and is not
+authoritative state. This contract is documented by RFC-0023 Draft 2 and is not
 current implementation authority.
 
 ### Transactions
@@ -516,9 +518,10 @@ generic Execution integration.
 
 ### RFC-0023: Deterministic Execution Engine
 
-[`RFC-0023 Draft 1`](RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md) specifies the
-proposed generic Execution domain, runtime, pipeline, adapter framework,
-Transaction observation, evidence, replay, and verification requirements.
+[`RFC-0023 Draft 2`](RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md) specifies the
+proposed generic Execution authority, runtime, lifecycle, pipeline, adapter
+framework, Transaction observation, owner snapshots, and verification
+requirements.
 
 The document is complete as a draft. It is not accepted architecture and
 authorizes no implementation until architectural review and explicit owner
@@ -532,6 +535,12 @@ markets, population, or stable public APIs. A roadmap mention does not
 authorize implementation or reserve a final design.
 
 ## 15. Glossary
+
+Canonical AH-1 platform vocabulary is defined by the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+If a platform-wide term appears in that addendum, the addendum is the single
+canonical definition. The entries below are guide-level shorthand or
+subsystem-specific context.
 
 **Adapter**
 
@@ -550,8 +559,8 @@ definition. Every Requirement succeeds or the Set receives no Commitment.
 
 **Atomic publication**
 
-The replacement or transition that makes a complete validated candidate
-visible as one consistent result.
+See Publication in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary).
 
 **Capacity**
 
@@ -569,8 +578,9 @@ Immutable, schema-versioned data describing what a stable concept is.
 
 **Evidence**
 
-Immutable reports, history, traces, results, and digests explaining an
-evaluation or transition.
+See the canonical evidence vocabulary and ownership model in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary)
+and the Evidence Lifecycle ADR.
 
 **Execution**
 
@@ -600,8 +610,8 @@ observations under a bounded deterministic contract.
 
 **Replay**
 
-Reconstruction or reevaluation from explicit recorded inputs and evidence,
-without querying live external state.
+See the canonical definition in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#6-replay-model).
 
 **Resource**
 
@@ -615,9 +625,8 @@ immutable identity or definition.
 
 **Scheduler Work**
 
-An immutable request for bounded handling at an authoritative Simulation Tick
-and stable stage. Scheduler ownership determines eligibility and order, not
-domain meaning.
+See the canonical definition in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary).
 
 **Trace**
 
@@ -639,6 +648,7 @@ nothing.
 - [`MODULES.md`](../MODULES.md)
 - [`SIMULATION_MODEL.md`](../SIMULATION_MODEL.md)
 - [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
+- [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
 - [`Economic Planning Engine`](ECONOMIC_PLANNING_ENGINE.md)
 - [`Production Framework`](PRODUCTION_FRAMEWORK.md)

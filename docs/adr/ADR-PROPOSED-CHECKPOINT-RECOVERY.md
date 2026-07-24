@@ -1,13 +1,21 @@
-# Proposed ADR: Coordinated Checkpoint And Crash Recovery
+# ADR-02: Coordinated Checkpoint And Crash Recovery
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
 
-Decision identifier: Unassigned
+Decision identifier: AH-1-ADR-02
 
 Package: BCSE Architecture Hardening AH-1
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted Decision process.
+Authority: Owner-ratified architecture direction. This document authorizes
+documentation alignment only. It does not authorize implementation, migration,
+schema changes, runtime behavior, gameplay behavior, or RFC-0023 edits.
+
+Canonical platform reference:
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+Platform-wide vocabulary, identity classes, invariant ownership, recovery,
+replay, failure-state, cancellation, operator-authority, World Identity, and
+Platform Determinism Manifest definitions are canonical there and are not
+redefined here.
 
 ## Context
 
@@ -26,7 +34,7 @@ The Scheduler rejects a loaded state whose finalized tick differs from the
 authoritative Clock. This fail-visible behavior protects integrity but provides
 no automatic recovery.
 
-This proposal responds to
+This decision responds to
 [BCSE-AUDIT-002](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-002-no-coordinated-durable-simulation-checkpoint).
 
 ## Problem
@@ -58,12 +66,12 @@ It must:
   autosave cadence, prior-generation retention, or recovery selection exists.
 - Schema 1 explicitly does not claim crash recovery or catch-up.
 
-This proposal does not implement a checkpoint coordinator or alter current
+This decision does not implement a checkpoint coordinator or alter current
 save behavior.
 
 ## Architectural Constraints
 
-The proposal is governed by:
+The decision is governed by:
 
 - `AI-0001` Deterministic Simulation;
 - `AI-0002` Server Authority;
@@ -90,6 +98,12 @@ Additional constraints:
 - cross-subsystem commit is distinct from in-memory atomic publication;
 - an incomplete generation is never treated as committed; and
 - implementation requires separate owner authorization.
+
+Checkpoint Recovery owns coordinated publication, generation identity,
+generation selection, integrity orchestration, rollback selection, recovery
+diagnostics, and publication of the recovered baseline. It does not own
+subsystem state, define subsystem validation rules, or become a second runtime
+authority.
 
 ## Atomicity Levels
 
@@ -134,7 +148,7 @@ represents a loadable BCSE world simulation generation.
 | Two-phase checkpoint publication | Validates all owner snapshots before one commit record | Requires quiescent boundary and coordinator | Last valid commit remains authoritative | High but explicit |
 | Checkpoint plus append-only journal | Small recovery loss and exact forward replay | Introduces durable mutation journal across owners and complex truncation | Can replay after checkpoint | Highest; not realistic for first hardening schema |
 
-## Decision Proposed
+## Decision
 
 Adopt a **directory-per-generation checkpoint with two-phase publication and
 dual commit slots**. Do not introduce a cross-owner write-ahead mutation
@@ -168,7 +182,9 @@ Each owner supplies and validates its own immutable checkpoint snapshot.
 
 ### `CheckpointGenerationId`
 
-Introduce a stable deterministic generation identity with:
+`CheckpointGenerationId` follows the generation identity rules in the
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#3-platform-identity-model).
+Its checkpoint-specific identity contains:
 
 - checkpoint schema version;
 - monotonically increasing committed sequence;
@@ -176,7 +192,7 @@ Introduce a stable deterministic generation identity with:
 - previous committed generation id; and
 - previous committed manifest digest.
 
-The proposed canonical textual form is:
+The schema-1 canonical textual form is:
 
 ```text
 butchercraft:checkpoint/<20-digit-sequence>/<simulation-tick>
@@ -229,7 +245,7 @@ needs a separate bridge decision.
 
 ### Checkpoint Cadence
 
-Schema 1 proposes:
+Schema 1 uses these operational defaults:
 
 - periodic checkpoint every **6,000 authoritative simulation ticks**;
 - manual server-authoritative request, executed at the next safe boundary;
@@ -270,7 +286,8 @@ Only one checkpoint preparation or publication can exist per world.
 
 ### Owner Snapshot Contract
 
-Each participant returns:
+Owner Snapshot is defined by the Platform Canonicalization Addendum. Each
+participant returns:
 
 - owner id;
 - owner snapshot schema version;
@@ -316,7 +333,7 @@ The coordinator:
 2. captures participant snapshots;
 3. validates owner completeness;
 4. validates Clock/Scheduler tick agreement;
-5. validates Transaction/Inventory revision agreement;
+5. validates Transaction result evidence against Inventory Freshness Identity;
 6. validates Planning/Scheduler Work and cycle references;
 7. validates Production/Transaction and Order references;
 8. validates future Allocation/Execution authorization and lifecycle
@@ -425,10 +442,10 @@ Directory modification time is never used.
 |---|---|
 | Before snapshot capture | Existing committed head remains authoritative |
 | During capture/validation | No durable candidate is committed |
-| During owner file writes | Temporary generation is ignored and later quarantined |
+| During owner file writes | Temporary generation is ignored and later recorded as a Quarantined Artifact |
 | After owner files, before generation manifest | Candidate is incomplete and ignored |
 | After generation manifest, before final directory rename | Temporary candidate is ignored |
-| After final directory rename, before head slot | Complete but uncommitted generation is ignored or quarantined |
+| After final directory rename, before head slot | Complete but uncommitted generation is ignored or recorded as a Quarantined Artifact |
 | During inactive head-slot write | Previous active head remains authoritative |
 | After valid new head slot | New generation is committed |
 | During old-generation cleanup | Both retained committed generations remain valid; cleanup resumes later |
@@ -445,8 +462,8 @@ Schema 1 recovery rolls back to the last committed generation. It does not:
 - automatically catch up lost ticks.
 
 All in-memory simulation progress after the selected checkpoint is lost after
-a hard crash. With the proposed periodic default, the normal exposure is fewer
-than 6,000 simulation ticks. The recovery report states the last observed
+a hard crash. With the schema-1 periodic default, the normal exposure is fewer
+than one checkpoint interval. The recovery report states the last observed
 uncommitted tick when such evidence is available, but does not treat it as
 authoritative.
 
@@ -455,16 +472,19 @@ accepted Decision.
 
 ### Transaction And Inventory Consistency
 
-The Inventory snapshot has a stable revision. The Transaction snapshot records:
+The Inventory snapshot has an Inventory Freshness Identity covering the
+authoritative Inventory state represented by the checkpoint. The Transaction
+snapshot records:
 
 - last authoritative submission sequence;
 - every retained APPLIED Transaction digest;
-- starting and ending Inventory revision for each retained application; and
-- the final Inventory revision represented.
+- starting and ending Inventory freshness evidence for each retained
+  application; and
+- the final Inventory Freshness Identity represented.
 
 Checkpoint validation requires exact agreement between Transaction and
-Inventory revisions and application evidence. It never replays a Transaction
-against the captured Inventory merely to make files match.
+Inventory freshness evidence and application evidence. It never replays a
+Transaction against the captured Inventory merely to make files match.
 
 ### Clock And Scheduler Consistency
 
@@ -539,12 +559,12 @@ mutation log at the same time.
 
 ## Compatibility
 
-The proposal introduces a new persistence architecture and requires a new
-accepted Decision. Existing schemas remain valid migration inputs. They do not
+The decision introduces a new persistence architecture for BCSE runtime
+generations. Existing schemas remain valid migration inputs. They do not
 become committed checkpoint generations merely by existing together.
 
 Public stable ids and domain ownership remain unchanged. File locations and
-load orchestration change only after migration.
+load orchestration change only after separately authorized migration.
 
 ## Migration
 
@@ -569,13 +589,16 @@ unchanged.
 
 ### World Identity `SavedData`
 
-Migration must select one durable authority. The proposed target is an owner
-snapshot inside the checkpoint generation, with Minecraft `SavedData` retained
-only as a migration source or compatibility projection. It must not remain a
-second mutable authority.
+Schema-1 World Identity remains an immutable external root. Checkpoint
+generations reference World Identity by stable identity, schema, and digest.
+They do not make Checkpoint Recovery the World Identity owner and do not
+authorize migration of World Identity from Minecraft `SavedData` into
+checkpoint storage.
 
-This specific migration requires owner approval because it changes the durable
-representation accepted by DEC-0054 without changing World Identity ownership.
+Recovery validates that the selected generation belongs to the same immutable
+World Identity root. Migration may record World Identity as an external root
+input, but it must preserve the saved identity rather than regenerate or
+reinterpret it.
 
 ### Schema Evolution
 
@@ -618,10 +641,11 @@ Proposed explicit outcomes include:
 - `CHECKPOINT_LEGACY_MIGRATION_FAILED`; and
 - `CHECKPOINT_FILESYSTEM_GUARANTEE_REDUCED`.
 
-Failure-code names are proposed contract names.
+Failure-code names are architectural contract names, not implemented
+constants.
 
-Incomplete candidates are quarantined or deleted only after deterministic
-reference checks. They are never loaded partially.
+Incomplete candidates become Quarantined Artifacts or are deleted only after
+deterministic reference checks. They are never loaded partially.
 
 ## Replay Implications
 
@@ -654,7 +678,7 @@ Required automated and fault-injection tests:
 - canonical owner ordering;
 - every participant present exactly once;
 - Clock/Scheduler tick agreement;
-- Transaction/Inventory revision agreement;
+- Transaction result and Inventory Freshness Identity agreement;
 - Planning six-file and Production three-file owner consistency;
 - future Allocation/Execution participant validation;
 - snapshot capture while no next-tick mutation can start;
@@ -695,37 +719,27 @@ Required automated and fault-injection tests:
 - **Checkpoint plus append-only journal:** deferred because it introduces a
   larger cross-owner mutation protocol than current schema requires.
 
-## Unresolved Questions
+## Ratification Notes
 
-Owner decisions required:
+Owner ratification approved coordinated checkpoint recovery with the revisions
+incorporated above:
 
-1. Approve or replace the 6,000-tick periodic cadence.
-2. Approve the three-generation minimum retention.
-3. Approve the dual head-slot protocol.
-4. Confirm whether World Identity migrates from `SavedData` into checkpoint
-   storage or remains an immutable external root with a validated digest.
-5. Define acceptable shutdown behavior when a final checkpoint fails.
-6. Define minimum supported filesystem guarantees for release.
-7. Confirm whether BCSE/vanilla ItemStack mutations require a future joint
-   durability bridge.
-8. Confirm operator access to select an older valid generation manually.
-9. Confirm whether the initial implementation may compress owner files while
-   preserving canonical uncompressed content digests.
+1. Checkpoint Recovery owns coordinated publication, generation identity,
+   generation selection, integrity orchestration, rollback selection, recovery
+   diagnostics, and recovered-baseline publication.
+2. Subsystems remain the owners of their own state, validation, snapshots,
+   schemas, and migration rules.
+3. Directory-per-generation two-phase publication, dual head slots,
+   deterministic generation identity, deterministic last-known-good selection,
+   and explicit rollback/no-catch-up are approved architectural direction.
+4. Checkpoint cadence, retained generation count, filesystem capability level,
+   compression, and storage layout details remain schema-1 operational policy
+   or implementation detail unless separately ratified as invariants.
+5. Schema-1 World Identity remains an immutable external root referenced by
+   checkpoint generations through identity, schema, and digest.
+6. Operator selection of an older valid generation is permitted only through
+   explicit operator authority and audit evidence.
 
-## Owner Approval Checklist
-
-- [ ] Approve the four atomicity-level definitions.
-- [ ] Approve directory-per-generation two-phase publication.
-- [ ] Approve `CheckpointGenerationId`.
-- [ ] Approve participant scope and owner order.
-- [ ] Approve checkpoint cadence and triggers.
-- [ ] Approve snapshot boundary and coordinator authority.
-- [ ] Approve dual head slots and recovery selection.
-- [ ] Approve explicit rollback/no-catch-up policy.
-- [ ] Approve generation retention.
-- [ ] Approve legacy migration, including World Identity disposition.
-- [ ] Approve filesystem guarantee wording.
-- [ ] Approve fault-injection requirements.
-- [ ] Authorize creation of an accepted Decision record.
-- [ ] Separately authorize implementation.
-
+Implementation, migration, checkpoint services, Java APIs, schema files,
+RFC-0023 reconciliation, Allocation integration, Execution integration, and
+gameplay remain separately gated.
