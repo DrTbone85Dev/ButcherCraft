@@ -120,6 +120,13 @@ M22D provider identity, explicit registry, immutable observation requests and
 results, failure isolation, canonical aggregation, bundle usability, and replay
 digests are documented in `docs/ALLOCATION_PROVIDER_FRAMEWORK.md`.
 
+RFC-0023 Parts I through III propose the philosophy, authority boundaries,
+first principles, invariants, immutable domain vocabulary, and mutable runtime
+and lifecycle model for a future Deterministic Execution Engine in
+`docs/RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md`. The RFC remains Draft 1 and
+authorizes no implementation until the complete specification is reviewed and
+approved.
+
 The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 
 Development environment verified on VS Code.
