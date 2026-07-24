@@ -1,14 +1,16 @@
 # BCSE Architecture Hardening Review
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: HISTORICAL REVIEW PACKAGE - RATIFIED DIRECTIONS RECORDED IN AH-1 ADRS
 
 Package: AH-1 Platform Lifecycle And Boundary Contracts
 
 Review date: 2026-07-24
 
-Authority: This package is owner-review material only. It does not accept a
-Decision, revise an RFC, authorize implementation, authorize migration, or
-change current behavior.
+Authority: This package is review evidence. Ratified AH-1 direction is recorded
+in the five AH-1 ADRs and the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+This document does not revise an RFC, authorize implementation, authorize
+migration, or change current behavior.
 
 ## Executive Summary
 
@@ -25,7 +27,7 @@ Decision Records:
 2. platform-wide evidence lifecycle;
 3. coordinated checkpoint and crash recovery;
 4. exact Transaction validation authority;
-5. enforceable Scheduler handler effects and one execution authority;
+5. enforceable Scheduler handler effects and one Scheduler Runtime Authority;
 6. RFC-0023 Draft 1 reconciliation; and
 7. M22E-M22F Allocation integration sequencing.
 
@@ -37,10 +39,11 @@ The package recommends:
   archive partitions;
 - a 6,000-tick coordinated directory-per-generation checkpoint with dual
   commit slots and deterministic rollback to the last valid generation;
-- Transaction validation bound to proposal digest, Inventory revision,
-  validation-plan digest, and manager-scoped single-use authority;
-- effect-specific retry/publication rules and exactly one Scheduler authority
-  plus one separate Allocation authority per world;
+- Transaction validation bound to proposal digest, Inventory Freshness
+  Identity, validation-plan digest, and Transaction-owned single-use Validation
+  Consumption Authority;
+- effect-specific retry/publication rules and exactly one Scheduler Runtime
+  Authority per world while preserving separate Allocation ownership;
 - an RFC-0023 Draft 2 that separates public `ExecutionInput` from internal
   `ExecutionContext`, records conditional phases explicitly, and acknowledges
   cross-owner publication boundaries; and
@@ -86,7 +89,7 @@ The proposals are based on current repository behavior:
   checkpoint generation exists.
 - Scheduler initialization rejects Clock/finalized-tick mismatch.
 - `TransactionExecutor` matches accepted validation to a Transaction by
-  `TransactionId`, without proposal digest or Inventory revision.
+  `TransactionId`, without proposal digest or Inventory Freshness Identity.
 - handler registration requires a non-null `HandlerEffectType` but does not
   enforce effect-specific policy.
 - `SimulationPipeline` and `AllocationCycleExecutor` use instance-local
@@ -140,7 +143,8 @@ Recommendation:
 - minimum separation 20 simulation ticks;
 - default periodic cadence 1,200 simulation ticks;
 - configurable range 20 through 72,000 simulation ticks;
-- one pending Planning Work and at most one cycle per tick;
+- one pending Scheduler Work item for Planning and at most one Planning Cycle
+  per tick;
 - ordered immutable trigger records;
 - deterministic coalescing;
 - one recovery cycle when overdue, never burst catch-up;
@@ -217,23 +221,23 @@ Document:
 Recommendation:
 
 - canonical Transaction proposal digest;
-- authoritative Inventory starting/ending revision;
+- authoritative Inventory Freshness Identity and resulting freshness evidence;
 - validation-plan digest;
 - manager-scoped, world-scoped, non-persisted single-use validation authority;
-- one manager-owned validation/execution critical section;
+- one Serialized Transaction-owner Boundary;
 - same-ID/different-body conflict;
 - duplicate identical APPLIED submission returns existing evidence;
 - stale validation rejection; and
-- future Execution observes exact digest/revision-bound result evidence.
+- future Execution observes exact digest/freshness-bound result evidence.
 
 Owner-sensitive items:
 
-- global versus per-inventory revision;
+- Inventory Freshness Identity representation;
 - legacy history migration when no original baseline exists;
 - post-authority-consumption failure status; and
 - lower-level executor visibility.
 
-### E. Scheduler Effects And Execution Authority
+### E. Scheduler Effects And Scheduler Runtime Authority
 
 Document:
 [ADR-PROPOSED-SCHEDULER-EFFECTS-AUTHORITY](adr/ADR-PROPOSED-SCHEDULER-EFFECTS-AUTHORITY.md)
@@ -273,7 +277,7 @@ Recommendation:
   `SKIPPED_AFTER_FAILURE`, and `NOT_REACHED_DUE_TO_BUDGET`;
 - adapter returns domain outcome and `TransactionProposalData`;
 - Execution Core constructs/submits the Transaction proposal;
-- exact digest/revision-bound Transaction observation;
+- exact digest/freshness-bound Transaction observation;
 - deterministic identities for attempt, history, report, trace, completion,
   failure, cancellation, and publication;
 - owner-local Execution atomicity distinguished from Transaction application
@@ -327,7 +331,7 @@ Owner-sensitive items:
 | Planning cadence | every tick; fixed periodic; evidence-triggered; hybrid; demand-only | deterministic hybrid |
 | Evidence lifecycle | count rolling; tick window; append-only archives; checkpoint+deltas; hybrid hot/cold | hybrid hot/cold |
 | Checkpointing | independent saves; ordered shutdown; generation directory; write-ahead manifest; two-phase; journal | generation directory plus two-phase dual heads |
-| Transaction authority | digest; opaque token; critical section; digest+revision; composite | composite |
+| Transaction authority | digest; runtime token; serialized boundary; digest+freshness; composite | composite |
 | Handler effects | descriptive labels; all idempotent; all Transaction-backed; enforced effect matrix | enforced effect matrix |
 | Execution input | literal Draft 1; remove Transactions; merge input/context; separate input/context | separate public input/internal context |
 | Allocation sequencing | Allocation first; pure Execution then Allocation; joint vertical slice; persistence first | pure Execution foundation then Allocation |
@@ -338,48 +342,42 @@ runtime, persistence, compatibility, and migration analysis.
 ## Decision Dependency Graph
 
 ```text
-Evidence Lifecycle (B) <------> Checkpoint And Recovery (C)
-          |                              |
-          +----------+-------------------+
-                     |
-                     v
-             Planning Cadence (A)
-
-Transaction Validation Authority (D)
-          |                    |
-          +----------+---------+
-                     |
-                     v
-       Scheduler Effects And Authority (E)
-                     |
-          +----------+----------+
-          |                     |
-          v                     v
-Evidence/Checkpoint (B/C)   Transaction (D)
-          \                     /
-           \                   /
-            v                 v
-        RFC-0023 Reconciliation (F)
-                     |
-                     v
- Allocation Integration Sequencing (G)
-          ^
-          |
- Planning Cadence (A)
+Platform Canonicalization Addendum
+              |
+              v
+Evidence Lifecycle
+Checkpoint Recovery
+Transaction Validation Authority
+Planning Cadence
+Scheduler Effects Authority
+              |
+              v
+RFC-0023 Draft 2 Reconciliation
+              |
+              v
+Allocation Integration Sequencing
 ```
 
 Normative dependency statements:
 
-- B and C are co-dependent and must be approved as a consistent pair.
-- A depends on B and C for retained trigger/replay state and restart behavior.
-- D can be reviewed independently but its migration/durability clauses depend
-  on C.
-- E depends on B, C, and D for durable effect evidence and Transaction-backed
-  recovery.
-- F depends on B, C, D, and E.
-- G depends on A through F.
+- The Platform Canonicalization Addendum is the canonical source for shared
+  vocabulary, identity classes, failure states, recovery/replay distinction,
+  operator authority, Platform Determinism Manifest, and World Identity
+  disposition.
+- Evidence Lifecycle, Checkpoint Recovery, Transaction Validation Authority,
+  Planning Cadence, and Scheduler Effects Authority depend on the addendum for
+  platform-wide definitions.
+- RFC-0023 Draft 2 reconciliation depends on the addendum and the five
+  ratified platform ADRs.
+- Allocation integration sequencing remains downstream of RFC-0023
+  reconciliation and the ratified platform ADRs.
+- The dependency graph contains no platform-document cycle.
 
-## Recommended Approval Order
+## Historical Approval Order
+
+The following approval order was the review recommendation before AR-007
+ratification. It is retained as historical review evidence; the ratified
+dependency direction is the graph above.
 
 ### Approval Wave 1: Lifecycle Pair
 
@@ -403,7 +401,7 @@ are aligned.
 
 ### Approval Wave 3: Invocation Safety
 
-- E Scheduler Effects And Execution Authority.
+- E Scheduler Effects And Scheduler Runtime Authority.
 
 This depends on the durable evidence and Transaction result contracts.
 
@@ -449,10 +447,11 @@ No required recovery delta is deleted by the proposed policy.
 
 ### Transaction And Inventory Consistency
 
-- Inventory owns its revision.
-- Transaction validation binds proposal, plan, and starting revision.
-- APPLIED result records starting and ending revisions.
-- The checkpoint validates exact final revision agreement.
+- Inventory owns its freshness identity.
+- Transaction validation binds proposal, plan, and Inventory Freshness
+  Identity.
+- APPLIED result records resulting freshness evidence.
+- The checkpoint validates exact Transaction/Inventory freshness agreement.
 - No load path merges one owner's newer files with another generation.
 
 No ownership transfer identified.
@@ -463,7 +462,7 @@ No ownership transfer identified.
 - Execution Core builds the canonical proposal;
 - TransactionManager owns validation authority;
 - Execution receives immutable result evidence only; and
-- result must match exact proposal digest and Inventory revisions.
+- result must match exact proposal digest and Inventory freshness evidence.
 
 ID-only inference is prohibited.
 
@@ -518,7 +517,7 @@ No proposed decision transfers:
 - Production runtime from Production;
 - generic runtime from future Execution;
 - mutation from Transactions;
-- quantities/revisions from Inventory; or
+- quantities and freshness identities from Inventory; or
 - time from the Simulation Clock.
 
 Player presence is absent from cadence, checkpoint, evidence, retry, and
@@ -533,8 +532,8 @@ migration:
 - Evidence records gain category, correlation, digest, archive, and horizon
   metadata.
 - current files migrate into checkpoint generation 1.
-- Inventory gains authoritative revision.
-- Transactions gain proposal/plan/application digests and revisions.
+- Inventory gains authoritative freshness identity.
+- Transactions gain proposal/plan/application digests and freshness evidence.
 - Scheduler handlers gain effect policy and invocation identity.
 - Scheduler schema later gains stage 350.
 - Planning and Production gain Allocation references.
@@ -549,7 +548,7 @@ Migration order is:
 
 1. validate every current persistence owner and cross-reference;
 2. establish evidence classification and archive import;
-3. establish Inventory/Transaction revision and digest binding;
+3. establish Inventory/Transaction freshness and digest binding;
 4. migrate Planning cadence and current continuation Work;
 5. register handler effect policy and authority ownership;
 6. commit the first coordinated checkpoint;
@@ -568,7 +567,7 @@ silently resets a subsystem or fabricates evidence.
 |---|---|---|
 | AH-1 decision acceptance | Owner approves each proposed ADR | Accepted Decision records exist |
 | Lifecycle implementation | B/C/A accepted and milestone authorized | sustained cadence, archive, checkpoint, recovery tests pass |
-| Transaction hardening | D accepted and milestone authorized | digest/revision/authority and migration tests pass |
+| Transaction hardening | D accepted and milestone authorized | digest/freshness/authority and migration tests pass |
 | Scheduler hardening | E accepted and dependencies implemented | effect/authority/concurrency tests pass |
 | RFC-0023 Draft 2 | F accepted | tracked Draft 2 prepared |
 | RFC-0023 implementation | Draft 2 separately accepted | pure milestone authorization |
@@ -603,7 +602,7 @@ without later authorization.
 - deleting, compacting, or archiving existing evidence;
 - adding checkpoint classes/files/services;
 - changing save hooks or load order;
-- adding Inventory revision;
+- adding Inventory Freshness Identity;
 - changing Transaction validation/executor APIs;
 - enforcing HandlerEffectType policy;
 - restricting/adding execution authorities;
@@ -640,7 +639,8 @@ gate. No new live durable subsystem should proceed during that postponement.
 
 - cadence without evidence policy still leaves archival undefined;
 - evidence policy without checkpoints cannot establish replay horizons;
-- checkpoints without Transaction revisions cannot prove mutation consistency;
+- checkpoints without Transaction freshness evidence cannot prove mutation
+  consistency;
 - effect enforcement without recovery cannot handle unknown outcomes;
 - RFC reconciliation without its dependencies remains aspirational; and
 - Allocation integration without all dependencies creates a new mixed
@@ -697,8 +697,8 @@ Nothing in this sequence authorizes this task to commit, tag, push, or publish.
 
 ### Transaction Validation
 
-- [ ] composite digest/revision/single-use authority.
-- [ ] Inventory revision scope.
+- [ ] composite digest/freshness/single-use authority.
+- [ ] Inventory Freshness Identity representation.
 - [ ] duplicate and stale behavior.
 - [ ] Execution handoff.
 - [ ] legacy migration policy.
@@ -747,38 +747,44 @@ For every approved ADR:
 - [ ] authorize architecture manifest changes; and
 - [ ] authorize gameplay exposure separately.
 
-## Unresolved Questions
+## Remaining Implementation And Specification Choices
 
-The package intentionally leaves owner choices:
+The ratified platform direction leaves these later choices for implementation
+or downstream RFC work:
 
-1. Are the proposed cadence, partition, checkpoint, and budget values suitable
-   for the intended simulation scale?
-2. Should World Identity leave Minecraft `SavedData` or remain an immutable
-   external checkpoint root?
-3. Is Inventory revision global per world or scoped per Inventory?
-4. Is any schema-1 `NON_REPEATABLE` handler acceptable?
-5. Should current Planning become `IDEMPOTENT` after cadence migration?
+1. Are the schema-1 cadence, partition, checkpoint, and budget defaults
+   suitable for the intended simulation scale before public save compatibility
+   is promised?
+2. What exact operator UX is required for checkpoint selection, archive
+   remount, Recovery-Blocked State, and storage recovery?
+3. Which Inventory Freshness Identity representation should implementation use?
+4. Is any schema-1 `NON_REPEATABLE` handler acceptable under a future
+   implementation milestone?
+5. How should the ratified Planning migration to `IDEMPOTENT` be implemented
+   after cadence identity exists?
 6. What is the first production-grade Allocation provider?
 7. How should nonterminal legacy Production Work migrate when stage 350 is
    introduced?
-8. What operator recovery controls are required for release?
-9. What filesystem durability capability is the minimum supported target?
-10. Does the owner approve preparing RFC-0023 Draft 2 from the proposed exact
-    replacement text?
+8. What filesystem durability capability is the minimum supported target?
+9. What exact RFC-0023 Draft 2 wording should reconcile with the ratified
+   platform vocabulary and invariants?
 
 ## Final Authority Statement
 
-AH-1 proposes a coherent path to bounded, recoverable, exactly authorized
-simulation. It changes no current architecture by itself.
+AH-1 records a coherent path to bounded, recoverable, exactly authorized
+simulation. AR-007 ratifies the platform direction in documentation while
+leaving implementation and runtime behavior unchanged.
 
-Until explicit owner approval:
+After AR-007 ratification:
 
-- every ADR remains proposed;
-- accepted Decisions remain unchanged;
+- the Platform Canonicalization Addendum is the canonical platform vocabulary
+  and invariant reference;
+- Evidence Lifecycle, Checkpoint Recovery, Transaction Validation Authority,
+  Planning Cadence, and Scheduler Effects Authority are ratified
+  architectural direction;
 - RFC-0023 remains Draft 1;
 - M22E-M22F remain blocked;
 - no checkpoint or evidence migration exists;
 - current Scheduler, Planning, Transaction, Allocation, Production, and
   gameplay behavior remains authoritative; and
 - no implementation is authorized.
-

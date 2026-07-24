@@ -13,9 +13,11 @@ When documents differ, use this authority order:
 
 1. [`CONSTITUTION.md`](../CONSTITUTION.md)
 2. Accepted records in [`DECISIONS.md`](../DECISIONS.md)
-3. [`TECHNICAL_ARCHITECTURE.md`](../TECHNICAL_ARCHITECTURE.md)
-4. Accepted RFC scope and focused subsystem documents
-5. This guide
+3. Ratified architecture hardening ADRs and
+   [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
+4. [`TECHNICAL_ARCHITECTURE.md`](../TECHNICAL_ARCHITECTURE.md)
+5. Accepted RFC scope and focused subsystem documents
+6. This guide
 
 A draft RFC does not become current architecture merely because this guide
 mentions it.
@@ -533,6 +535,12 @@ authorize implementation or reserve a final design.
 
 ## 15. Glossary
 
+Canonical AH-1 platform vocabulary is defined by the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+If a platform-wide term appears in that addendum, the addendum is the single
+canonical definition. The entries below are guide-level shorthand or
+subsystem-specific context.
+
 **Adapter**
 
 A boundary that translates an owning domain's specialized definition or
@@ -550,8 +558,8 @@ definition. Every Requirement succeeds or the Set receives no Commitment.
 
 **Atomic publication**
 
-The replacement or transition that makes a complete validated candidate
-visible as one consistent result.
+See Publication in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary).
 
 **Capacity**
 
@@ -569,8 +577,9 @@ Immutable, schema-versioned data describing what a stable concept is.
 
 **Evidence**
 
-Immutable reports, history, traces, results, and digests explaining an
-evaluation or transition.
+See the canonical evidence vocabulary and ownership model in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary)
+and the Evidence Lifecycle ADR.
 
 **Execution**
 
@@ -600,8 +609,8 @@ observations under a bounded deterministic contract.
 
 **Replay**
 
-Reconstruction or reevaluation from explicit recorded inputs and evidence,
-without querying live external state.
+See the canonical definition in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#6-replay-model).
 
 **Resource**
 
@@ -615,9 +624,8 @@ immutable identity or definition.
 
 **Scheduler Work**
 
-An immutable request for bounded handling at an authoritative Simulation Tick
-and stable stage. Scheduler ownership determines eligibility and order, not
-domain meaning.
+See the canonical definition in the
+[`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary).
 
 **Trace**
 
@@ -639,6 +647,7 @@ nothing.
 - [`MODULES.md`](../MODULES.md)
 - [`SIMULATION_MODEL.md`](../SIMULATION_MODEL.md)
 - [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
+- [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
 - [`Economic Planning Engine`](ECONOMIC_PLANNING_ENGINE.md)
 - [`Production Framework`](PRODUCTION_FRAMEWORK.md)

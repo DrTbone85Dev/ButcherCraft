@@ -1,13 +1,21 @@
-# Proposed ADR: Platform Evidence Lifecycle
+# ADR-01: Platform Evidence Lifecycle
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
 
-Decision identifier: Unassigned
+Decision identifier: AH-1-ADR-01
 
 Package: BCSE Architecture Hardening AH-1
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted Decision process.
+Authority: Owner-ratified architecture direction. This document authorizes
+documentation alignment only. It does not authorize implementation, migration,
+schema changes, runtime behavior, gameplay behavior, or RFC-0023 edits.
+
+Canonical platform reference:
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+Platform-wide vocabulary, identity classes, invariant ownership, recovery,
+replay, failure-state, cancellation, operator-authority, World Identity, and
+Platform Determinism Manifest definitions are canonical there and are not
+redefined here.
 
 ## Context
 
@@ -22,7 +30,7 @@ does not define a platform-wide lifetime, archive, compaction, or storage
 budget. Planning currently retains every cycle and every artifact in hot
 runtime and rewrites the complete history on save.
 
-This proposal addresses evidence portions of
+This decision addresses evidence portions of
 [BCSE-AUDIT-001](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-001-planning-history-grows-without-a-lifetime-bound)
 and
 [BCSE-AUDIT-002](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-002-no-coordinated-durable-simulation-checkpoint).
@@ -59,12 +67,12 @@ reached.
 - RFC-0023 Draft 1 requires immutable Execution evidence but does not define
   retention.
 
-This proposal defines future policy only. It does not delete, compact, migrate,
+This decision defines future policy only. It does not delete, compact, migrate,
 or move current evidence.
 
 ## Architectural Constraints
 
-The proposal is governed by:
+The decision is governed by:
 
 - `AI-0001` Deterministic Simulation;
 - `AI-0004` Immutable Identity Separation;
@@ -85,10 +93,16 @@ Additional constraints:
 - archive movement does not change evidence identity or content;
 - no authoritative fact is silently deleted;
 - compaction must state whether replay capability changes;
-- storage budgets are authoritative configuration and replay input;
+- storage budgets are authoritative configuration and replay input represented
+  by the Platform Determinism Manifest;
 - wall-clock age and player presence do not control retention;
 - current subsystem ownership does not transfer to an archive service; and
 - implementation requires separate owner authorization.
+
+Each authoritative fact remains owned by exactly one originating subsystem.
+Evidence Lifecycle owns classification, retention policy, archive placement,
+compaction records, integrity verification, and query policy. It does not
+become an alternate authority for the facts represented by that evidence.
 
 ## Evidence Classification
 
@@ -113,7 +127,7 @@ to the current authoritative state.
 
 Examples:
 
-- applied Transactions and their exact Inventory revisions;
+- applied Transactions and their exact Inventory freshness evidence;
 - Scheduler Work transitions and invocation outcomes;
 - Planning trigger and cycle publication records;
 - Allocation lifecycle transitions and Commitment publication/release;
@@ -184,9 +198,9 @@ audit facts.
 
 ### Checkpoints
 
-Committed coordinated snapshots defined by the proposed checkpoint and
-recovery decision. A checkpoint can subsume prior replay deltas for runtime
-reconstruction but cannot erase permanent audit facts.
+Committed coordinated snapshots defined by the Checkpoint Recovery ADR. A
+checkpoint can subsume prior replay deltas for runtime reconstruction but
+cannot erase permanent audit facts.
 
 ### Archived Evidence
 
@@ -208,30 +222,20 @@ Expiry must be deterministic and recorded in a compaction report.
 | 4. Checkpoint plus bounded delta history | Strong recovery boundary and small hot state | Permanent audit facts need a separate home; bad checkpoint policy can shrink auditability | Exact within retained checkpoint horizon | Predictable load and restart |
 | 5. Hybrid hot evidence plus cold archives | Separates operation, replay, and audit concerns; preserves evidence | Highest specification and migration complexity | Exact recent replay plus permanent audit history | Bounded hot state with explicit archive growth |
 
-## Decision Proposed
+## Decision
 
 Adopt **Option 5: hybrid hot evidence plus cold partitioned archives**, using
 committed checkpoints and bounded replay deltas.
 
 ### Evidence Identity
 
-Every retained evidence record has:
-
-- owner subsystem id;
-- stable evidence id;
-- evidence type;
-- schema version;
-- authoritative simulation tick;
-- owner sequence or structural identity;
-- correlation id;
-- canonical content digest; and
-- optional causal predecessor identities.
-
-Archive movement and hot-store removal do not change these values.
+Evidence Identity is defined by the
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#2-platform-vocabulary).
+Archive movement and hot-store removal do not change evidence identity.
 
 ### Cross-Subsystem Correlation
 
-Introduce an industry-neutral immutable `SimulationCorrelationId` contract.
+Use the addendum's platform identity rules for cross-subsystem correlation.
 The exact Java name remains an implementation decision after approval.
 
 The root correlation identity is deterministically derived from the initiating
@@ -249,7 +253,7 @@ predecessor identity. Correlation is reference-only and transfers no ownership.
 
 ### Hot Replay Horizon
 
-Hot storage retains:
+Hot storage retains the schema-1 operational default horizon:
 
 - the **three most recent committed checkpoint generations**;
 - all replay-critical deltas from the oldest retained generation through the
@@ -258,10 +262,12 @@ Hot storage retains:
 - all currently active runtime references; and
 - indexes required to resolve those records.
 
-With the proposed 6,000-tick checkpoint cadence, the minimum normal replay
-horizon is at least 12,000 simulation ticks plus the current uncheckpointed
+With the schema-1 checkpoint cadence default, the minimum normal replay
+horizon is at least two checkpoint intervals plus the current uncheckpointed
 delta. Manual and shutdown checkpoints do not shorten the oldest retained
-period.
+period. The exact generation count and cadence remain schema-1 operational
+defaults aligned with the Checkpoint Recovery ADR rather than permanent
+Evidence Lifecycle invariants.
 
 No evidence is removed from hot storage until:
 
@@ -275,7 +281,7 @@ No evidence is removed from hot storage until:
 
 ### Archive Partitioning
 
-Cold archives are partitioned by:
+Cold archives use the schema-1 operational default partitioning by:
 
 1. owner subsystem id;
 2. evidence category;
@@ -321,7 +327,7 @@ retention for a report cited by permanent evidence.
 
 ### Storage Budgets
 
-Schema 1 proposes world-authoritative defaults:
+Schema 1 proposes world-authoritative operational defaults:
 
 - maximum hot evidence records per owner/category: **100,000**;
 - maximum diagnostic records per owner/type: **10,000**;
@@ -329,6 +335,13 @@ Schema 1 proposes world-authoritative defaults:
 - maximum archive partitions: **10,000**;
 - maximum canonical archive bytes: **10 GiB**; and
 - minimum free-space reserve before a new durable publication: **256 MiB**.
+
+Numeric retention, partition, capacity, and storage values are schema-1
+operational defaults rather than permanent architectural invariants. They may
+be revised through an accepted implementation milestone before public save
+compatibility is promised, provided that evidence ownership, deterministic
+archival, explicit replay guarantees, and the prohibition against silent loss
+of authoritative or permanent audit facts remain intact.
 
 All values are schema-versioned configuration and participate in replay.
 Canonical archive bytes are measured from the exact encoded bytes covered by
@@ -391,6 +404,12 @@ manifests, and unresolved integrity evidence. Cold partition bodies may load
 on demand after manifest validation. Missing required replay or permanent
 evidence fails visibly.
 
+When required cold evidence is unavailable, the affected world enters the
+Recovery-Blocked State defined by the
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md#7-failure-model).
+New side-effecting simulation work for the affected authority is prohibited
+until explicit recovery or operator action resolves the condition.
+
 Disposable diagnostic expiry is not performed implicitly during load. It runs
 as an explicit bounded compaction operation.
 
@@ -399,7 +418,7 @@ as an explicit bounded compaction operation.
 | Subsystem | Permanent/audit evidence | Checkpoint-subsumed or reconstructable evidence |
 |---|---|---|
 | Transactions | APPLIED Transaction and exact mutation/application identity | validation diagnostics and rejected proposals after policy horizon |
-| Inventory | revisions cited by applied Transactions and recovery conflicts | intermediate runtime snapshots before retained baseline |
+| Inventory | freshness evidence cited by applied Transactions and recovery conflicts | intermediate runtime snapshots before retained baseline |
 | Orders/Contracts | definitions, obligations, fulfillment attribution, terminal lifecycle evidence | derived open-order summaries |
 | Production | terminal outcome, completion Transaction link, failure/cancellation evidence | progress reports before retained baseline when uncited |
 | Scheduler | Work submission identity, terminal outcome, recovery conflict | eligible-queue summaries and uncited per-phase diagnostics |
@@ -490,8 +509,8 @@ No importer invents missing authoritative history.
 - Corrupt archive segment: `EVIDENCE_ARCHIVE_DIGEST_MISMATCH`.
 - Duplicate evidence identity with different content:
   `EVIDENCE_IDENTITY_CONFLICT`.
-- Hot capacity exhausted: force checkpoint; if unsuccessful, pause new
-  evidence-producing operations.
+- Hot capacity exhausted: request checkpoint; if unsuccessful, reject new
+  evidence-producing side-effecting operations before mutation.
 - Archive budget exhausted: preserve existing evidence and reject new
   operations before side effects.
 - Compaction interruption: retain source evidence; ignore uncommitted
@@ -501,7 +520,8 @@ No importer invents missing authoritative history.
 - No failure path deletes authoritative evidence or fabricates a successful
   archive.
 
-Failure-code names are proposed contract names.
+Failure-code names are architectural contract names, not implemented
+constants.
 
 ## Replay Implications
 
@@ -562,32 +582,23 @@ Required automated tests:
 - **Checkpoint plus delta only:** rejected because permanent audit evidence
   must remain queryable after it is no longer needed for runtime replay.
 
-## Unresolved Questions
+## Ratification Notes
 
-Owner decisions required:
+Owner ratification approved the hybrid evidence lifecycle model with the
+revisions incorporated above:
 
-1. Approve or replace the three-checkpoint hot horizon.
-2. Approve or replace the 100,000-tick archive partition size.
-3. Approve or replace each proposed default storage budget.
-4. Confirm which Planning reports remain permanent when an Approved Plan is
-   never submitted.
-5. Confirm export/remount expectations for cold archives.
-6. Confirm whether permanent evidence may move to an owner-managed external
-   archive while remaining addressable by the world manifest.
-7. Confirm whether future legal/accounting gameplay requires longer mandatory
-   report retention.
+1. Evidence Lifecycle owns evidence policy, not subsystem facts.
+2. Authoritative runtime evidence and permanent audit evidence are never
+   silently deleted, rewritten, or content-compacted.
+3. Planning-cycle evidence remains authoritative Planning evidence even when a
+   proposal is rejected, expires, or is never submitted for execution.
+4. Numeric retention, partition, and capacity values remain schema-1
+   operational defaults, not permanent invariants.
+5. Missing, unmounted, or corrupt required cold evidence creates an
+   operator-visible Recovery-Blocked State.
+6. Storage exhaustion blocks affected side-effecting work before mutation and
+   preserves existing committed evidence.
 
-## Owner Approval Checklist
-
-- [ ] Approve the evidence classification.
-- [ ] Approve hybrid hot/cold architecture.
-- [ ] Approve replay horizon and checkpoint dependency.
-- [ ] Approve partitioning and canonical ordering.
-- [ ] Approve storage budgets and fail-visible exhaustion.
-- [ ] Approve cross-subsystem correlation identity.
-- [ ] Approve compaction and deletion restrictions.
-- [ ] Approve migration requirements.
-- [ ] Approve testing requirements.
-- [ ] Authorize creation of an accepted Decision record.
-- [ ] Separately authorize implementation.
-
+Implementation, migration, checkpoint code, RFC-0023 reconciliation, Planning
+cadence changes, Allocation integration, Execution integration, and gameplay
+remain separately gated.

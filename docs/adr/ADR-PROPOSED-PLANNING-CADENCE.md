@@ -1,13 +1,21 @@
-# Proposed ADR: Deterministic Planning Cadence
+# ADR-04: Deterministic Planning Cadence
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
 
-Decision identifier: Unassigned
+Decision identifier: AH-1-ADR-04
 
 Package: BCSE Architecture Hardening AH-1
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted Decision process.
+Authority: Owner-ratified architecture direction. This document authorizes
+documentation alignment only. It does not authorize implementation, migration,
+schema changes, runtime behavior, gameplay behavior, or RFC-0023 edits.
+
+Canonical platform reference:
+[`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
+Platform-wide vocabulary, identity classes, invariant ownership, recovery,
+replay, failure-state, cancellation, operator-authority, World Identity, and
+Platform Determinism Manifest definitions are canonical there and are not
+redefined here.
 
 ## Context
 
@@ -21,7 +29,7 @@ itself to the next tick.
 Per-cycle execution is deterministic and bounded. World-lifetime cycle count,
 retained evidence, save cost, and load cost are not bounded.
 
-This proposal responds to
+This decision responds to
 [BCSE-AUDIT-001](../BCSE_ARCHITECTURE_AUDIT.md#bcse-audit-001-planning-history-grows-without-a-lifetime-bound).
 The audit is evidence, not authority.
 
@@ -50,12 +58,12 @@ BCSE needs a deterministic Planning cadence that:
 - No Planning cadence configuration, relevant-change trigger queue, missed
   cycle policy, or catch-up policy exists.
 
-This proposal does not change that behavior. It defines a replacement contract
+This decision does not change that behavior. It defines a replacement contract
 for later owner-authorized implementation.
 
 ## Architectural Constraints
 
-The proposal is governed by:
+The decision is governed by:
 
 - `AI-0001` Deterministic Simulation;
 - `AI-0009` Deterministic Registries;
@@ -75,7 +83,13 @@ Additional constraints:
 - no direct Planning mutation of other owners;
 - no more than one Planning Cycle at one simulation tick;
 - no silent loss of pending relevant-change evidence; and
-- no implementation before owner approval.
+- no implementation before separate owner authorization.
+
+Planning owns Planning eligibility, trigger consumption, input capture,
+Planning Cycle publication, and Planning decisions. Scheduler owns Scheduler
+Work dispatch and lifecycle. Evidence Lifecycle owns retention and archival.
+Checkpoint Recovery owns committed generation publication and recovery
+selection.
 
 ## Options Considered
 
@@ -87,24 +101,30 @@ Additional constraints:
 | 4. Deterministic hybrid periodic plus relevant-change triggers | Bounded idle evaluation and responsive change handling | More state and validation than a fixed period | Deterministic when trigger records, ordering, and coalescing are explicit | Bounded by minimum separation; low when idle | Persists one cadence state and bounded pending triggers | Requires schema migration and owner adapters |
 | 5. Demand-driven scheduling only | No idle Planning work | A living world can stop planning when no requester submits demand; hidden coupling to demand producers | Replay depends on complete demand submission history | Lowest baseline | Smallest baseline state | Requires every Need source to become a scheduler client |
 
-## Decision Proposed
+## Decision
 
 Adopt **Option 4: deterministic hybrid periodic plus relevant-change
 triggers**.
 
 ### Cadence Values
 
-Schema 1 of this contract proposes:
+Schema 1 of this contract uses these operational defaults:
 
 - minimum cycle separation: **20 simulation ticks**;
 - default periodic cadence: **1,200 simulation ticks**;
 - configurable periodic cadence range: **20 through 72,000 simulation
   ticks**, inclusive;
 - at most one Planning Cycle at one simulation tick; and
-- at most one pending Planning Scheduler Work item per world.
+- at most one pending Scheduler Work item for Planning per world.
 
 These are simulation ticks. Their meaning never changes with wall-clock rate,
 server performance, pause duration, or player count.
+
+Numeric cadence values are schema-1 operational defaults rather than
+permanent architectural invariants. They may be revised through an accepted
+implementation milestone before public save compatibility is promised if
+bounded recurring work, deterministic eligibility, explicit replay inputs, and
+the no-burst-catch-up rule remain intact.
 
 The cadence values are world-authoritative, schema-versioned Planning
 configuration. A configuration change is effective only from an explicit
@@ -132,8 +152,8 @@ owner. Schema 1 trigger categories are limited to facts Planning already reads:
 - accepted Order or Contract definition/lifecycle change;
 - Order fulfillment change;
 - Production Plan or Run lifecycle change affecting an open Need;
-- Inventory revision affecting a Good and actor/inventory binding referenced
-  by an open Need;
+- Inventory Freshness Identity affecting a Good and actor/inventory binding
+  referenced by an open Need;
 - Business Runtime or Workforce availability revision referenced by a
   candidate Opportunity; and
 - approved Planning configuration revision.
@@ -201,23 +221,25 @@ The capture boundary is explicit and recorded.
   recovery cycle tick.
 - Pending triggers are coalesced into that recovery cycle.
 - A crash rolls back cadence state and trigger state to the last committed
-  checkpoint under the proposed checkpoint decision. BCSE performs no
+  checkpoint under the Checkpoint Recovery ADR. BCSE performs no
   wall-clock or Minecraft-time catch-up.
 
 ### Scheduler Interaction
 
 - Planning remains in the accepted PLANNING stage.
-- One Planning Work item represents the next cycle, regardless of trigger
-  count.
+- One Scheduler Work item represents the next Planning Cycle, regardless of
+  trigger count.
 - Scheduler item, stage, work-unit, generation, retry, and same-tick budgets
   continue to apply.
-- If the Planning stage budget prevents execution, the same Work remains
-  eligible under Scheduler rules. No second Planning Work is created.
-- A completed cycle consumes only the trigger set captured for that cycle.
-- Failed input capture consumes no trigger.
-- A failure after accepted Planning publication follows the proposed Scheduler
-  effect and checkpoint contracts; it must not silently schedule a duplicate
+- If the Planning stage budget prevents execution, the same Scheduler Work
+  remains eligible under Scheduler rules. No second Scheduler Work item for
+  Planning is created.
+- A completed Planning Cycle consumes only the trigger set captured for that
   cycle.
+- Failed input capture consumes no trigger.
+- A failure after accepted Planning publication follows the Scheduler effect
+  and checkpoint contracts; it must not silently schedule a duplicate Planning
+  Cycle.
 
 ### Checkpoint Interaction
 
@@ -230,7 +252,7 @@ The Planning checkpoint snapshot includes:
 - next periodic due tick;
 - pending ordered trigger records;
 - captured-but-not-published trigger state, if any;
-- current Planning Work identity and Scheduler reference; and
+- current Scheduler Work identity and Scheduler reference for Planning; and
 - correlation identities for the latest completed cycle and checkpoint.
 
 The Clock, Scheduler, Planning cadence, and Planning evidence must belong to
@@ -269,10 +291,10 @@ living-world principle from missing or delayed change events. Minimum
 separation and one-work coalescing prevent event storms from recreating
 per-tick Planning under another name.
 
-The proposed 1,200-tick default reduces idle cycle creation by a factor of
-1,200 relative to current behavior. The 20-tick hard minimum prevents more than
-one cycle per 20 simulation ticks even under continuous change. The 72,000-tick
-upper configuration bound prevents indefinite Planning starvation.
+The schema-1 1,200-tick default reduces idle cycle creation by a factor of
+1,200 relative to current behavior. The 20-tick minimum prevents more than one
+Planning Cycle per 20 simulation ticks even under continuous change. The
+72,000-tick upper configuration bound prevents indefinite Planning starvation.
 
 ## Consequences
 
@@ -293,12 +315,13 @@ upper configuration bound prevents indefinite Planning starvation.
 - A relevant change may wait up to the minimum separation.
 - A missing owner trigger delays response until the periodic cycle.
 - Existing per-tick cycle histories require migration.
-- The proposed constants become compatibility-sensitive world configuration.
+- The schema-1 constants become compatibility-sensitive world configuration
+  once public save compatibility is promised.
 
 ## Compatibility
 
-The proposal changes accepted DEC-0074 behavior and therefore requires a new
-accepted Decision before implementation. It does not amend DEC-0074 in place.
+The decision changes accepted DEC-0074 behavior after implementation is
+separately authorized. It does not amend DEC-0074 in place.
 
 Existing Planning artifact identities and cycle contents remain valid. The
 cadence and trigger schema are additive. Existing worlds must not reinterpret
@@ -330,16 +353,17 @@ visibly and leaves the legacy state unchanged.
   `PLANNING_TRIGGER_IDENTITY_CONFLICT`.
 - Trigger queue capacity exhaustion is
   `PLANNING_TRIGGER_CAPACITY_EXHAUSTED` and blocks creation of additional
-  Planning work without deleting triggers.
+  Scheduler Work for Planning without deleting triggers.
 - Checked tick overflow is `PLANNING_CADENCE_TICK_OVERFLOW`.
 - Inconsistent checkpoint cadence state is
   `PLANNING_CADENCE_CHECKPOINT_MISMATCH`.
-- Multiple Planning Work items are
+- Multiple Scheduler Work items for Planning are
   `PLANNING_CADENCE_DUPLICATE_WORK`.
 - No failure path silently discards a pending trigger or creates a second
-  cycle at the same tick.
+  Planning Cycle at the same tick.
 
-Failure-code names are proposed contract names, not implemented constants.
+Failure-code names are architectural contract names, not implemented
+constants.
 
 ## Replay Implications
 
@@ -394,30 +418,26 @@ Required automated tests:
 - **Demand-driven only:** rejected because it transfers liveness to demand
   producers and can make world simulation player- or feature-dependent.
 
-These rejections are proposed. The owner may select another option.
+## Ratification Notes
 
-## Unresolved Questions
+Owner ratification approved deterministic hybrid Planning cadence with the
+revisions incorporated above:
 
-Owner decisions required:
+1. Planning owns Planning eligibility, trigger consumption, input capture,
+   Planning Cycle publication, and Planning decisions.
+2. Scheduler owns dispatch and lifecycle of Scheduler Work; it does not decide
+   Planning outcomes.
+3. The hybrid model, deterministic trigger identity, deterministic coalescing,
+   one Planning Cycle per tick, and no burst catch-up are approved
+   architectural direction.
+4. The 20-tick minimum, 1,200-tick default, 72,000-tick maximum, queue limits,
+   and similar numeric values are schema-1 operational defaults, not permanent
+   invariants.
+5. Relevant-change classification must use owner-published facts and
+   freshness identities without transferring ownership to Planning.
+6. Restart and rollback behavior uses committed checkpoint state and never
+   wall-clock catch-up.
 
-1. Approve or replace the proposed 20-tick minimum.
-2. Approve or replace the proposed 1,200-tick default.
-3. Approve or replace the proposed 72,000-tick maximum.
-4. Confirm the closed schema-1 trigger category list.
-5. Confirm whether a configuration change itself triggers an immediate cycle.
-6. Confirm whether trigger queue capacity is one global bound or a per-owner
-   bound in the implementation specification.
-
-## Owner Approval Checklist
-
-- [ ] Approve the deterministic hybrid model.
-- [ ] Approve minimum, default, and maximum cadence values.
-- [ ] Approve the relevant-change trigger categories.
-- [ ] Approve trigger identity, ordering, and coalescing.
-- [ ] Approve one-cycle-per-tick and no-burst-catch-up rules.
-- [ ] Approve checkpoint and evidence-lifecycle dependencies.
-- [ ] Approve the migration requirements.
-- [ ] Approve the failure and testing requirements.
-- [ ] Authorize creation of an accepted Decision record.
-- [ ] Separately authorize implementation.
-
+Implementation, Scheduler effect changes, Planning code changes, evidence
+migrations, checkpoint implementation, RFC-0023 edits, Execution
+implementation, Allocation integration, and gameplay remain separately gated.
