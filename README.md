@@ -89,6 +89,11 @@ The trim, ground, forequarter, and beef fabrication test products are developmen
 
 Planning and architecture documents live at the repository root. Start with `CONSTITUTION.md`, the project's highest-level architectural authority, then read `VISION.md`, `CORE_PRINCIPLES.md`, `PROJECT_RULES.md`, `MODULES.md`, `SIMULATION_MODEL.md`, `ROADMAP.md`, and `TECHNICAL_ARCHITECTURE.md`. Accepted decisions in `DECISIONS.md` record how specific choices conform to that hierarchy. Future economic concepts are bounded in `ECONOMY_MODEL.md`, compatibility direction is recorded in `COMPATIBILITY.md`, and the non-stable extension map is in `docs/API_OVERVIEW.md`.
 
+Experienced contributors can use the
+[BCSE Architecture Guide](docs/BCSE_ARCHITECTURE_GUIDE.md) as the primary
+orientation to kernel ownership, layering, deterministic data flow, replay,
+validation, and extension boundaries before reading individual RFCs.
+
 The immutable economic goods language and its separation from processing products and ItemStacks are documented in `docs/GOODS_FRAMEWORK.md`.
 
 The industry-neutral participant model, actor capabilities, Good relationships, runtime boundary, and definition persistence are documented in `docs/ECONOMIC_ACTORS.md`.
@@ -119,6 +124,13 @@ in `docs/ALLOCATION_CYCLE.md`.
 M22D provider identity, explicit registry, immutable observation requests and
 results, failure isolation, canonical aggregation, bundle usability, and replay
 digests are documented in `docs/ALLOCATION_PROVIDER_FRAMEWORK.md`.
+
+RFC-0023 Draft 1 proposes the complete domain, runtime, pipeline, adapter,
+Transaction-observation, evidence, replay, and verification architecture for a
+future Deterministic Execution Engine in
+`docs/RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md`. The completed draft is not
+accepted architecture and authorizes no implementation until architectural
+review and explicit owner approval.
 
 The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 
