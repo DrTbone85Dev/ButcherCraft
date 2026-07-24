@@ -7,12 +7,17 @@ import java.util.Objects;
 public final class ValidationContextBuilder {
     private final ArchitectureId id;
     private final List<ArchitectureComponent> components = new ArrayList<>();
+    private final List<ArchitectureDocumentDescriptor> architectureDocuments = new ArrayList<>();
+    private final List<PlatformIdentityDescriptor> platformIdentities = new ArrayList<>();
+    private final List<PlatformContractDescriptor> platformContracts = new ArrayList<>();
+    private final List<RuntimeAuthorityDescriptor> runtimeAuthorities = new ArrayList<>();
     private final List<OwnershipAssignment> ownershipAssignments = new ArrayList<>();
     private final List<OwnershipContract> ownershipContracts = new ArrayList<>();
     private final List<DependencyDescriptor> dependencies = new ArrayList<>();
     private final List<DependencyConstraint> dependencyConstraints = new ArrayList<>();
     private final List<RegistryDescriptor> registries = new ArrayList<>();
     private final List<PersistenceDescriptor> persistenceDescriptors = new ArrayList<>();
+    private final List<SchedulerEffectDeclaration> schedulerEffects = new ArrayList<>();
     private final List<SchedulerDescriptor> schedulers = new ArrayList<>();
     private final List<SimulationInvariantDescriptor> simulationInvariants = new ArrayList<>();
 
@@ -22,6 +27,26 @@ public final class ValidationContextBuilder {
 
     public ValidationContextBuilder component(ArchitectureComponent component) {
         components.add(Objects.requireNonNull(component, "component"));
+        return this;
+    }
+
+    public ValidationContextBuilder architectureDocument(ArchitectureDocumentDescriptor document) {
+        architectureDocuments.add(Objects.requireNonNull(document, "document"));
+        return this;
+    }
+
+    public ValidationContextBuilder platformIdentity(PlatformIdentityDescriptor identity) {
+        platformIdentities.add(Objects.requireNonNull(identity, "identity"));
+        return this;
+    }
+
+    public ValidationContextBuilder platformContract(PlatformContractDescriptor contract) {
+        platformContracts.add(Objects.requireNonNull(contract, "contract"));
+        return this;
+    }
+
+    public ValidationContextBuilder runtimeAuthority(RuntimeAuthorityDescriptor authority) {
+        runtimeAuthorities.add(Objects.requireNonNull(authority, "authority"));
         return this;
     }
 
@@ -55,6 +80,11 @@ public final class ValidationContextBuilder {
         return this;
     }
 
+    public ValidationContextBuilder schedulerEffect(SchedulerEffectDeclaration effect) {
+        schedulerEffects.add(Objects.requireNonNull(effect, "effect"));
+        return this;
+    }
+
     public ValidationContextBuilder scheduler(SchedulerDescriptor scheduler) {
         schedulers.add(Objects.requireNonNull(scheduler, "scheduler"));
         return this;
@@ -69,12 +99,17 @@ public final class ValidationContextBuilder {
         return new ValidationContext(
                 id,
                 components,
+                architectureDocuments,
+                platformIdentities,
+                platformContracts,
+                runtimeAuthorities,
                 ownershipAssignments,
                 ownershipContracts,
                 dependencies,
                 dependencyConstraints,
                 registries,
                 persistenceDescriptors,
+                schedulerEffects,
                 schedulers,
                 simulationInvariants
         );

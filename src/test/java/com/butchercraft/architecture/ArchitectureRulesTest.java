@@ -1,19 +1,26 @@
 package com.butchercraft.architecture;
 
 import com.butchercraft.architecture.validation.ArchitectureComponent;
+import com.butchercraft.architecture.validation.ArchitectureDocumentDescriptor;
 import com.butchercraft.architecture.validation.ArchitectureId;
 import com.butchercraft.architecture.validation.ArchitectureReference;
 import com.butchercraft.architecture.validation.ArchitectureRules;
 import com.butchercraft.architecture.validation.ArchitectureValidator;
+import com.butchercraft.architecture.validation.ArchitectureValidationDisposition;
 import com.butchercraft.architecture.validation.DependencyConstraint;
 import com.butchercraft.architecture.validation.DependencyDescriptor;
 import com.butchercraft.architecture.validation.OrderingPolicy;
 import com.butchercraft.architecture.validation.OwnershipAssignment;
 import com.butchercraft.architecture.validation.PersistenceDataKind;
 import com.butchercraft.architecture.validation.PersistenceDescriptor;
+import com.butchercraft.architecture.validation.PlatformContractDescriptor;
+import com.butchercraft.architecture.validation.PlatformIdentityDescriptor;
+import com.butchercraft.architecture.validation.PlatformIdentityKind;
 import com.butchercraft.architecture.validation.RegistryDescriptor;
 import com.butchercraft.architecture.validation.RegistryEntryDescriptor;
+import com.butchercraft.architecture.validation.RuntimeAuthorityDescriptor;
 import com.butchercraft.architecture.validation.SchedulerDescriptor;
+import com.butchercraft.architecture.validation.SchedulerEffectDeclaration;
 import com.butchercraft.architecture.validation.SchedulerStageDescriptor;
 import com.butchercraft.architecture.validation.SimulationInvariantDescriptor;
 import com.butchercraft.architecture.validation.SimulationInvariantType;
@@ -39,8 +46,8 @@ class ArchitectureRulesTest {
         ValidationReport report = ButcherCraftArchitectureValidation.validateCurrentArchitecture();
 
         assertTrue(report.successful(), () -> "Architecture failures: " + report.failedRules());
-        assertEquals(21, report.summary().ruleCount());
-        assertEquals(21, report.summary().passedRules());
+        assertEquals(26, report.summary().ruleCount());
+        assertEquals(26, report.summary().passedRules());
         assertEquals(0, report.summary().failedRules());
         assertTrue(report.findByCategory(ValidationCategory.ALLOCATION).stream()
                 .allMatch(result -> result.status() == ValidationStatus.PASSED));
@@ -73,6 +80,141 @@ class ArchitectureRulesTest {
         );
 
         assertFailedWith(result, "Duplicate component id", "Duplicate component package root");
+    }
+
+    @Test
+    void platformDocumentRuleDetectsMissingDuplicateAndEnvironmentSpecificDescriptors() {
+        ValidationContext base = ArchitectureValidationTestFixtures.validContext();
+        ArchitectureDocumentDescriptor first = base.architectureDocuments().getFirst();
+        List<ArchitectureDocumentDescriptor> documents = new ArrayList<>(base.architectureDocuments());
+        documents.add(new ArchitectureDocumentDescriptor(
+                first.id(),
+                "C:/absolute/doc.md",
+                first.status(),
+                first.revision(),
+                first.disposition()
+        ));
+
+        ValidationResult duplicate = validate(
+                ArchitectureRules.architectureDocuments(),
+                ArchitectureValidationTestFixtures.withArchitectureDocuments(base, documents)
+        );
+        ValidationResult missing = validate(
+                ArchitectureRules.architectureDocuments(),
+                ArchitectureValidationTestFixtures.withArchitectureDocuments(base, List.of())
+        );
+
+        assertFailedWith(duplicate, "Duplicate architecture document id",
+                "Architecture document path must be repository-relative");
+        assertFailedWith(missing, "No architecture document descriptors");
+    }
+
+    @Test
+    void currentManifestRegistersRatifiedPlatformDocumentsAndRfc0023Draft2() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value()
+                        .equals("butchercraft:document/platform_canonicalization_addendum")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value()
+                        .equals("butchercraft:document/evidence_lifecycle_adr")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value()
+                        .equals("butchercraft:document/checkpoint_recovery_adr")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value()
+                        .equals("butchercraft:document/transaction_validation_authority_adr")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value()
+                        .equals("butchercraft:document/planning_cadence_adr")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value()
+                        .equals("butchercraft:document/scheduler_effects_authority_adr")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value().equals("butchercraft:document/rfc_0022")));
+        assertTrue(context.architectureDocuments().stream()
+                .anyMatch(document -> document.id().value().equals("butchercraft:document/rfc_0023")
+                        && document.revision().equals("Draft 2")));
+    }
+
+    @Test
+    void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
+        ValidationContext base = ArchitectureValidationTestFixtures.validContext();
+        List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
+        PlatformIdentityDescriptor entity = identities.stream()
+                .filter(identity -> identity.kind() == PlatformIdentityKind.ENTITY)
+                .findFirst()
+                .orElseThrow();
+        identities.add(new PlatformIdentityDescriptor(
+                ArchitectureId.of("butchercraft:identity/entity_duplicate"),
+                entity.kind(),
+                entity.disposition(),
+                entity.source(),
+                entity.description()
+        ));
+        identities.removeIf(identity -> identity.kind() == PlatformIdentityKind.CONFIGURATION);
+
+        ValidationResult result = validate(
+                ArchitectureRules.platformIdentityDeclarations(),
+                ArchitectureValidationTestFixtures.withPlatformIdentities(base, identities)
+        );
+
+        assertFailedWith(result, "Duplicate platform identity kind: ENTITY",
+                "Missing platform identity kind: CONFIGURATION");
+    }
+
+    @Test
+    void platformContractRuleDetectsDuplicateDeclarationsAndUnknownOwners() {
+        ValidationContext base = ArchitectureValidationTestFixtures.validContext();
+        List<PlatformContractDescriptor> contracts = new ArrayList<>(base.platformContracts());
+        PlatformContractDescriptor first = contracts.getFirst();
+        contracts.add(first);
+        contracts.add(new PlatformContractDescriptor(
+                ArchitectureId.of("butchercraft:platform_contract/missing_owner"),
+                ValidationCategory.PLATFORM,
+                ArchitectureId.of("butchercraft:missing_owner"),
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "test",
+                "test contract"
+        ));
+
+        ValidationResult result = validate(
+                ArchitectureRules.platformContractDeclarations(),
+                ArchitectureValidationTestFixtures.withPlatformContracts(base, contracts)
+        );
+
+        assertFailedWith(result, "Duplicate platform contract id", "Unknown platform contract owner");
+    }
+
+    @Test
+    void runtimeAuthorityRuleDetectsDuplicateScopesAndUnknownOwners() {
+        ValidationContext base = ArchitectureValidationTestFixtures.validContext();
+        List<RuntimeAuthorityDescriptor> authorities = new ArrayList<>(base.runtimeAuthorities());
+        RuntimeAuthorityDescriptor first = authorities.getFirst();
+        authorities.add(new RuntimeAuthorityDescriptor(
+                ArchitectureId.of("butchercraft:runtime_authority/duplicate_scope"),
+                first.ownerId(),
+                first.scopeId(),
+                first.disposition(),
+                first.source(),
+                first.description()
+        ));
+        authorities.add(new RuntimeAuthorityDescriptor(
+                ArchitectureId.of("butchercraft:runtime_authority/missing_owner"),
+                ArchitectureId.of("butchercraft:missing_owner"),
+                first.scopeId(),
+                first.disposition(),
+                "test",
+                "missing owner"
+        ));
+
+        ValidationResult result = validate(
+                ArchitectureRules.runtimeAuthorityDeclarations(),
+                ArchitectureValidationTestFixtures.withRuntimeAuthorities(base, authorities)
+        );
+
+        assertFailedWith(result, "Duplicate runtime authority scope", "Unknown runtime authority owner");
     }
 
     @Test
@@ -156,6 +298,23 @@ class ArchitectureRulesTest {
                 "Forbidden dependency");
         assertFailedWith(validate(ArchitectureRules.dependencyCycles(), context),
                 "Dependency loop includes");
+    }
+
+    @Test
+    void executionToAllocationDependencyIsForbiddenByRfc0023Draft2() {
+        ValidationContext base = ArchitectureValidationTestFixtures.validContext();
+        List<DependencyDescriptor> dependencies = new ArrayList<>(base.dependencies());
+        dependencies.add(new DependencyDescriptor(
+                ArchitectureId.of("butchercraft:execution"),
+                ArchitectureId.of("butchercraft:allocation")
+        ));
+
+        ValidationResult result = validate(
+                ArchitectureRules.forbiddenDependencies(),
+                ArchitectureValidationTestFixtures.withDependencies(base, dependencies, base.dependencyConstraints())
+        );
+
+        assertFailedWith(result, "butchercraft:execution->butchercraft:allocation");
     }
 
     @Test
@@ -273,6 +432,39 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void schedulerEffectRuleDetectsUnknownDuplicateMissingAndWrongOwnerDeclarations() {
+        ValidationContext base = ArchitectureValidationTestFixtures.validContext();
+        List<SchedulerEffectDeclaration> effects = new ArrayList<>(base.schedulerEffects());
+        SchedulerEffectDeclaration first = effects.getFirst();
+        effects.removeIf(effect -> effect.effectKind().equals("NON_REPEATABLE"));
+        effects.add(new SchedulerEffectDeclaration(
+                ArchitectureId.of("butchercraft:scheduler_effect/duplicate_kind"),
+                first.effectKind(),
+                ArchitectureId.of("butchercraft:planning"),
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "test",
+                "wrong owner"
+        ));
+        effects.add(new SchedulerEffectDeclaration(
+                ArchitectureId.of("butchercraft:scheduler_effect/unknown"),
+                "unknown_effect",
+                ArchitectureId.of("butchercraft:simulation_scheduler"),
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "test",
+                "unknown effect"
+        ));
+
+        ValidationResult result = validate(
+                ArchitectureRules.schedulerEffectDeclarations(),
+                ArchitectureValidationTestFixtures.withSchedulerEffects(base, effects)
+        );
+
+        assertFailedWith(result, "Duplicate Scheduler effect kind", "Unknown Scheduler effect kind",
+                "Scheduler effect owned by non-Scheduler component",
+                "Missing Scheduler effect declaration: NON_REPEATABLE");
+    }
+
+    @Test
     void simulationRuleDetectsMissingDuplicateAndUnsatisfiedDeclarations() {
         SimulationInvariantDescriptor failed = new SimulationInvariantDescriptor(
                 ArchitectureId.of("butchercraft:invariant/replay"),
@@ -333,6 +525,49 @@ class ArchitectureRulesTest {
         );
 
         assertFalse(validate(ArchitectureRules.forbiddenDependencies(), context).isSuccessful());
+    }
+
+    @Test
+    void evidenceAndCheckpointContractsDoNotTransferSubsystemFactOwnership() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/evidence_not_fact_owner")
+                && contract.ownerId().value().equals("butchercraft:evidence_lifecycle")
+                && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/checkpoint_owner_snapshots")
+                && contract.ownerId().value().equals("butchercraft:checkpoint_recovery")
+                && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.ownershipAssignments().stream().noneMatch(assignment ->
+                assignment.ownerId().value().equals("butchercraft:evidence_lifecycle")
+                        && assignment.responsibilityId().value().equals(
+                                "butchercraft:responsibility/economic_mutations"
+                        )));
+        assertTrue(context.ownershipAssignments().stream().noneMatch(assignment ->
+                assignment.ownerId().value().equals("butchercraft:checkpoint_recovery")
+                        && assignment.responsibilityId().value().equals(
+                                "butchercraft:responsibility/inventory_quantities"
+                        )));
+    }
+
+    @Test
+    void implementationGatedPlatformDeclarationsAreNotReportedAsImplementedGuarantees() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.schedulerEffects().stream().allMatch(effect ->
+                effect.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformIdentities().stream().allMatch(identity ->
+                identity.disposition() == ArchitectureValidationDisposition.DOCUMENTATION_ONLY));
+        assertTrue(context.platformContracts().stream()
+                .filter(contract -> !contract.id().value()
+                        .equals("butchercraft:platform_contract/execution_independent_of_allocation"))
+                .allMatch(contract ->
+                        contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.runtimeAuthorities().stream()
+                .filter(authority -> authority.ownerId().value().equals("butchercraft:execution"))
+                .allMatch(authority ->
+                        authority.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
     }
 
     private static ValidationResult validate(ValidationRule rule, ValidationContext context) {

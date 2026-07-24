@@ -1,6 +1,7 @@
 package com.butchercraft.architecture.validation;
 
 public enum ValidationCategory {
+    PLATFORM,
     OWNERSHIP,
     DEPENDENCIES,
     PERSISTENCE,

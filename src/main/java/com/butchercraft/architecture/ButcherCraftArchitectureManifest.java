@@ -1,8 +1,10 @@
 package com.butchercraft.architecture;
 
 import com.butchercraft.architecture.validation.ArchitectureComponent;
+import com.butchercraft.architecture.validation.ArchitectureDocumentDescriptor;
 import com.butchercraft.architecture.validation.ArchitectureId;
 import com.butchercraft.architecture.validation.ArchitectureReference;
+import com.butchercraft.architecture.validation.ArchitectureValidationDisposition;
 import com.butchercraft.architecture.validation.DependencyConstraint;
 import com.butchercraft.architecture.validation.DependencyDescriptor;
 import com.butchercraft.architecture.validation.OrderingPolicy;
@@ -10,9 +12,15 @@ import com.butchercraft.architecture.validation.OwnershipAssignment;
 import com.butchercraft.architecture.validation.OwnershipContract;
 import com.butchercraft.architecture.validation.PersistenceDataKind;
 import com.butchercraft.architecture.validation.PersistenceDescriptor;
+import com.butchercraft.architecture.validation.PlatformContractDescriptor;
+import com.butchercraft.architecture.validation.PlatformIdentityDescriptor;
+import com.butchercraft.architecture.validation.PlatformIdentityKind;
 import com.butchercraft.architecture.validation.RegistryDescriptor;
 import com.butchercraft.architecture.validation.RegistryEntryDescriptor;
+import com.butchercraft.architecture.validation.RuntimeAuthorityDescriptor;
 import com.butchercraft.architecture.validation.SchedulerDescriptor;
+import com.butchercraft.architecture.validation.SchedulerEffectDeclaration;
+import com.butchercraft.architecture.validation.SchedulerEffectKind;
 import com.butchercraft.architecture.validation.SchedulerStageDescriptor;
 import com.butchercraft.architecture.validation.SimulationInvariantDescriptor;
 import com.butchercraft.architecture.validation.SimulationInvariantType;
@@ -33,6 +41,7 @@ import java.util.List;
 public final class ButcherCraftArchitectureManifest {
     public static final ArchitectureId CONTEXT_ID = id("butchercraft:current_architecture");
 
+    private static final ArchitectureId PLATFORM_ARCHITECTURE = id("butchercraft:platform_architecture");
     private static final ArchitectureId WORLD_IDENTITY = id("butchercraft:world_identity");
     private static final ArchitectureId SIMULATION = id("butchercraft:simulation");
     private static final ArchitectureId BUSINESS_RUNTIME = id("butchercraft:business_runtime");
@@ -45,9 +54,13 @@ public final class ButcherCraftArchitectureManifest {
     private static final ArchitectureId SCHEDULER = id("butchercraft:simulation_scheduler");
     private static final ArchitectureId PRODUCTION = id("butchercraft:production");
     private static final ArchitectureId PLANNING = id("butchercraft:planning");
+    private static final ArchitectureId EVIDENCE_LIFECYCLE = id("butchercraft:evidence_lifecycle");
+    private static final ArchitectureId CHECKPOINT_RECOVERY = id("butchercraft:checkpoint_recovery");
     private static final ArchitectureId ALLOCATION = id("butchercraft:allocation");
+    private static final ArchitectureId EXECUTION = id("butchercraft:execution");
     private static final ArchitectureId RESOURCE_AUTHORITIES =
             id("butchercraft:resource_authorities");
+    private static final ArchitectureId WORLD_SCOPE = id("butchercraft:scope/world");
 
     private static final String STAGE_REGISTRY_ID = "butchercraft:simulation_stages";
     private static final String WORK_TYPE_REGISTRY_ID = "butchercraft:simulation_work_types";
@@ -68,16 +81,26 @@ public final class ButcherCraftArchitectureManifest {
     public static ValidationContext current() {
         ValidationContextBuilder builder = ValidationContext.builder(CONTEXT_ID);
         addComponents(builder);
+        addArchitectureDocuments(builder);
+        addPlatformIdentities(builder);
+        addPlatformContracts(builder);
+        addRuntimeAuthorities(builder);
         addOwnership(builder);
         addDependencies(builder);
         addRegistries(builder);
         addPersistence(builder);
+        addSchedulerEffects(builder);
         addScheduler(builder);
         addSimulationInvariants(builder);
         return builder.build();
     }
 
     private static void addComponents(ValidationContextBuilder builder) {
+        builder.component(component(
+                PLATFORM_ARCHITECTURE,
+                "Platform Architecture",
+                "com.butchercraft.architecture.platform"
+        ));
         builder.component(component(WORLD_IDENTITY, "World Identity", "com.butchercraft.world.identity"));
         builder.component(component(SIMULATION, "Simulation Clock", "com.butchercraft.world.simulation"));
         builder.component(component(BUSINESS_RUNTIME, "Business Runtime", "com.butchercraft.world.business.runtime"));
@@ -90,12 +113,183 @@ public final class ButcherCraftArchitectureManifest {
         builder.component(component(SCHEDULER, "Simulation Scheduler", "com.butchercraft.world.simulation.scheduler"));
         builder.component(component(PRODUCTION, "Production", "com.butchercraft.world.production"));
         builder.component(component(PLANNING, "Economic Planning", "com.butchercraft.world.planning"));
+        builder.component(component(EVIDENCE_LIFECYCLE, "Evidence Lifecycle", "com.butchercraft.world.evidence"));
+        builder.component(component(
+                CHECKPOINT_RECOVERY,
+                "Checkpoint Recovery",
+                "com.butchercraft.world.checkpoint"
+        ));
         builder.component(component(ALLOCATION, "Resource Allocation", "com.butchercraft.world.allocation"));
+        builder.component(component(EXECUTION, "Execution", "com.butchercraft.world.execution"));
         builder.component(component(
                 RESOURCE_AUTHORITIES,
                 "External Resource Authorities",
                 "external.resource.authorities"
         ));
+    }
+
+    private static void addArchitectureDocuments(ValidationContextBuilder builder) {
+        document(builder, "butchercraft:document/platform_canonicalization_addendum",
+                "docs/adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "AH-1",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/evidence_lifecycle_adr",
+                "docs/adr/ADR-PROPOSED-EVIDENCE-LIFECYCLE.md",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "AH-1-ADR-01",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/checkpoint_recovery_adr",
+                "docs/adr/ADR-PROPOSED-CHECKPOINT-RECOVERY.md",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "AH-1-ADR-02",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/transaction_validation_authority_adr",
+                "docs/adr/ADR-PROPOSED-TRANSACTION-VALIDATION-AUTHORITY.md",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "AH-1-ADR-03",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/planning_cadence_adr",
+                "docs/adr/ADR-PROPOSED-PLANNING-CADENCE.md",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "AH-1-ADR-04",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/scheduler_effects_authority_adr",
+                "docs/adr/ADR-PROPOSED-SCHEDULER-EFFECTS-AUTHORITY.md",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "AH-1-ADR-05",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/rfc_0022",
+                "docs/RFC-0022_RESOURCE_ALLOCATION_ENGINE.md",
+                "ACCEPTED_M22A_M22D_IMPLEMENTED_M22E_M22F_GATED",
+                "Revision 2",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/rfc_0023",
+                "docs/RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md",
+                "ARCHITECTURE_SPECIFICATION_IMPLEMENTATION_NOT_AUTHORIZED",
+                "Draft 2",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+    }
+
+    private static void addPlatformIdentities(ValidationContextBuilder builder) {
+        identity(builder, "butchercraft:identity/entity", PlatformIdentityKind.ENTITY,
+                "Platform Canonicalization Addendum",
+                "Durable entity, definition, runtime record, or external reference identity");
+        identity(builder, "butchercraft:identity/content", PlatformIdentityKind.CONTENT,
+                "Platform Canonicalization Addendum",
+                "Digest or structural identity proving exact canonical content equality");
+        identity(builder, "butchercraft:identity/freshness", PlatformIdentityKind.FRESHNESS,
+                "Platform Canonicalization Addendum",
+                "Source-owned identity of all authoritative state examined by a consumer");
+        identity(builder, "butchercraft:identity/invocation", PlatformIdentityKind.INVOCATION,
+                "Platform Canonicalization Addendum",
+                "Deterministic identity of one bounded invocation attempt");
+        identity(builder, "butchercraft:identity/generation", PlatformIdentityKind.GENERATION,
+                "Platform Canonicalization Addendum",
+                "Committed checkpoint lineage position identity");
+        identity(builder, "butchercraft:identity/evidence", PlatformIdentityKind.EVIDENCE,
+                "Platform Canonicalization Addendum",
+                "Stable identity of immutable evidence independent of storage location");
+        identity(builder, "butchercraft:identity/configuration", PlatformIdentityKind.CONFIGURATION,
+                "Platform Canonicalization Addendum",
+                "Replay-relevant configuration, schema, policy, registry, and migration identity");
+    }
+
+    private static void addPlatformContracts(ValidationContextBuilder builder) {
+        platformContract(builder, "butchercraft:platform_contract/evidence_policy_ownership",
+                ValidationCategory.OWNERSHIP, EVIDENCE_LIFECYCLE,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-01 Evidence Lifecycle",
+                "Evidence Lifecycle owns classification, retention, archival, compaction records, "
+                        + "integrity verification, and query policy");
+        platformContract(builder, "butchercraft:platform_contract/evidence_not_fact_owner",
+                ValidationCategory.OWNERSHIP, EVIDENCE_LIFECYCLE,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-01 Evidence Lifecycle",
+                "Evidence policy does not transfer source facts or runtime state away from producing subsystems");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_publication",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-02 Checkpoint Recovery",
+                "Checkpoint Recovery owns generation identity, committed-generation selection, rollback, "
+                        + "atomic checkpoint visibility, and storage-artifact quarantine");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_owner_snapshots",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-02 Checkpoint Recovery",
+                "Checkpoint Recovery coordinates owner snapshots but each owner retains snapshot content authority");
+        platformContract(builder, "butchercraft:platform_contract/platform_determinism_manifest",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "Platform Canonicalization Addendum and ADR-02 Checkpoint Recovery",
+                "Checkpoint Recovery publishes the Platform Determinism Manifest while each source owns entries");
+        platformContract(builder, "butchercraft:platform_contract/transaction_validation_binding",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-03 Transaction Validation Authority",
+                "A successful validation binds the proposal digest, Inventory Freshness Identity, "
+                        + "and validation plan digest");
+        platformContract(builder, "butchercraft:platform_contract/transaction_consumption_authority",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-03 Transaction Validation Authority",
+                "Validation Consumption Authority is private, single-use, runtime-only, and Transaction-owned");
+        platformContract(builder, "butchercraft:platform_contract/serialized_transaction_owner_boundary",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-03 Transaction Validation Authority",
+                "Validation, freshness check, authority consumption, and mutation occur within a serialized "
+                        + "Transaction-owner boundary");
+        platformContract(builder, "butchercraft:platform_contract/planning_cadence",
+                ValidationCategory.PLANNING, PLANNING,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-04 Deterministic Planning Cadence",
+                "Planning Cycle eligibility, trigger ordering, input capture, and publication are Planning-owned");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_runtime_authority",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-05 Scheduler Effects Authority",
+                "Scheduler Runtime Authority owns Scheduler runtime, dispatch, invocation identity, "
+                        + "effect policy, and Scheduler publication");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_observes_domain_results",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-05 Scheduler Effects Authority",
+                "Scheduler observes domain effects and authoritative results but does not own or infer them");
+        platformContract(builder, "butchercraft:platform_contract/execution_authorization_evidence",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "RFC-0023 Draft 2",
+                "Execution consumes explicit Execution Authorization Evidence rather than requiring Allocation");
+        platformContract(builder, "butchercraft:platform_contract/execution_independent_of_allocation",
+                ValidationCategory.DEPENDENCIES, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "RFC-0023 Draft 2",
+                "Execution must not acquire a direct architectural dependency on Allocation");
+        platformContract(builder, "butchercraft:platform_contract/allocation_integration_gate",
+                ValidationCategory.ALLOCATION, ALLOCATION,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "RFC-0022 M22E-M22F and RFC-0023 Draft 2",
+                "Future Allocation integration depends on finalized Execution contracts and remains separately gated");
+    }
+
+    private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
+        runtimeAuthority(builder, "butchercraft:runtime_authority/scheduler_world",
+                SCHEDULER, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-05 Scheduler Effects Authority",
+                "One Scheduler Runtime Authority is declared for each loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/planning_world",
+                PLANNING, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "ADR-04 Deterministic Planning Cadence",
+                "One Planning runtime authority is declared for each loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/allocation_world",
+                ALLOCATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "RFC-0022 M22B",
+                "Allocation runtime lifecycle authority is declared for each loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/execution_world",
+                EXECUTION, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "RFC-0023 Draft 2",
+                "Future generic Execution authority is declared for each loaded world");
     }
 
     private static void addOwnership(ValidationContextBuilder builder) {
@@ -315,9 +509,45 @@ public final class ButcherCraftArchitectureManifest {
         );
         forbid(
                 builder,
+                INVENTORY,
+                TRANSACTIONS,
+                "Inventory owns authoritative quantities but not Transaction validation or mutation authority"
+        );
+        forbid(
+                builder,
+                INVENTORY,
+                PLANNING,
+                "Inventory cannot acquire Planning decision authority"
+        );
+        forbid(
+                builder,
+                INVENTORY,
+                ALLOCATION,
+                "Inventory cannot acquire Allocation authorization authority"
+        );
+        forbid(
+                builder,
+                INVENTORY,
+                EXECUTION,
+                "Inventory cannot acquire generic Execution authority"
+        );
+        forbid(
+                builder,
                 TRANSACTIONS,
                 PLANNING,
                 "Transactions cannot depend upon Planning decisions"
+        );
+        forbid(
+                builder,
+                TRANSACTIONS,
+                ALLOCATION,
+                "Transactions cannot depend upon Allocation authorization"
+        );
+        forbid(
+                builder,
+                TRANSACTIONS,
+                EXECUTION,
+                "Transactions cannot depend upon Execution progress or lifecycle"
         );
         forbid(
                 builder,
@@ -330,6 +560,19 @@ public final class ButcherCraftArchitectureManifest {
                 SCHEDULER,
                 PRODUCTION,
                 "Scheduler eligibility remains independent from Production behavior"
+        );
+        forbid(
+                builder,
+                SCHEDULER,
+                TRANSACTIONS,
+                "Scheduler dispatch observes authoritative results but cannot validate Transactions"
+        );
+        forbid(
+                builder,
+                EXECUTION,
+                ALLOCATION,
+                "RFC-0023 Draft 2 requires Execution to consume generic authorization evidence without "
+                        + "requiring Allocation"
         );
         forbid(
                 builder,
@@ -371,9 +614,11 @@ public final class ButcherCraftArchitectureManifest {
 
     private static void addRegistries(ValidationContextBuilder builder) {
         List<RegistryEntryDescriptor> components = List.of(
+                PLATFORM_ARCHITECTURE,
                 WORLD_IDENTITY, SIMULATION, BUSINESS_RUNTIME, WORKFORCE, GOODS, ACTORS,
                 INVENTORY, TRANSACTIONS, ORDERS, SCHEDULER, PRODUCTION, PLANNING,
-                ALLOCATION, RESOURCE_AUTHORITIES
+                EVIDENCE_LIFECYCLE, CHECKPOINT_RECOVERY, ALLOCATION, EXECUTION,
+                RESOURCE_AUTHORITIES
         ).stream()
                 .sorted()
                 .map(componentId -> RegistryEntryDescriptor.of(componentId.value()))
@@ -504,6 +749,25 @@ public final class ButcherCraftArchitectureManifest {
         );
     }
 
+    private static void addSchedulerEffects(ValidationContextBuilder builder) {
+        schedulerEffect(builder, "butchercraft:scheduler_effect/read_only",
+                SchedulerEffectKind.READ_ONLY,
+                "ADR-05 Scheduler Effects Authority",
+                "Read-only Scheduler handler observation effect");
+        schedulerEffect(builder, "butchercraft:scheduler_effect/idempotent",
+                SchedulerEffectKind.IDEMPOTENT,
+                "ADR-05 Scheduler Effects Authority",
+                "Deterministically repeatable Scheduler handler effect");
+        schedulerEffect(builder, "butchercraft:scheduler_effect/transaction_backed",
+                SchedulerEffectKind.TRANSACTION_BACKED,
+                "ADR-05 Scheduler Effects Authority",
+                "Scheduler handler effect backed by authoritative Transaction result evidence");
+        schedulerEffect(builder, "butchercraft:scheduler_effect/non_repeatable",
+                SchedulerEffectKind.NON_REPEATABLE,
+                "ADR-05 Scheduler Effects Authority",
+                "Consequential Scheduler handler effect that must not be automatically reinvoked");
+    }
+
     private static void addScheduler(ValidationContextBuilder builder) {
         List<SimulationStageDefinition> definitions = BuiltInSimulationStages.definitions();
         List<SchedulerStageDescriptor> stages = new ArrayList<>(definitions.size());
@@ -575,6 +839,93 @@ public final class ButcherCraftArchitectureManifest {
             String rationale
     ) {
         builder.dependencyConstraint(new DependencyConstraint(consumer, provider, rationale));
+    }
+
+    private static void document(
+            ValidationContextBuilder builder,
+            String id,
+            String path,
+            String status,
+            String revision,
+            ArchitectureValidationDisposition disposition
+    ) {
+        builder.architectureDocument(new ArchitectureDocumentDescriptor(
+                ArchitectureId.of(id),
+                path,
+                status,
+                revision,
+                disposition
+        ));
+    }
+
+    private static void identity(
+            ValidationContextBuilder builder,
+            String id,
+            PlatformIdentityKind kind,
+            String source,
+            String description
+    ) {
+        builder.platformIdentity(new PlatformIdentityDescriptor(
+                ArchitectureId.of(id),
+                kind,
+                ArchitectureValidationDisposition.DOCUMENTATION_ONLY,
+                source,
+                description
+        ));
+    }
+
+    private static void platformContract(
+            ValidationContextBuilder builder,
+            String id,
+            ValidationCategory category,
+            ArchitectureId owner,
+            ArchitectureValidationDisposition disposition,
+            String source,
+            String description
+    ) {
+        builder.platformContract(new PlatformContractDescriptor(
+                ArchitectureId.of(id),
+                category,
+                owner,
+                disposition,
+                source,
+                description
+        ));
+    }
+
+    private static void runtimeAuthority(
+            ValidationContextBuilder builder,
+            String id,
+            ArchitectureId owner,
+            ArchitectureValidationDisposition disposition,
+            String source,
+            String description
+    ) {
+        builder.runtimeAuthority(new RuntimeAuthorityDescriptor(
+                ArchitectureId.of(id),
+                owner,
+                WORLD_SCOPE,
+                disposition,
+                source,
+                description
+        ));
+    }
+
+    private static void schedulerEffect(
+            ValidationContextBuilder builder,
+            String id,
+            SchedulerEffectKind kind,
+            String source,
+            String description
+    ) {
+        builder.schedulerEffect(new SchedulerEffectDeclaration(
+                ArchitectureId.of(id),
+                kind.name(),
+                SCHEDULER,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                source,
+                description
+        ));
     }
 
     private static RegistryEntryDescriptor workType(String id, String stageId) {

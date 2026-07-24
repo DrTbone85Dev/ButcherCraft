@@ -1,6 +1,6 @@
 # BCSE Architecture Validation Framework
 
-Status: Phase 1 implemented
+Status: Phase 2 manifest implemented
 
 The BCSE Architecture Validation Framework turns documented architectural
 contracts into deterministic, executable checks. It validates an immutable
@@ -22,6 +22,10 @@ architecture define contracts for:
 - deterministic registries;
 - versioned and separately owned persistence;
 - stable Scheduler stages;
+- canonical platform document registration;
+- platform identity-category declarations;
+- platform contract and runtime-authority declarations;
+- Scheduler effect-kind declarations;
 - transaction authority;
 - Planning and Production ownership;
 - deterministic simulation and replay.
@@ -50,9 +54,11 @@ id. Every result sorts its detail messages, so equivalent inputs produce equal
 reports.
 
 `ButcherCraftArchitectureManifest.current()` is the explicit Phase 1 snapshot
-of accepted current architecture. It references current pure Scheduler stage
-and Work-type constants where those constants already exist. All other
-contracts remain declarations, not introspection.
+of accepted current architecture plus the Manifest 2.0 AH-1 platform
+declarations. It references current pure Scheduler stage and Work-type
+constants where those constants already exist. AH-1 platform contracts are
+classified by validation disposition so implementation-gated architecture does
+not become a false runtime guarantee.
 
 ## Core Model
 
@@ -61,12 +67,17 @@ contracts remain declarations, not introspection.
 `ValidationContext` is an immutable aggregate containing:
 
 - architecture components;
+- canonical architecture document descriptors;
+- platform identity descriptors;
+- platform contract descriptors and validation dispositions;
+- runtime authority descriptors;
 - ownership assignments;
 - ownership contracts;
 - observed dependency edges;
 - forbidden dependency constraints;
 - registry descriptors and entry references;
 - persistence descriptors;
+- Scheduler effect declarations;
 - Scheduler descriptors and stage dependencies;
 - simulation invariant declarations.
 
@@ -139,6 +150,7 @@ Phase 1 defines these additive categories:
 
 | Category | Current purpose |
 | --- | --- |
+| `PLATFORM` | Canonical document, identity, platform contract, and runtime-authority declarations. |
 | `OWNERSHIP` | Singular ownership and general owner contracts. |
 | `DEPENDENCIES` | Known edges, forbidden direction, and graph cycles. |
 | `PERSISTENCE` | Schema, id, path, ordering, ownership, and references. |
@@ -164,21 +176,26 @@ integration declaration.
 `ArchitectureRules.standardRegistry()` currently installs:
 
 1. Component id and package-root integrity.
-2. Singular responsibility ownership.
-3. Category-specific ownership-contract validation.
-4. Dependency reference and duplicate validation.
-5. Forbidden dependency validation.
-6. Dependency cycle detection.
-7. Registry id, entry id, duplicate, and reference identity validation.
-8. Canonical, explicit, or insertion ordering validation.
-9. Registry reference resolution.
-10. Persistence id, path, owner, and schema validation.
-11. Immutable-definition and mutable-runtime authority separation.
-12. Persisted registry-reference resolution.
-13. Scheduler and stage identity validation.
-14. Scheduler ordering and gap validation.
-15. Scheduler dependency reference, order, and cycle validation.
-16. Simulation replay, deterministic ordering, and stable-id validation.
+2. Canonical platform architecture document registration.
+3. Platform identity-category completeness and uniqueness.
+4. Platform contract owner declaration integrity.
+5. Runtime-authority declaration singularity by owner and scope.
+6. Singular responsibility ownership.
+7. Category-specific ownership-contract validation.
+8. Dependency reference and duplicate validation.
+9. Forbidden dependency validation.
+10. Dependency cycle detection.
+11. Registry id, entry id, duplicate, and reference identity validation.
+12. Canonical, explicit, or insertion ordering validation.
+13. Registry reference resolution.
+14. Persistence id, path, owner, and schema validation.
+15. Immutable-definition and mutable-runtime authority separation.
+16. Persisted registry-reference resolution.
+17. Scheduler effect-kind declaration validation.
+18. Scheduler and stage identity validation.
+19. Scheduler ordering and gap validation.
+20. Scheduler dependency reference, order, and cycle validation.
+21. Simulation replay, deterministic ordering, and stable-id validation.
 
 Rules aggregate all violations they find instead of stopping at the first
 error. This keeps reports useful while preserving deterministic output.
@@ -219,6 +236,35 @@ The current manifest encodes, among other accepted contracts:
 - Production owns Production Run runtime.
 - Scheduler owns Work eligibility.
 
+## Platform Declaration Validation
+
+Manifest 2.0 adds descriptor families for ratified AH-1 platform architecture:
+
+- `ArchitectureDocumentDescriptor` records the canonical document id,
+  repository-relative path, status, revision, and validation disposition.
+- `PlatformIdentityDescriptor` records the seven canonical platform identity
+  categories: Entity, Content, Freshness, Invocation, Generation, Evidence,
+  and Configuration.
+- `PlatformContractDescriptor` records owner-facing platform contracts and
+  classifies each as enforced now, declared but implementation-gated,
+  documentation-only, or not machine-verifiable.
+- `RuntimeAuthorityDescriptor` records one declared owner and scope for
+  world-scoped runtime authorities.
+- `SchedulerEffectDeclaration` records the four ratified Scheduler effect
+  kinds: `READ_ONLY`, `IDEMPOTENT`, `TRANSACTION_BACKED`, and
+  `NON_REPEATABLE`.
+
+The standard rules validate descriptor identity, uniqueness, known owners,
+required platform identity categories, runtime-authority singularity by owner
+and scope, and known Scheduler effect kinds. They do not parse governing prose,
+load checkpoint storage, run Scheduler handlers, validate Transaction runtime
+authority consumption, or execute any recovery path.
+
+The current AH-1 implementation gates are explicit in the manifest. Evidence
+Lifecycle, Checkpoint Recovery, Transaction hardening, Planning cadence,
+Scheduler effect enforcement, generic Execution, and Allocation M22E-M22F
+integration are declared architecture but not runtime guarantees.
+
 ## Dependency Validation
 
 `DependencyDescriptor` records one observed architectural dependency.
@@ -234,6 +280,12 @@ Standard rules detect:
 The current manifest describes accepted high-level contracts. It does not scan
 Java imports. Existing source dependency-boundary tests remain responsible for
 checking concrete package text where that is appropriate.
+
+Manifest 2.0 adds AH-1 forbidden dependency declarations for platform
+hardening, including the RFC-0023 Draft 2 rule that future generic Execution
+must not directly depend on Allocation. Future Allocation integration remains
+separately gated and may depend on finalized Execution contracts only through a
+later accepted milestone.
 
 ## Registry Validation
 
@@ -301,6 +353,11 @@ Rules detect:
 The current manifest maps the accepted six stages at orders 100 through 600.
 It does not add the proposed RFC-0022 Allocation stage.
 
+Manifest 2.0 also declares the four Scheduler effect kinds ratified by
+ADR-05. These declarations are implementation-gated. They validate canonical
+effect vocabulary and ownership only; they do not enforce handler runtime
+policy.
+
 ## Simulation Validation
 
 Simulation declarations are typed as:
@@ -357,6 +414,14 @@ is deliberate evidence that the generic framework exists while no
 production-grade concrete provider is active. Allocation still has no
 persistence descriptor or Scheduler stage 350.
 
+Manifest 2.0 registers the Platform Canonicalization Addendum, ADR-01 through
+ADR-05, RFC-0022 Revision 2, and RFC-0023 Draft 2 as canonical architecture
+document descriptors. It also declares Evidence Lifecycle, Checkpoint
+Recovery, and future Execution as architecture components so ownership and
+dependency constraints can be validated before runtime implementation begins.
+Those declarations do not create Java packages, services, persistence files,
+Scheduler handlers, gameplay behavior, or world-load hooks.
+
 This build-time integration is deliberate:
 
 - validation cannot change world behavior;
@@ -371,6 +436,14 @@ Automated coverage includes:
 
 - successful full-manifest validation;
 - every violation family;
+- canonical platform document registration and missing descriptor detection;
+- platform identity-category completeness;
+- platform contract duplicate and unknown-owner detection;
+- runtime-authority duplicate-scope and unknown-owner detection;
+- Scheduler effect duplicate, missing, wrong-owner, and unknown-kind detection;
+- RFC-0023 Draft 2 Execution-to-Allocation dependency prohibition;
+- Evidence Lifecycle and Checkpoint Recovery boundary declarations;
+- implementation-gated declarations not reported as implemented guarantees;
 - duplicate ids and registrations;
 - malformed and throwing rules;
 - null and edge handling;

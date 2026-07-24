@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -20,6 +21,8 @@ public final class ArchitectureRules {
     private static final Pattern CANONICAL_ID = Pattern.compile(
             "[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*(?:/[a-z][a-z0-9_]*)*)?"
     );
+    private static final ArchitectureId SCHEDULER_OWNER =
+            ArchitectureId.of("butchercraft:simulation_scheduler");
 
     private ArchitectureRules() {
     }
@@ -27,6 +30,10 @@ public final class ArchitectureRules {
     public static ValidationRuleRegistry standardRegistry() {
         return ValidationRuleRegistry.builder()
                 .register(componentIntegrity())
+                .register(architectureDocuments())
+                .register(platformIdentityDeclarations())
+                .register(platformContractDeclarations())
+                .register(runtimeAuthorityDeclarations())
                 .register(singularOwnership())
                 .register(ownershipContracts(ValidationCategory.OWNERSHIP))
                 .register(ownershipContracts(ValidationCategory.TRANSACTIONS))
@@ -43,6 +50,7 @@ public final class ArchitectureRules {
                 .register(persistenceIdentity())
                 .register(persistenceSeparation())
                 .register(persistenceReferences())
+                .register(schedulerEffectDeclarations())
                 .register(schedulerIdentity())
                 .register(schedulerOrdering())
                 .register(schedulerDependencies())
@@ -64,6 +72,109 @@ public final class ArchitectureRules {
                             .forEach(value -> details.add("Duplicate component id: " + value));
                     duplicateValues(context.components(), ArchitectureComponent::packageRoot)
                             .forEach(value -> details.add("Duplicate component package root: " + value));
+                    return details;
+                }
+        );
+    }
+
+    public static ValidationRule architectureDocuments() {
+        return rule(
+                "butchercraft:architecture/platform_documents",
+                "Canonical platform architecture documents are explicitly registered",
+                ValidationCategory.PLATFORM,
+                context -> {
+                    List<String> details = new ArrayList<>();
+                    if (context.architectureDocuments().isEmpty()) {
+                        details.add("No architecture document descriptors were declared");
+                    }
+                    duplicateValues(context.architectureDocuments(), document -> document.id().value())
+                            .forEach(value -> details.add("Duplicate architecture document id: " + value));
+                    duplicateValues(context.architectureDocuments(), ArchitectureDocumentDescriptor::path)
+                            .forEach(value -> details.add("Duplicate architecture document path: " + value));
+                    for (ArchitectureDocumentDescriptor document : context.architectureDocuments()) {
+                        if (document.path().startsWith("/") || document.path().contains(":")) {
+                            details.add("Architecture document path must be repository-relative: "
+                                    + document.path());
+                        }
+                    }
+                    return details;
+                }
+        );
+    }
+
+    public static ValidationRule platformIdentityDeclarations() {
+        return rule(
+                "butchercraft:architecture/platform_identities",
+                "Canonical platform identity categories are declared exactly once",
+                ValidationCategory.PLATFORM,
+                context -> {
+                    List<String> details = new ArrayList<>();
+                    if (context.platformIdentities().isEmpty()) {
+                        details.add("No platform identity descriptors were declared");
+                    }
+                    duplicateValues(context.platformIdentities(), identity -> identity.id().value())
+                            .forEach(value -> details.add("Duplicate platform identity id: " + value));
+                    duplicateValues(context.platformIdentities(), identity -> identity.kind().name())
+                            .forEach(value -> details.add("Duplicate platform identity kind: " + value));
+                    EnumSet<PlatformIdentityKind> present = EnumSet.noneOf(PlatformIdentityKind.class);
+                    context.platformIdentities().forEach(identity -> present.add(identity.kind()));
+                    for (PlatformIdentityKind required : PlatformIdentityKind.values()) {
+                        if (!present.contains(required)) {
+                            details.add("Missing platform identity kind: " + required);
+                        }
+                    }
+                    return details;
+                }
+        );
+    }
+
+    public static ValidationRule platformContractDeclarations() {
+        return rule(
+                "butchercraft:architecture/platform_contracts",
+                "Platform contract declarations identify one known owning subsystem",
+                ValidationCategory.PLATFORM,
+                context -> {
+                    List<String> details = new ArrayList<>();
+                    if (context.platformContracts().isEmpty()) {
+                        details.add("No platform contract descriptors were declared");
+                    }
+                    Set<ArchitectureId> componentIds = componentIds(context);
+                    duplicateValues(context.platformContracts(), contract -> contract.id().value())
+                            .forEach(value -> details.add("Duplicate platform contract id: " + value));
+                    for (PlatformContractDescriptor contract : context.platformContracts()) {
+                        if (!componentIds.contains(contract.ownerId())) {
+                            details.add("Unknown platform contract owner for " + contract.id().value()
+                                    + ": " + contract.ownerId().value());
+                        }
+                    }
+                    return details;
+                }
+        );
+    }
+
+    public static ValidationRule runtimeAuthorityDeclarations() {
+        return rule(
+                "butchercraft:architecture/runtime_authorities",
+                "Runtime authority declarations are singular for each owner and scope",
+                ValidationCategory.PLATFORM,
+                context -> {
+                    List<String> details = new ArrayList<>();
+                    if (context.runtimeAuthorities().isEmpty()) {
+                        details.add("No runtime authority descriptors were declared");
+                    }
+                    Set<ArchitectureId> componentIds = componentIds(context);
+                    duplicateValues(context.runtimeAuthorities(), authority -> authority.id().value())
+                            .forEach(value -> details.add("Duplicate runtime authority id: " + value));
+                    duplicateValues(
+                            context.runtimeAuthorities(),
+                            authority -> authority.ownerId().value() + "@" + authority.scopeId().value()
+                    ).forEach(value -> details.add("Duplicate runtime authority scope: " + value));
+                    for (RuntimeAuthorityDescriptor authority : context.runtimeAuthorities()) {
+                        if (!componentIds.contains(authority.ownerId())) {
+                            details.add("Unknown runtime authority owner for " + authority.id().value()
+                                    + ": " + authority.ownerId().value());
+                        }
+                    }
                     return details;
                 }
         );
@@ -437,6 +548,46 @@ public final class ArchitectureRules {
                                     .forEach(value -> details.add(
                                             "Duplicate dependency on stage " + stage.id() + ": " + value
                                     ));
+                        }
+                    }
+                    return details;
+                }
+        );
+    }
+
+    public static ValidationRule schedulerEffectDeclarations() {
+        return rule(
+                "butchercraft:architecture/scheduler_effects",
+                "Scheduler effect declarations use canonical effect kinds and Scheduler ownership",
+                ValidationCategory.SCHEDULER,
+                context -> {
+                    List<String> details = new ArrayList<>();
+                    if (context.schedulerEffects().isEmpty()) {
+                        details.add("No Scheduler effect declarations were declared");
+                    }
+                    Set<ArchitectureId> componentIds = componentIds(context);
+                    duplicateValues(context.schedulerEffects(), effect -> effect.id().value())
+                            .forEach(value -> details.add("Duplicate Scheduler effect id: " + value));
+                    duplicateValues(context.schedulerEffects(), SchedulerEffectDeclaration::effectKind)
+                            .forEach(value -> details.add("Duplicate Scheduler effect kind: " + value));
+                    Set<String> present = new LinkedHashSet<>();
+                    for (SchedulerEffectDeclaration effect : context.schedulerEffects()) {
+                        if (SchedulerEffectKind.isKnown(effect.effectKind())) {
+                            present.add(effect.effectKind());
+                        } else {
+                            details.add("Unknown Scheduler effect kind: " + effect.effectKind());
+                        }
+                        if (!componentIds.contains(effect.ownerId())) {
+                            details.add("Unknown Scheduler effect owner for " + effect.id().value()
+                                    + ": " + effect.ownerId().value());
+                        } else if (!SCHEDULER_OWNER.equals(effect.ownerId())) {
+                            details.add("Scheduler effect owned by non-Scheduler component: "
+                                    + effect.id().value() + " -> " + effect.ownerId().value());
+                        }
+                    }
+                    for (String required : SchedulerEffectKind.tokens()) {
+                        if (!present.contains(required)) {
+                            details.add("Missing Scheduler effect declaration: " + required);
                         }
                     }
                     return details;
