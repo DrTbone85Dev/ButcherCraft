@@ -2,60 +2,161 @@
 
 Status: Architecture Specification
 
-Revision: Draft 1
+Revision: Draft 2
 
 Governing authority: [`CONSTITUTION.md`](../CONSTITUTION.md)
 
-This RFC defines the industry-neutral framework that performs approved,
-resource-authorized work.
+This RFC defines the proposed industry-neutral Execution subsystem. It replaces
+Draft 1 as the proposed Execution architecture and reconciles Execution with
+the ratified BCSE platform architecture.
 
-No implementation is authorized until the complete RFC has been reviewed and
-approved.
+No implementation, schema change, migration, gameplay behavior, runtime
+behavior, Allocation integration, Scheduler integration, Transaction
+integration, or persistence implementation is authorized by this draft.
 
-## Part I: Philosophy, Authority, And First Principles
+## 1. Authoritative References
 
-### 1. Purpose
+Execution consumes platform architecture. It does not redefine platform-wide
+concepts.
 
-The Deterministic Execution Engine exists to answer one question:
+This RFC is subordinate to:
 
-> Given an executable work definition and complete active resource
-> authorization, how does that work progress toward completion?
+- [`CONSTITUTION.md`](../CONSTITUTION.md)
+- [`CORE_PRINCIPLES.md`](../CORE_PRINCIPLES.md)
+- [`BCSE Architecture Guide`](BCSE_ARCHITECTURE_GUIDE.md)
+- [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
+- [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
+- [`ADR-01: Platform Evidence Lifecycle`](adr/ADR-PROPOSED-EVIDENCE-LIFECYCLE.md)
+- [`ADR-02: Checkpoint Recovery`](adr/ADR-PROPOSED-CHECKPOINT-RECOVERY.md)
+- [`ADR-03: Transaction Validation Authority`](adr/ADR-PROPOSED-TRANSACTION-VALIDATION-AUTHORITY.md)
+- [`ADR-04: Deterministic Planning Cadence`](adr/ADR-PROPOSED-PLANNING-CADENCE.md)
+- [`ADR-05: Scheduler Handler Effects And Scheduler Runtime Authority`](adr/ADR-PROPOSED-SCHEDULER-EFFECTS-AUTHORITY.md)
+- [`RFC-0022: Resource Allocation Engine`](RFC-0022_RESOURCE_ALLOCATION_ENGINE.md)
+
+The [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
+is the canonical source for platform vocabulary, identity classes, invariant
+ownership, Recovery, Replay, Rollback, Publication, Observation, failure
+taxonomy, cancellation, Operator Authority, World Identity, and the Platform
+Determinism Manifest.
+
+## 2. Purpose
+
+The Deterministic Execution Engine answers one question:
+
+> Given approved executable work and explicit Execution Authorization Evidence,
+> how does that work progress toward completion?
 
 Execution does not decide whether work should happen.
 
-Execution does not decide whether resources are available.
+Execution does not decide whether scarce Capacity is available.
 
-Execution performs already-approved and already-authorized work.
+Execution does not mutate authoritative state.
 
-### 2. Architectural Position
+Execution coordinates bounded, deterministic progress for already approved and
+authorized work.
+
+## 3. Architectural Position
+
+The target BCSE data flow is:
 
 ```text
-Observation
-  -> Planning
+Authoritative Observation
+  -> Planning Cycle
       -> Domain-Owned Executable Work Definition
-          -> Allocation
-              -> Execution
-                  -> Transactions
-                      -> Authoritative State
+          -> Execution Authorization Evidence
+              -> Scheduler Work
+                  -> Execution
+                      -> Transaction Proposal
+                          -> Authoritative Result
+                              -> Authoritative State
 ```
 
-Planning decides.
+This is an ownership and data-flow diagram, not a Scheduler stage list and not
+an implementation dependency chain.
 
-Allocation commits scarce execution capacity.
+Execution consumes externally owned facts and publishes Execution-owned runtime
+and evidence. It does not become the owner of Planning, Allocation, Scheduler,
+Transactions, Inventory, Checkpoint Recovery, Evidence Lifecycle, or World
+Identity.
 
-Execution performs work.
+## 4. Execution Ownership
 
-Transactions apply authoritative state changes.
+Execution owns:
 
-Authoritative subsystems own the resulting state.
+- Execution Authority;
+- Execution lifecycle;
+- Execution runtime state;
+- Execution instances;
+- Execution attempts;
+- Execution progress;
+- Execution coordination;
+- Execution observation;
+- Execution reports;
+- Execution traces;
+- Execution summaries;
+- Execution owner snapshots;
+- Execution adapter contracts;
+- Execution verification;
+- Execution acceptance criteria.
 
-### 3. Execution Definition
+Execution does not own:
 
-Execution is the deterministic progression of an executable work instance
-through time.
+- platform identity model;
+- platform Replay model;
+- platform Recovery model;
+- Evidence Lifecycle;
+- Checkpoint generation publication;
+- Transaction validation;
+- Inventory mutation;
+- Planning cadence;
+- Scheduler effect semantics;
+- Allocation authority;
+- World Identity;
+- Operator Authority.
 
-Execution begins only after all required authorization conditions are
-satisfied.
+## 5. Execution Authority
+
+Schema 1 defines one Execution Authority per loaded world when generic
+Execution is implemented.
+
+Execution Authority owns:
+
+- accepted Execution instances;
+- Execution runtime lifecycle state;
+- active and historical Execution attempts;
+- Execution progress records;
+- Execution-local observations;
+- Execution reports;
+- Execution traces;
+- Execution summaries;
+- Execution owner snapshots.
+
+Execution Authority does not own:
+
+- executable work definitions;
+- Planning Cycle artifacts;
+- Allocation Requests, AllocationSets, Commitments, Resources, or Capacity;
+- Scheduler Work lifecycle or dispatch order;
+- Transaction validation, Validation Consumption Authority, or mutation;
+- Inventory quantities;
+- CheckpointGenerationId selection or committed-generation visibility;
+- evidence retention, archival, or compaction policy.
+
+Public callers may request Execution actions through documented contracts after
+a future implementation is approved. They do not receive Execution Authority.
+
+## 6. Execution Definition
+
+Execution is the deterministic progression of one Execution instance through
+time.
+
+Execution begins only after the Execution Authority accepts:
+
+- a stable reference to a domain-owned executable work definition;
+- explicit Execution Authorization Evidence;
+- a valid Scheduler invocation context;
+- all required platform identities and configuration references;
+- a valid non-terminal Execution runtime state.
 
 Execution ends through exactly one terminal outcome:
 
@@ -63,1260 +164,208 @@ Execution ends through exactly one terminal outcome:
 - `FAILED`
 - `CANCELLED`
 
-Execution never implies successful state mutation unless the required
-Transaction has been applied successfully.
+Execution completion never implies successful authoritative state mutation
+unless the required Transaction Authoritative Result proves that mutation.
 
-### 4. Execution Is Not Planning
+## 7. Boundaries
 
-Planning answers:
+### 7.1 Planning
 
-> What should happen?
+Planning owns Planning Cycle cadence, Planning decisions, trigger consumption,
+input capture, and Planning Cycle publication under the Planning Cadence ADR.
 
-Execution answers:
+Execution may reference an approved executable intent. It shall not create,
+rank, approve, reschedule, or reinterpret Planning artifacts.
 
-> What is currently happening?
+### 7.2 Allocation
 
-Execution shall never:
+Allocation owns Resource and Capacity authority under RFC-0022.
 
-- create Needs;
-- create Opportunities;
-- rank Candidate Plans;
-- approve Plans;
-- change Planning priority;
-- modify Planning fairness;
-- replan failed work.
+Execution consumes Execution Authorization Evidence. Future Allocation
+integration may provide that evidence. Execution does not define Allocation
+authority and does not require Allocation implementation to exist.
 
-Planning remains externally authoritative for decisions.
+Execution shall not search for Resources, select Resources, reserve Capacity,
+create AllocationSets, create Commitments, activate Commitments, release
+Commitments, repair missing authorization, or extend expired authorization.
 
-### 5. Execution Is Not Allocation
+### 7.3 Scheduler
 
-Allocation answers:
+Scheduler owns Scheduler Work lifecycle, ordered dispatch, effect policy,
+Invocation Identity, Effect Identity, Scheduler publication, and Scheduler
+Runtime Authority under the Scheduler Effects Authority ADR.
 
-> Which scarce Capacity is committed?
+Execution consumes one Scheduler invocation at a time. One Scheduler invocation
+may authorize at most one bounded Execution step for one Execution instance.
 
-Execution answers:
+Execution does not own Scheduler Work, dispatch order, retry policy, effect
+classification, or Unknown Outcome handling.
 
-> How does authorized work progress?
+### 7.4 Transactions
 
-Execution shall never:
+Transactions own validation, Validation Consumption Authority, the Serialized
+Transaction-owner Boundary, mutation application, and Authoritative Result
+evidence under the Transaction Validation Authority ADR.
 
-- search for Resources;
-- select Resources;
-- reserve Capacity;
-- create AllocationSets;
-- create Commitments;
-- replace missing Commitments;
-- extend expired Commitments.
+Execution may submit a canonical Transaction proposal through the approved
+Transaction boundary. Transactions validate the proposal, consume Validation
+Consumption Authority privately, and publish Authoritative Result evidence.
 
-Allocation remains externally authoritative for resource authorization.
+Execution observes Authoritative Result evidence. Execution never receives,
+persists, reuses, or transfers Validation Consumption Authority.
 
-### 6. Execution Is Not Transactions
+### 7.5 Evidence Lifecycle
 
-Execution may request or construct a proposed state transition through an
-approved domain adapter.
+Execution owns the content of Execution reports, traces, summaries, history,
+and owner snapshots.
 
-Execution shall never directly mutate authoritative state.
+The Evidence Lifecycle ADR owns evidence classification, retention, archival,
+compaction, integrity verification, and query policy. Execution evidence does
+not become a second runtime authority.
 
-Execution shall never directly mutate Inventory quantities.
+### 7.6 Checkpoint Recovery
 
-Execution shall never bypass Transaction validation or execution.
+Checkpoint Recovery owns CheckpointGenerationId, committed generation
+selection, atomic checkpoint visibility, Rollback selection, Recovery, and
+storage-artifact quarantine.
 
-Execution completion and Transaction application remain distinct facts.
+Execution owns its owner snapshot content and validates that content when
+Checkpoint Recovery requests participant validation. Execution does not select
+checkpoint generations or publish platform checkpoints.
 
-### 7. Domain Ownership
+### 7.7 World Identity
 
-Executable work definitions remain owned by their authoritative domain
-subsystems.
+World Identity remains an immutable external root owned outside Execution.
+Execution references World Identity as a platform identity input and never
+regenerates, migrates, or redefines it.
+
+## 8. Platform Concepts Consumed By Execution
+
+Execution consumes these canonical platform concepts by reference:
+
+- Authority;
+- Identity;
+- Entity Identity;
+- Content Identity;
+- Freshness Identity;
+- Evidence Identity;
+- Proposal Identity;
+- Validation Plan Identity;
+- Invocation Identity;
+- Effect Identity;
+- CheckpointGenerationId;
+- Owner Snapshot;
+- Publication;
+- Observation;
+- Recovery;
+- Replay;
+- Rollback;
+- Authoritative Result;
+- Unknown Outcome;
+- Recovery-Blocked State;
+- Quarantined Artifact;
+- Configuration Identity;
+- Platform Determinism Manifest;
+- Operator Authority.
+
+When this RFC uses one of those terms, the canonical definition is the
+Platform Canonicalization Addendum.
+
+## 9. Execution Identity
+
+Execution-specific identities follow the Platform Identity Model. This RFC
+defines only what Execution-specific identities identify.
+
+Schema 1 Execution-specific identities are:
+
+| Identity | Identifies | Owner |
+| --- | --- | --- |
+| Execution Identity | The generic Execution subsystem authority for one loaded world | Execution |
+| Execution Instance Identity | One accepted runtime instance for one domain-owned executable work definition | Execution |
+| Execution Attempt Identity | One bounded attempt to advance one Execution instance | Execution |
+| Execution Step Identity | One bounded step evaluated under one Scheduler invocation | Execution |
+| Execution Report Identity | One immutable Execution report | Execution |
+| Execution Trace Identity | One immutable Execution trace | Execution |
+| Execution Summary Identity | One immutable Execution summary | Execution |
+| Execution Owner Snapshot Identity | One Execution-owned snapshot supplied to Checkpoint Recovery | Execution |
+| Execution Authorization Evidence reference | A reference to externally owned authorization evidence consumed by Execution | Source owner |
+
+Execution also references platform and external identities including Proposal
+Identity, Freshness Identity, Validation Plan Identity, Invocation Identity,
+Effect Identity, Evidence Identity, CheckpointGenerationId, World Identity,
+and the Platform Determinism Manifest.
+
+Execution shall not define a global Inventory state version, Inventory
+Freshness Identity scheme, Transaction proposal digest algorithm, Scheduler
+invocation identity, checkpoint generation identity, evidence identity, or
+world identity scheme.
+
+## 10. Execution Authorization Evidence
+
+Execution Authorization Evidence is the explicit evidence that externally
+owned authorization conditions have been satisfied for an Execution instance.
+
+Execution consumes this evidence. It does not own the authority that created
+the evidence.
+
+Execution Authorization Evidence may include, when required by the owning
+domain or future integration:
+
+- a domain-owned executable work reference;
+- authorization source identity;
+- authorization source owner;
+- source-owned Freshness Identity;
+- authorization content identity;
+- authorized scope;
+- valid lifecycle state;
+- valid simulation tick range or invocation binding;
+- configuration identity or Platform Determinism Manifest reference;
+- integrity evidence needed by the source owner.
+
+Missing, stale, conflicting, corrupt, or unsupported authorization evidence
+prevents Execution from beginning or continuing. Execution records a typed
+Execution-local failure or waiting state as appropriate, but it does not repair
+or replace the missing authority.
+
+## 11. Domain-Owned Executable Work
+
+Executable work definitions remain owned by their authoritative domain.
 
 Examples:
 
-- Production owns `ProductionPlanDefinition`.
-- Future Logistics owns `TransportWorkDefinition`.
-- Future Maintenance owns `MaintenanceWorkDefinition`.
-- Future Utilities owns `UtilityWorkDefinition`.
+- Production owns Production work definitions.
+- Future Logistics owns transport work definitions.
+- Future Maintenance owns maintenance work definitions.
+- Future Utilities owns utility work definitions.
 
-Execution never becomes authoritative for domain work definitions.
+Execution references a domain-owned executable work definition and invokes a
+registered Execution adapter for that definition type. Execution never becomes
+authoritative for the domain definition, domain policy, or domain semantics.
 
-Execution owns only generic execution runtime and execution evidence.
+## 12. Execution Runtime
 
-### 8. Execution Ownership
+Execution runtime state is mutable only inside Execution Authority.
 
-Execution owns:
+Schema 1 runtime state includes:
 
-- Execution instances;
-- Execution lifecycle;
-- Execution progress;
-- Execution attempts;
-- Execution failure evidence;
-- Execution cancellation evidence;
-- Execution completion evidence;
-- Execution reports;
-- Execution history;
-- Execution traces.
-
-Execution does not own:
-
-- Plans;
-- Allocation Commitments;
-- Resources;
-- Capacity;
-- Transactions;
-- Inventory;
-- Goods;
-- Businesses;
-- Workers;
-- Machines;
-- Vehicles;
-- Utilities.
-
-### 9. Execution Authorization
-
-Execution may begin only when every required authorization condition is
-satisfied.
-
-Schema-1 authorization requires at minimum:
-
-- valid executable work reference;
-- valid Execution instance;
-- complete AllocationSet association;
-- required Commitments present;
-- required Commitments `ACTIVE`;
-- Commitments compatible with executable work;
-- no terminal Execution state;
-- valid authoritative simulation tick.
-
-Future authorization conditions remain additive.
-
-### 10. Commitment Gate
-
-AllocationCommitments grant permission to begin or continue work.
-
-Execution consumes Commitments as immutable authorization evidence.
-
-Execution does not mutate Commitment definitions.
-
-Execution does not activate Commitments unless a later approved integration
-decision explicitly assigns activation authority to Execution.
-
-Execution does not release Commitments directly.
-
-Execution reports lifecycle outcomes to the approved Allocation integration
-boundary.
-
-### 11. Execution Instance
-
-An Execution Instance represents one runtime attempt to perform one
-domain-owned executable work definition.
-
-Each Execution Instance has stable identity.
-
-The executable work definition remains external.
-
-The Execution Instance references it.
-
-Execution Instances are not reusable after reaching a terminal state.
-
-A retry creates a new Execution attempt or follows the exact retry model defined
-later in this RFC.
-
-### 12. Determinism
-
-Given identical:
-
-- executable work definition reference;
-- Execution runtime state;
-- Allocation authorization;
-- simulation tick sequence;
-- Scheduler ordering;
-- domain execution adapter behavior;
-- Transaction results;
-
-Execution shall produce identical:
-
-- lifecycle transitions;
-- progress;
-- attempts;
-- failures;
-- completion evidence;
-- reports;
-- history;
-- trace.
-
-No randomness is permitted unless an external domain explicitly supplies a
-deterministic random input through an approved contract.
-
-Schema 1 introduces no random execution.
-
-### 13. Time Authority
-
-Execution owns no clock.
-
-Execution reads authoritative simulation time supplied by the Scheduler or
-Execution invocation context.
-
-Execution shall never read:
-
-- system time;
-- wall-clock time;
-- real-time elapsed duration;
-- client render time;
-- frame time.
-
-Execution progress is measured only through authoritative simulation units.
-
-### 14. Scheduler Authority
-
-Scheduler remains the sole authority for determining when Execution work runs.
-
-Execution does not create its own loop.
-
-Execution does not advance itself.
-
-Execution does not recursively invoke itself.
-
-One Scheduler invocation produces at most one bounded Execution step for one
-Execution Instance unless a later accepted batching rule states otherwise.
-
-### 15. Bounded Progress
-
-Execution proceeds through bounded deterministic steps.
-
-A single Execution invocation shall never perform unbounded work.
-
-Every Execution step must have explicit limits.
-
-Execution that requires additional progress returns a nonterminal runtime state
-for a future Scheduler invocation.
-
-No hidden loops.
-
-No run-until-complete behavior unless the work is provably bounded within the
-approved step budget.
-
-### 16. Progress
-
-Progress represents deterministic advancement toward a domain-defined
-completion condition.
-
-Progress may be represented through:
-
-- completed work units;
-- remaining work units;
-- domain-neutral exact progress quantity;
-- discrete execution phase;
-- another approved exact representation.
-
-Progress shall never use floating-point arithmetic.
-
-Progress must be monotonic unless an explicitly approved domain model permits a
-reversible phase.
-
-Schema 1 assumes monotonic progress.
-
-### 17. Execution Adapter
-
-Execution requires an industry-neutral adapter boundary.
-
-The generic Execution Engine does not understand:
-
-- Grinding;
-- Transporting;
-- Inspecting;
-- Repairing;
-- Cooking;
-- Packaging;
-- Generating power.
-
-Each domain supplies an Execution Adapter that translates its executable work
-definition into deterministic Execution behavior.
-
-Adapters remain owned by the domain or an integration package.
-
-Core Execution shall not depend directly on concrete Production, Logistics,
-Utilities, Maintenance, or gameplay classes.
-
-### 18. Adapter Responsibilities
-
-A domain Execution Adapter may:
-
-- validate domain work eligibility;
-- describe required deterministic progress;
-- evaluate one bounded Execution step;
-- produce immutable proposed domain outcome evidence;
-- produce an approved Transaction proposal when completion requires state
-  mutation;
-- produce typed domain failure evidence.
-
-A domain Execution Adapter shall not:
-
-- mutate authoritative state directly;
-- allocate Resources;
-- schedule itself;
-- read wall-clock time;
-- use randomness;
-- bypass Transactions;
-- modify Execution runtime directly.
-
-### 19. Execution Lifecycle
-
-Schema-1 lifecycle shall include the following conceptual states:
-
-- `CREATED`
-- `READY`
-- `RUNNING`
-- `WAITING`
-- `COMPLETING`
-- `COMPLETED`
-- `FAILED`
-- `CANCELLED`
-
-Exact state names and transitions are defined in later Parts.
-
-Terminal states:
-
-- `COMPLETED`
-- `FAILED`
-- `CANCELLED`
-
-Terminal states never transition.
-
-### 20. Waiting
-
-`WAITING` represents valid work that cannot advance during the current
-Execution step.
-
-Possible causes include:
-
-- authorization temporarily unavailable;
-- required domain condition absent;
-- Transaction result pending;
-- Scheduler dependency incomplete;
-- another explicitly modeled deterministic condition.
-
-`WAITING` is not failure.
-
-Execution never busy-waits.
-
-Execution never retries internally.
-
-A later Scheduler invocation may reevaluate waiting work.
-
-### 21. Failure
-
-Failure is explicit and typed.
-
-Expected failures shall not escape as generic exceptions.
-
-Failure evidence must distinguish:
-
-- invalid Execution state;
-- invalid authorization;
-- domain execution failure;
-- Transaction rejection;
-- Transaction execution failure;
-- unsupported work definition;
-- budget exhaustion;
-- reference failure;
-- adapter failure;
-- internal invariant failure.
-
-Failure must remain deterministic and replayable.
-
-### 22. Cancellation
-
-Cancellation is an explicit externally requested lifecycle event.
-
-Execution does not invent cancellation.
-
-Cancellation authority belongs to an approved caller, such as:
-
-- Planning integration;
-- domain owner;
-- Business Runtime;
-- administrator command in a future gameplay layer.
-
-Cancellation does not directly release Resources or reverse Transactions.
-
-Those effects occur through their authoritative subsystems.
-
-### 23. Completion
-
-Execution completion requires all approved completion conditions.
-
-For work that changes authoritative state, Schema 1 requires:
-
-- domain progress complete;
-- proposed Transaction valid;
-- Transaction applied successfully;
-- completion evidence published.
-
-Only then may Execution become `COMPLETED`.
-
-Progress completion without successful Transaction application is not final
-Execution completion.
-
-### 24. Transaction Boundary
-
-Execution may produce a proposed Transaction through a domain adapter.
-
-The Transaction framework remains responsible for:
-
-- validation;
-- atomic execution;
-- mutation;
-- history;
-- replay.
-
-Execution observes the resulting Transaction status.
-
-Execution shall not duplicate Transaction logic.
-
-### 25. Atomic Completion
-
-Execution publication shall be atomic.
-
-A terminal completion result shall not become visible unless:
-
-- Execution runtime transition;
-- completion evidence;
-- Transaction reference;
-- report;
-- history;
-- trace;
-
-are mutually consistent.
-
-Partial completion publication is prohibited.
-
-### 26. Attempts
-
-Execution attempts must be explicit.
-
-A failed attempt shall never be silently rewritten as though it did not occur.
-
-Retries shall preserve prior attempt evidence.
-
-Schema-1 retry policy is defined later in this RFC.
-
-Execution does not automatically retry unless an accepted policy explicitly
-authorizes it.
-
-### 27. Replay
-
-Execution shall support deterministic replay.
-
-Replay requires explicit input state and authoritative external results.
-
-Execution replay shall not query live provider state.
-
-Execution replay shall not resubmit Transactions unless the replay mode
-explicitly uses an isolated deterministic Transaction environment.
-
-Reports and traces shall allow comparison through canonical digests.
-
-### 28. Living World Principle
-
-Execution must remain fully functional without players.
-
-Factories continue working.
-
-Transport continues progressing.
-
-Maintenance continues.
-
-Utilities continue.
-
-Transactions continue.
-
-The absence of a connected player shall have no effect on Execution behavior.
-
-### 29. Industry Neutrality
-
-Core Execution shall not contain:
-
-- meat-processing logic;
-- Minecraft blocks;
-- Minecraft entities;
-- villager logic;
-- recipes;
-- Production-specific progress rules;
-- Transport-specific routing;
-- Utility-specific dispatch;
-- Maintenance-specific repair logic.
-
-All domain semantics enter through explicit adapters and immutable contracts.
-
-### 30. Purity
-
-The deterministic Execution decision step should remain pure wherever
-practical.
-
-Conceptually:
-
-```text
-Execution Input
-  -> Execution Evaluation
-      -> Proposed Execution Result
-          -> Validation
-              -> Atomic Publication
-```
-
-No authoritative runtime mutation occurs during evaluation.
-
-No authoritative state mutation occurs outside Transactions.
-
-### 31. Execution Pipeline
-
-The canonical conceptual pipeline is:
-
-```text
-Capture Input
-  -> Validate Execution Envelope
-      -> Validate Authorization
-          -> Resolve Domain Adapter
-              -> Evaluate One Bounded Step
-                  -> Validate Proposed Result
-                      -> Submit or Observe Transaction
-                          -> Construct Runtime Transition
-                              -> Atomic Publication
-                                  -> Report and Trace
-```
-
-Detailed stage semantics are defined in later Parts.
-
-### 32. No Hidden Work
-
-Execution shall never perform undeclared secondary work.
-
-One Execution Instance advances only its referenced executable work.
-
-Any new dependent work must be represented explicitly through:
-
-- Planning;
-- domain work creation;
-- Scheduler Work;
-- another approved subsystem.
-
-Execution does not silently spawn work.
-
-### 33. No Resource Ownership Transfer
-
-Execution using a Resource does not become its owner.
-
-Execution references Allocation authorization.
-
-Resource ownership remains with the provider subsystem.
-
-Execution termination does not destroy the Resource.
-
-Execution completion does not automatically release Capacity without the
-approved Allocation lifecycle handoff.
-
-### 34. Observability
-
-Every Execution step shall produce sufficient immutable evidence to explain:
-
-- what was evaluated;
-- why it advanced;
-- why it waited;
-- why it failed;
-- what Transaction was proposed;
-- what Transaction result was observed;
-- what runtime transition occurred.
-
-No opaque success or failure.
-
-### 35. Public Stability
-
-Execution contracts shall be designed for future domains without requiring Core
-changes.
-
-Future domains shall integrate through:
-
-- stable identifiers;
-- generic executable-work references;
-- Execution adapters;
-- exact progress contracts;
-- typed outcomes;
-- Transactions.
-
-Future domain support must remain additive.
-
-### 36. First Principles
-
-Planning decides.
-
-Allocation authorizes scarce Capacity.
-
-Scheduler determines execution order.
-
-Execution performs bounded work.
-
-Domain adapters define work semantics.
-
-Transactions apply authoritative mutations.
-
-Authoritative subsystems own resulting state.
-
-No layer assumes another layer's authority.
-
-### 37. Execution Invariants
-
-`EX-0001`
-
-Execution never plans.
-
-`EX-0002`
-
-Execution never allocates.
-
-`EX-0003`
-
-Execution never directly mutates authoritative state.
-
-`EX-0004`
-
-Execution requires complete approved authorization.
-
-`EX-0005`
-
-Execution owns runtime only.
-
-`EX-0006`
-
-Domain subsystems retain executable-work ownership.
-
-`EX-0007`
-
-Scheduler remains execution-order authority.
-
-`EX-0008`
-
-Transactions remain mutation authority.
-
-`EX-0009`
-
-Execution steps remain bounded.
-
-`EX-0010`
-
-Execution remains deterministic.
-
-`EX-0011`
-
-Terminal states never transition.
-
-`EX-0012`
-
-Expected failures remain typed.
-
-`EX-0013`
-
-Completion publication remains atomic.
-
-`EX-0014`
-
-Execution reads no wall clock.
-
-`EX-0015`
-
-Execution contains no industry-specific semantics.
-
-`EX-0016`
-
-Evaluation does not mutate authoritative runtime.
-
-`EX-0017`
-
-One Execution Instance represents one explicit work attempt.
-
-`EX-0018`
-
-Retries preserve attempt history.
-
-`EX-0019`
-
-Progress without successful required mutation is not completion.
-
-`EX-0020`
-
-Execution remains autonomous without players.
-
-### 38. End Part I
-
-Part II defines:
-
-- Execution Domain Model;
-- Execution identities;
-- executable work references;
-- Execution definitions;
-- Execution attempts;
-- progress models;
-- authorization evidence;
-- runtime and result contracts.
-
-## Part II: Execution Domain Model
-
-This Part defines the immutable vocabulary used by the Execution Engine.
-
-Execution runtime is defined later.
-
-No implementation is authorized.
-
-### 39. Domain Philosophy
-
-Execution models work.
-
-Execution does not model planning.
-
-Execution does not model allocation.
-
-Execution does not model authoritative state mutation.
-
-Execution models the deterministic progression of one authorized work
-instance.
-
-### 40. Primary Domain Objects
-
-Execution consists of the following first-class concepts:
-
-- `ExecutionInstance`;
-- `ExecutionAttempt`;
-- `ExecutionProgress`;
-- `ExecutionAuthorization`;
-- `ExecutionContext`;
-- `ExecutionStep`;
-- `ExecutionStepResult`;
-- `ExecutionCompletion`;
-- `ExecutionFailure`;
-- `ExecutionCancellation`;
-- `ExecutionTrace`;
-- `ExecutionSummary`;
-- `ExecutionReport`;
-- `ExecutionOutcome`.
-
-Schema-1 introduces no additional execution concepts.
-
-### 41. ExecutionInstance
-
-`ExecutionInstance` represents one runtime instance of one executable work
-definition.
-
-`ExecutionInstance` owns runtime only.
-
-Executable work remains externally authoritative.
-
-### 42. ExecutionInstance Identity
-
-Implement `ExecutionInstanceId`.
-
-Requirements:
-
-- immutable;
-- canonical;
-- replay stable;
-- persistable;
-- value equality;
-- namespace validated;
-- no random UUID;
-- no clock-derived identity.
-
-### 43. Executable Work Reference
-
-Execution references executable work.
-
-Execution never owns executable work.
-
-Examples:
-
-- `ProductionPlanDefinition`;
-- future `TransportWorkDefinition`;
-- future `MaintenanceWorkDefinition`;
-- future `UtilityWorkDefinition`.
-
-The reference shall remain industry neutral.
-
-### 44. ExecutionAuthorization
-
-`ExecutionAuthorization` represents immutable authorization evidence.
-
-Authorization is produced externally.
-
-Execution consumes authorization.
-
-Execution never creates authorization.
-
-Execution never repairs authorization.
-
-`ExecutionAuthorization` references:
-
-- AllocationSet;
-- AllocationCommitments;
-- Simulation Tick;
-- required evidence;
-- schema version.
-
-### 45. ExecutionContext
-
-`ExecutionContext` contains every deterministic fact required for one Execution
-step.
-
-`ExecutionContext` is immutable.
-
-`ExecutionContext` contains:
-
-- Simulation Tick;
-- ExecutionInstance reference;
-- authorization;
-- domain adapter reference;
-- runtime snapshot;
-- configuration;
-- schema version.
-
-`ExecutionContext` shall never query live state.
-
-### 46. ExecutionAttempt
-
-`ExecutionAttempt` represents one bounded attempt to advance one
-`ExecutionInstance`.
-
-An immutable `ExecutionAttempt` record is created only when Execution actually
-begins evaluating a bounded work step.
-
-Scheduler invocations that terminate before an Execution attempt begins do not
-create an `ExecutionAttempt`.
-
-`ExecutionAttempt` records remain immutable historical records and are never
-rewritten.
-
-### 47. ExecutionAttempt Identity
-
-Implement `ExecutionAttemptId`.
-
-Requirements:
-
-- deterministic;
-- immutable;
-- replay stable;
-- persistable;
-- canonical.
-
-### 48. ExecutionProgress
-
-`ExecutionProgress` represents deterministic advancement.
-
-Progress remains domain neutral.
-
-Progress does not imply completion.
-
-Progress may be represented through:
-
-- completed work;
-- remaining work;
-- exact progress quantity;
-- discrete phase;
-- another approved exact model.
-
-Progress remains immutable.
-
-### 49. ExecutionStep
-
-Execution proceeds through bounded Steps.
-
-One Scheduler invocation executes at most one `ExecutionStep`.
-
-`ExecutionStep` never loops internally.
-
-### 50. ExecutionStepResult
-
-`ExecutionStepResult` represents the proposed outcome of one bounded Execution
-step.
-
-Possible contents include:
-
-- progress;
-- runtime transition;
-- domain evidence;
-- proposed Transaction;
-- warnings;
-- typed failure;
-- completion evidence.
-
-`ExecutionStepResult` remains immutable.
-
-### 51. ExecutionCompletion
-
-`ExecutionCompletion` represents successful completion evidence.
-
-Completion references:
-
-- ExecutionInstance;
-- Completion Tick;
-- Completion Attempt;
-- Transaction reference;
-- Completion evidence;
-- schema version.
-
-Completion remains immutable.
-
-### 52. ExecutionFailure
-
-`ExecutionFailure` represents deterministic failure evidence.
-
-`ExecutionFailure` contains:
-
-- failure code;
-- failure scope;
-- ExecutionAttempt;
-- Simulation Tick;
-- evidence;
-- schema version.
-
-`ExecutionFailure` remains immutable.
-
-### 53. ExecutionCancellation
-
-`ExecutionCancellation` represents explicit cancellation evidence.
-
-Cancellation references:
-
-- ExecutionInstance;
-- cancellation authority;
-- Simulation Tick;
-- reason;
-- schema version.
-
-Execution never invents cancellation.
-
-### 54. ExecutionOutcome
-
-`ExecutionOutcome` classifies one `ExecutionStepResult`.
-
-Examples:
-
-- `ADVANCED`;
-- `WAITING`;
-- `FAILED`;
-- `COMPLETED`;
-- `CANCELLED`.
-
-`ExecutionOutcome` is distinct from lifecycle state.
-
-### 55. ExecutionTrace
-
-`ExecutionTrace` records deterministic engineering evidence.
-
-`ExecutionTrace` may include:
-
-- ExecutionAttempt;
-- evaluation phases;
-- adapter evidence;
-- progress;
-- proposed Transaction;
-- publication evidence;
-- deterministic digests.
-
-`ExecutionTrace` remains immutable.
-
-### 56. ExecutionSummary
-
-`ExecutionSummary` contains concise deterministic information.
-
-Examples:
-
-- Execution status;
-- progress;
-- attempts;
-- completion state;
-- failure count;
-- cancellation state.
-
-`ExecutionSummary` remains immutable.
-
-### 57. ExecutionReport
-
-`ExecutionReport` represents detailed execution evidence.
-
-Reports remain immutable.
-
-Reports never own runtime.
-
-### 58. Runtime Separation
-
-Definitions remain immutable.
-
-Runtime remains mutable.
-
-Execution runtime is defined in later Parts.
-
-Definitions never mutate runtime.
-
-Runtime never mutates definitions.
-
-### 59. Domain Adapter
-
-Execution requires an industry-neutral adapter.
-
-Implement conceptually:
-
-- `ExecutionAdapter`.
-
-Responsibilities:
-
-- validate work;
-- evaluate one Step;
-- produce StepResult;
-- produce proposed Transaction;
-- produce deterministic evidence.
-
-Execution adapters remain external.
-
-### 60. Domain Adapter Identity
-
-Implement `ExecutionAdapterId`.
-
-Requirements:
-
-- immutable;
-- replay stable;
-- namespace validated;
-- canonical;
-- persistable.
-
-### 61. Adapter Result
-
-Execution adapters produce `ExecutionStepResult`.
-
-Execution adapters never mutate runtime.
-
-Execution adapters never mutate Inventory.
-
-Execution adapters never execute Transactions.
-
-### 62. Execution References
-
-Execution owns:
-
-- Execution Reports;
-- Execution History;
-- Execution Trace.
-
-Execution references:
-
-- executable work definitions;
-- Allocation authorization;
-- Allocation Commitments;
-- Transaction references;
-- authoritative domain state;
-- external Resources.
-
-Execution never owns:
-
-- executable work definitions;
-- Allocation Commitments;
-- Transactions;
-- authoritative domain state;
-- Resources;
-- Capacity;
-- Inventory;
-- Goods;
-- Businesses;
-- Workers;
-- Machines.
-
-### 63. Progress Exactness
-
-Progress shall use exact arithmetic.
-
-Floating point is prohibited.
-
-Progress quantities remain replay stable.
-
-### 64. Domain Neutrality
-
-Execution definitions shall contain no:
-
-- Production logic;
-- Logistics logic;
-- Maintenance logic;
-- Utility logic;
-- gameplay logic;
-- Minecraft classes;
-- NeoForge classes.
-
-Industry semantics belong to adapters.
-
-### 65. Schema Version
-
-Execution definitions remain schema versioned.
-
-Definitions retain compatibility.
-
-Runtime compatibility is defined later.
-
-### 66. Public Stability
-
-Execution public contracts shall remain stable.
-
-Future domains integrate through adapters.
-
-Core Execution should not require modification to support future industries.
-
-### 67. Execution Invariants
-
-`ED-0001`
-
-ExecutionInstance owns runtime only.
-
-`ED-0002`
-
-Executable work remains external.
-
-`ED-0003`
-
-ExecutionAuthorization remains immutable.
-
-`ED-0004`
-
-ExecutionContext is explicit.
-
-`ED-0005`
-
-ExecutionStep is bounded.
-
-`ED-0006`
-
-ExecutionAttempt is immutable.
-
-`ED-0007`
-
-ExecutionProgress uses exact arithmetic.
-
-`ED-0008`
-
-ExecutionStepResult is immutable.
-
-`ED-0009`
-
-ExecutionCompletion is immutable.
-
-`ED-0010`
-
-ExecutionFailure is immutable.
-
-`ED-0011`
-
-ExecutionCancellation is immutable.
-
-`ED-0012`
-
-ExecutionTrace is immutable.
-
-`ED-0013`
-
-ExecutionReport is immutable.
-
-`ED-0014`
-
-Definitions remain separate from runtime.
-
-`ED-0015`
-
-Execution adapters remain external.
-
-`ED-0016`
-
-Execution owns no industry logic.
-
-### 68. End Part II
-
-Part III defines:
-
-- Execution Runtime;
-- lifecycle;
-- legal state transitions;
-- attempts;
-- retry model;
-- waiting;
-- completion;
-- cancellation;
-- failure propagation.
-
-## Part III: Execution Runtime And Lifecycle
-
-This Part defines the mutable runtime owned by the Execution Engine.
-
-Definitions remain immutable.
-
-Runtime remains mutable.
-
-### 69. Runtime Philosophy
-
-Execution Definitions describe work.
-
-Execution Runtime describes the current state of one `ExecutionInstance`.
-
-Runtime never mutates Definitions.
-
-Definitions never mutate Runtime.
-
-### 70. Runtime Ownership
-
-Execution Runtime owns only mutable execution state.
-
-Execution Runtime never owns:
-
-- executable work definitions;
-- Allocation Commitments;
-- Transactions;
-- Resources;
-- Capacity;
-- Inventory;
-- Goods;
-- domain runtime.
-
-### 71. Runtime Objects
-
-Execution Runtime introduces:
-
-- `ExecutionRuntime`;
-- `ExecutionRuntimeView`;
-- `ExecutionRuntimeRegistry`;
-- `ExecutionRuntimeService`;
-- `ExecutionHistory`;
-- `ExecutionReportRegistry`;
-- `ExecutionTraceRegistry`;
-- `ExecutionAttemptRuntime`.
-
-Schema 1 introduces no additional runtime concepts.
-
-### 72. Runtime Identity
-
-`ExecutionRuntime` is keyed by `ExecutionInstanceId`.
-
-Exactly one mutable Runtime exists for one active `ExecutionInstance`.
-
-Terminal Runtime remains addressable for history and replay.
-
-### 73. Runtime State
-
-Runtime stores only mutable execution facts.
-
-Examples:
-
+- Execution Instance Identity;
+- executable work reference;
+- Execution Authorization Evidence references;
 - current lifecycle state;
-- current progress;
-- current attempt;
-- current waiting reason;
-- completion reference;
-- failure reference;
-- cancellation reference;
-- last simulation tick;
-- schema version.
+- active attempt reference, if any;
+- progress;
+- waiting reason, if any;
+- terminal outcome reference, if any;
+- last accepted Scheduler invocation reference;
+- last observed Transaction Authoritative Result reference, if any;
+- schema version;
+- Platform Determinism Manifest reference.
 
-### 74. Lifecycle States
+Public views of runtime state are immutable snapshots.
 
-Schema 1 defines:
+## 13. Lifecycle States
+
+Schema 1 lifecycle states are:
 
 - `CREATED`
 - `READY`
@@ -1327,1505 +376,626 @@ Schema 1 defines:
 - `FAILED`
 - `CANCELLED`
 
-Terminal states:
+Terminal states are:
 
 - `COMPLETED`
 - `FAILED`
 - `CANCELLED`
 
-### 75. Lifecycle Purpose
+`CREATED` means the Execution instance exists but has not yet accepted all
+required runtime and authorization conditions.
 
-`CREATED`
+`READY` means Execution has accepted required conditions and the instance may
+advance when Scheduler dispatches eligible Scheduler Work.
 
-`ExecutionInstance` exists. Authorization is not yet confirmed.
+`RUNNING` means one bounded Execution step is being evaluated.
 
-`READY`
+`WAITING` means the instance remains valid but cannot advance during the
+current invocation.
 
-Execution is authorized and eligible for Scheduler execution.
+`COMPLETING` means domain work has completed and Execution is waiting for any
+required Transaction Authoritative Result or local publication condition.
 
-`RUNNING`
+`COMPLETED`, `FAILED`, and `CANCELLED` are terminal.
 
-Execution is currently advancing through one bounded step.
+## 14. Lifecycle Transitions
 
-`WAITING`
-
-Execution is valid but unable to advance during this Scheduler invocation.
-
-`COMPLETING`
-
-Execution has finished domain work and is awaiting successful completion
-publication.
-
-`COMPLETED`
-
-Execution successfully completed.
-
-`FAILED`
-
-Execution permanently failed.
-
-`CANCELLED`
-
-Execution was explicitly cancelled.
-
-### 76. Legal Transitions
-
-Schema 1 permits:
+Schema 1 permits these transitions:
 
 ```text
 CREATED -> READY
+CREATED -> FAILED
 READY -> RUNNING
+READY -> CANCELLED
 RUNNING -> WAITING
 RUNNING -> COMPLETING
+RUNNING -> FAILED
 WAITING -> RUNNING
 WAITING -> FAILED
+WAITING -> CANCELLED
 COMPLETING -> COMPLETED
 COMPLETING -> FAILED
-READY -> CANCELLED
-WAITING -> CANCELLED
-RUNNING -> FAILED
 ```
 
-Illegal transitions are rejected.
+Terminal states never transition. Any unlisted transition fails explicitly.
 
-### 77. Illegal Transitions
+Cancellation follows the platform Cancellation Model. Execution may cancel its
+own non-terminal lifecycle state when an authorized cancellation request is
+accepted. Execution cancellation does not cancel applied Transactions, release
+Allocation authority, clear Scheduler Work, or select rollback.
 
-Examples:
+## 15. Attempts
 
-```text
-COMPLETED -> RUNNING
-FAILED -> READY
-CANCELLED -> RUNNING
-RUNNING -> CREATED
-WAITING -> CREATED
-```
+An Execution attempt represents one bounded attempt to advance one Execution
+instance.
 
-Terminal states never transition.
+An attempt records:
 
-### 78. ExecutionAttempt Runtime
-
-`ExecutionAttemptRuntime` tracks mutable information for the current attempt.
-
-Immutable `ExecutionAttempt` records remain separate.
-
-Runtime may contain:
-
-- attempt number;
-- current progress;
-- attempt status;
-- attempt start tick;
-- last update tick.
-
-### 79. Attempt Creation
-
-A new `ExecutionAttempt` record is created only when a bounded execution attempt
-actually begins.
-
-Scheduler invocations that terminate before an attempt begins create no new
-`ExecutionAttempt`.
-
-Attempts remain historically significant.
-
-### 80. Waiting
-
-`WAITING` indicates:
-
-- Execution remains valid;
-- Execution has not failed;
-- Execution has not completed;
-- Execution cannot currently advance.
-
-Waiting shall include explicit typed reason evidence.
-
-### 81. Completion
-
-Execution enters `COMPLETING` after domain work has successfully reached its
-completion condition.
-
-Execution enters `COMPLETED` only after:
-
-- completion validation;
-- required Transaction success;
-- Runtime publication;
-- Report publication;
-- History publication;
-- Trace publication.
-
-### 82. Failure
-
-`FAILED` is terminal.
-
-Failure evidence remains immutable.
-
-Runtime references Failure.
-
-Failure shall never be silently replaced.
-
-### 83. Cancellation
-
-Cancellation is externally requested.
-
-Execution Runtime records:
-
-- cancellation authority;
-- cancellation tick;
-- cancellation reason.
-
-Execution does not invent cancellation.
-
-### 84. Runtime Service
-
-`ExecutionRuntimeService` is the only authority permitted to mutate Runtime.
-
-Public mutation APIs are prohibited.
-
-### 85. Runtime Registry
-
-`ExecutionRuntimeRegistry` stores mutable Runtime.
-
-Public views remain immutable.
-
-Canonical ordering is required.
-
-Duplicate `ExecutionInstanceId` is prohibited.
-
-### 86. Runtime Queries
-
-Queries shall include:
-
-- find by ExecutionInstance;
-- find by lifecycle;
-- find by executable work;
-- find active;
-- find waiting;
-- find completed;
-- find failed;
-- find cancelled.
-
-Queries never mutate Runtime.
-
-### 87. Runtime Validation
-
-Validation shall detect:
-
-- illegal transition;
-- duplicate Runtime;
-- unknown ExecutionInstance;
-- unknown Attempt;
-- malformed progress;
-- invalid completion;
-- invalid cancellation;
-- unknown references;
-- terminal transition violation.
-
-### 88. Runtime Publication
-
-Runtime publication remains atomic.
-
-Partial Runtime publication is prohibited.
-
-Publication shall synchronize:
-
-- Runtime;
-- History;
-- Reports;
-- Trace;
-- completion references.
-
-### 89. Runtime History
-
-History records every Runtime transition.
-
-History remains immutable.
-
-History is append-only.
-
-### 90. Runtime Reports
-
-Reports summarize Runtime.
-
-Reports never mutate Runtime.
-
-### 91. Runtime Trace
-
-Trace captures deterministic engineering evidence.
-
-Trace remains immutable.
-
-Trace supports replay.
-
-### 92. Runtime Replay
-
-Replay reconstructs Runtime using:
-
-- Definitions;
-- Runtime History;
-- Execution Attempts;
-- Transaction results;
-- Simulation ticks.
-
-Replay never queries live provider state.
-
-### 93. Runtime Invariants
-
-`ER-0001`
-
-Runtime owns mutable state only.
-
-`ER-0002`
-
-Definitions remain immutable.
-
-`ER-0003`
-
-Exactly one Runtime exists per active ExecutionInstance.
-
-`ER-0004`
-
-ExecutionAttempt records remain immutable.
-
-`ER-0005`
-
-ExecutionAttemptRuntime remains mutable.
-
-`ER-0006`
-
-Lifecycle transitions remain deterministic.
-
-`ER-0007`
-
-Illegal transitions are rejected.
-
-`ER-0008`
-
-Terminal states never transition.
-
-`ER-0009`
-
-Runtime publication remains atomic.
-
-`ER-0010`
-
-History remains append-only.
-
-`ER-0011`
-
-Reports remain immutable.
-
-`ER-0012`
-
-Trace remains immutable.
-
-`ER-0013`
-
-Replay remains deterministic.
-
-`ER-0014`
-
-Runtime Service owns mutation.
-
-`ER-0015`
-
-Runtime Registry exposes immutable views.
-
-`ER-0016`
-
-Queries never mutate Runtime.
-
-### 94. End Part III
-
-Part IV defines:
-
-- Execution Pipeline;
-- bounded execution steps;
-- Execution adapters;
-- Transaction proposal;
-- publication;
-- engineering trace.
-
-## Part IV: Execution Pipeline
-
-### 95. Purpose
-
-Part IV defines the deterministic Execution pipeline.
-
-The pipeline explains how one bounded Execution step progresses from immutable
-input to immutable proposed result while preserving every architectural
-ownership boundary.
-
-This Part does not redefine ownership already established by Parts I through
-III.
-
-### 96. Pipeline Philosophy
-
-Execution is a deterministic pipeline.
-
-Execution never mutates authoritative state during evaluation.
-
-Execution evaluates.
-
-Execution proposes.
-
-Execution validates.
-
-Execution publishes atomically.
-
-### 97. Canonical Pipeline
-
-The canonical Execution pipeline is:
-
-```text
-Capture Input
-  -> Validate Runtime
-      -> Validate Authorization
-          -> Resolve Execution Adapter
-              -> Evaluate One Bounded Step
-                  -> Validate Proposed Result
-                      -> Construct Transaction Proposal
-                          -> Validate Publication
-                              -> Atomic Publication
-                                  -> Reports
-                                      -> History
-                                          -> Trace
-```
-
-Every phase executes exactly once.
-
-No phase loops.
-
-No phase recursively invokes Execution.
-
-### 98. Capture Input
-
-`ExecutionInput` is immutable.
-
-`ExecutionInput` shall contain every fact required for one bounded Execution
-step.
-
-`ExecutionInput` shall include only immutable references and immutable Runtime
-views.
-
-`ExecutionInput` shall never query live external systems.
-
-### 99. Runtime Validation
-
-Execution validates:
-
-- ExecutionInstance;
-- ExecutionRuntime;
-- ExecutionAttemptRuntime;
-- ExecutionAuthorization;
-- lifecycle;
-- schema;
-- Runtime consistency.
-
-Validation failures remain typed.
-
-### 100. Authorization Validation
-
-Execution verifies:
-
-- AllocationSet;
-- required Commitments;
-- Commitment lifecycle;
-- Simulation Tick;
-- required Execution conditions.
-
-Execution never repairs authorization.
-
-Execution never allocates.
-
-### 101. Execution Adapter
-
-Execution resolves exactly one `ExecutionAdapter`.
-
-`ExecutionAdapter` performs one bounded deterministic step.
-
-`ExecutionAdapter` returns an immutable `ExecutionStepResult`.
-
-Execution never interprets industry-specific work.
-
-### 102. Execution Step
-
-`ExecutionAdapter` evaluates exactly one bounded step.
-
-The adapter may:
-
-- advance progress;
-- remain waiting;
-- fail;
-- complete domain work;
-- produce deterministic evidence;
-- produce a proposed Transaction.
-
-The adapter shall never:
-
-- mutate authoritative state;
-- mutate Inventory;
-- allocate Capacity;
-- execute Transactions.
-
-### 103. Transaction Proposal
-
-Execution may construct one immutable proposed Transaction.
-
-Execution never executes Transactions.
-
-Execution submits proposals through the approved Transaction boundary.
-
-Execution completion depends upon Transaction success where required.
-
-### 104. Publication
-
-Publication remains atomic.
-
-The following shall publish together:
-
-- Execution Runtime;
-- Execution Reports;
-- Execution History;
-- Execution Trace;
-- completion evidence;
-- failure evidence;
-- cancellation evidence.
-
-Partial publication is prohibited.
-
-### 105. Engineering Trace
-
-`ExecutionTrace` shall include:
-
-- pipeline phases;
-- ExecutionAttempt;
-- progress;
-- adapter evidence;
-- Transaction proposal;
-- publication evidence;
-- deterministic digests.
-
-Trace remains immutable.
-
-### 106. Failure Isolation
-
-Failure during one `ExecutionInstance` shall never corrupt unrelated
-ExecutionInstances.
-
-Adapter failures remain local.
-
-Publication failures remain local.
-
-Runtime corruption is prohibited.
-
-### 107. Replay
-
-Replay shall reproduce:
-
-- progress;
-- attempts;
-- lifecycle;
-- Reports;
-- History;
-- Trace;
-- Transaction proposal;
-- deterministic digests.
-
-Execution replay never queries live external systems.
-
-### 108. Bounded Execution
-
-One Scheduler invocation performs at most one bounded `ExecutionStep`.
-
-Execution never performs unbounded work.
-
-Execution never recursively schedules itself.
-
-Execution never busy-waits.
-
-### 109. Execution Pipeline Invariants
-
-`EP-0001`
-
-The pipeline executes once.
-
-`EP-0002`
-
-Evaluation remains pure.
-
-`EP-0003`
-
-Execution never mutates authoritative state.
-
-`EP-0004`
-
-Publication remains atomic.
-
-`EP-0005`
-
-ExecutionAdapter owns domain logic.
-
-`EP-0006`
-
-Execution owns orchestration.
-
-`EP-0007`
-
-Replay remains deterministic.
-
-`EP-0008`
-
-Execution remains bounded.
-
-`EP-0009`
-
-ExecutionInput remains immutable and explicit.
-
-`EP-0010`
-
-Validation failures remain typed.
-
-`EP-0011`
-
-Execution never repairs or creates Allocation authorization.
-
-`EP-0012`
-
-Exactly one ExecutionAdapter is resolved for one bounded step.
-
-`EP-0013`
-
-ExecutionAdapter never executes Transactions.
-
-`EP-0014`
-
-Execution constructs at most one proposed Transaction per bounded step.
-
-`EP-0015`
-
-ExecutionInstance failures remain isolated.
-
-`EP-0016`
-
-ExecutionTrace remains immutable and digest-backed.
-
-### 110. End Part IV
-
-Part V defines:
-
-- Execution Adapter Framework;
-- adapter registration;
+- Execution Attempt Identity;
+- Execution Instance Identity;
+- Scheduler Invocation Identity;
+- starting lifecycle state;
+- starting progress;
+- Execution Authorization Evidence references used;
 - adapter identity;
-- adapter resolution;
-- domain work translation;
-- adapter validation;
-- adapter failure isolation.
+- Transaction proposal reference, if one was submitted;
+- observed Authoritative Result reference, if one was required;
+- ending lifecycle state;
+- typed failure or waiting reason, if any;
+- trace reference;
+- schema version.
 
-## Part V: Execution Adapter Framework
+Attempts are immutable once published. Retry creates a new attempt identity
+unless a future accepted Execution policy defines a narrower retry identity
+rule.
 
-### 111. Purpose
+## 16. Progress
 
-Part V defines the industry-neutral Execution Adapter Framework.
+Execution progress is an Execution-owned runtime fact.
 
-Execution owns orchestration.
+Progress must be:
 
-Domain adapters own work semantics.
+- deterministic;
+- bounded;
+- monotonic within one Execution instance unless an accepted domain adapter
+  explicitly defines a reversible progress model;
+- inspectable through immutable snapshots;
+- explained by Execution trace evidence.
 
-Execution itself never understands domain-specific behavior.
+Progress alone does not complete Execution. Required Transaction Authoritative
+Result evidence must be observed before Transaction-dependent completion.
 
-### 112. Architectural Position
+## 17. Execution Input
 
-```text
-Execution Engine
-  -> Execution Adapter
-      -> Domain Evaluation
-          -> ExecutionStepResult
-              -> Transaction Proposal
-                  -> Transaction Framework
-                      -> Observed Transaction Result
-                          -> Execution Runtime
-```
+ExecutionInput is the immutable input to one bounded Execution step.
 
-Execution never bypasses Transactions.
+ExecutionInput contains every fact Execution requires for that step, including:
 
-The Transaction Framework and Observed Transaction Result stages are mandatory
-whenever a proposed Transaction is required. They refine the abbreviated
-pipeline in Part IV without changing its ownership boundaries.
+- Execution Instance Identity;
+- immutable runtime snapshot;
+- executable work reference;
+- Execution Authorization Evidence references;
+- Scheduler Invocation Identity;
+- authoritative simulation tick supplied through Scheduler;
+- Platform Determinism Manifest reference;
+- adapter identity;
+- explicit configuration identities relevant to Execution;
+- prior Transaction Authoritative Result references relevant to the instance.
 
-### 113. Execution Adapter
+ExecutionInput shall not query live provider state, Inventory state,
+Transaction runtime, Scheduler runtime, wall-clock time, filesystem order,
+randomness, or mutable global state.
 
-The generic `ExecutionAdapter` contract shall:
+## 18. Execution Context
 
-- validate executable work;
-- evaluate exactly one bounded step;
-- produce an immutable `ExecutionStepResult`;
-- produce deterministic domain evidence;
-- produce one immutable proposed Transaction when required;
-- produce typed domain failures.
+ExecutionContext is the internal deterministic view derived from
+ExecutionInput for adapter evaluation.
 
-`ExecutionAdapter` shall never:
+ExecutionContext may contain normalized values, resolved immutable references,
+and owner-supplied snapshots that were already present in the input. It may
+not introduce hidden runtime context.
+
+Every fact required to reproduce or verify an Execution decision must be
+represented by ExecutionInput, ExecutionContext, Execution Authorization
+Evidence, explicit owner snapshots, resulting Execution evidence, or platform
+evidence referenced by identity.
+
+## 19. Execution Adapter
+
+An Execution adapter translates one domain-owned executable work definition
+into one bounded deterministic Execution step.
+
+Execution adapters:
+
+- are registered explicitly;
+- have stable adapter identity;
+- accept ExecutionContext;
+- evaluate at most one bounded step per invocation;
+- return immutable adapter output;
+- may produce Transaction proposal data;
+- may produce Execution-local evidence.
+
+Execution adapters shall not:
 
 - mutate authoritative state;
-- execute Transactions;
-- allocate Resources;
-- schedule work;
-- read wall-clock time;
-- use randomness.
+- mutate Inventory quantities;
+- validate or execute Transactions;
+- consume Validation Consumption Authority;
+- allocate Capacity;
+- mutate Scheduler Work;
+- select checkpoint generations;
+- perform Recovery or Replay;
+- query live provider state;
+- read wall-clock time or hidden randomness;
+- reinterpret domain ownership.
+
+## 20. Adapter Output
 
-### 114. Execution Adapter Identity
+Adapter output is immutable and has one of these Execution-local meanings:
 
-`ExecutionAdapterId` is:
+- progress advanced;
+- still waiting;
+- domain step failed;
+- domain work completed without required Transaction;
+- domain work completed with Transaction proposal data;
+- cancellation accepted;
+- no-op with explicit reason.
+
+Adapter output is not an Authoritative Result and does not prove external
+state mutation.
+
+## 21. Canonical Execution Pipeline
 
-- immutable;
-- replay stable;
-- canonical;
-- persistable;
-- namespace validated.
+One bounded Execution step follows this pipeline:
+
+```text
+Capture ExecutionInput
+  -> Validate Execution runtime
+      -> Validate Execution Authorization Evidence
+          -> Resolve Execution adapter
+              -> Evaluate one bounded adapter step
+                  -> Build Execution candidate state
+                      -> Submit or observe Transaction if required
+                          -> Validate Execution publication candidate
+                              -> Publish Execution runtime and evidence
+```
+
+The pipeline is bounded. It does not loop, recursively invoke Execution, or
+perform hidden work.
+
+Each phase records enough trace evidence to explain whether the phase
+completed, produced a typed failure, or was not reached because an earlier
+phase ended the step.
 
-### 115. Execution Context
+## 22. Transaction Boundary
 
-`ExecutionContext` contains every deterministic fact required for one Execution
-step.
+When completion requires authoritative economic mutation, Execution submits a
+canonical Transaction proposal through the Transaction boundary.
 
-`ExecutionContext` remains immutable.
+Transactions own:
 
-`ExecutionContext` shall never query live external systems.
+- Proposal Identity;
+- Inventory Freshness Identity or other source-owned Freshness Identity;
+- Validation Plan Identity;
+- Validation Consumption Authority;
+- Serialized Transaction-owner Boundary;
+- mutation application;
+- Authoritative Result evidence.
+
+Execution owns only:
+
+- proposal submission as an Execution-observed action;
+- reference to the submitted proposal identity;
+- reference to the observed Authoritative Result;
+- Execution lifecycle reaction to that result.
 
-### 116. Execution Step Evaluation
+Execution shall not infer successful mutation from proposal construction,
+validation evidence alone, missing result evidence, timeout, local progress,
+or adapter output.
 
-`ExecutionAdapter` evaluates exactly one bounded step.
+## 23. Transaction Observation
 
-Possible outcomes include:
+Execution observes Transaction Authoritative Result evidence.
+
+Execution may react to observed Transaction evidence by:
+
+- waiting for a result;
+- completing when the required Authoritative Result proves success;
+- failing when the Authoritative Result proves rejection or failure;
+- entering an explicit platform failure path when outcome evidence is missing,
+  conflicting, or unknown.
+
+Execution shall not define Transaction statuses. Execution-local observation
+labels, if introduced by implementation, must be documented as Execution
+lifecycle reactions rather than Transaction authority.
+
+## 24. Execution Publication
+
+Execution publication is the Execution-owned visibility boundary for Execution
+runtime and Execution evidence.
+
+One accepted publication candidate updates all affected Execution-owned facts
+together:
+
+- runtime state;
+- attempt record;
+- progress;
+- report;
+- trace;
+- summary;
+- completion, failure, cancellation, or waiting evidence.
+
+Execution publication does not publish platform checkpoints. Checkpoint
+Recovery coordinates durable checkpoint generation publication.
+
+## 25. Execution History, Reports, Traces, And Summaries
+
+Execution owns the content of these records:
+
+| Record | Purpose |
+| --- | --- |
+| Execution history | Ordered lifecycle and attempt facts for an Execution instance |
+| Execution report | Human- and system-readable outcome evidence for one instance or attempt |
+| Execution trace | Diagnostic phase-by-phase explanation of inputs, adapter output, proposals, results, and publication |
+| Execution summary | Compact query view of current or terminal Execution state |
+
+These records are immutable once published. Their retention, archival,
+compaction, integrity verification, and query policy are owned by the Evidence
+Lifecycle ADR.
+
+## 26. Execution Owner Snapshot
+
+Execution owner snapshots are the Execution-owned snapshot content supplied to
+Checkpoint Recovery.
+
+An Execution owner snapshot includes:
 
-- advance;
-- wait;
-- fail;
-- complete domain work;
-- construct a Transaction proposal.
+- snapshot identity;
+- schema version;
+- Platform Determinism Manifest reference;
+- active Execution runtime state;
+- terminal Execution records required for recovery and replay;
+- unresolved Transaction Authoritative Result references, if any;
+- unresolved Scheduler invocation references, if any;
+- Execution evidence required by the Evidence Lifecycle policy;
+- validation digest or integrity evidence required by Checkpoint Recovery.
+
+Checkpoint Recovery coordinates publication and Recovery. Execution validates
+its own snapshot content but does not select the committed checkpoint
+generation.
+
+## 27. Persistence Boundary
+
+Execution defines what Execution-owned data must be persisted or snapshotted.
+
+Execution does not own:
+
+- platform persistence architecture;
+- checkpoint storage layout;
+- checkpoint generation selection;
+- retention policy;
+- archive policy;
+- compaction policy;
+- Recovery;
+- Replay baseline selection;
+- migration execution.
+
+Any future Execution persistence implementation requires a separate approved
+implementation milestone and must integrate with Checkpoint Recovery and the
+Evidence Lifecycle ADR.
+
+## 28. Replay Boundary
+
+Replay is defined by the Platform Canonicalization Addendum.
+
+Execution replay consumes:
+
+- explicit recovered baseline selected by Checkpoint Recovery;
+- Execution owner snapshots;
+- ExecutionInput records;
+- Execution evidence;
+- Scheduler Invocation Identity and related Scheduler evidence;
+- Transaction proposal and Authoritative Result evidence;
+- source-owned Freshness Identity references;
+- Platform Determinism Manifest;
+- retained replay-critical evidence under Evidence Lifecycle policy.
+
+Execution replay may verify lifecycle transitions, progress, adapter output,
+publication candidates, Transaction observation references, digests, and trace
+equivalence.
+
+Execution replay shall not:
+
+- select a checkpoint generation;
+- perform Recovery or Rollback;
+- query live Allocation providers;
+- query live Inventory;
+- resubmit real Transactions;
+- reuse Validation Consumption Authority;
+- repair missing authority;
+- perform non-repeatable effects;
+- convert an Unknown Outcome into success;
+- advance time by wall clock.
+
+## 29. Recovery Boundary
+
+Recovery is owned by Checkpoint Recovery with owner validation.
+
+During Recovery, Execution may:
+
+- validate an Execution owner snapshot;
+- reject corrupt, unsupported, or internally inconsistent Execution snapshot
+  content;
+- report unresolved references;
+- expose required evidence dependencies;
+- restore Execution-owned runtime from a valid selected baseline.
 
-`ExecutionAdapter` never completes Execution directly.
+Execution shall not:
 
-### 117. Transaction Boundary
+- select last-known-good checkpoint generation;
+- authorize Rollback;
+- publish recovered platform state;
+- quarantine storage artifacts outside its ownership;
+- fabricate missing Execution evidence;
+- replay lost ticks as authoritative state.
 
-`ExecutionAdapter` may construct one immutable proposed Transaction.
+If required Execution evidence or snapshot content is unavailable, corrupt, or
+unresolved, the affected authority follows the platform Recovery-Blocked State
+rules.
 
-Execution submits the proposal.
+## 30. Failure Boundary
 
-The Transaction Framework validates and executes the proposal.
+Execution uses the platform failure taxonomy.
 
-Execution observes the resulting Transaction outcome.
+Execution may define Execution-local lifecycle failures, such as:
 
-Execution completion depends upon the observed Transaction result.
+- invalid Execution runtime;
+- missing executable work reference;
+- unsupported executable work schema;
+- missing Execution Authorization Evidence;
+- stale Execution Authorization Evidence;
+- adapter missing;
+- adapter rejected input;
+- adapter bounded-step failure;
+- Transaction proposal construction failure;
+- missing required Authoritative Result;
+- publication candidate invalid;
+- snapshot validation failure.
 
-Execution never executes Transactions.
+Execution-local failures must be typed, explicit, reproducible from recorded
+inputs, and visible in Execution evidence.
 
-### 118. Transaction Observation
+Unknown Outcome, Quarantined Artifact, Recovery-Blocked State, Operator
+Intervention Required, and related platform states retain their canonical
+meaning from the Platform Canonicalization Addendum.
 
-Execution explicitly observes Transaction results as:
+## 31. Cancellation Boundary
 
-- `ACCEPTED`;
-- `REJECTED`;
-- `EXECUTED`;
-- `FAILED`.
+Execution cancellation is an Execution lifecycle transition requested through
+an approved platform path.
 
-These are Execution observation classifications, not replacements for the
-authoritative Transaction Framework's `TransactionStatus` values.
+Execution cancellation may stop future Execution progress for a non-terminal
+Execution instance. It does not:
 
-`ACCEPTED` records accepted validation represented by authoritative
-`VALIDATED` Transaction evidence. It does not permit Execution completion.
+- cancel an applied Transaction;
+- consume or revoke Validation Consumption Authority;
+- release Allocation authority;
+- delete Scheduler Work;
+- select Rollback;
+- clear Unknown Outcome;
+- remove Quarantined Artifacts.
 
-`REJECTED` records authoritative rejection.
+Interrupted cancellation is recovered through Checkpoint Recovery and
+owner-published evidence.
 
-`EXECUTED` requires authoritative Transaction evidence with final `APPLIED`
-status. Only this classification can satisfy a required successful Transaction
-completion condition.
+## 32. Determinism Requirements
 
-`FAILED` records a typed Transaction submission, validation, execution, or
-observation failure without inferring successful mutation.
+Execution determinism is a subsystem contribution to platform determinism.
 
-Execution Runtime transitions according to the observed Transaction outcome.
+Execution requires:
 
-Execution never infers Transaction success.
+- explicit inputs;
+- explicit identities;
+- source-owned Freshness Identity where source facts are examined;
+- canonical ordering for every collection;
+- exact arithmetic where quantities are involved;
+- no hidden wall-clock inputs;
+- no hidden randomness;
+- no filesystem ordering dependence;
+- bounded work per Scheduler invocation;
+- immutable published evidence;
+- Platform Determinism Manifest reference for replay-relevant configuration.
 
-### 119. Execution Publication
+Execution does not own the Platform Determinism Manifest. Checkpoint Recovery
+publishes the manifest with the generation, and each source subsystem owns its
+manifest entries.
 
-Execution Runtime transitions only after observing required Transaction
-results.
+## 33. Execution Invariants
 
-Publication remains atomic.
+`EX-0001`
 
-The following publish together:
+Execution consumes platform architecture and does not redefine platform-wide
+identity, Replay, Recovery, failure taxonomy, cancellation, operator authority,
+checkpoint publication, evidence lifecycle, or World Identity.
 
-- Execution Runtime;
-- Reports;
-- History;
-- Trace;
-- completion evidence;
-- failure evidence;
-- cancellation evidence.
+`EX-0002`
 
-### 120. Adapter Purity
+Exactly one Execution Authority exists per loaded world where generic
+Execution is implemented.
 
-Given identical:
+`EX-0003`
 
-- ExecutionContext;
-- Simulation Tick;
-- Runtime snapshot;
-- Allocation authorization;
+Execution owns Execution runtime state, lifecycle, attempts, progress,
+observation, reports, traces, summaries, owner snapshots, adapter contracts,
+verification, and acceptance criteria.
 
-an `ExecutionAdapter` produces identical:
+`EX-0004`
 
-- ExecutionStepResult;
-- Transaction proposal;
-- domain evidence.
+Execution does not own Planning, Allocation, Scheduler, Transactions,
+Inventory, Checkpoint Recovery, Evidence Lifecycle, World Identity, or Operator
+Authority.
 
-No hidden state.
+`EX-0005`
 
-No randomness.
+Execution consumes Execution Authorization Evidence and does not create or
+repair externally owned authorization.
 
-### 121. Domain Neutrality
+`EX-0006`
 
-Execution Core contains no knowledge of:
+One Scheduler invocation advances at most one bounded Execution step for one
+Execution instance.
 
-- Production;
-- Logistics;
-- Maintenance;
-- Utilities;
-- gameplay;
-- Minecraft;
-- NeoForge.
+`EX-0007`
 
-All semantics belong to adapters.
+ExecutionInput contains every fact required for one bounded step and does not
+query hidden runtime context.
 
-### 122. Execution Adapter Invariants
+`EX-0008`
 
-`EA-0001`
+Execution adapters are deterministic, bounded, and unable to mutate
+authoritative state.
 
-Adapter owns domain semantics.
+`EX-0009`
 
-`EA-0002`
-
-Execution owns orchestration.
-
-`EA-0003`
-
-Transactions own mutation.
-
-`EA-0004`
-
-Adapters remain deterministic.
-
-`EA-0005`
-
-Adapters remain bounded.
-
-`EA-0006`
-
-Adapters produce immutable results.
-
-`EA-0007`
-
-Execution observes Transaction outcomes.
-
-`EA-0008`
-
-Execution never bypasses Transactions.
-
-`EA-0009`
-
-ExecutionContext remains immutable and explicit.
-
-`EA-0010`
-
-One adapter evaluation performs exactly one bounded step.
-
-`EA-0011`
-
-Adapter domain failures remain typed.
-
-`EA-0012`
-
-Adapters never allocate Resources or schedule work.
-
-`EA-0013`
-
-Adapters read no wall clock and use no randomness.
-
-`EA-0014`
-
-Adapters never complete Execution directly.
-
-`EA-0015`
-
-Required Runtime transitions follow observed Transaction evidence.
-
-`EA-0016`
-
-Execution publication of adapter results remains atomic with Execution
+Transaction-dependent completion requires observed Authoritative Result
 evidence.
 
-### 123. End Part V
+`EX-0010`
 
-Part VI defines:
+Execution publication is atomic within Execution ownership.
 
-- Execution Runtime;
-- Reporting;
-- History;
-- Replay;
-- Verification.
+`EX-0011`
 
-## Part VI: Execution Runtime, Evidence, And Replay
+Execution records are immutable once published; Evidence Lifecycle owns their
+retention, archival, compaction, integrity verification, and query policy.
 
-### 124. Purpose
+`EX-0012`
+
+Execution owner snapshots are validated by Execution and published through
+Checkpoint Recovery.
+
+`EX-0013`
 
-Part VI defines the mutable Runtime and immutable evidence owned by the
-Execution subsystem.
+Execution replay consumes the platform Replay contract and never selects a
+checkpoint generation, queries live providers, resubmits real Transactions, or
+reuses Validation Consumption Authority.
 
-Execution Runtime represents current state.
+`EX-0014`
 
-Execution evidence records historical facts.
+Execution failures are typed, explicit, reproducible, and expressed with
+canonical platform failure terminology plus Execution-local lifecycle codes.
 
-Replay reconstructs Runtime solely from deterministic evidence.
+## 34. Validation
+
+Before one bounded step publishes, Execution validates:
 
-### 125. Runtime Philosophy
+- Execution Instance Identity;
+- runtime lifecycle state;
+- schema version;
+- executable work reference;
+- Execution Authorization Evidence references;
+- Scheduler Invocation Identity;
+- adapter registration;
+- ExecutionInput completeness;
+- source-owned Freshness Identity references required by Execution;
+- Transaction Authoritative Result reference, when required;
+- publication candidate completeness;
+- Evidence Lifecycle requirements for Execution-owned evidence content;
+- Checkpoint Recovery owner-snapshot requirements when snapshotting.
 
-Execution Definitions remain immutable.
+Validation failure produces explicit Execution-local failure evidence or a
+waiting state. It shall not partially publish runtime state.
 
-Execution Runtime remains mutable.
+## 35. Verification Requirements
 
-Execution evidence remains immutable.
+An accepted implementation of this RFC must verify:
 
-Execution Runtime never mutates Definitions.
+- Execution Authority is singular per loaded world where implemented;
+- Execution does not own Planning, Allocation, Scheduler, Transactions,
+  Inventory, Checkpoint Recovery, Evidence Lifecycle, World Identity, or
+  Operator Authority;
+- Execution-specific identities follow the Platform Identity Model;
+- Execution Authorization Evidence is consumed but not created by Execution
+  unless Execution is the source owner for a future Execution-owned condition;
+- one Scheduler invocation advances at most one bounded Execution step;
+- adapters cannot mutate authoritative state;
+- adapters cannot consume Validation Consumption Authority;
+- required Transaction completion depends on Authoritative Result evidence;
+- Execution publication is atomic within Execution ownership;
+- Execution owner snapshots validate deterministically;
+- Replay consumes the platform Replay contract;
+- Recovery consumes Checkpoint Recovery;
+- failure records use canonical platform failure terminology;
+- no implementation uses hidden clocks, random values, filesystem ordering, or
+  mutable global state for authoritative outcomes.
 
-Execution evidence never mutates Runtime.
+## 36. Architecture Validation Framework Impact
 
-### 126. Execution Runtime
+This RFC does not modify the Architecture Validation Framework.
 
-Execution Runtime owns:
+A future implementation milestone may add Execution descriptors, ownership
+contracts, persistence declarations, dependency constraints, registry
+descriptors, Scheduler integration declarations, and simulation invariants to
+the validation manifest. Such changes require separate owner authorization.
 
-- current lifecycle;
-- current progress;
-- current ExecutionAttemptRuntime;
-- current waiting state;
-- current completion reference;
-- current failure reference;
-- current cancellation reference;
-- last Simulation Tick;
-- schema version.
+## 37. Compatibility With RFC-0022
 
-Runtime owns no domain state.
+RFC-0022 owns Allocation. RFC-0023 owns Execution.
 
-### 127. Execution Runtime Identity
+Execution consumes Execution Authorization Evidence. RFC-0022 or a future
+Allocation integration may produce that evidence, but Execution remains
+independent of Allocation implementation.
 
-Runtime is keyed by `ExecutionInstanceId`.
+Allocation integration remains separately gated. This RFC does not authorize:
 
-Exactly one mutable Runtime exists for one active `ExecutionInstance`.
+- Allocation persistence;
+- Scheduler stage 350;
+- Allocation Work handlers;
+- concrete provider activation;
+- Planning handoff to Allocation;
+- Allocation-to-Execution runtime gate;
+- Commitment activation or release by Execution.
 
-Terminal Runtime remains replayable.
+## 38. Acceptance Criteria
 
-### 128. Execution Registry
+RFC-0023 Draft 2 is ready for owner approval when:
 
-Execution defines:
-
-- `ExecutionRuntimeRegistry`;
-- `ExecutionReportRegistry`;
-- `ExecutionTraceRegistry`;
-- `ExecutionHistoryRegistry`.
-
-Registries expose immutable public views.
-
-Mutation occurs only through `ExecutionRuntimeService`.
-
-Canonical ordering is required.
-
-### 129. Execution History
-
-`ExecutionHistory` records every Runtime transition.
-
-History is append-only.
-
-History remains immutable.
-
-History includes:
-
-- transition;
-- Simulation Tick;
-- Attempt;
-- reason;
-- evidence;
-- schema version.
-
-History is never rewritten.
-
-### 130. Execution Reports
-
-`ExecutionReport` summarizes Runtime.
-
-Reports remain immutable.
-
-Reports never own Runtime.
-
-Reports include:
-
-- current state;
-- progress;
-- Attempts;
-- waiting;
-- completion;
-- failure;
-- cancellation;
-- Transaction observations.
-
-### 131. Execution Trace
-
-`ExecutionTrace` records deterministic engineering evidence.
-
-Trace includes:
-
-- pipeline phases;
-- ExecutionAttempt;
-- ExecutionStepResult;
-- adapter evidence;
-- Transaction proposal;
-- observed Transaction result;
-- publication evidence;
-- canonical digests.
-
-Trace remains immutable.
-
-### 132. Execution Replay
-
-Replay reconstructs Runtime using only:
-
-- Definitions;
-- ExecutionHistory;
-- ExecutionAttempt records;
-- observed Transaction results;
-- Simulation Ticks.
-
-Replay shall never query:
-
-- Planning;
-- Allocation providers;
-- live Inventory;
-- live Resources;
-- live Capacity;
-- Minecraft Runtime.
-
-Replay remains deterministic.
-
-### 133. Execution Digests
-
-Execution defines canonical SHA-256 digests:
-
-- Execution Input Digest;
-- Execution Runtime Digest;
-- Execution History Digest;
-- Execution Report Digest;
-- Execution Trace Digest;
-- Execution Result Digest.
-
-Equivalent replay produces identical digests.
-
-### 134. Runtime Publication
-
-Publication remains atomic.
-
-The following shall publish together:
-
-- Execution Runtime;
-- Execution History;
-- Execution Reports;
-- Execution Trace;
-- completion evidence;
-- failure evidence;
-- cancellation evidence.
-
-Partial publication is prohibited.
-
-### 135. Runtime Queries
-
-Execution defines an immutable query model.
-
-Queries include:
-
-- by ExecutionInstance;
-- by lifecycle;
-- by executable work;
-- by Attempt;
-- by waiting reason;
-- by completion;
-- by failure;
-- by cancellation.
-
-Queries never mutate Runtime.
-
-### 136. Replay Validation
-
-Replay validates:
-
-- Execution Definitions;
-- Runtime;
-- History;
-- Attempts;
-- Transaction observations;
-- lifecycle;
-- Reports;
-- Trace;
-- digests.
-
-Replay shall fail explicitly on inconsistency.
-
-### 137. Engineering Evidence
-
-Execution evidence shall explain:
-
-- why work advanced;
-- why work waited;
-- why work failed;
-- why work completed;
-- which Transaction was proposed;
-- which Transaction result was observed;
-- why publication succeeded.
-
-No opaque outcomes.
-
-### 138. Execution Runtime Invariants
-
-`EV-0001`
-
-Runtime owns mutable state.
-
-`EV-0002`
-
-Evidence remains immutable.
-
-`EV-0003`
-
-History remains append-only.
-
-`EV-0004`
-
-Reports remain immutable.
-
-`EV-0005`
-
-Trace remains immutable.
-
-`EV-0006`
-
-Publication remains atomic.
-
-`EV-0007`
-
-Replay remains deterministic.
-
-`EV-0008`
-
-Runtime Registry exposes immutable views.
-
-`EV-0009`
-
-Runtime mutation occurs only through ExecutionRuntimeService.
-
-`EV-0010`
-
-Queries never mutate Runtime.
-
-`EV-0011`
-
-Digests remain canonical.
-
-`EV-0012`
-
-Execution History is never rewritten.
-
-`EV-0013`
-
-Replay never queries live systems.
-
-`EV-0014`
-
-Evidence explains every lifecycle transition.
-
-`EV-0015`
-
-Definitions remain separate from Runtime.
-
-`EV-0016`
-
-Definitions remain separate from evidence.
-
-### 139. End Part VI
-
-Part VII defines:
-
-- Verification;
-- Architecture Compliance;
-- Acceptance Criteria;
-- Completion.
-
-## Part VII: Verification, Acceptance Criteria, And Architectural Compliance
-
-This Part defines the verification requirements for the Deterministic
-Execution Engine.
-
-No implementation shall be considered complete unless every acceptance
-criterion is satisfied.
-
-### 140. Verification Philosophy
-
-Verification demonstrates architectural correctness.
-
-Passing tests alone do not imply architectural compliance.
-
-Execution must satisfy:
-
-- ownership;
-- determinism;
-- replay;
-- atomic publication;
-- bounded execution;
-- Runtime correctness;
-- evidence correctness;
-- architecture compliance.
-
-### 141. Verification Categories
-
-Execution implementations shall be verified through:
-
-- Identity Verification;
-- Ownership Verification;
-- Runtime Verification;
-- Lifecycle Verification;
-- Execution Pipeline Verification;
-- Adapter Verification;
-- Authorization Verification;
-- Transaction Boundary Verification;
-- Publication Verification;
-- Replay Verification;
-- Evidence Verification;
-- Performance Verification;
-- Living World Verification;
-- Architecture Compliance Review.
-
-### 142. Identity Verification
-
-Verify:
-
-- ExecutionInstanceId;
-- ExecutionAttemptId;
-- ExecutionAdapterId;
-- Execution Runtime identity;
-- Execution Definitions;
-- Execution Reports;
-- Execution Traces;
-- Execution History.
-
-Identities remain:
-
-- immutable;
-- canonical;
-- replay stable;
-- persistable;
-- namespace validated.
-
-### 143. Ownership Verification
-
-Verify:
-
-- Planning owns decisions;
-- Allocation owns authorization;
-- Execution owns Runtime;
-- Execution owns Reports;
-- Execution owns History;
-- Execution owns Traces;
-- Transactions own mutation;
-- Inventory owns quantities.
-
-Execution never violates another subsystem's authority.
-
-### 144. Runtime Verification
-
-Verify:
-
-- exactly one Runtime exists for one active ExecutionInstance;
-- Definitions remain immutable;
-- Runtime remains mutable;
-- evidence remains immutable;
-- Runtime mutation occurs only through ExecutionRuntimeService.
-
-### 145. Lifecycle Verification
-
-Verify:
-
-- every legal transition;
-- every illegal transition;
-- terminal-state protection;
-- Attempt creation;
-- waiting;
-- completion;
-- failure;
-- cancellation.
-
-Illegal transitions fail explicitly.
-
-### 146. Execution Pipeline Verification
-
-Verify:
-
-```text
-Capture Input
-  -> Validate Runtime
-      -> Validate Authorization
-          -> Resolve Adapter
-              -> Evaluate Step
-                  -> Validate Result
-                      -> Construct Transaction Proposal
-                          -> Submit Proposal
-                              -> Observe Transaction Result
-                                  -> Construct Runtime Transition
-                                      -> Atomic Publication
-                                          -> Reports
-                                              -> History
-                                                  -> Trace
-```
-
-Each phase executes exactly once.
-
-### 147. Adapter Verification
-
-Verify:
-
-- ExecutionAdapter receives immutable context;
-- ExecutionAdapter evaluates exactly one bounded step;
-- ExecutionAdapter produces immutable StepResult.
-
-ExecutionAdapter never:
-
-- mutates state;
-- allocates Capacity;
-- executes Transactions;
-- uses randomness;
-- reads wall-clock time.
-
-### 148. Authorization Verification
-
-Verify:
-
-- Execution never advances without required Allocation authorization;
-- Execution never repairs authorization;
-- Execution never allocates missing Capacity;
-- Execution observes authorization only.
-
-### 149. Transaction Boundary Verification
-
-Verify:
-
-- Execution constructs Transaction proposals;
-- Transaction Framework validates and executes proposals;
-- Execution observes Transaction results;
-- Execution never executes Transactions directly;
-- Execution completion depends upon required observed Transaction success.
-
-### 150. Publication Verification
-
-Verify atomic publication.
-
-The following publish together:
-
-- Runtime;
-- History;
-- Reports;
-- Trace;
-- completion evidence;
-- failure evidence;
-- cancellation evidence.
-
-Partial publication is prohibited.
-
-### 151. Replay Verification
-
-Given identical:
-
-- Definitions;
-- Runtime;
-- authorization;
-- Simulation Ticks;
-- Execution adapters;
-- observed Transaction results;
-
-Execution shall produce identical:
-
-- Runtime;
-- History;
-- Reports;
-- Trace;
-- digests.
-
-Replay remains deterministic.
-
-### 152. Evidence Verification
-
-Verify every lifecycle transition is explained through immutable evidence.
-
-Execution shall explain:
-
-- progress;
-- waiting;
-- failure;
-- completion;
-- cancellation;
-- Transaction observation;
-- publication.
-
-No opaque transitions.
-
-### 153. Performance Verification
-
-Verify deterministic Execution under representative large workloads.
-
-Representative scenarios include:
-
-- millions of ExecutionInstances;
-- millions of Attempts;
-- large Runtime registries;
-- large History registries;
-- large Report registries;
-- large Trace registries;
-- high replay volume.
-
-Results remain deterministic.
-
-### 154. Living World Verification
-
-Verify autonomous operation.
-
-Without players:
-
-- Execution continues;
-- domain adapters continue;
-- Transactions continue;
-- replay remains correct;
-- simulation remains operational.
-
-### 155. Failure Isolation
-
-Failure of one ExecutionInstance shall not corrupt unrelated
-ExecutionInstances.
-
-Adapter failure remains local.
-
-Publication failure remains local.
-
-Runtime corruption is prohibited.
-
-### 156. Save Compatibility
-
-Schema-version compatibility shall be verified.
-
-The following shall either load successfully or fail explicitly:
-
-- Execution Definitions;
-- Runtime;
-- History;
-- Reports;
-- Trace.
-
-Silent repair is prohibited.
-
-### 157. Repository Requirements
-
-Execution implementation shall include:
-
-- architecture documentation;
-- replay tests;
-- lifecycle tests;
-- pipeline tests;
-- adapter tests;
-- publication tests;
-- determinism tests;
-- stress tests;
-- architecture validation.
-
-Documentation forms part of the implementation contract.
-
-### 158. Architecture Gates
-
-Execution implementation shall not proceed to production until:
-
-- ownership is verified;
-- Runtime is verified;
-- pipeline is verified;
-- replay is verified;
-- publication is verified;
-- Architecture Validation passes;
-- acceptance criteria are satisfied.
-
-### 159. Acceptance Criteria
-
-An RFC-0023 implementation shall be considered complete only when:
-
-- Execution remains deterministic;
-- Execution remains bounded;
-- Execution Runtime is correct;
-- Execution Reports remain immutable;
-- Execution History remains append-only;
-- Execution Trace remains immutable;
-- Execution adapters remain pure;
-- Transaction boundary remains intact;
-- publication remains atomic;
-- replay succeeds;
-- Living World simulation remains autonomous.
-
-### 160. Completion Report
-
-Implementation shall produce a completion report summarizing:
-
-- architecture implemented;
-- public APIs;
-- Runtime;
-- pipeline;
-- Reports;
-- History;
-- Trace;
-- replay;
-- testing totals;
-- stress testing;
-- known limitations;
-- future extension points.
-
-### 161. Future Expansion
-
-Future schemas may extend Execution through:
-
-- parallel deterministic execution;
-- distributed execution;
-- Execution budgets;
-- cooperative execution;
-- long-running work;
-- Execution preemption;
-- Execution migration;
-- Execution batching.
-
-Schema 1 implements none of these.
-
-### 162. Final Principle
-
-Execution performs deterministic bounded work.
-
-Planning decides.
-
-Allocation authorizes.
-
-Execution performs.
-
-Transactions mutate.
-
-Inventory owns.
-
-These responsibilities remain permanently independent.
-
-### 163. End RFC-0023
-
-RFC-0023 is complete.
-
-Implementation may begin only after architectural review and owner approval.
+- platform concepts are referenced instead of redefined;
+- Execution ownership is singular and explicit;
+- Execution Authorization Evidence replaces Allocation-specific authority;
+- Transaction integration uses Authoritative Result evidence and does not
+  expose Validation Consumption Authority to Execution;
+- Execution persistence content is separated from checkpoint publication,
+  Evidence Lifecycle policy, Replay, and Recovery;
+- replay and recovery use canonical platform terminology;
+- failure and cancellation use canonical platform terminology;
+- Allocation integration remains deferred;
+- no implementation work is implied.
+
+## 39. Implementation Gate
+
+No implementation is authorized by this RFC draft.
+
+Before implementation begins, the owner must explicitly approve:
+
+- RFC-0023 acceptance;
+- implementation milestone scope;
+- Execution package and public API surface;
+- Execution persistence or owner-snapshot schema;
+- Architecture Validation Framework manifest updates;
+- Scheduler integration;
+- Transaction integration;
+- Allocation integration, if any;
+- migration requirements, if any.
+
+## 40. Final Principle
+
+Execution performs bounded authorized work.
+
+It does not decide, allocate, validate Transactions, mutate Inventory, publish
+checkpoints, recover the world, retain evidence by policy, or redefine platform
+identity.
+
+Execution is a platform consumer with one narrow authority: deterministic
+runtime progression and evidence for work that another owner already approved
+and another authority explicitly authorized.

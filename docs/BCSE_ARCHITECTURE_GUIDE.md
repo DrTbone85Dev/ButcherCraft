@@ -85,7 +85,7 @@ object graph.
 | Planning | Implemented deterministic Production planning and Scheduler integration |
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
-| Generic Execution | Specified by RFC-0023 Draft 1 only; not accepted or implemented |
+| Generic Execution | Specified by RFC-0023 Draft 2 only; not accepted or implemented |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 The live Scheduler currently contains Production and Economic Planning
@@ -133,7 +133,7 @@ that architecture.
 | Planning | Observations used by a cycle, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, cycle evidence, and submission state | Execution, Inventory mutation, Transactions, Scheduler runtime, durable Capacity reservations | Implemented |
 | Providers | Their source-domain Resources, Capacity, and current facts | Planning decisions, Allocation Commitments, execution, or cross-domain mutation | Generic Allocation provider contract implemented; concrete providers deferred |
 | Allocation | Requirements, Requests, AllocationSets, Commitments, set runtime, detached accounting, Cycle reports, traces, and observation aggregation | Source Resources, source Capacity, Planning artifacts, executable definitions, Transactions, or Inventory | M22A-M22D implemented; live integration deferred |
-| Execution | Generic execution runtime, attempts, progress, lifecycle, Reports, History, and Trace | Plans, Commitments, Resources, Capacity, Transactions, Inventory, or domain semantics | RFC-0023 Draft 1 only |
+| Execution | Generic execution runtime, attempts, progress, lifecycle, Reports, History, and Trace | Plans, Commitments, Resources, Capacity, Transactions, Inventory, or domain semantics | RFC-0023 Draft 2 only |
 | Transactions | Economic mutation validation, accepted change plans, atomic execution, audit history, and replay orchestration | Business decisions, production semantics, planning, scheduling, or source-domain policy | Implemented |
 | Inventory | Economic quantities, inventory runtime, storage hierarchy, and capacity invariants | The reason a quantity changes, Production policy, Orders, or market behavior | Implemented |
 | Architecture Validation | Immutable architecture descriptions, rules, deterministic validation, and reports | Any described subsystem state, architecture approval, runtime discovery, or simulation behavior | Implemented build-time framework |
@@ -176,7 +176,7 @@ an external domain adapter, observes any required Transaction result, and
 publishes runtime and evidence atomically.
 
 Execution does not decide, allocate, interpret industry semantics, or mutate
-authoritative state. This contract is documented by RFC-0023 Draft 1 and is not
+authoritative state. This contract is documented by RFC-0023 Draft 2 and is not
 current implementation authority.
 
 ### Transactions
@@ -518,9 +518,10 @@ generic Execution integration.
 
 ### RFC-0023: Deterministic Execution Engine
 
-[`RFC-0023 Draft 1`](RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md) specifies the
-proposed generic Execution domain, runtime, pipeline, adapter framework,
-Transaction observation, evidence, replay, and verification requirements.
+[`RFC-0023 Draft 2`](RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md) specifies the
+proposed generic Execution authority, runtime, lifecycle, pipeline, adapter
+framework, Transaction observation, owner snapshots, and verification
+requirements.
 
 The document is complete as a draft. It is not accepted architecture and
 authorizes no implementation until architectural review and explicit owner
