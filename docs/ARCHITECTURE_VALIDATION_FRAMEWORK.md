@@ -261,9 +261,9 @@ load checkpoint storage, run Scheduler handlers, validate Transaction runtime
 authority consumption, or execute any recovery path.
 
 The current AH-1 implementation gates are explicit in the manifest. Remaining
-Evidence Lifecycle archival work, broad Checkpoint Recovery, Planning cadence,
-generic Execution, and Allocation M22E-M22F integration are declared
-architecture but not runtime guarantees.
+Evidence Lifecycle archival work, broad Checkpoint Recovery, generic Execution,
+and Allocation M22E-M22F integration are declared architecture but not runtime
+guarantees.
 
 ## Dependency Validation
 

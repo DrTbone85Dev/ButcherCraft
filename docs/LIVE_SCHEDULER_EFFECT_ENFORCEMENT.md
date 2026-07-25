@@ -1,6 +1,6 @@
 # Live Scheduler Effect Enforcement
 
-Status: IM-009 implementation note
+Status: IM-009 implementation note, updated by IM-010
 
 This note describes the live implementation of ADR-05 Scheduler Effects
 Authority. The canonical architecture remains the Constitution, Core
@@ -45,9 +45,12 @@ while retaining the same Effect Identity.
 | `TRANSACTION_BACKED` | Requires stable Effect Identity and authoritative Transaction result evidence before completion. Scheduler observes the evidence; Transaction remains the only mutation owner. |
 | `NON_REPEATABLE` | Is exceptional. Automatic retry is not permitted after invocation begins. Consequential uncertainty becomes `UNKNOWN_OUTCOME`. |
 
-Planning currently uses a narrowly explicit `NON_REPEATABLE` continuation policy
-that allows deferral while Planning Cadence remains gated. IM-009 does not
-implement Planning Cadence.
+Planning uses a narrowly explicit `NON_REPEATABLE` continuation policy that
+allows deferral to the next Planning-owned cadence eligibility tick. IM-010
+implements the live cadence. Planning is not reclassified as `IDEMPOTENT`
+because the current Scheduler Effect Identity is scoped to the persistent
+Scheduler Work, while Planning needs one stable effect identity per Planning
+Cycle to prove duplicate-safe owner publication.
 
 ## Unknown Outcome
 
@@ -88,9 +91,9 @@ content and does not parse Scheduler internals directly.
 
 ## Gated Work
 
-IM-009 does not implement:
+IM-009 and IM-010 do not implement:
 
-- Planning Cadence;
+- Planning `IDEMPOTENT` effect reclassification;
 - generic Execution runtime;
 - Allocation integration;
 - operator Unknown Outcome reconciliation;

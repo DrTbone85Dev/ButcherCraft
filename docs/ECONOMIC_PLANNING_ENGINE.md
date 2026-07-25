@@ -180,8 +180,29 @@ butchercraft:economic_planning_cycle
 
 It runs in `butchercraft:planning`. The payload contains only the Planning
 policy id. The handler consumes the Scheduler's authoritative tick, executes at
-most one cycle for that tick, and defers the same continuation Work to the next
-tick. It does not own a second timer or tick loop.
+most one cadence-eligible cycle for that tick, and defers the same continuation
+Work to the next Planning-owned eligibility tick. It does not own a second timer
+or tick loop.
+
+Live cadence is hybrid and deterministic:
+
+- default periodic eligibility is every 1,200 simulation ticks;
+- default minimum separation is 20 simulation ticks;
+- default maximum interval is 72,000 simulation ticks;
+- source-owned trigger evidence may make Planning eligible earlier;
+- duplicate triggers with identical identity and content are safe observations;
+- duplicate trigger identity with different content is a Planning conflict;
+- overdue loaded cadence schedules one next eligible cycle, not burst catch-up.
+
+Planning owns cadence configuration identity, trigger identity consumption,
+input capture, and Planning Cycle publication. Scheduler owns the continuation
+Work lifecycle and the reschedule operation that moves pending Work to the next
+Planning-approved eligibility tick.
+
+Planning remains `NON_REPEATABLE` under a continuation policy. It is not yet
+classified as `IDEMPOTENT` because the current Scheduler Effect Identity is
+scoped to the persistent Scheduler Work, while a proof of idempotence requires
+one stable effect identity per Planning Cycle.
 
 The default policy is:
 
@@ -204,11 +225,15 @@ planning_opportunities.json
 planning_candidates.json
 planning_approved_plans.json
 planning_runtime.json
+planning_cadence.json
 ```
 
 Files use UTF-8, stable snake-case field names, explicit schema versions,
 deterministic record order, temporary-file writes, and atomic replacement when
-supported. An existing persistence set must contain all six files.
+supported. An existing legacy artifact set must contain all six artifact files.
+`planning_cadence.json` is Planning-owned cadence runtime and evidence. Legacy
+six-file saves without cadence state remain loadable; they do not receive
+synthetic historical trigger evidence.
 
 Load reconstructs complete cycle snapshots and validates:
 
@@ -220,6 +245,8 @@ Load reconstructs complete cycle snapshots and validates:
 - Goods, Orders and lines, Production Processes, Actors, Businesses, and
   Inventories;
 - submitted Production Plan and Scheduler Work references.
+- cadence configuration identity, pending trigger records, cadence evidence,
+  and absence of active in-progress Planning Cycles.
 
 Malformed, partial, unsupported, interrupted, or externally inconsistent state
 fails initialization visibly. Planning does not silently discard a cycle,
@@ -233,8 +260,10 @@ Server start order is:
 2. Planning installs its delegating Scheduler handler.
 3. Scheduler loads and validates persisted Work types.
 4. Production validates persisted Scheduler references.
-5. Planning loads after all dependencies and validates its six-file snapshot.
-6. Planning ensures one continuation Work exists.
+5. Planning loads after all dependencies and validates its artifact and cadence
+   snapshot.
+6. Planning ensures one continuation Work exists and aligns it to cadence
+   eligibility.
 
 On shutdown, Production and Scheduler save before Planning. Planning retains
 references to the loaded authoritative manager snapshots while validating and
@@ -257,6 +286,9 @@ writing its terminal cycles.
 - `EP-0013`: Terminal cycle persistence is complete-set and fail-visible.
 - `EP-0014`: Minecraft and NeoForge APIs remain outside the Planning domain.
 - `EP-0015`: Schema 1 supports business-scale Production planning only.
+- `EP-0016`: Live Planning cadence is periodic, trigger-aware, and bounded.
+- `EP-0017`: Planning trigger evidence never transfers source fact ownership.
+- `EP-0018`: Planning input freeze identity is recorded for cadence cycles.
 
 ## Measured Phase 21 Scale
 

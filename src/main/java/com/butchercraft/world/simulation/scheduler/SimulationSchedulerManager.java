@@ -191,6 +191,48 @@ public final class SimulationSchedulerManager {
         return SchedulerOperationResult.success();
     }
 
+    public synchronized SchedulerOperationResult reschedulePendingWork(
+            SimulationWorkId id,
+            long tick,
+            long nextEligibleTick,
+            String reason
+    ) {
+        SimulationWorkRuntime runtime = runtimes.get(Objects.requireNonNull(id, "id"));
+        if (runtime == null) {
+            return SchedulerOperationResult.failure(WorkFailureCode.UNKNOWN_WORK, "Unknown simulation work: " + id);
+        }
+        SchedulerValidation.requireTick(tick, "Work reschedule tick");
+        SchedulerValidation.requireTick(nextEligibleTick, "Work reschedule next eligible tick");
+        if (nextEligibleTick <= tick) {
+            return SchedulerOperationResult.failure(
+                    WorkFailureCode.INVALID_TICK,
+                    "Rescheduled eligible tick must follow current tick"
+            );
+        }
+        if (tick < runtime.lastUpdatedSimulationTick()) {
+            return SchedulerOperationResult.failure(
+                    WorkFailureCode.BACKWARD_TICK,
+                    "Reschedule tick precedes the work runtime tick"
+            );
+        }
+        if (runtime.status().isTerminal() || runtime.status() == SimulationWorkStatus.RUNNING
+                || runtime.status() == SimulationWorkStatus.ELIGIBLE) {
+            return SchedulerOperationResult.failure(
+                    WorkFailureCode.INVALID_STATUS,
+                    "Work cannot be rescheduled from status " + runtime.status()
+            );
+        }
+        ScheduledSimulationWork work = registry.find(id).orElseThrow();
+        if (nextEligibleTick < work.scheduledTick()) {
+            return SchedulerOperationResult.failure(
+                    WorkFailureCode.BACKWARD_TICK,
+                    "Rescheduled eligible tick cannot precede the Work scheduled tick"
+            );
+        }
+        change(runtime, () -> runtime.reschedulePending(tick, nextEligibleTick, reason));
+        return SchedulerOperationResult.success();
+    }
+
     synchronized EligibilityUpdate promoteDue(long tick, int maximumTransitions) {
         SchedulerValidation.requireTick(tick, "Eligibility tick");
         if (maximumTransitions < 0) throw new IllegalArgumentException("Transition limit must not be negative");

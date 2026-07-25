@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.regex.Pattern;
 
 final class PlanningValidation {
@@ -64,6 +65,20 @@ final class PlanningValidation {
         return size;
     }
 
+    static String canonicalMap(Map<String, String> source) {
+        StringBuilder builder = new StringBuilder();
+        metadata(source).forEach((key, value) -> appendCanonical(builder, key).append('=')
+                .append(value.length()).append(':').append(value).append(';'));
+        return builder.toString();
+    }
+
+    static String canonicalStrings(Collection<String> values) {
+        StringBuilder builder = new StringBuilder();
+        Objects.requireNonNull(values, "values").stream().sorted().forEach(value ->
+                appendCanonical(builder, text(value, "Planning identity component")).append(';'));
+        return builder.toString();
+    }
+
     static String derivedId(String type, String... components) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -78,5 +93,9 @@ final class PlanningValidation {
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is unavailable", exception);
         }
+    }
+
+    private static StringBuilder appendCanonical(StringBuilder builder, String value) {
+        return builder.append(value.length()).append(':').append(value);
     }
 }

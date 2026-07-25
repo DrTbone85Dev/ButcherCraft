@@ -18,6 +18,7 @@ public final class PlanningManager {
     private final PlanningPipeline pipeline;
     private final PlanningSelectionPolicy policy;
     private final PlanningExecutionBudget budget;
+    private final PlanningCadenceState cadence;
     private final Map<PlanningCycleId, PlanningCycleSnapshot> cycles = new LinkedHashMap<>();
     private final Map<Long, PlanningCycleId> cycleByTick = new LinkedHashMap<>();
 
@@ -35,23 +36,95 @@ public final class PlanningManager {
             PlanningExecutionBudget budget,
             Collection<PlanningCycleSnapshot> loaded
     ) {
+        this(dependencies, policy, budget, loaded, null);
+    }
+
+    PlanningManager(
+            PlanningDependencies dependencies,
+            PlanningSelectionPolicy policy,
+            PlanningExecutionBudget budget,
+            Collection<PlanningCycleSnapshot> loaded,
+            PlanningCadenceState loadedCadence
+    ) {
         this.dependencies = Objects.requireNonNull(dependencies, "dependencies");
         this.policy = Objects.requireNonNull(policy, "policy");
         this.budget = Objects.requireNonNull(budget, "budget");
         pipeline = new PlanningPipeline(dependencies, policy, budget);
-        for (PlanningCycleSnapshot cycle : Objects.requireNonNull(loaded, "loaded")) {
+        Collection<PlanningCycleSnapshot> loadedCycles = Objects.requireNonNull(loaded, "loaded");
+        cadence = loadedCadence == null
+                ? PlanningCadenceState.legacyFromCycles(PlanningCadenceConfiguration.standard(), loadedCycles)
+                : loadedCadence;
+        for (PlanningCycleSnapshot cycle : loadedCycles) {
             registerLoaded(cycle);
         }
     }
 
-    public synchronized PlanningCycleSnapshot executeCycle(long simulationTick) {
+    synchronized PlanningCycleSnapshot executeCycle(long simulationTick) {
         PlanningCycleId id = PlanningCycleId.forTick(simulationTick);
         if (cycles.containsKey(id) || cycleByTick.containsKey(simulationTick)) {
             throw new IllegalArgumentException("A Planning Cycle already exists for tick " + simulationTick);
         }
         PlanningCycleSnapshot cycle = pipeline.execute(simulationTick);
         registerLoaded(cycle);
+        cadence.recordLegacyCompletedCycle(cycle);
         return cycle;
+    }
+
+    synchronized PlanningCadenceExecutionResult executeCadenceCycle(
+            long simulationTick,
+            long remainingWorkUnits
+    ) {
+        PlanningValidation.tick(simulationTick);
+        if (!cadence.eligibleAt(simulationTick)) {
+            return PlanningCadenceExecutionResult.idle(cadence.nextEligibilityTick(simulationTick));
+        }
+        PlanningCycleId id = PlanningCycleId.forTick(simulationTick);
+        if (cycles.containsKey(id) || cycleByTick.containsKey(simulationTick)) {
+            throw new IllegalArgumentException("A Planning Cycle already exists for tick " + simulationTick);
+        }
+        PlanningCadenceBoundary boundary = cadence.beginCycle(id, simulationTick);
+        try {
+            PlanningCycleSnapshot raw = pipeline.execute(simulationTick);
+            String frozenInputIdentity = frozenInputIdentity(raw, boundary);
+            PlanningCycleCadenceEvidence evidence = cadence.completeCycle(boundary, frozenInputIdentity);
+            PlanningCycleSnapshot cycle = withCadenceEvidence(raw, evidence);
+            registerLoaded(cycle);
+            long artifactCount = (long) cycle.observations().size() + cycle.needs().size()
+                    + cycle.constraints().size() + cycle.opportunities().size()
+                    + cycle.candidates().size() + cycle.approvedPlans().size();
+            return PlanningCadenceExecutionResult.executed(
+                    cycle,
+                    evidence.nextEligibilityTick(),
+                    artifactCount,
+                    remainingWorkUnits
+            );
+        } catch (RuntimeException exception) {
+            cadence.abortActiveCycle(id);
+            throw exception;
+        }
+    }
+
+    public synchronized PlanningTriggerPublicationResult publishTrigger(
+            PlanningTriggerRecord trigger,
+            long currentTick
+    ) {
+        return cadence.publishTrigger(trigger, currentTick);
+    }
+
+    public synchronized long nextCadenceEligibilityTick(long currentTick) {
+        return cadence.nextEligibilityTick(currentTick);
+    }
+
+    synchronized PlanningCadenceSnapshot cadenceSnapshot() {
+        return cadence.snapshot();
+    }
+
+    public synchronized List<PlanningTriggerRecord> pendingTriggers() {
+        return cadence.pendingTriggers();
+    }
+
+    synchronized Optional<PlanningCycleCadenceEvidence> cadenceEvidenceFor(PlanningCycleId id) {
+        return cadence.evidenceFor(id);
     }
 
     public synchronized Optional<PlanningCycleSnapshot> find(PlanningCycleId id) {
@@ -97,7 +170,16 @@ public final class PlanningManager {
         for (PlanningCycleSnapshot cycle : cycles.values()) {
             if (!cycle.status().terminal()) throw new IllegalArgumentException("Persisted Planning Cycle is interrupted");
             validateCycle(cycle);
+            cycle.cadenceEvidence().ifPresent(evidence -> {
+                if (cadence.evidenceFor(cycle.id()).isEmpty()) {
+                    throw new IllegalArgumentException("Planning Cycle cadence evidence is not indexed");
+                }
+                if (!cadence.evidenceFor(cycle.id()).orElseThrow().equals(evidence)) {
+                    throw new IllegalArgumentException("Planning Cycle cadence evidence is inconsistent");
+                }
+            });
         }
+        cadence.validate();
     }
 
     private void registerLoaded(PlanningCycleSnapshot cycle) {
@@ -114,6 +196,64 @@ public final class PlanningManager {
         validateStructureAndBudget(cycle);
         validateGraph(cycle, budget.maximumRecursiveDepth());
         validateReferences(cycle);
+    }
+
+    private static PlanningCycleSnapshot withCadenceEvidence(
+            PlanningCycleSnapshot cycle,
+            PlanningCycleCadenceEvidence evidence
+    ) {
+        return new PlanningCycleSnapshot(
+                cycle.id(),
+                cycle.simulationTick(),
+                cycle.policyId(),
+                cycle.status(),
+                cycle.observations(),
+                cycle.needs(),
+                cycle.constraints(),
+                cycle.opportunities(),
+                cycle.candidates(),
+                cycle.approvedPlans(),
+                cycle.needRuntimes(),
+                cycle.submissionRuntimes(),
+                cycle.report(),
+                Optional.of(evidence),
+                cycle.revision(),
+                cycle.schemaVersion()
+        );
+    }
+
+    private static String frozenInputIdentity(PlanningCycleSnapshot cycle, PlanningCadenceBoundary boundary) {
+        try {
+            List<String> components = new ArrayList<>();
+            components.add(cycle.id().value());
+            components.add(Long.toString(cycle.simulationTick()));
+            components.add(cycle.policyId().value());
+            components.add(boundary.cadenceConfigurationIdentity());
+            components.add(PlanningValidation.canonicalStrings(boundary.eligibilityReasons()));
+            components.add(PlanningValidation.canonicalStrings(boundary.consumedTriggers().stream()
+                    .map(PlanningTriggerRecord::triggerIdentity).toList()));
+            components.add(PlanningValidation.canonicalStrings(cycle.observations().stream()
+                    .map(value -> value.id().value())
+                    .toList()));
+            components.add(PlanningValidation.canonicalStrings(cycle.needs().stream()
+                    .map(value -> value.id().value())
+                    .toList()));
+            components.add(PlanningValidation.canonicalStrings(cycle.constraints().stream()
+                    .map(value -> value.id().value())
+                    .toList()));
+            components.add(PlanningValidation.canonicalStrings(cycle.opportunities().stream()
+                    .map(value -> value.id().value())
+                    .toList()));
+            components.add(PlanningValidation.canonicalStrings(cycle.candidates().stream()
+                    .map(value -> value.id().value())
+                    .toList()));
+            components.add(PlanningValidation.canonicalStrings(cycle.approvedPlans().stream()
+                    .map(value -> value.id().value())
+                    .toList()));
+            return PlanningValidation.derivedId("planning_frozen_input", components.toArray(String[]::new));
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("Planning input capture failed", exception);
+        }
     }
 
     private void validateStructureAndBudget(PlanningCycleSnapshot cycle) {

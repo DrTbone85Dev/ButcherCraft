@@ -315,8 +315,8 @@ The million-record definition/runtime scale is intentionally split from combined
 ## Known Limitations And Extension Points
 
 - Schema 2 has no catch-up, partial-tick resume, broad world migration, startup crash recovery, or automatic reconciliation with a mismatched clock.
-- The live registry contains the internal Production Run and Economic Planning Cycle handlers. Planning ensures one continuation Work and may submit Production Work for accepted open Order-line Needs, but no live industry Process is registered and no gameplay executes.
-- Planning remains classified as `NON_REPEATABLE` with a cadence-gated continuation policy. Planning Cadence migration is not implemented in IM-009.
+- The live registry contains the internal Production Run and Economic Planning Cycle handlers. Planning ensures one cadence-gated continuation Work and may submit Production Work for accepted open Order-line Needs, but no live industry Process is registered and no gameplay executes.
+- Planning remains classified as `NON_REPEATABLE` with a cadence-gated continuation policy. IM-010 implements live Planning cadence, but `IDEMPOTENT` Planning classification remains blocked until Scheduler can represent cycle-scoped Effect Identity.
 - Reports are transient and no profiling/audit UI exists.
 - The scheduler cannot provide global rollback for side effects performed outside transaction-backed handlers.
 - Handler registration is internal and not a stable public API.

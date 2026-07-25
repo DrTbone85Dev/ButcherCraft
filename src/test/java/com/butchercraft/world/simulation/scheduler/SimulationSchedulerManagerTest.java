@@ -115,6 +115,28 @@ class SimulationSchedulerManagerTest {
     }
 
     @Test
+    void pendingWorkCanBeRescheduledBySchedulerAuthority() {
+        SimulationSchedulerManager manager = SchedulerTestFixtures.manager(
+                SchedulerTestFixtures.handler(context ->
+                        SimulationWorkResult.completed(context.authoritativeSimulationTick(), 1)), 0
+        );
+        SimulationWorkRequest request = SchedulerTestFixtures.request(
+                "test:reschedule", BuiltInSimulationStages.PLANNING, 0, 1
+        );
+        assertTrue(manager.submit(request, 0).accepted());
+
+        SchedulerOperationResult result = manager.reschedulePendingWork(
+                request.id(), 10L, 20L, "test reschedule"
+        );
+
+        assertTrue(result.successful());
+        assertEquals(20L, manager.runtimeFor(request.id()).orElseThrow()
+                .nextEligibleTick().orElseThrow());
+        assertEquals(SimulationWorkStatus.SCHEDULED,
+                manager.runtimeFor(request.id()).orElseThrow().status());
+    }
+
+    @Test
     void loadedRegistryRejectsDuplicateSequencesMissingRuntimeAndUnknownHandler() {
         ScheduledSimulationWork first = ScheduledSimulationWork.fromRequest(
                 SchedulerTestFixtures.request("test:a", BuiltInSimulationStages.EXECUTION, 0, 1), 0, 0

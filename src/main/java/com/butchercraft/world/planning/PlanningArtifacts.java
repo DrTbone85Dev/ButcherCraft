@@ -497,9 +497,31 @@ record PlanningCycleSnapshot(
         List<NeedResolutionRuntime> needRuntimes,
         List<ApprovedPlanSubmissionRuntime> submissionRuntimes,
         PlanningCycleReport report,
+        Optional<PlanningCycleCadenceEvidence> cadenceEvidence,
         long revision,
         int schemaVersion
 ) {
+    PlanningCycleSnapshot(
+            PlanningCycleId id,
+            long simulationTick,
+            PlanningPolicyId policyId,
+            PlanningCycleStatus status,
+            List<ObservationDefinition> observations,
+            List<NeedDefinition> needs,
+            List<ConstraintDefinition> constraints,
+            List<OpportunityDefinition> opportunities,
+            List<CandidatePlanDefinition> candidates,
+            List<ApprovedPlanDefinition> approvedPlans,
+            List<NeedResolutionRuntime> needRuntimes,
+            List<ApprovedPlanSubmissionRuntime> submissionRuntimes,
+            PlanningCycleReport report,
+            long revision,
+            int schemaVersion
+    ) {
+        this(id, simulationTick, policyId, status, observations, needs, constraints, opportunities, candidates,
+                approvedPlans, needRuntimes, submissionRuntimes, report, Optional.empty(), revision, schemaVersion);
+    }
+
     PlanningCycleSnapshot {
         Objects.requireNonNull(id); simulationTick = PlanningValidation.tick(simulationTick);
         Objects.requireNonNull(policyId); Objects.requireNonNull(status);
@@ -509,6 +531,13 @@ record PlanningCycleSnapshot(
         candidates = candidates.stream().sorted(PlanningArtifacts.CANDIDATE_ORDER).toList();
         approvedPlans = List.copyOf(approvedPlans); needRuntimes = List.copyOf(needRuntimes);
         submissionRuntimes = List.copyOf(submissionRuntimes); Objects.requireNonNull(report);
+        cadenceEvidence = Objects.requireNonNull(cadenceEvidence, "cadenceEvidence");
+        long checkedSimulationTick = simulationTick;
+        cadenceEvidence.ifPresent(evidence -> {
+            if (!evidence.cycleId().equals(id) || evidence.simulationTick() != checkedSimulationTick) {
+                throw new IllegalArgumentException("Planning cadence evidence identity does not match its cycle");
+            }
+        });
         if (revision < 0) throw new IllegalArgumentException("Planning cycle revision must not be negative");
         schemaVersion = PlanningValidation.schema(schemaVersion);
     }

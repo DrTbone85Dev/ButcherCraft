@@ -36,7 +36,7 @@ public final class EconomicPlanningWorkHandler implements SimulationWorkHandler 
         return SchedulerEffectPolicy.nonRepeatableContinuation(
                 TYPE,
                 "butchercraft:planning",
-                "IM-009 Planning continuation remains gated until Planning Cadence is implemented"
+                "IM-010 Planning cadence remains NON_REPEATABLE until cycle-scoped Scheduler Effect Identity exists"
         );
     }
 
@@ -67,20 +67,29 @@ public final class EconomicPlanningWorkHandler implements SimulationWorkHandler 
     @Override
     public SimulationWorkResult execute(SimulationExecutionContext context) {
         long tick = context.authoritativeSimulationTick();
-        PlanningCycleSnapshot cycle = managerSupplier.get().executeCycle(tick);
-        long artifactCount = (long) cycle.observations().size() + cycle.needs().size()
-                + cycle.constraints().size() + cycle.opportunities().size()
-                + cycle.candidates().size() + cycle.approvedPlans().size();
-        int units = Math.toIntExact(Math.min(Integer.MAX_VALUE,
-                Math.min(context.remainingWorkUnits(), Math.max(1L, artifactCount))));
+        PlanningCadenceExecutionResult result = managerSupplier.get()
+                .executeCadenceCycle(tick, context.remainingWorkUnits());
+        List<WorkPayloadEntry> summaryEntries = result.cycle()
+                .map(cycle -> List.of(
+                        WorkPayloadEntry.identifier("butchercraft:planning_cycle_id", cycle.id().value()),
+                        WorkPayloadEntry.identifier(
+                                "butchercraft:planning_frozen_input_identity",
+                                cycle.cadenceEvidence().orElseThrow().frozenInputIdentity()
+                        ),
+                        WorkPayloadEntry.longValue(
+                                "butchercraft:planning_consumed_trigger_count",
+                                cycle.cadenceEvidence().orElseThrow().consumedTriggers().size()
+                        )
+                ))
+                .orElseGet(() -> List.of(WorkPayloadEntry.identifier(
+                        "butchercraft:planning_cadence_state",
+                        "butchercraft:planning_cadence/deferred"
+                )));
         return new SimulationWorkResult(
                 SimulationWorkOutcome.DEFERRED, Optional.empty(),
-                List.of("Economic Planning Cycle " + cycle.status().name().toLowerCase(
-                        java.util.Locale.ROOT)),
-                OptionalLong.of(Math.addExact(tick, 1L)), List.of(),
-                new WorkPayload(List.of(
-                        WorkPayloadEntry.identifier("butchercraft:planning_cycle_id", cycle.id().value())
-                )), units, tick
+                result.messages(),
+                OptionalLong.of(result.nextEligibleTick()), List.of(),
+                new WorkPayload(summaryEntries), result.workUnits(), tick
         );
     }
 }

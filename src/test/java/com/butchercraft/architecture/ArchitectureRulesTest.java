@@ -720,6 +720,11 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/serialized_transaction_owner_boundary",
                         "butchercraft:platform_contract/transaction_live_duplicate_conflict_behavior",
                         "butchercraft:platform_contract/transaction_live_result_evidence",
+                        "butchercraft:platform_contract/planning_cadence",
+                        "butchercraft:platform_contract/planning_live_periodic_cadence",
+                        "butchercraft:platform_contract/planning_live_trigger_cadence",
+                        "butchercraft:platform_contract/planning_live_no_burst_catch_up",
+                        "butchercraft:platform_contract/planning_effect_classification_blocker",
                         "butchercraft:platform_contract/scheduler_runtime_authority",
                         "butchercraft:platform_contract/scheduler_observes_domain_results",
                         "butchercraft:platform_contract/scheduler_live_effect_enforcement",
@@ -735,6 +740,9 @@ class ArchitectureRulesTest {
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
         assertTrue(context.runtimeAuthorities().stream()
                 .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/scheduler_world")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/planning_world")
                         && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.runtimeAuthorities().stream()
                 .filter(authority -> authority.ownerId().value().equals("butchercraft:execution"))

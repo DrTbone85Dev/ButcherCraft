@@ -151,8 +151,8 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/planning_cadence_adr",
                 "docs/adr/ADR-PROPOSED-PLANNING-CADENCE.md",
-                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
-                "AH-1-ADR-04",
+                "RATIFIED_ARCHITECTURAL_DIRECTION_CORE_CADENCE_IMPLEMENTED",
+                "AH-1-ADR-04 IM-010",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/scheduler_effects_authority_adr",
                 "docs/adr/ADR-PROPOSED-SCHEDULER-EFFECTS-AUTHORITY.md",
@@ -434,9 +434,29 @@ public final class ButcherCraftArchitectureManifest {
                 "Live bound terminal Transaction results publish authoritative result evidence for observation");
         platformContract(builder, "butchercraft:platform_contract/planning_cadence",
                 ValidationCategory.PLANNING, PLANNING,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-04 Deterministic Planning Cadence",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-010 Planning Cadence Live Enforcement",
                 "Planning Cycle eligibility, trigger ordering, input capture, and publication are Planning-owned");
+        platformContract(builder, "butchercraft:platform_contract/planning_live_periodic_cadence",
+                ValidationCategory.PLANNING, PLANNING,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-010 Planning Cadence Live Enforcement",
+                "Live Planning cadence uses deterministic periodic eligibility with bounded minimum separation");
+        platformContract(builder, "butchercraft:platform_contract/planning_live_trigger_cadence",
+                ValidationCategory.PLANNING, PLANNING,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-010 Planning Cadence Live Enforcement",
+                "Live Planning accepts source-owned trigger evidence, coalesces duplicate triggers, and rejects conflicts");
+        platformContract(builder, "butchercraft:platform_contract/planning_live_no_burst_catch_up",
+                ValidationCategory.PLANNING, PLANNING,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-010 Planning Cadence Live Enforcement",
+                "Loaded overdue Planning cadence schedules one next eligible cycle instead of burst catch-up");
+        platformContract(builder, "butchercraft:platform_contract/planning_effect_classification_blocker",
+                ValidationCategory.SCHEDULER, PLANNING,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-010 Planning Cadence Live Enforcement",
+                "Planning remains NON_REPEATABLE until Scheduler can represent cycle-scoped Effect Identity");
         platformContract(builder, "butchercraft:platform_contract/scheduler_runtime_authority",
                 ValidationCategory.SCHEDULER, SCHEDULER,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -511,8 +531,8 @@ public final class ButcherCraftArchitectureManifest {
                 "IM-009 Scheduler Effects Live Enforcement",
                 "One Scheduler Runtime Authority is declared for each loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/planning_world",
-                PLANNING, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-04 Deterministic Planning Cadence",
+                PLANNING, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-010 Planning Cadence Live Enforcement",
                 "One Planning runtime authority is declared for each loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/allocation_world",
                 ALLOCATION, ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -553,6 +573,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/production_processes", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_plans", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_run_runtime", PRODUCTION);
+        own(builder, "butchercraft:responsibility/planning_cadence_configuration", PLANNING);
+        own(builder, "butchercraft:responsibility/planning_trigger_identity", PLANNING);
+        own(builder, "butchercraft:responsibility/planning_input_capture", PLANNING);
+        own(builder, "butchercraft:responsibility/planning_cycle_publication", PLANNING);
         own(builder, "butchercraft:responsibility/planning_decisions", PLANNING);
         own(builder, "butchercraft:responsibility/approved_plans", PLANNING);
         own(builder, "butchercraft:responsibility/allocation_requests", ALLOCATION);
@@ -763,6 +787,34 @@ public final class ButcherCraftArchitectureManifest {
                 CHECKPOINT_RECOVERY,
                 ValidationCategory.PERSISTENCE,
                 "IM-006 assigns all-or-nothing owner restoration coordination and owner-supplied rollback orchestration to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/planning_cadence_configuration",
+                PLANNING,
+                ValidationCategory.PLANNING,
+                "IM-010 assigns live cadence configuration identity to Planning"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/planning_trigger_identity",
+                PLANNING,
+                ValidationCategory.PLANNING,
+                "IM-010 assigns Planning Trigger Identity consumption and conflict classification to Planning"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/planning_input_capture",
+                PLANNING,
+                ValidationCategory.PLANNING,
+                "IM-010 assigns Planning Cycle input freeze identity to Planning"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/planning_cycle_publication",
+                PLANNING,
+                ValidationCategory.PLANNING,
+                "IM-010 assigns bounded Planning Cycle publication to Planning"
         );
         contract(
                 builder,
@@ -1365,6 +1417,16 @@ public final class ButcherCraftArchitectureManifest {
                 OrderingPolicy.CANONICAL_ID,
                 new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.PLANNING.value())
         );
+        persistence(
+                builder,
+                "butchercraft:planning_cadence",
+                "butchercraft/planning_cadence.json",
+                PLANNING,
+                1,
+                PersistenceDataKind.MUTABLE_RUNTIME,
+                OrderingPolicy.CANONICAL_ID,
+                new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.PLANNING.value())
+        );
     }
 
     private static void addSchedulerEffects(ValidationContextBuilder builder) {
@@ -1422,6 +1484,9 @@ public final class ButcherCraftArchitectureManifest {
         invariant(builder, "butchercraft:invariant/transaction_validation",
                 SimulationInvariantType.KNOWN_INVARIANT,
                 "Economic mutation requires accepted Transaction validation");
+        invariant(builder, "butchercraft:invariant/planning_cadence_bounded",
+                SimulationInvariantType.KNOWN_INVARIANT,
+                "Planning cadence is bounded by periodic eligibility, minimum separation, and no burst catch-up");
     }
 
     private static ArchitectureComponent component(ArchitectureId id, String name, String packageRoot) {

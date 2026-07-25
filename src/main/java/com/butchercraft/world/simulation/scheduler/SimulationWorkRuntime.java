@@ -207,6 +207,24 @@ public final class SimulationWorkRuntime {
         diagnosticSummary = Optional.of(SchedulerValidation.requireText(reason, "Deferral reason", 2_048));
     }
 
+    synchronized void reschedulePending(long tick, long eligibleTick, String reason) {
+        SchedulerValidation.requireTick(tick, "Work reschedule tick");
+        SchedulerValidation.requireTick(eligibleTick, "Work reschedule eligible tick");
+        if (eligibleTick <= tick) {
+            throw new IllegalArgumentException("Rescheduled eligible tick must follow current tick");
+        }
+        if (tick < lastUpdatedSimulationTick) throw new IllegalStateException("Work tick cannot move backward");
+        if (status != SimulationWorkStatus.SCHEDULED
+                && status != SimulationWorkStatus.DEFERRED
+                && status != SimulationWorkStatus.RETRY_WAIT) {
+            throw new IllegalStateException("Work status cannot be rescheduled: " + status);
+        }
+        lastUpdatedSimulationTick = tick;
+        nextEligibleTick = OptionalLong.of(eligibleTick);
+        diagnosticSummary = Optional.of(SchedulerValidation.requireText(reason, "Reschedule reason", 2_048));
+        revision = Math.incrementExact(revision);
+    }
+
     synchronized void retry(long tick, long eligibleTick, WorkFailureCode failureCode, String reason) {
         if (eligibleTick <= tick) throw new IllegalArgumentException("Retry tick must follow current tick");
         transition(SimulationWorkStatus.RETRY_WAIT, tick);
