@@ -423,6 +423,15 @@ public final class ProductionManager {
             );
             return handleTransactionFailure(runtime, failure, process, tick, cost, runId);
         }
+        if (result.resultEvidence().isEmpty()
+                || !result.resultEvidence().orElseThrow().transactionId().equals(transaction.id())) {
+            ProductionFailure failure = ProductionFailure.of(
+                    ProductionFailureCode.TRANSACTION_NOT_APPLIED,
+                    "Production completion Transaction did not publish authoritative result evidence",
+                    transaction.id().value()
+            );
+            return handleTransactionFailure(runtime, failure, process, tick, cost, runId);
+        }
         EconomicTransaction applied = dependencies.transactionManager().find(transaction.id()).orElseThrow();
         if (applied.status() != TransactionStatus.APPLIED) {
             ProductionFailure failure = ProductionFailure.of(

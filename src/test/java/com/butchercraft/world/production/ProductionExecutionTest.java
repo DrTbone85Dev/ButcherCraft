@@ -51,6 +51,9 @@ class ProductionExecutionTest {
                 .getFirst().status());
         assertEquals(3, context.dependencies().transactionManager().history()
                 .getFirst().inventoryChangePlan().size());
+        assertTrue(context.dependencies().transactionManager()
+                .resultEvidenceFor(run.completionTransactionId().orElseThrow())
+                .isPresent());
         assertTrue(context.dependencies().orderManager().definitions().isEmpty());
     }
 

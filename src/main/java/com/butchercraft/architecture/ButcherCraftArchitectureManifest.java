@@ -407,21 +407,31 @@ public final class ButcherCraftArchitectureManifest {
                 "Transactions provide deterministic typed validation checks for binding and evidence mismatches");
         platformContract(builder, "butchercraft:platform_contract/transaction_validation_binding",
                 ValidationCategory.TRANSACTIONS, TRANSACTIONS,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-03 Transaction Validation Authority",
-                "A successful validation binds the proposal digest, Inventory Freshness Identity, "
-                        + "and validation plan digest");
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-008 Live Transaction Validation Binding Integration",
+                "Live accepted Transaction validation binds the Proposal Identity, Inventory Freshness Identity, "
+                        + "and Validation Plan Identity");
         platformContract(builder, "butchercraft:platform_contract/transaction_consumption_authority",
                 ValidationCategory.TRANSACTIONS, TRANSACTIONS,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-03 Transaction Validation Authority",
-                "Validation Consumption Authority is private, single-use, runtime-only, and Transaction-owned");
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-008 Live Transaction Validation Binding Integration",
+                "Live Validation Consumption Authority is private, single-use, runtime-only, and Transaction-owned");
         platformContract(builder, "butchercraft:platform_contract/serialized_transaction_owner_boundary",
                 ValidationCategory.TRANSACTIONS, TRANSACTIONS,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-03 Transaction Validation Authority",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-008 Live Transaction Validation Binding Integration",
                 "Validation, freshness check, authority consumption, and mutation occur within a serialized "
                         + "Transaction-owner boundary");
+        platformContract(builder, "butchercraft:platform_contract/transaction_live_duplicate_conflict_behavior",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-008 Live Transaction Validation Binding Integration",
+                "Live duplicate observations and conflicting same-id proposals are classified before mutation");
+        platformContract(builder, "butchercraft:platform_contract/transaction_live_result_evidence",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-008 Live Transaction Validation Binding Integration",
+                "Live bound terminal Transaction results publish authoritative result evidence for observation");
         platformContract(builder, "butchercraft:platform_contract/planning_cadence",
                 ValidationCategory.PLANNING, PLANNING,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,

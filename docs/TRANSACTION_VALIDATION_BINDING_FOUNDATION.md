@@ -1,6 +1,6 @@
 # Transaction Validation Binding Foundation
 
-Status: Implemented foundation only
+Status: Implemented foundation; live runtime integration implemented by IM-008
 
 Source architecture:
 
@@ -9,9 +9,17 @@ Source architecture:
 
 ## Scope
 
-IM-004 adds pure Java Transaction validation binding primitives. It does not change live Transaction submission, validation, execution, replay, persistence, schemas, Scheduler integration, Planning integration, Production behavior, Execution behavior, Allocation behavior, Checkpoint publication, gameplay, resources, or UI.
+IM-004 added pure Java Transaction validation binding primitives.
 
-The existing live Transaction path remains authoritative until a later milestone explicitly wires these primitives into `TransactionManager`, `TransactionValidator`, `TransactionExecutor`, replay, and persistence.
+IM-008 wires those primitives into live `TransactionManager`,
+`TransactionValidator`, `TransactionExecutor`, replay, duplicate/conflict
+handling, and Production observation. See
+`docs/LIVE_TRANSACTION_VALIDATION_BINDING.md`.
+
+Transaction persistence remains schema 1. Durable binding/result-evidence
+migration, Transaction/Inventory checkpoint participation, startup recovery,
+Scheduler effect enforcement, Planning cadence, Execution, Allocation,
+gameplay, resources, and UI remain outside this foundation document.
 
 ## Foundation Types
 
@@ -48,13 +56,13 @@ Inventory Freshness Identity is source-owned and deterministic. It intentionally
 
 ## Explicit Deferrals
 
-The following remain unauthorized by IM-004:
+The following remain unauthorized by IM-004 and IM-008:
 
-- Live Transaction validation binding integration.
-- Serialized Transaction-owner boundary implementation.
 - Persistent Transaction result evidence schema changes.
-- Replay migration to explicit recovered baselines.
-- Checkpoint publication or generation selection.
+- Transaction/Inventory checkpoint publication or generation selection.
+- Startup recovery or post-consumption crash recovery.
 - Evidence Lifecycle retention integration.
-- Scheduler, Planning, Production, Execution, or Allocation integration.
+- Scheduler effect enforcement.
+- Planning cadence changes.
+- Execution or Allocation integration.
 - Gameplay behavior.

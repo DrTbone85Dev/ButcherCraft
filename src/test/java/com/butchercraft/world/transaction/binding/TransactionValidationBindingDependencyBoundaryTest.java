@@ -74,8 +74,8 @@ class TransactionValidationBindingDependencyBoundaryTest {
         );
         for (Path file : liveRuntimeFiles) {
             String source = Files.readString(file);
-            assertFalse(source.contains("com.butchercraft.world.transaction.binding"));
             assertFalse(source.contains("ValidationConsumptionAuthority"));
+            assertFalse(source.contains("java.io.Serializable"));
         }
     }
 

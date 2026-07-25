@@ -69,8 +69,11 @@ class TransactionExecutionTest {
         ).success());
         assertEquals(20L, inventory.quantityIn(InventoryTestFixtures.BEEF_INVENTORY, InventoryTestFixtures.BEEF));
 
-        assertTrue(executor.execute(pending.withStatus(TransactionStatus.VALIDATED), accepted).success());
-        assertEquals(25L, inventory.quantityIn(InventoryTestFixtures.BEEF_INVENTORY, InventoryTestFixtures.BEEF));
+        TransactionResult withoutAuthority = executor.execute(pending.withStatus(TransactionStatus.VALIDATED), accepted);
+        assertFalse(withoutAuthority.success());
+        assertEquals(TransactionFailureCode.APPLICATION_WITHOUT_VALIDATION,
+                withoutAuthority.failureCode().orElseThrow());
+        assertEquals(20L, inventory.quantityIn(InventoryTestFixtures.BEEF_INVENTORY, InventoryTestFixtures.BEEF));
     }
 
     @Test
@@ -106,7 +109,17 @@ class TransactionExecutionTest {
                 "test:once", TransactionType.INVENTORY_ADD, 1L, 26L
         );
         assertTrue(manager.submit(valid).success());
-        assertFalse(manager.submit(valid).success());
+        assertTrue(manager.submit(valid).success());
+        assertFalse(manager.submit(EconomicTransaction.builder()
+                .id(TransactionId.of("test:once"))
+                .type(TransactionType.INVENTORY_ADD)
+                .destinationActorId(InventoryTestFixtures.WAREHOUSE_ACTOR)
+                .destinationInventoryId(InventoryTestFixtures.BEEF_INVENTORY)
+                .goodId(InventoryTestFixtures.BEEF)
+                .quantity(2L)
+                .unitOfMeasure(UnitOfMeasure.POUND)
+                .simulationTick(27L)
+                .build()).success());
         assertFalse(manager.submit(EconomicTransaction.builder()
                 .id(TransactionId.of("test:unknown"))
                 .type(TransactionType.INVENTORY_ADD)

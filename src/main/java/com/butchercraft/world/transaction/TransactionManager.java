@@ -1,8 +1,13 @@
 package com.butchercraft.world.transaction;
 
 import com.butchercraft.world.inventory.InventoryManager;
+import com.butchercraft.world.transaction.binding.AuthoritativeTransactionResultEvidence;
+import com.butchercraft.world.transaction.binding.TransactionTerminalResult;
+import com.butchercraft.world.transaction.binding.TransactionProposalIdentity;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -10,6 +15,8 @@ public final class TransactionManager {
     private final TransactionRegistry registry;
     private final TransactionValidator validator;
     private final TransactionExecutor executor;
+    private final Map<TransactionId, TransactionProposalIdentity> proposalIdentities = new LinkedHashMap<>();
+    private final Map<TransactionId, TransactionResult> authoritativeResults = new LinkedHashMap<>();
 
     public TransactionManager(InventoryManager inventoryManager) {
         this(new TransactionRegistry(), inventoryManager);
@@ -28,17 +35,15 @@ public final class TransactionManager {
                                 + String.join("; ", references.messages())
                 );
             }
+            proposalIdentities.put(transaction.id(), TransactionBindingFactory.proposalIdentity(transaction));
         }
     }
 
     public synchronized TransactionResult submit(EconomicTransaction transaction) {
         Objects.requireNonNull(transaction, "transaction");
+        TransactionProposalIdentity proposalIdentity = TransactionBindingFactory.proposalIdentity(transaction);
         if (registry.contains(transaction.id())) {
-            return TransactionResult.rejected(
-                    TransactionFailureCode.VALIDATION_FAILED,
-                    List.of("Duplicate transaction id: " + transaction.id().value()),
-                    transaction.simulationTick()
-            );
+            return duplicateOrConflict(transaction, proposalIdentity);
         }
         if (transaction.status() != TransactionStatus.PENDING) {
             return TransactionResult.rejected(
@@ -57,20 +62,33 @@ public final class TransactionManager {
         TransactionValidation validation = validator.validateForSubmission(transaction);
         if (!validation.accepted()) {
             registry.replace(transaction.withStatus(TransactionStatus.REJECTED));
-            return rejectedResult(validation, transaction.simulationTick());
+            proposalIdentities.put(transaction.id(), proposalIdentity);
+            TransactionResult result = rejectedResult(validation, transaction.simulationTick());
+            authoritativeResults.put(transaction.id(), result);
+            return result;
         }
 
         EconomicTransaction validated = transaction.withStatus(TransactionStatus.VALIDATED);
         registry.replace(validated);
-        TransactionResult result = executor.execute(validated, validation);
+        TransactionResult result = executor.execute(validated, LiveTransactionValidation.issue(validation));
         registry.replace(validated.withStatus(
                 result.success() ? TransactionStatus.APPLIED : TransactionStatus.REJECTED
         ));
+        proposalIdentities.put(transaction.id(), validation.proposalIdentity().orElse(proposalIdentity));
+        authoritativeResults.put(transaction.id(), result);
         return result;
     }
 
     public synchronized Optional<EconomicTransaction> find(TransactionId id) {
         return registry.find(id);
+    }
+
+    public synchronized Optional<TransactionResult> resultFor(TransactionId id) {
+        return Optional.ofNullable(authoritativeResults.get(Objects.requireNonNull(id, "id")));
+    }
+
+    public synchronized Optional<AuthoritativeTransactionResultEvidence> resultEvidenceFor(TransactionId id) {
+        return resultFor(id).flatMap(TransactionResult::resultEvidence);
     }
 
     public synchronized int size() {
@@ -112,7 +130,7 @@ public final class TransactionManager {
                             + String.join("; ", validation.messages())
             );
         }
-        TransactionResult result = replayExecutor.execute(accepted, validation);
+        TransactionResult result = replayExecutor.execute(accepted, LiveTransactionValidation.issue(validation));
         if (!result.success()) {
             throw new IllegalStateException(
                     "Transaction replay execution failed for " + historical.id().value() + ": "
@@ -122,7 +140,52 @@ public final class TransactionManager {
         return result;
     }
 
+    private TransactionResult duplicateOrConflict(
+            EconomicTransaction submitted,
+            TransactionProposalIdentity submittedProposalIdentity
+    ) {
+        TransactionProposalIdentity existingProposal = proposalIdentities.get(submitted.id());
+        if (existingProposal == null) {
+            EconomicTransaction existing = registry.find(submitted.id()).orElseThrow();
+            existingProposal = TransactionBindingFactory.proposalIdentity(existing);
+            proposalIdentities.put(existing.id(), existingProposal);
+        }
+        if (existingProposal.equals(submittedProposalIdentity)) {
+            TransactionResult existingResult = authoritativeResults.get(submitted.id());
+            if (existingResult != null) {
+                return TransactionResult.duplicateObservation(existingResult, submitted.simulationTick());
+            }
+            return TransactionResult.rejected(
+                    TransactionFailureCode.PERSISTENCE_COMPATIBILITY_FAILURE,
+                    List.of("Existing Transaction has no live authoritative result evidence: "
+                            + submitted.id().value()),
+                    submitted.simulationTick()
+            );
+        }
+        Optional<AuthoritativeTransactionResultEvidence> existingEvidence =
+                resultEvidenceFor(submitted.id());
+        return TransactionResult.conflict(
+                TransactionFailureCode.TRANSACTION_IDENTITY_CONFLICT,
+                List.of("Same Transaction identity cannot authorize a different canonical proposal identity: "
+                        + submitted.id().value()),
+                submitted.simulationTick(),
+                existingEvidence
+        );
+    }
+
     private static TransactionResult rejectedResult(TransactionValidation validation, long executionTick) {
+        if (validation.binding().isPresent() && validation.inventoryFreshnessIdentity().isPresent()) {
+            return TransactionResult.rejected(
+                    validation.failureCode().orElse(TransactionFailureCode.UNKNOWN),
+                    validation.messages(),
+                    executionTick,
+                    TransactionBindingFactory.resultEvidence(
+                            validation.binding().orElseThrow(),
+                            TransactionTerminalResult.REJECTED,
+                            validation.inventoryFreshnessIdentity().orElseThrow()
+                    )
+            );
+        }
         return TransactionResult.rejected(
                 validation.failureCode().orElse(TransactionFailureCode.UNKNOWN),
                 validation.messages(),

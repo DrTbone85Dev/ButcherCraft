@@ -240,21 +240,19 @@ class ArchitectureRulesTest {
                     .anyMatch(contract -> contract.id().value().equals(contractId)
                             && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         }
-        assertTrue(context.platformContracts().stream()
-                .anyMatch(contract -> contract.id().value()
-                        .equals("butchercraft:platform_contract/transaction_validation_binding")
-                        && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
-        assertTrue(context.platformContracts().stream()
-                .anyMatch(contract -> contract.id().value()
-                        .equals("butchercraft:platform_contract/transaction_consumption_authority")
-                        && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
-        assertTrue(context.platformContracts().stream()
-                .anyMatch(contract -> contract.id().value()
-                        .equals("butchercraft:platform_contract/serialized_transaction_owner_boundary")
-                        && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        List<String> implementedLiveContracts = List.of(
+                "butchercraft:platform_contract/transaction_validation_binding",
+                "butchercraft:platform_contract/transaction_consumption_authority",
+                "butchercraft:platform_contract/serialized_transaction_owner_boundary",
+                "butchercraft:platform_contract/transaction_live_duplicate_conflict_behavior",
+                "butchercraft:platform_contract/transaction_live_result_evidence"
+        );
+
+        for (String contractId : implementedLiveContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
     }
 
     @Test
@@ -716,7 +714,12 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/validation_consumption_authority_foundation",
                         "butchercraft:platform_contract/transaction_result_evidence_foundation",
                         "butchercraft:platform_contract/transaction_duplicate_conflict_foundation",
-                        "butchercraft:platform_contract/transaction_binding_validation_checks_foundation"
+                        "butchercraft:platform_contract/transaction_binding_validation_checks_foundation",
+                        "butchercraft:platform_contract/transaction_validation_binding",
+                        "butchercraft:platform_contract/transaction_consumption_authority",
+                        "butchercraft:platform_contract/serialized_transaction_owner_boundary",
+                        "butchercraft:platform_contract/transaction_live_duplicate_conflict_behavior",
+                        "butchercraft:platform_contract/transaction_live_result_evidence"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
