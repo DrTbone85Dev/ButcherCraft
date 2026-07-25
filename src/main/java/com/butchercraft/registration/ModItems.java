@@ -56,7 +56,7 @@ public final class ModItems {
     );
 
     /**
-     * Development-only product fixture used to verify ItemStack product data integration.
+     * Promoted Beef Trim gameplay item. The original registry id is retained for save compatibility.
      */
     public static final DeferredItem<ProductTestItem> BEEF_TRIM_TEST = ITEMS.register(
             "beef_trim_test",
@@ -70,8 +70,10 @@ public final class ModItems {
             ))
     );
 
+    public static final DeferredItem<ProductTestItem> BEEF_TRIM = BEEF_TRIM_TEST;
+
     /**
-     * Development-only product fixture used to verify ItemStack product data integration.
+     * Promoted Ground Beef gameplay item. The original registry id is retained for save compatibility.
      */
     public static final DeferredItem<ProductTestItem> GROUND_BEEF_TEST = ITEMS.register(
             "ground_beef_test",
@@ -84,6 +86,8 @@ public final class ModItems {
                     700
             ))
     );
+
+    public static final DeferredItem<ProductTestItem> GROUND_BEEF = GROUND_BEEF_TEST;
 
     /**
      * Development-only product fixture used to verify Packaging Table output.

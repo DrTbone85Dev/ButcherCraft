@@ -622,6 +622,26 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
                 "Automated server-world tests verify malformed and uncertain restored grinder states stop visibly without mutation");
+        platformContract(builder, "butchercraft:platform_contract/grinder_promoted_gameplay_content",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-014 Grinder Gameplay Promotion and Hardening",
+                "The promoted Grinder path presents Beef Trim and Ground Beef as player-facing content while retaining legacy registry compatibility");
+        platformContract(builder, "butchercraft:platform_contract/grinder_survival_obtainability",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-014 Grinder Gameplay Promotion and Hardening",
+                "The Grinder has normal gameplay obtainability through generated recipe, block item, creative tab entry, and loot table");
+        platformContract(builder, "butchercraft:platform_contract/grinder_player_visible_status_sync",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-014 Grinder Gameplay Promotion and Hardening",
+                "The Grinder exposes owner state, bounded progress, total duration, and public failure code through server-owned menu data");
+        platformContract(builder, "butchercraft:platform_contract/grinder_active_break_preservation",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-014 Grinder Gameplay Promotion and Hardening",
+                "Breaking an active Grinder cancels pending workstation processing, drops preserved input, and does not publish output");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {

@@ -1,6 +1,6 @@
 # ButcherCraft Asset Manifest
 
-Status: v0.8.0E asset framework baseline
+Status: v0.8.0E asset framework baseline plus IM-014 promoted Grinder assets
 
 ## Purpose
 
@@ -24,6 +24,7 @@ No current ButcherCraft v0.8.0 visual asset is production approved.
 | Block models | `src/generated/resources/assets/butchercraft/models/block/*.json` for generated workstation models. |
 | Item models | `src/generated/resources/assets/butchercraft/models/item/*.json` for generated items; legacy hand-authored development fixtures may remain in `src/main/resources/assets/butchercraft/models/item`. |
 | Workstation textures | `src/main/resources/assets/butchercraft/textures/block/workstation/*.png`. |
+| Product textures | `src/main/resources/assets/butchercraft/textures/item/product/*.png`. |
 | Packaging textures | `src/main/resources/assets/butchercraft/textures/item/packaging/*.png`. |
 | GUI textures | `src/main/resources/assets/butchercraft/textures/gui/*.png`. |
 | Development fixture textures | `src/main/resources/assets/butchercraft/textures/item/development_test_item.png`. |
@@ -47,23 +48,30 @@ No current ButcherCraft v0.8.0 visual asset is production approved.
 
 | Asset name | Registry/resource id | Category | Source path | Generated | Required dimensions | Current status | Placeholder | Intended material | Model dependency | Texture dependency | Notes | In-game review |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Grinder block model | `butchercraft:block/grinder` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/grinder.json` | Yes | JSON model within 0-16 block bounds | Placeholder | Yes | Stainless steel grinder body | `assets/butchercraft/blockstates/grinder.json` | `butchercraft:item/development_test_item` | Shape is only a development proof and needs future art pass. | Review Required |
-| Grinder item model | `butchercraft:item/grinder` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/grinder.json` | Yes | Parent block model | Placeholder | Yes | Same as block | `butchercraft:block/grinder` | Same as block | Inherits generated block model. | Review Required |
+| Grinder block model | `butchercraft:block/grinder` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/grinder.json` | Yes | JSON model within 0-16 block bounds | Framework Ready | Yes | Stainless steel grinder body | `assets/butchercraft/blockstates/grinder.json` | `butchercraft:block/workstation/grinder_frame`, `butchercraft:block/workstation/grinder_surface`, `butchercraft:block/workstation/grinder_feed` | Shape and texture targets are stable enough for the promoted Grinder gameplay slice. | Review Required |
+| Grinder item model | `butchercraft:item/grinder` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/grinder.json` | Yes | Parent block model | Framework Ready | Yes | Same as block | `butchercraft:block/grinder` | Same as block | Inherits generated block model. | Review Required |
 | Bandsaw lower block model | `butchercraft:block/bandsaw` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/bandsaw.json` | Yes | JSON model within 0-16 block bounds | Placeholder | Yes | Stainless steel bandsaw body | `assets/butchercraft/blockstates/bandsaw.json` | `butchercraft:item/development_test_item` | Paired block behavior is production gameplay; visuals are not final. | Review Required |
 | Bandsaw upper block model | `butchercraft:block/bandsaw_upper` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/bandsaw_upper.json` | Yes | JSON model within 0-16 block bounds | Placeholder | Yes | Stainless steel upper frame | `assets/butchercraft/blockstates/bandsaw_upper.json` | `butchercraft:item/development_test_item` | Must preserve two-block readability after final art. | Review Required |
 | Bandsaw item model | `butchercraft:item/bandsaw` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/bandsaw.json` | Yes | Parent lower block model | Placeholder | Yes | Same as lower block | `butchercraft:block/bandsaw` | Same as lower block | Item uses lower block representation. | Review Required |
 | Development Processing Workstation | `butchercraft:development_processing_workstation` | Development fixture block/item | `src/main/resources/assets/butchercraft/models/block/development_processing_workstation.json` | No | JSON model and generated item parent | Placeholder | Yes | Development-only fixture | Hand-authored block and item models | `butchercraft:item/development_test_item` | Legacy diagnostic fixture retained for tests. | Deferred |
 
+## Promoted Product Asset Section
+
+| Asset name | Registry/resource id | Category | Associated content | Source path | Generated | Required dimensions | Current status | Placeholder | Intended material | Model dependency | Texture dependency | Artist notes | In-game review |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Beef Trim | `butchercraft:beef_trim_test` | Promoted product item | `butchercraft:beef_trim` | `src/main/resources/assets/butchercraft/models/item/beef_trim_test.json` and generated mirror | Mixed | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic raw beef trim | `minecraft:item/generated` | `butchercraft:item/product/beef_trim` | Registry id is retained for save compatibility; player-facing name is Beef Trim. | Review Required |
+| Ground Beef | `butchercraft:ground_beef_test` | Promoted product item | `butchercraft:ground_beef` | `src/main/resources/assets/butchercraft/models/item/ground_beef_test.json` and generated mirror | Mixed | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic ground beef | `minecraft:item/generated` | `butchercraft:item/product/ground_beef` | Registry id is retained for save compatibility; player-facing name is Ground Beef. | Review Required |
+
 ## Development Product Fixture Audit
 
 The following product fixture item models are active development content and intentionally share `butchercraft:item/development_test_item` until a product item factory and final product art are scheduled:
 
-`beef_trim_test`, `ground_beef_test`, `pork_trim_test`, `ground_pork_test`, `bison_trim_test`, `ground_bison_test`, `beef_forequarter_test`, `beef_chuck_test`, `beef_rib_test`, `beef_packer_brisket_test`, `beef_plate_test`, `beef_shank_test`, `beef_fat_test`, `beef_bone_test`, `beef_hindquarter_test`, `beef_round_test`, `beef_sirloin_test`, `beef_short_loin_test`, `beef_flank_test`, `t_bone_steak_test`, `porterhouse_steak_test`, `beef_strip_loin_test`, `beef_tenderloin_test`, `top_round_test`, `bottom_round_test`, `eye_of_round_test`, `sirloin_tip_test`, `top_sirloin_test`, `sirloin_steak_test`, and `tri_tip_test`.
+`pork_trim_test`, `ground_pork_test`, `bison_trim_test`, `ground_bison_test`, `beef_forequarter_test`, `beef_chuck_test`, `beef_rib_test`, `beef_packer_brisket_test`, `beef_plate_test`, `beef_shank_test`, `beef_fat_test`, `beef_bone_test`, `beef_hindquarter_test`, `beef_round_test`, `beef_sirloin_test`, `beef_short_loin_test`, `beef_flank_test`, `t_bone_steak_test`, `porterhouse_steak_test`, `beef_strip_loin_test`, `beef_tenderloin_test`, `top_round_test`, `bottom_round_test`, `eye_of_round_test`, `sirloin_tip_test`, `top_sirloin_test`, `sirloin_steak_test`, and `tri_tip_test`.
 
 | Asset family | Category | Source paths | Generated | Required dimensions | Current status | Placeholder | Intended material | Dependencies | Notes | In-game review |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Development product fixture items | Product fixture item models | `src/main/resources/assets/butchercraft/models/item/*_test.json` for legacy grinder fixtures and `src/generated/resources/assets/butchercraft/models/item/*_test.json` for newer fixtures | Mixed | 16x16 shared placeholder texture | Placeholder | Yes | Generic development product marker | `butchercraft:item/development_test_item` | Not production retail/product art. Retail Ground Beef now has its own packaging texture target. | Deferred |
-| Development product placeholder texture | `butchercraft:item/development_test_item` | Shared development texture | `src/main/resources/assets/butchercraft/textures/item/development_test_item.png` | No | 16x16 PNG | Placeholder | Yes | Neutral unfinished marker | Used by legacy fixtures and non-packaging prototype workstation models | Replaced from 1x1 to 16x16 to avoid mip warnings. | Deferred |
+| Development product fixture items | Product fixture item models | `src/main/resources/assets/butchercraft/models/item/*_test.json` for legacy fixtures and `src/generated/resources/assets/butchercraft/models/item/*_test.json` for newer fixtures | Mixed | 16x16 shared placeholder texture | Placeholder | Yes | Generic development product marker | `butchercraft:item/development_test_item` | Not production retail/product art. Beef Trim, Ground Beef, and Retail Ground Beef now have distinct texture targets. | Deferred |
+| Development product placeholder texture | `butchercraft:item/development_test_item` | Shared development texture | `src/main/resources/assets/butchercraft/textures/item/development_test_item.png` | No | 16x16 PNG | Placeholder | Yes | Neutral unfinished marker | Used by non-promoted development fixtures and prototype workstation models | Replaced from 1x1 to 16x16 to avoid mip warnings. | Deferred |
 
 ## Audit Notes
 

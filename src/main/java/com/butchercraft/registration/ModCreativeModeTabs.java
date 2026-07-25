@@ -17,11 +17,12 @@ public final class ModCreativeModeTabs {
             CREATIVE_MODE_TABS.register("butchercraft", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.butchercraft"))
                     .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
-                    .icon(() -> ModItems.DEVELOPMENT_TEST_ITEM.get().getDefaultInstance())
+                    .icon(() -> ModItems.GRINDER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
+                        output.accept(ModItems.GRINDER.get());
+                        output.accept(ModItems.BEEF_TRIM.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance());
                         output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
-                        output.accept(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
-                        output.accept(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
                         output.accept(ModItems.RETAIL_GROUND_BEEF_TEST.get().getDefaultInstance());
                         output.accept(ModItems.PORK_TRIM_TEST.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_PORK_TEST.get().getDefaultInstance());
@@ -51,7 +52,6 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.TOP_SIRLOIN_TEST.get().getDefaultInstance());
                         output.accept(ModItems.SIRLOIN_STEAK_TEST.get().getDefaultInstance());
                         output.accept(ModItems.TRI_TIP_TEST.get().getDefaultInstance());
-                        output.accept(ModItems.GRINDER.get());
                         output.accept(ModItems.BANDSAW.get());
                         output.accept(ModItems.PACKAGING_TABLE.get());
                         output.accept(ModItems.FOAM_TRAY.get());

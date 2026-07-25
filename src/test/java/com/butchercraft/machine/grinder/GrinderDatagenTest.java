@@ -37,9 +37,11 @@ class GrinderDatagenTest {
         String dataGenerators = source("src/main/java/com/butchercraft/data/ButcherCraftDataGenerators.java");
         String blockStates = source("src/main/java/com/butchercraft/data/ButcherCraftBlockStateProvider.java");
         String lootTables = source("src/main/java/com/butchercraft/data/ButcherCraftLootTableProvider.java");
+        String recipes = source("src/main/java/com/butchercraft/data/ButcherCraftRecipeProvider.java");
 
         assertTrue(dataGenerators.contains("ButcherCraftBlockStateProvider"));
         assertTrue(dataGenerators.contains("ButcherCraftLootTableProvider"));
+        assertTrue(dataGenerators.contains("ButcherCraftRecipeProvider"));
         assertTrue(dataGenerators.contains("event.includeClient()"));
         assertTrue(dataGenerators.contains("event.includeServer()"));
         assertTrue(blockStates.contains("ButcherCraft Block States"));
@@ -52,6 +54,29 @@ class GrinderDatagenTest {
         assertTrue(lootTables.contains("dropSelf(ModBlocks.GRINDER.get())"));
         assertTrue(lootTables.contains("protected Iterable<Block> getKnownBlocks()"));
         assertTrue(lootTables.contains("ModBlocks.GRINDER.get()"));
+        assertTrue(recipes.contains("extends RecipeProvider"));
+        assertTrue(recipes.contains("ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GRINDER.get())"));
+        assertTrue(recipes.contains("Items.IRON_INGOT"));
+        assertTrue(recipes.contains("Items.COPPER_INGOT"));
+    }
+
+    @Test
+    void generatedGrinderRecipeMakesGrinderSurvivalObtainable() throws IOException {
+        Path recipe = TestProjectPaths.projectPath(
+                "src/generated/resources/data/butchercraft/recipe/grinder.json"
+        );
+        assertTrue(
+                Files.isRegularFile(recipe),
+                "Missing generated grinder recipe. Run .\\gradlew.bat runData and copy src/generated/resources."
+        );
+
+        var json = JsonParser.parseString(Files.readString(recipe)).getAsJsonObject();
+
+        assertEquals("minecraft:crafting_shaped", json.get("type").getAsString());
+        assertEquals("ICI", json.getAsJsonArray("pattern").get(0).getAsString());
+        assertEquals("SRS", json.getAsJsonArray("pattern").get(1).getAsString());
+        assertEquals("ICI", json.getAsJsonArray("pattern").get(2).getAsString());
+        assertEquals("butchercraft:grinder", recipeResult(json));
     }
 
     private static String source(String relativePath) throws IOException {
@@ -70,5 +95,13 @@ class GrinderDatagenTest {
         var json = JsonParser.parseString(Files.readString(definition)).getAsJsonObject();
 
         assertEquals("butchercraft:grinding", json.get("workstation_capability").getAsString());
+    }
+
+    private static String recipeResult(com.google.gson.JsonObject json) {
+        var result = json.getAsJsonObject("result");
+        if (result.has("id")) {
+            return result.get("id").getAsString();
+        }
+        return result.get("item").getAsString();
     }
 }

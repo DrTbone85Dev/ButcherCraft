@@ -206,7 +206,7 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Beef Trim resolves to grind_beef for development station: " + workstationDiagnostic.beefTrimResolvesToGrindBeef()), false);
         source.sendSuccess(() -> Component.literal("grind_beef duration resolves to 60 ticks: " + workstationDiagnostic.grindBeefDurationIs60Ticks()), false);
         source.sendSuccess(() -> Component.literal("Prototype processing context validates: " + workstationDiagnostic.prototypeContextValidates()), false);
-        source.sendSuccess(() -> Component.literal("Output mapping resolves to Ground Beef Test Product: " + workstationDiagnostic.outputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Output mapping resolves to Ground Beef: " + workstationDiagnostic.outputMappingResolves()), false);
         source.sendSuccess(() -> Component.literal("Grinder block registered: " + grinderDiagnostic.blockRegistered()), false);
         source.sendSuccess(() -> Component.literal("Grinder block entity registered: " + grinderDiagnostic.blockEntityRegistered()), false);
         source.sendSuccess(() -> Component.literal("Grinder menu registered: " + grinderDiagnostic.menuRegistered()), false);

@@ -1,6 +1,7 @@
 package com.butchercraft.product;
 
 import com.butchercraft.test.TestProjectPaths;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -8,14 +9,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ProductDataAssetsTest {
     @Test
     void productLanguageEntriesExist() throws IOException {
         String language = Files.readString(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/lang/en_us.json"));
+        var languageJson = JsonParser.parseString(language).getAsJsonObject();
 
         assertTrue(language.contains("\"item.butchercraft.beef_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_beef_test\""));
+        assertEquals("Beef Trim", languageJson.get("item.butchercraft.beef_trim_test").getAsString());
+        assertEquals("Ground Beef", languageJson.get("item.butchercraft.ground_beef_test").getAsString());
         assertTrue(language.contains("\"item.butchercraft.retail_ground_beef_test\""));
         assertTrue(language.contains("\"item.butchercraft.pork_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_pork_test\""));
@@ -51,9 +56,21 @@ class ProductDataAssetsTest {
     }
 
     @Test
-    void productItemModelsExistAndUsePlaceholderTexture() throws IOException {
-        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/beef_trim_test.json"));
-        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_beef_test.json"));
+    void productItemModelsUseExpectedTextures() throws IOException {
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/beef_trim.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/ground_beef.png"
+        )));
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/beef_trim_test.json"),
+                "butchercraft:item/product/beef_trim"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_beef_test.json"),
+                "butchercraft:item/product/ground_beef"
+        );
         assertRetailGroundBeefModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/retail_ground_beef_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/pork_trim_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_pork_test.json"));
@@ -87,10 +104,14 @@ class ProductDataAssetsTest {
     }
 
     private static void assertPlaceholderModel(Path path) throws IOException {
+        assertGeneratedModel(path, "butchercraft:item/development_test_item");
+    }
+
+    private static void assertGeneratedModel(Path path, String texture) throws IOException {
         assertTrue(Files.isRegularFile(path), "Expected item model at " + path);
         String model = Files.readString(path);
         assertTrue(model.contains("\"minecraft:item/generated\""));
-        assertTrue(model.contains("\"butchercraft:item/development_test_item\""));
+        assertTrue(model.contains("\"" + texture + "\""));
     }
 
     private static void assertRetailGroundBeefModel(Path path) throws IOException {

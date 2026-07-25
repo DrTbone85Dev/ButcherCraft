@@ -15,6 +15,10 @@ import java.util.Objects;
 final class ButcherCraftItemModelProvider extends ItemModelProvider {
     private static final ResourceLocation DEVELOPMENT_PLACEHOLDER_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/development_test_item");
+    private static final ResourceLocation BEEF_TRIM_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/beef_trim");
+    private static final ResourceLocation GROUND_BEEF_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_beef");
     private static final ResourceLocation RETAIL_GROUND_BEEF_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/packaging/retail_ground_beef");
 
@@ -25,8 +29,8 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         basicItem(ModItems.DEVELOPMENT_TEST_ITEM.get());
-        placeholderProductItem(ModItems.BEEF_TRIM_TEST.get());
-        placeholderProductItem(ModItems.GROUND_BEEF_TEST.get());
+        generatedItem(ModItems.BEEF_TRIM.get(), BEEF_TRIM_TEXTURE);
+        generatedItem(ModItems.GROUND_BEEF.get(), GROUND_BEEF_TEXTURE);
         generatedItem(ModItems.RETAIL_GROUND_BEEF_TEST.get(), RETAIL_GROUND_BEEF_TEXTURE);
         placeholderProductItem(ModItems.PORK_TRIM_TEST.get());
         placeholderProductItem(ModItems.GROUND_PORK_TEST.get());

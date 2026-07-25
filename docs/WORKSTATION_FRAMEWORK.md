@@ -168,7 +168,7 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:sirloin_steak` -> `butchercraft:sirloin_steak_test`
 - `butchercraft:tri_tip` -> `butchercraft:tri_tip_test`
 
-This mapping is built from registered development fixture items and their default product data. It is not a universal item factory. Future product item creation needs a deliberate data-driven design.
+This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
 
 ## Development Workstation
 

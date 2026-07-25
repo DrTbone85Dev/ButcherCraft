@@ -149,8 +149,8 @@ Default values are test fixtures, not final balance:
 
 | Item | Product type | Source | State | Quantity | Quality |
 | --- | --- | --- | --- | --- | --- |
-| Beef Trim Test Product | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
-| Ground Beef Test Product | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
+| Beef Trim | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Beef | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
 | Retail Ground Beef Test Product | `butchercraft:retail_ground_beef` | `butchercraft:beef` | `butchercraft:retail_packaged` | `900 gram` | `700` |
 | Pork Trim Test Product | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Pork Test Product | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
@@ -183,7 +183,7 @@ Default values are test fixtures, not final balance:
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
-Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. The development-only mapping derives product definition ids from fixture item default product data; it is still not a general product item factory.
+Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining their legacy registry ids for compatibility. The development-only mapping derives product definition ids from item default product data; it is still not a general product item factory.
 
 ## Tooltip Behavior
 

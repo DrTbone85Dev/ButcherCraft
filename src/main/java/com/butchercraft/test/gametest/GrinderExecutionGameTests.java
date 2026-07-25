@@ -52,7 +52,13 @@ public final class GrinderExecutionGameTests {
     public static void registrationSmokeDiscoversButchercraftGameTests(GameTestHelper helper) {
         helper.assertTrue(helper.getLevel().getServer() != null, "GameTest server is available");
         helper.assertTrue(ModBlocks.GRINDER.get() != null, "Grinder block is registered");
-        helper.assertTrue(ModItems.BEEF_TRIM_TEST.get() != null, "Beef trim fixture item is registered");
+        helper.assertTrue(ModItems.GRINDER.get() != null, "Grinder item is registered");
+        helper.assertTrue(ModItems.BEEF_TRIM.get() != null, "Beef Trim gameplay item is registered");
+        helper.assertTrue(ModItems.GROUND_BEEF.get() != null, "Ground Beef gameplay item is registered");
+        helper.assertTrue(ModItems.BEEF_TRIM.get() == ModItems.BEEF_TRIM_TEST.get(),
+                "Legacy Beef Trim registry identity remains compatible");
+        helper.assertTrue(ModItems.GROUND_BEEF.get() == ModItems.GROUND_BEEF_TEST.get(),
+                "Legacy Ground Beef registry identity remains compatible");
         helper.succeed();
     }
 
@@ -91,6 +97,25 @@ public final class GrinderExecutionGameTests {
         });
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 120)
+    public static void promotedMenuDataShowsProcessingProgress(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertBeefTrim(helper, grinder);
+
+        helper.runAtTickTime(8, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            helper.assertTrue(active.menuData().get(0) == WorkstationState.PROCESSING.ordinal(),
+                    "Server menu data exposes PROCESSING status");
+            helper.assertTrue(active.menuData().get(1) > 0 && active.menuData().get(1) < 60,
+                    "Server menu data exposes bounded processing progress");
+            helper.assertTrue(active.menuData().get(2) == 60,
+                    "Server menu data exposes the 60-tick grind duration");
+            helper.assertTrue(active.menuData().get(3) == -1,
+                    "Server menu data exposes no failure during normal processing");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = TEMPLATE, timeoutTicks = 220)
     public static void repeatedInputAndUseWhileProcessingDoNotDuplicateExecution(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIds(helper);
@@ -115,6 +140,26 @@ public final class GrinderExecutionGameTests {
             assertCompletedGroundBeef(helper, completed);
             helper.assertTrue(newOperations(helper, before).size() == 1,
                     "Only one Execution operation exists for the repeated initiation attempt");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void breakingActiveGrinderDropsInputWithoutOutput(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertBeefTrim(helper, grinder);
+
+        helper.runAtTickTime(8, () -> {
+            helper.assertTrue(grinder(helper).workstationState() == WorkstationState.PROCESSING,
+                    "Grinder is actively processing before block break");
+            helper.getLevel().destroyBlock(helper.absolutePos(GRINDER_POS), true);
+        });
+
+        helper.runAtTickTime(14, () -> {
+            helper.assertBlockNotPresent(ModBlocks.GRINDER.get(), GRINDER_POS);
+            helper.assertItemEntityPresent(ModItems.GRINDER.get(), GRINDER_POS, 3.0);
+            helper.assertItemEntityPresent(ModItems.BEEF_TRIM.get(), GRINDER_POS, 3.0);
+            helper.assertItemEntityNotPresent(ModItems.GROUND_BEEF.get(), GRINDER_POS, 3.0);
             helper.succeed();
         });
     }
@@ -312,11 +357,11 @@ public final class GrinderExecutionGameTests {
                 beefTrim(),
                 false
         );
-        helper.assertTrue(remainder.isEmpty(), "Beef trim fixture inserts into grinder input");
+        helper.assertTrue(remainder.isEmpty(), "Beef Trim inserts into grinder input");
     }
 
     private static ItemStack beefTrim() {
-        return ModItems.BEEF_TRIM_TEST.get().getDefaultInstance();
+        return ModItems.BEEF_TRIM.get().getDefaultInstance();
     }
 
     private static ItemStack porkTrim() {
@@ -324,7 +369,7 @@ public final class GrinderExecutionGameTests {
     }
 
     private static ItemStack groundBeef() {
-        return ModItems.GROUND_BEEF_TEST.get().getDefaultInstance();
+        return ModItems.GROUND_BEEF.get().getDefaultInstance();
     }
 
     private static void assertCompletedGroundBeef(GameTestHelper helper, GrinderBlockEntity grinder) {

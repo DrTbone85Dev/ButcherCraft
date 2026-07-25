@@ -21,8 +21,8 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.BUTCHER_PAPER_ROLL.get(), "Butcher Paper Roll");
         add(ModItems.FREEZER_PAPER_ROLL.get(), "Freezer Paper Roll");
         add(ModItems.RETAIL_LABEL_ROLL.get(), "Retail Label Roll");
-        add(ModItems.BEEF_TRIM_TEST.get(), "Beef Trim Test Product");
-        add(ModItems.GROUND_BEEF_TEST.get(), "Ground Beef Test Product");
+        add(ModItems.BEEF_TRIM.get(), "Beef Trim");
+        add(ModItems.GROUND_BEEF.get(), "Ground Beef");
         add(ModItems.RETAIL_GROUND_BEEF_TEST.get(), "Retail Ground Beef Test Product");
         add(ModItems.PORK_TRIM_TEST.get(), "Pork Trim Test Product");
         add(ModItems.GROUND_PORK_TEST.get(), "Ground Pork Test Product");
@@ -140,6 +140,10 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("workstation.butchercraft.failure.invalid_workstation_state", "Workstation state is invalid");
         add("workstation.butchercraft.failure.registry_not_available", "Processing definitions are unavailable");
         add("workstation.butchercraft.failure.processing_validation_rejected", "Processing validation rejected the input");
+        add("workstation.butchercraft.failure.execution_authorization_rejected", "Processing could not be authorized");
+        add("workstation.butchercraft.failure.execution_dispatch_rejected", "Processing could not be scheduled");
+        add("workstation.butchercraft.failure.execution_result_rejected", "Processing result could not be confirmed");
+        add("workstation.butchercraft.failure.execution_outcome_unknown", "Processing outcome is unknown");
         add("workstation.butchercraft.failure.result_creation_failed", "Could not create processing result");
         add("workstation.butchercraft.failure.missing_required_supply", "Required packaging supplies are missing");
         add("workstation.butchercraft.failure.invalid_supply_item", "Invalid packaging supply");

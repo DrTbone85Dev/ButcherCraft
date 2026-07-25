@@ -3,28 +3,22 @@
     {
       "faces": {
         "down": {
-          "cullface": "down",
-          "texture": "#all"
+          "texture": "#frame"
         },
         "east": {
-          "cullface": "east",
-          "texture": "#all"
+          "texture": "#frame"
         },
         "north": {
-          "cullface": "north",
-          "texture": "#all"
+          "texture": "#frame"
         },
         "south": {
-          "cullface": "south",
-          "texture": "#all"
+          "texture": "#frame"
         },
         "up": {
-          "cullface": "up",
-          "texture": "#all"
+          "texture": "#frame"
         },
         "west": {
-          "cullface": "west",
-          "texture": "#all"
+          "texture": "#frame"
         }
       },
       "from": [
@@ -41,28 +35,22 @@
     {
       "faces": {
         "down": {
-          "cullface": "down",
-          "texture": "#all"
+          "texture": "#surface"
         },
         "east": {
-          "cullface": "east",
-          "texture": "#all"
+          "texture": "#surface"
         },
         "north": {
-          "cullface": "north",
-          "texture": "#all"
+          "texture": "#surface"
         },
         "south": {
-          "cullface": "south",
-          "texture": "#all"
+          "texture": "#surface"
         },
         "up": {
-          "cullface": "up",
-          "texture": "#all"
+          "texture": "#surface"
         },
         "west": {
-          "cullface": "west",
-          "texture": "#all"
+          "texture": "#surface"
         }
       },
       "from": [
@@ -79,28 +67,22 @@
     {
       "faces": {
         "down": {
-          "cullface": "down",
-          "texture": "#all"
+          "texture": "#feed"
         },
         "east": {
-          "cullface": "east",
-          "texture": "#all"
+          "texture": "#feed"
         },
         "north": {
-          "cullface": "north",
-          "texture": "#all"
+          "texture": "#feed"
         },
         "south": {
-          "cullface": "south",
-          "texture": "#all"
+          "texture": "#feed"
         },
         "up": {
-          "cullface": "up",
-          "texture": "#all"
+          "texture": "#feed"
         },
         "west": {
-          "cullface": "west",
-          "texture": "#all"
+          "texture": "#feed"
         }
       },
       "from": [
@@ -116,6 +98,9 @@
     }
   ],
   "textures": {
-    "all": "butchercraft:item/development_test_item"
+    "feed": "butchercraft:block/workstation/grinder_feed",
+    "frame": "butchercraft:block/workstation/grinder_frame",
+    "particle": "butchercraft:block/workstation/grinder_frame",
+    "surface": "butchercraft:block/workstation/grinder_surface"
   }
 }
