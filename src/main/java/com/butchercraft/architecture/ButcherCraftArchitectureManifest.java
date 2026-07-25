@@ -571,7 +571,7 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.EXECUTION, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-012 First Player-Facing Workstation Execution Vertical Slice",
-                "One grinder workstation operation issues workstation-owned Execution authorization and completes through generic Execution");
+                "Promoted grinder workstation operations issue workstation-owned Execution authorization and complete through generic Execution");
         platformContract(builder, "butchercraft:platform_contract/workstation_owner_result_publication",
                 ValidationCategory.EXECUTION, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -627,6 +627,31 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-014 Grinder Gameplay Promotion and Hardening",
                 "The promoted Grinder path presents Beef Trim and Ground Beef as player-facing content while retaining legacy registry compatibility");
+        platformContract(builder, "butchercraft:platform_contract/grinder_two_promoted_processes",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
+                "The Grinder promotes exactly two live trim-to-ground flows: Beef Trim to Ground Beef and Pork Trim to Ground Pork");
+        platformContract(builder, "butchercraft:platform_contract/grinder_deterministic_multi_process_resolution",
+                ValidationCategory.REGISTRIES, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
+                "Grinder process selection resolves from authoritative product data and registry definitions with deterministic ambiguity rejection");
+        platformContract(builder, "butchercraft:platform_contract/grinder_process_specific_execution_identity",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
+                "Execution authorization for promoted Grinder work binds workstation, selected process, frozen input, expected output, configuration, and world identity");
+        platformContract(builder, "butchercraft:platform_contract/grinder_process_specific_owner_results",
+                ValidationCategory.EXECUTION, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
+                "Workstation owner result evidence binds the selected Grinder process and committed output products");
+        platformContract(builder, "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
+                "Automated server-world tests verify the promoted Pork Trim Grinder flow, isolation, serialization resume, duplicate safety, and active break safety");
         platformContract(builder, "butchercraft:platform_contract/grinder_survival_obtainability",
                 ValidationCategory.GENERAL, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,

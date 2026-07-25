@@ -53,8 +53,8 @@ class GrinderOperationResolverTest {
     }
 
     @Test
-    void porkAndBisonTrimFindSpeciesSpecificGrindingOperationsForGrinder() {
-        WorkstationOperationResolution pork = resolve(ModItems.PORK_TRIM_TEST.get().getDefaultInstance(), GrinderWorkstation.capability());
+    void promotedPorkAndBisonFixtureTrimFindSpeciesSpecificGrindingOperationsForGrinder() {
+        WorkstationOperationResolution pork = resolve(ModItems.PORK_TRIM.get().getDefaultInstance(), GrinderWorkstation.capability());
         WorkstationOperationResolution bison = resolve(ModItems.BISON_TRIM_TEST.get().getDefaultInstance(), GrinderWorkstation.capability());
 
         assertTrue(pork.succeeded(), pork.toString());

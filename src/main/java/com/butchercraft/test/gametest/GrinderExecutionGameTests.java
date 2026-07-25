@@ -55,10 +55,16 @@ public final class GrinderExecutionGameTests {
         helper.assertTrue(ModItems.GRINDER.get() != null, "Grinder item is registered");
         helper.assertTrue(ModItems.BEEF_TRIM.get() != null, "Beef Trim gameplay item is registered");
         helper.assertTrue(ModItems.GROUND_BEEF.get() != null, "Ground Beef gameplay item is registered");
+        helper.assertTrue(ModItems.PORK_TRIM.get() != null, "Pork Trim gameplay item is registered");
+        helper.assertTrue(ModItems.GROUND_PORK.get() != null, "Ground Pork gameplay item is registered");
         helper.assertTrue(ModItems.BEEF_TRIM.get() == ModItems.BEEF_TRIM_TEST.get(),
                 "Legacy Beef Trim registry identity remains compatible");
         helper.assertTrue(ModItems.GROUND_BEEF.get() == ModItems.GROUND_BEEF_TEST.get(),
                 "Legacy Ground Beef registry identity remains compatible");
+        helper.assertTrue(ModItems.PORK_TRIM.get() == ModItems.PORK_TRIM_TEST.get(),
+                "Legacy Pork Trim registry identity remains compatible");
+        helper.assertTrue(ModItems.GROUND_PORK.get() == ModItems.GROUND_PORK_TEST.get(),
+                "Legacy Ground Pork registry identity remains compatible");
         helper.succeed();
     }
 
@@ -98,6 +104,48 @@ public final class GrinderExecutionGameTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 120)
+    public static void validSecondProcessCompletesThroughLiveExecution(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertPorkTrim(helper, grinder);
+
+        helper.runAtTickTime(4, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            helper.assertTrue(active.workstationState() == WorkstationState.PROCESSING,
+                    "Pork Trim begins processing through server block-entity tick");
+            ExecutionOperationSnapshot operation = onlyNewOperation(helper, before);
+            helper.assertTrue(operation.status() == ExecutionStatus.AUTHORIZED
+                            || operation.status() == ExecutionStatus.READY,
+                    "Pork Execution operation is authorized before scheduler dispatch");
+        });
+
+        helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedGroundPork(helper, completed);
+            assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void processIsolationPreventsCrossOutput(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertPorkTrim(helper, grinder);
+
+        helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedGroundPork(helper, completed);
+            helper.assertTrue(completed.inventory().output().getItem() == ModItems.GROUND_PORK.get(),
+                    "Pork process output uses Ground Pork item");
+            helper.assertFalse(completed.inventory().output().getItem() == ModItems.GROUND_BEEF.get(),
+                    "Pork process never creates Ground Beef item");
+            assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 120)
     public static void promotedMenuDataShowsProcessingProgress(GameTestHelper helper) {
         GrinderBlockEntity grinder = placeGrinder(helper);
         insertBeefTrim(helper, grinder);
@@ -112,6 +160,34 @@ public final class GrinderExecutionGameTests {
                     "Server menu data exposes the 60-tick grind duration");
             helper.assertTrue(active.menuData().get(3) == -1,
                     "Server menu data exposes no failure during normal processing");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void secondProcessDuplicateInteractionRemainsSafe(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertPorkTrim(helper, grinder);
+
+        helper.runAtTickTime(8, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            ItemStack duplicateRemainder = active.inventory().insertItem(
+                    WorkstationInventory.INPUT_SLOT,
+                    porkTrim(),
+                    false
+            );
+            helper.assertFalse(duplicateRemainder.isEmpty(), "Second Pork Trim insertion is rejected while slot is occupied");
+            helper.useBlock(GRINDER_POS);
+            helper.assertTrue(newOperations(helper, before).size() == 1,
+                    "Repeated use while Pork Trim is processing does not create another Execution operation");
+        });
+
+        helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedGroundPork(helper, completed);
+            helper.assertTrue(newOperations(helper, before).size() == 1,
+                    "Only one Execution operation exists for the repeated Pork Trim initiation attempt");
             helper.succeed();
         });
     }
@@ -140,6 +216,27 @@ public final class GrinderExecutionGameTests {
             assertCompletedGroundBeef(helper, completed);
             helper.assertTrue(newOperations(helper, before).size() == 1,
                     "Only one Execution operation exists for the repeated initiation attempt");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void breakingActiveSecondProcessDropsInputWithoutOutput(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertPorkTrim(helper, grinder);
+
+        helper.runAtTickTime(8, () -> {
+            helper.assertTrue(grinder(helper).workstationState() == WorkstationState.PROCESSING,
+                    "Grinder is actively processing Pork Trim before block break");
+            helper.getLevel().destroyBlock(helper.absolutePos(GRINDER_POS), true);
+        });
+
+        helper.runAtTickTime(14, () -> {
+            helper.assertBlockNotPresent(ModBlocks.GRINDER.get(), GRINDER_POS);
+            helper.assertItemEntityPresent(ModItems.GRINDER.get(), GRINDER_POS, 3.0);
+            helper.assertItemEntityPresent(ModItems.PORK_TRIM.get(), GRINDER_POS, 3.0);
+            helper.assertItemEntityNotPresent(ModItems.GROUND_PORK.get(), GRINDER_POS, 3.0);
+            helper.assertItemEntityNotPresent(ModItems.GROUND_BEEF.get(), GRINDER_POS, 3.0);
             helper.succeed();
         });
     }
@@ -197,6 +294,32 @@ public final class GrinderExecutionGameTests {
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
             assertCompletedGroundBeef(helper, grinder(helper));
+            assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void secondProcessSerializationResumesSafely(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertPorkTrim(helper, grinder);
+
+        helper.runAtTickTime(16, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            helper.assertTrue(active.workstationState() == WorkstationState.PROCESSING,
+                    "Pork Trim process is active before serialization");
+            CompoundTag saved = active.saveWithFullMetadata(helper.getLevel().registryAccess());
+            GrinderBlockEntity restored = replaceBlockEntity(helper, saved);
+            helper.assertTrue(restored.workstationState() == WorkstationState.PROCESSING,
+                    "Restored Pork Trim grinder preserves active processing state");
+            helper.assertTrue(elapsedTicks(restored) > 0 && elapsedTicks(restored) < totalTicks(restored),
+                    "Restored Pork Trim grinder preserves bounded progress before effect publication");
+        });
+
+        helper.runAtTickTime(EXTENDED_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedGroundPork(helper, completed);
             assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
             helper.succeed();
         });
@@ -360,12 +483,21 @@ public final class GrinderExecutionGameTests {
         helper.assertTrue(remainder.isEmpty(), "Beef Trim inserts into grinder input");
     }
 
+    private static void insertPorkTrim(GameTestHelper helper, GrinderBlockEntity grinder) {
+        ItemStack remainder = grinder.inventory().insertItem(
+                WorkstationInventory.INPUT_SLOT,
+                porkTrim(),
+                false
+        );
+        helper.assertTrue(remainder.isEmpty(), "Pork Trim inserts into grinder input");
+    }
+
     private static ItemStack beefTrim() {
         return ModItems.BEEF_TRIM.get().getDefaultInstance();
     }
 
     private static ItemStack porkTrim() {
-        return ModItems.PORK_TRIM_TEST.get().getDefaultInstance();
+        return ModItems.PORK_TRIM.get().getDefaultInstance();
     }
 
     private static ItemStack groundBeef() {
@@ -384,6 +516,24 @@ public final class GrinderExecutionGameTests {
                 "Output product type is ground beef");
         helper.assertTrue(Objects.equals("butchercraft:beef", data.sourceCategoryId()),
                 "Output source category remains beef");
+        helper.assertTrue(data.quantityValue() == 900, "Output quantity is 900 grams");
+        helper.assertTrue(data.qualityScore() == 695, "Output quality adjustment is deterministic");
+    }
+
+    private static void assertCompletedGroundPork(GameTestHelper helper, GrinderBlockEntity grinder) {
+        helper.assertTrue(grinder.workstationState() == WorkstationState.COMPLETE,
+                "Grinder reaches COMPLETE state");
+        helper.assertTrue(grinder.inventory().input().isEmpty(), "Input is consumed exactly once");
+        ItemStack output = grinder.inventory().output();
+        helper.assertFalse(output.isEmpty(), "Output is present after completion");
+        helper.assertTrue(output.getCount() == 1, "Output stack count remains one");
+        helper.assertTrue(output.getItem() == ModItems.GROUND_PORK.get(),
+                "Output item is Ground Pork");
+        ProductStackData data = ProductStackAdapter.readProductData(output).orThrow();
+        helper.assertTrue(Objects.equals("butchercraft:ground_pork", data.productTypeId()),
+                "Output product type is ground pork");
+        helper.assertTrue(Objects.equals("butchercraft:pork", data.sourceCategoryId()),
+                "Output source category remains pork");
         helper.assertTrue(data.quantityValue() == 900, "Output quantity is 900 grams");
         helper.assertTrue(data.qualityScore() == 695, "Output quality adjustment is deterministic");
     }

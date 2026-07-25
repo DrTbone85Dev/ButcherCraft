@@ -1,6 +1,6 @@
 # ButcherCraft Asset Manifest
 
-Status: v0.8.0E asset framework baseline plus IM-014 promoted Grinder assets
+Status: v0.8.0E asset framework baseline plus IM-014 promoted Grinder assets and IM-015 promoted pork Grinder assets
 
 ## Purpose
 
@@ -61,16 +61,18 @@ No current ButcherCraft v0.8.0 visual asset is production approved.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Beef Trim | `butchercraft:beef_trim_test` | Promoted product item | `butchercraft:beef_trim` | `src/main/resources/assets/butchercraft/models/item/beef_trim_test.json` and generated mirror | Mixed | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic raw beef trim | `minecraft:item/generated` | `butchercraft:item/product/beef_trim` | Registry id is retained for save compatibility; player-facing name is Beef Trim. | Review Required |
 | Ground Beef | `butchercraft:ground_beef_test` | Promoted product item | `butchercraft:ground_beef` | `src/main/resources/assets/butchercraft/models/item/ground_beef_test.json` and generated mirror | Mixed | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic ground beef | `minecraft:item/generated` | `butchercraft:item/product/ground_beef` | Registry id is retained for save compatibility; player-facing name is Ground Beef. | Review Required |
+| Pork Trim | `butchercraft:pork_trim_test` | Promoted product item | `butchercraft:pork_trim` | `src/main/resources/assets/butchercraft/models/item/pork_trim_test.json` and generated mirror | Mixed | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic raw pork trim | `minecraft:item/generated` | `butchercraft:item/product/pork_trim` | Registry id is retained for save compatibility; player-facing name is Pork Trim. | Review Required |
+| Ground Pork | `butchercraft:ground_pork_test` | Promoted product item | `butchercraft:ground_pork` | `src/main/resources/assets/butchercraft/models/item/ground_pork_test.json` and generated mirror | Mixed | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic ground pork | `minecraft:item/generated` | `butchercraft:item/product/ground_pork` | Registry id is retained for save compatibility; player-facing name is Ground Pork. | Review Required |
 
 ## Development Product Fixture Audit
 
 The following product fixture item models are active development content and intentionally share `butchercraft:item/development_test_item` until a product item factory and final product art are scheduled:
 
-`pork_trim_test`, `ground_pork_test`, `bison_trim_test`, `ground_bison_test`, `beef_forequarter_test`, `beef_chuck_test`, `beef_rib_test`, `beef_packer_brisket_test`, `beef_plate_test`, `beef_shank_test`, `beef_fat_test`, `beef_bone_test`, `beef_hindquarter_test`, `beef_round_test`, `beef_sirloin_test`, `beef_short_loin_test`, `beef_flank_test`, `t_bone_steak_test`, `porterhouse_steak_test`, `beef_strip_loin_test`, `beef_tenderloin_test`, `top_round_test`, `bottom_round_test`, `eye_of_round_test`, `sirloin_tip_test`, `top_sirloin_test`, `sirloin_steak_test`, and `tri_tip_test`.
+`bison_trim_test`, `ground_bison_test`, `beef_forequarter_test`, `beef_chuck_test`, `beef_rib_test`, `beef_packer_brisket_test`, `beef_plate_test`, `beef_shank_test`, `beef_fat_test`, `beef_bone_test`, `beef_hindquarter_test`, `beef_round_test`, `beef_sirloin_test`, `beef_short_loin_test`, `beef_flank_test`, `t_bone_steak_test`, `porterhouse_steak_test`, `beef_strip_loin_test`, `beef_tenderloin_test`, `top_round_test`, `bottom_round_test`, `eye_of_round_test`, `sirloin_tip_test`, `top_sirloin_test`, `sirloin_steak_test`, and `tri_tip_test`.
 
 | Asset family | Category | Source paths | Generated | Required dimensions | Current status | Placeholder | Intended material | Dependencies | Notes | In-game review |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Development product fixture items | Product fixture item models | `src/main/resources/assets/butchercraft/models/item/*_test.json` for legacy fixtures and `src/generated/resources/assets/butchercraft/models/item/*_test.json` for newer fixtures | Mixed | 16x16 shared placeholder texture | Placeholder | Yes | Generic development product marker | `butchercraft:item/development_test_item` | Not production retail/product art. Beef Trim, Ground Beef, and Retail Ground Beef now have distinct texture targets. | Deferred |
+| Development product fixture items | Product fixture item models | `src/main/resources/assets/butchercraft/models/item/*_test.json` for legacy fixtures and `src/generated/resources/assets/butchercraft/models/item/*_test.json` for newer fixtures | Mixed | 16x16 shared placeholder texture | Placeholder | Yes | Generic development product marker | `butchercraft:item/development_test_item` | Not production retail/product art. Beef Trim, Ground Beef, Pork Trim, Ground Pork, and Retail Ground Beef now have distinct texture targets. | Deferred |
 | Development product placeholder texture | `butchercraft:item/development_test_item` | Shared development texture | `src/main/resources/assets/butchercraft/textures/item/development_test_item.png` | No | 16x16 PNG | Placeholder | Yes | Neutral unfinished marker | Used by non-promoted development fixtures and prototype workstation models | Replaced from 1x1 to 16x16 to avoid mip warnings. | Deferred |
 
 ## Audit Notes

@@ -1,5 +1,10 @@
 package com.butchercraft.machine.grinder.execution;
 
+import com.butchercraft.machine.grinder.GrinderWorkstation;
+import com.butchercraft.processing.definition.BuiltInDefinitionIds;
+import com.butchercraft.processing.definition.BuiltInProcessingDefinitions;
+import com.butchercraft.registration.ModItems;
+import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.world.execution.ExecutionAuthorization;
 import com.butchercraft.world.execution.ExecutionAuthorizationEvidence;
 import com.butchercraft.world.execution.ExecutionFailureCode;
@@ -33,6 +38,34 @@ class GrinderExecutionAuthorizationTest {
         assertTrue(handler.contract().ownerResultRequired());
         assertEquals(GrinderExecutionConstants.OPERATION_TYPE, handler.contract().operationType());
         assertEquals(GrinderExecutionConstants.HANDLER_ID, handler.contract().handlerId());
+    }
+
+    @Test
+    void promotedGrinderOperationsAreBeefAndPorkOnly() {
+        assertTrue(GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(BuiltInDefinitionIds.GRIND_BEEF));
+        assertTrue(GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(BuiltInDefinitionIds.GRIND_PORK));
+        assertFalse(GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(BuiltInDefinitionIds.GRIND_BISON));
+        assertEquals(2, GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.size());
+    }
+
+    @Test
+    void grinderProcessIdentityDiffersBetweenPromotedProcesses() {
+        WorkstationOperationResolver resolver = new WorkstationOperationResolver();
+        var beef = resolver.resolve(
+                BuiltInProcessingDefinitions.builtInView(),
+                GrinderWorkstation.capability(),
+                ModItems.BEEF_TRIM.get().getDefaultInstance()
+        ).operation().orElseThrow();
+        var pork = resolver.resolve(
+                BuiltInProcessingDefinitions.builtInView(),
+                GrinderWorkstation.capability(),
+                ModItems.PORK_TRIM.get().getDefaultInstance()
+        ).operation().orElseThrow();
+
+        assertNotEquals(
+                GrinderExecutionIdentities.operationIdentity(beef),
+                GrinderExecutionIdentities.operationIdentity(pork)
+        );
     }
 
     @Test
@@ -94,6 +127,66 @@ class GrinderExecutionAuthorizationTest {
     }
 
     @Test
+    void changedExpectedOutputProducesDifferentOperationIdentity() {
+        ExecutionManager manager = new ExecutionManager(
+                new ExecutionHandlerRegistry(List.of(handler)),
+                ExecutionRuntimeConfiguration.standard()
+        );
+
+        ExecutionOperationSnapshot first = manager.acceptAuthorization(
+                ExecutionAuthorization.issue(evidence(
+                        workstationIdentity(),
+                        "butchercraft:workstation_input/v1/aaa",
+                        "butchercraft:workstation_output/v1/beef",
+                        12
+                )),
+                12
+        ).value().orElseThrow();
+        ExecutionOperationSnapshot changed = manager.acceptAuthorization(
+                ExecutionAuthorization.issue(evidence(
+                        workstationIdentity(),
+                        "butchercraft:workstation_input/v1/aaa",
+                        "butchercraft:workstation_output/v1/pork",
+                        12
+                )),
+                12
+        ).value().orElseThrow();
+
+        assertNotEquals(first.operationId(), changed.operationId());
+    }
+
+    @Test
+    void changedSelectedProcessFreshnessProducesDifferentOperationIdentity() {
+        ExecutionManager manager = new ExecutionManager(
+                new ExecutionHandlerRegistry(List.of(handler)),
+                ExecutionRuntimeConfiguration.standard()
+        );
+
+        ExecutionOperationSnapshot first = manager.acceptAuthorization(
+                ExecutionAuthorization.issue(evidence(
+                        workstationIdentity(),
+                        "butchercraft:workstation_input/v1/aaa",
+                        "butchercraft:workstation_output/v1/bbb",
+                        "butchercraft:workstation_freshness/v1/grind_beef",
+                        12
+                )),
+                12
+        ).value().orElseThrow();
+        ExecutionOperationSnapshot changed = manager.acceptAuthorization(
+                ExecutionAuthorization.issue(evidence(
+                        workstationIdentity(),
+                        "butchercraft:workstation_input/v1/aaa",
+                        "butchercraft:workstation_output/v1/bbb",
+                        "butchercraft:workstation_freshness/v1/grind_pork",
+                        12
+                )),
+                12
+        ).value().orElseThrow();
+
+        assertNotEquals(first.operationId(), changed.operationId());
+    }
+
+    @Test
     void workstationIdentityRoundTripsDimensionAndPosition() {
         GrinderWorkstationReference reference = new GrinderWorkstationReference(
                 ResourceLocation.fromNamespaceAndPath("minecraft", "overworld"),
@@ -120,6 +213,22 @@ class GrinderExecutionAuthorizationTest {
             String expectedOutputIdentity,
             long tick
     ) {
+        return evidence(
+                workstationIdentity,
+                frozenInputIdentity,
+                expectedOutputIdentity,
+                "butchercraft:workstation_freshness/v1/fresh",
+                tick
+        );
+    }
+
+    private static ExecutionAuthorizationEvidence evidence(
+            String workstationIdentity,
+            String frozenInputIdentity,
+            String expectedOutputIdentity,
+            String sourceFreshnessIdentity,
+            long tick
+    ) {
         return ExecutionAuthorizationEvidence.issued(
                 GrinderExecutionConstants.OWNER_SUBSYSTEM_ID,
                 GrinderExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
@@ -127,7 +236,7 @@ class GrinderExecutionAuthorizationTest {
                 GrinderExecutionConstants.OPERATION_TYPE,
                 GrinderExecutionConstants.HANDLER_ID,
                 frozenInputIdentity,
-                "butchercraft:workstation_freshness/v1/fresh",
+                sourceFreshnessIdentity,
                 GrinderExecutionConstants.CONFIGURATION_IDENTITY,
                 "butchercraft:world/world_test",
                 tick,

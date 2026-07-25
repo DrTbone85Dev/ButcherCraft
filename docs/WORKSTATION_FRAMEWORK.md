@@ -168,7 +168,7 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:sirloin_steak` -> `butchercraft:sirloin_steak_test`
 - `butchercraft:tri_tip` -> `butchercraft:tri_tip_test`
 
-This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
+This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
 
 ## Development Workstation
 
@@ -178,7 +178,7 @@ Temporary block:
 butchercraft:development_processing_workstation
 ```
 
-The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim test products, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground test product.
+The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim product fixtures, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground product fixture.
 
 ## Bandsaw Machine
 

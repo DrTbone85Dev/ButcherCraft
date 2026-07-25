@@ -1,5 +1,6 @@
 package com.butchercraft.machine.grinder.execution;
 
+import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.WorldIdentityService;
@@ -45,11 +46,20 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
     @Override
     public WorkstationExecutionStartResult start(WorkstationExecutionStartRequest request) {
         Objects.requireNonNull(request, "request");
-        if (!GrinderExecutionConstants.GRIND_BEEF.equals(request.operation().operationId())) {
+        if (!GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(request.operation().operationId())) {
             return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                     WorkstationFailureCode.NO_COMPATIBLE_OPERATION,
                     request.operation().operationId(),
-                    "IM-012 authorizes only the grinder beef-trim Execution vertical slice"
+                    "Grinder Execution authorizes only promoted player-facing grinder operations"
+            ));
+        }
+        if (request.operation().definition().operation().workstationCapability()
+                .filter(GrinderWorkstation.CAPABILITY_ID::equals)
+                .isEmpty()) {
+            return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
+                    WorkstationFailureCode.NO_COMPATIBLE_OPERATION,
+                    request.operation().operationId(),
+                    "Grinder Execution authorizes only operations that declare the grinder capability"
             ));
         }
         try {
@@ -59,11 +69,13 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
                     request.tickContext().level(),
                     request.tickContext().blockPos()
             ).identity();
+            String operationIdentity = GrinderExecutionIdentities.operationIdentity(request.operation());
             String frozenInputIdentity = GrinderExecutionIdentities.inputIdentity(request.frozenInputs());
             String expectedOutputIdentity = GrinderExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
             String sourceFreshnessIdentity = GrinderExecutionIdentities.sourceFreshnessIdentity(
                     workstationIdentity,
                     request.operation(),
+                    operationIdentity,
                     frozenInputIdentity,
                     expectedOutputIdentity
             );
@@ -79,7 +91,7 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
                     worldIdentity(server),
                     tick,
                     OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),
-                    List.of(workstationIdentity, frozenInputIdentity, expectedOutputIdentity)
+                    List.of(workstationIdentity, operationIdentity, frozenInputIdentity, expectedOutputIdentity)
             );
             ExecutionOperationResult<ExecutionOperationSnapshot> accepted = execution(server)
                     .acceptAuthorization(ExecutionAuthorization.issue(evidence), tick);

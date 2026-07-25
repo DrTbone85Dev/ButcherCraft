@@ -39,5 +39,7 @@ class GrinderRegistrationTest {
         assertTrue(source.contains("output.accept(ModItems.GRINDER.get())"));
         assertTrue(source.contains("output.accept(ModItems.BEEF_TRIM.get().getDefaultInstance())"));
         assertTrue(source.contains("output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.PORK_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_PORK.get().getDefaultInstance())"));
     }
 }

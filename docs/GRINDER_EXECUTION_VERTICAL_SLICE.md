@@ -1,18 +1,18 @@
 # Grinder Execution Vertical Slice
 
-Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation.
+Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process.
 
 This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
 
 ## Selected Slice
 
-The selected operation is the existing grinder transformation that accepts one valid Beef Trim product stack and produces one Ground Beef output through the existing grinder menu, controller, transformation strategy, and workstation ItemStack commit plan.
+The selected operations are the existing promoted grinder transformations that accept one valid Beef Trim or Pork Trim product stack and produce one matching Ground Beef or Ground Pork output through the existing grinder menu, controller, transformation strategy, and workstation ItemStack commit plan.
 
-The duration remains 60 server ticks, derived from the existing 3000 millisecond processing definition. Progress remains workstation-owned presentation state.
+Both promoted operations use 60 server ticks, derived from the existing 3000 millisecond processing definition. Progress remains workstation-owned presentation state.
 
 ## Player Flow
 
-The player crafts or obtains the Grinder, places it, opens the menu, inserts a valid product-bearing Beef Trim stack, observes processing progress through the existing menu data, waits for completion, and retrieves one Ground Beef output from the output slot.
+The player crafts or obtains the Grinder, places it, opens the menu, inserts a valid product-bearing Beef Trim or Pork Trim stack, observes processing progress through the existing menu data, waits for completion, and retrieves the matching Ground Beef or Ground Pork output from the output slot.
 
 The client may display state, progress, and failure messages. It does not assert valid input, successful authorization, output contents, or Execution success.
 
@@ -31,6 +31,8 @@ The authorization binds:
 - configuration identity,
 - world identity,
 - issuance tick and validity boundary.
+
+IM-015 makes the selected operation binding explicit in the authorization identity inputs. Beef and Pork operations therefore produce distinct Operation Identities even when they use the same workstation, duration, handler, and configuration.
 
 Execution owns authorization consumption, deterministic Operation Identity, domain Effect Identity, lifecycle state, attempts, and Execution Result Evidence.
 
@@ -77,6 +79,7 @@ The tests verify:
 - Closing an opened test interaction does not cancel server-side processing.
 - Block-entity NBT serialization and restoration preserves safe pre-effect progress and does not duplicate completed output.
 - Changed input, blocked output, malformed restored state, and uncertain consequential restored state fail visibly without fabricating output or retrying automatically.
+- IM-015 adds focused Pork Trim coverage for live Execution completion, process isolation against Ground Beef output, serialization resume, duplicate interaction safety, and active block-break preservation.
 
 The save/load coverage is serialization-level block-entity coverage. It does not claim chunk unload/reload, full world reload, server-restart recovery, coordinated checkpoint recovery, or operator reconciliation coverage.
 
@@ -90,14 +93,25 @@ IM-014 keeps the legacy item registry ids for saved-world and fixture compatibil
 - the Grinder uses dedicated workstation textures instead of the shared development placeholder.
 - the Grinder has a generated shaped crafting recipe, block item, creative-tab entry, and loot-table drop.
 
-This does not authorize a general product item factory. Pork, bison, bandsaw, packaging, and broader product fixture mappings remain temporary development bridges until separately promoted.
+This does not authorize a general product item factory. Bison, bandsaw, packaging, and broader product fixture mappings remain temporary development bridges until separately promoted.
 
 Breaking an active Grinder uses the existing workstation block-removal path: active processing is canceled before effect publication, stored input is dropped, output is not fabricated, and no runtime authority token is serialized or reused.
+
+## IM-015 Second Process Promotion
+
+IM-015 promotes Pork Trim and Ground Pork presentation for the Grinder while retaining their legacy item registry ids:
+
+- `butchercraft:pork_trim_test` now presents to players as Pork Trim.
+- `butchercraft:ground_pork_test` now presents to players as Ground Pork.
+- both items use dedicated product textures instead of the shared development placeholder.
+- `butchercraft:grind_pork` is the one additional promoted live Grinder operation.
+
+The existing bison grinding definition remains prototype fixture content. It verifies data-driven definitions and resolver behavior but is not included in the promoted live Grinder Execution authorization set.
 
 ## Remaining Gates
 
 - General workstation Execution framework.
-- Additional grinder operations.
+- Additional promoted grinder operations beyond Beef Trim and Pork Trim.
 - Bandsaw, Packaging Table, and development workstation Execution migration.
 - Production-backed workstation execution.
 - Economic Inventory and Transaction integration for player workstations.

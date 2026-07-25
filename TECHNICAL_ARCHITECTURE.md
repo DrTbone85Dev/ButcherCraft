@@ -865,6 +865,8 @@ Version 0.8.0 Sprint D connects the Packaging Table to the shared processing con
 
 Version 0.8.0E establishes the asset framework and presentation foundation. Packaging supply items, the Retail Ground Beef test product, the Packaging Table block model, and the Packaging Table GUI now have stable placeholder-backed resource paths for future final art replacement without gameplay, registry, datapack, or workstation behavior changes.
 
+IM-015 promotes Pork Trim to Ground Pork as the one additional player-facing Grinder process. It retains the existing legacy item registry ids for compatibility, uses canonical product ids `butchercraft:pork_trim` and `butchercraft:ground_pork`, and keeps bison grinding as prototype fixture data outside the promoted live Grinder Execution set.
+
 Canonical butcher-cut terminology belongs in product definitions, fixture item data, generated language, and docs. Machine code and generic workstation code must not translate or special-case cut names.
 
 ## Testing Strategy

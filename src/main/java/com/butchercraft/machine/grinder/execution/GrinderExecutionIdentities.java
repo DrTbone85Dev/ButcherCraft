@@ -54,15 +54,41 @@ final class GrinderExecutionIdentities {
         return "butchercraft:workstation_output/v1/" + digestIdSuffix(digest.finish());
     }
 
+    static String operationIdentity(ResolvedWorkstationOperation operation) {
+        CanonicalDigest digest = CanonicalDigest.create("butchercraft:grinder_operation_identity")
+                .add(operation.operationId().toString())
+                .add(operation.definition().operation().inputProduct().toString())
+                .add(operation.definition().operation().requiredInputProcessingState().toString())
+                .add(operation.definition().operation().outputs().size())
+                .add(operation.definition().operation().baseDurationMilliseconds())
+                .add(operation.totalTicks());
+        operation.definition().operation().workstationCapability()
+                .ifPresentOrElse(
+                        capability -> digest.add(capability.toString()),
+                        () -> digest.add("")
+                );
+        operation.definition().operation().outputs().forEach(output -> digest
+                .add(output.product().toString())
+                .add(output.state().toString())
+                .add(output.yield().numerator())
+                .add(output.yield().denominator())
+                .add(output.qualityAdjustment())
+                .add(output.quantityUnit())
+                .add(output.allowZero()));
+        return "butchercraft:workstation_operation/v1/" + digestIdSuffix(digest.finish());
+    }
+
     static String sourceFreshnessIdentity(
             String workstationIdentity,
             ResolvedWorkstationOperation operation,
+            String operationIdentity,
             String frozenInputIdentity,
             String expectedOutputIdentity
     ) {
         String digest = CanonicalDigest.create("butchercraft:grinder_slot_freshness")
                 .add(workstationIdentity)
                 .add(operation.operationId().toString())
+                .add(operationIdentity)
                 .add(frozenInputIdentity)
                 .add(expectedOutputIdentity)
                 .add("output_empty")

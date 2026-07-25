@@ -24,8 +24,8 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.BEEF_TRIM.get(), "Beef Trim");
         add(ModItems.GROUND_BEEF.get(), "Ground Beef");
         add(ModItems.RETAIL_GROUND_BEEF_TEST.get(), "Retail Ground Beef Test Product");
-        add(ModItems.PORK_TRIM_TEST.get(), "Pork Trim Test Product");
-        add(ModItems.GROUND_PORK_TEST.get(), "Ground Pork Test Product");
+        add(ModItems.PORK_TRIM.get(), "Pork Trim");
+        add(ModItems.GROUND_PORK.get(), "Ground Pork");
         add(ModItems.BISON_TRIM_TEST.get(), "Bison Trim Test Product");
         add(ModItems.GROUND_BISON_TEST.get(), "Ground Bison Test Product");
         add(ModItems.BEEF_FOREQUARTER_TEST.get(), "Beef Forequarter Test Product");

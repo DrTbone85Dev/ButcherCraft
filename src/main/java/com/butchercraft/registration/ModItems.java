@@ -109,7 +109,7 @@ public final class ModItems {
     );
 
     /**
-     * Development-only product fixture used to prove data-driven grinding beyond beef.
+     * Promoted Pork Trim gameplay item. The original registry id is retained for save compatibility.
      */
     public static final DeferredItem<ProductTestItem> PORK_TRIM_TEST = ITEMS.register(
             "pork_trim_test",
@@ -123,8 +123,10 @@ public final class ModItems {
             ))
     );
 
+    public static final DeferredItem<ProductTestItem> PORK_TRIM = PORK_TRIM_TEST;
+
     /**
-     * Development-only product fixture used to prove data-driven grinding beyond beef.
+     * Promoted Ground Pork gameplay item. The original registry id is retained for save compatibility.
      */
     public static final DeferredItem<ProductTestItem> GROUND_PORK_TEST = ITEMS.register(
             "ground_pork_test",
@@ -137,6 +139,8 @@ public final class ModItems {
                     700
             ))
     );
+
+    public static final DeferredItem<ProductTestItem> GROUND_PORK = GROUND_PORK_TEST;
 
     /**
      * Development-only product fixture used to prove data-driven grinding beyond fixed engine source categories.

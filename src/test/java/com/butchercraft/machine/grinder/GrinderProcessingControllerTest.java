@@ -73,7 +73,7 @@ class GrinderProcessingControllerTest {
     @Test
     void completionProducesAdjustedPorkAndBisonThroughSameControllerPath() {
         assertCompletesTo(
-                ModItems.PORK_TRIM_TEST.get().getDefaultInstance(),
+                ModItems.PORK_TRIM.get().getDefaultInstance(),
                 "butchercraft:ground_pork",
                 "butchercraft:pork"
         );
@@ -99,6 +99,27 @@ class GrinderProcessingControllerTest {
         assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED, harness.controller.lastFailure().orElseThrow().code());
         assertFalse(harness.inventory.input().isEmpty());
         assertFalse(harness.inventory.output().isEmpty());
+    }
+
+    @Test
+    void outputObstructionBlocksPromotedPorkCompletionSafely() {
+        Harness harness = Harness.create();
+        harness.inventory.setInputInternal(ModItems.PORK_TRIM.get().getDefaultInstance());
+        harness.tick();
+        harness.inventory.setOutputInternal(ModItems.GROUND_PORK.get().getDefaultInstance());
+
+        for (int i = 0; i < 60; i++) {
+            harness.tick();
+        }
+
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED, harness.controller.lastFailure().orElseThrow().code());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertEquals("butchercraft:pork_trim",
+                ProductStackAdapter.readProductData(harness.inventory.input()).orThrow().productTypeId());
+        assertFalse(harness.inventory.output().isEmpty());
+        assertEquals("butchercraft:ground_pork",
+                ProductStackAdapter.readProductData(harness.inventory.output()).orThrow().productTypeId());
     }
 
     @Test
@@ -154,6 +175,32 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
+    void saveLoadMidProcessPreservesPromotedPorkProcessAndCompletes() {
+        Harness harness = Harness.create();
+        harness.inventory.setInputInternal(ModItems.PORK_TRIM.get().getDefaultInstance());
+        harness.tick();
+        for (int i = 0; i < 10; i++) {
+            harness.tick();
+        }
+
+        Harness restored = Harness.restoreFrom(harness);
+
+        assertEquals(WorkstationState.PROCESSING, restored.controller.state());
+        assertEquals(BuiltInDefinitionIds.GRIND_PORK, restored.controller.selectedOperationId().orElseThrow());
+        assertEquals(10, restored.controller.elapsedTicks());
+        assertEquals(60, restored.controller.totalTicks());
+        assertFalse(restored.inventory.input().isEmpty());
+
+        for (int i = 0; i < 50; i++) {
+            restored.tick();
+        }
+
+        assertEquals(WorkstationState.COMPLETE, restored.controller.state());
+        assertEquals("butchercraft:ground_pork",
+                ProductStackAdapter.readProductData(restored.inventory.output()).orThrow().productTypeId());
+    }
+
+    @Test
     void saveLoadAfterCompletionDoesNotDuplicateOutput() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
@@ -169,6 +216,26 @@ class GrinderProcessingControllerTest {
         assertTrue(restored.inventory.input().isEmpty());
         assertEquals(1, restored.inventory.output().getCount());
         assertEquals(900, ProductStackAdapter.readProductData(restored.inventory.output()).orThrow().quantityValue());
+    }
+
+    @Test
+    void saveLoadAfterPromotedPorkCompletionDoesNotDuplicateOutput() {
+        Harness harness = Harness.create();
+        harness.inventory.setInputInternal(ModItems.PORK_TRIM.get().getDefaultInstance());
+        harness.tick();
+        for (int i = 0; i < 60; i++) {
+            harness.tick();
+        }
+
+        Harness restored = Harness.restoreFrom(harness);
+        restored.tick();
+
+        assertEquals(WorkstationState.COMPLETE, restored.controller.state());
+        assertTrue(restored.inventory.input().isEmpty());
+        assertEquals(1, restored.inventory.output().getCount());
+        var data = ProductStackAdapter.readProductData(restored.inventory.output()).orThrow();
+        assertEquals("butchercraft:ground_pork", data.productTypeId());
+        assertEquals(900, data.quantityValue());
     }
 
     private static void assertCompletesTo(net.minecraft.world.item.ItemStack input, String outputProductId, String sourceId) {
