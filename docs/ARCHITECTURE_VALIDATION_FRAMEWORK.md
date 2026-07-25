@@ -260,10 +260,10 @@ and scope, and known Scheduler effect kinds. They do not parse governing prose,
 load checkpoint storage, run Scheduler handlers, validate Transaction runtime
 authority consumption, or execute any recovery path.
 
-The current AH-1 implementation gates are explicit in the manifest. Evidence
-Lifecycle, Checkpoint Recovery, Transaction hardening, Planning cadence,
-Scheduler effect enforcement, generic Execution, and Allocation M22E-M22F
-integration are declared architecture but not runtime guarantees.
+The current AH-1 implementation gates are explicit in the manifest. Remaining
+Evidence Lifecycle archival work, broad Checkpoint Recovery, Planning cadence,
+generic Execution, and Allocation M22E-M22F integration are declared
+architecture but not runtime guarantees.
 
 ## Dependency Validation
 
@@ -354,9 +354,11 @@ The current manifest maps the accepted six stages at orders 100 through 600.
 It does not add the proposed RFC-0022 Allocation stage.
 
 Manifest 2.0 also declares the four Scheduler effect kinds ratified by
-ADR-05. These declarations are implementation-gated. They validate canonical
-effect vocabulary and ownership only; they do not enforce handler runtime
-policy.
+ADR-05. After IM-009, those declarations are marked enforced where the live
+Scheduler policy matrix, Invocation Identity, Effect Identity observation, and
+Unknown Outcome runtime are implemented. The manifest rules still validate
+canonical effect vocabulary and ownership; runtime behavior is verified by the
+Scheduler tests.
 
 ## Simulation Validation
 

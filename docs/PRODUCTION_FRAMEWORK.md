@@ -176,9 +176,9 @@ The handler:
 5. starts, resumes, or advances exact progress;
 6. defers the same Work to a future tick while incomplete;
 7. builds and submits one completion transaction when progress is complete;
-8. records `COMPLETED` only after transaction history reports `APPLIED`.
+8. records `COMPLETED` only after transaction history reports `APPLIED` and publishes authoritative Transaction result evidence.
 
-No Production Work recursively schedules itself in the same tick. The handler returns typed completed, deferred, or failed outcomes and never accesses mutable Scheduler internals.
+No Production Work recursively schedules itself in the same tick. The handler returns typed completed, deferred, or failed outcomes and never accesses mutable Scheduler internals. For IM-009, the handler publishes a Scheduler effect observation only after the Transaction owner publishes result evidence.
 
 ### Planning Submission Boundary
 
@@ -211,7 +211,9 @@ Consequences:
 - failed preflight creates no transaction history entry and no Inventory mutation;
 - rejected submitted transactions never complete the Run;
 - replay preserves the complete ordered change plan;
-- completion transaction metadata identifies Run, Plan, Process, Actor, Scheduler Work, completion tick, and optional Order/Contract context.
+- completion transaction identity is stable for the logical Run completion: `<production_run_id>/completion`;
+- completion transaction metadata identifies Run, Plan, Process, Actor, Scheduler Work, completion tick, and optional Order/Contract context;
+- Scheduler observes the Transaction result evidence digest but does not receive Validation Consumption Authority or infer completion from Transaction id alone.
 
 Outputs do not automatically fulfill Orders. A future explicit orchestration owner may allocate the APPLIED transaction through `OrderManager`.
 

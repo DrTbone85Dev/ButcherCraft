@@ -439,15 +439,55 @@ public final class ButcherCraftArchitectureManifest {
                 "Planning Cycle eligibility, trigger ordering, input capture, and publication are Planning-owned");
         platformContract(builder, "butchercraft:platform_contract/scheduler_runtime_authority",
                 ValidationCategory.SCHEDULER, SCHEDULER,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-05 Scheduler Effects Authority",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
                 "Scheduler Runtime Authority owns Scheduler runtime, dispatch, invocation identity, "
                         + "effect policy, and Scheduler publication");
         platformContract(builder, "butchercraft:platform_contract/scheduler_observes_domain_results",
                 ValidationCategory.SCHEDULER, SCHEDULER,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-05 Scheduler Effects Authority",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
                 "Scheduler observes domain effects and authoritative results but does not own or infer them");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_live_effect_enforcement",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Scheduler handler effect declarations are enforced as live runtime contracts");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_invocation_identity_runtime",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Every live Scheduler handler attempt receives deterministic Invocation Identity");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_effect_identity_runtime",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Consequential Scheduler effects use stable Effect Identity separate from Invocation Identity");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_effect_retry_matrix",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Scheduler retry, deferral, generated Work, and completion legality are gated by effect policy");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_unknown_outcome_runtime",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Consequential uncertainty is represented as Scheduler Unknown Outcome and blocks automatic retry");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_owner_result_observation",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Scheduler records owner-published result evidence without owning domain results");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_parallel_reentrancy_prohibition",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Parallel, recursive, and nested Scheduler dispatch for one world-scoped manager are rejected");
+        platformContract(builder, "butchercraft:platform_contract/production_transaction_backed_scheduler_conformance",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
+                "Production Scheduler Work completes only after APPLIED Transaction result evidence is observed");
         platformContract(builder, "butchercraft:platform_contract/execution_authorization_evidence",
                 ValidationCategory.EXECUTION, EXECUTION,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
@@ -467,8 +507,8 @@ public final class ButcherCraftArchitectureManifest {
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
         runtimeAuthority(builder, "butchercraft:runtime_authority/scheduler_world",
-                SCHEDULER, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-05 Scheduler Effects Authority",
+                SCHEDULER, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-009 Scheduler Effects Live Enforcement",
                 "One Scheduler Runtime Authority is declared for each loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/planning_world",
                 PLANNING, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
@@ -506,6 +546,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/order_intent", ORDERS);
         own(builder, "butchercraft:responsibility/work_eligibility", SCHEDULER);
         own(builder, "butchercraft:responsibility/scheduler_checkpoint_snapshot_content", SCHEDULER);
+        own(builder, "butchercraft:responsibility/scheduler_invocation_identity", SCHEDULER);
+        own(builder, "butchercraft:responsibility/scheduler_effect_policy", SCHEDULER);
+        own(builder, "butchercraft:responsibility/scheduler_effect_identity_observation", SCHEDULER);
+        own(builder, "butchercraft:responsibility/scheduler_unknown_outcome_runtime", SCHEDULER);
         own(builder, "butchercraft:responsibility/production_processes", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_plans", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_run_runtime", PRODUCTION);
@@ -572,6 +616,34 @@ public final class ButcherCraftArchitectureManifest {
                 SCHEDULER,
                 ValidationCategory.PERSISTENCE,
                 "IM-006 assigns Scheduler checkpoint payload content, schema, validation, and restoration to Scheduler"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/scheduler_invocation_identity",
+                SCHEDULER,
+                ValidationCategory.SCHEDULER,
+                "IM-009 assigns deterministic Scheduler handler attempt identity to Scheduler"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/scheduler_effect_policy",
+                SCHEDULER,
+                ValidationCategory.SCHEDULER,
+                "IM-009 assigns live Scheduler effect policy enforcement to Scheduler"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/scheduler_effect_identity_observation",
+                SCHEDULER,
+                ValidationCategory.SCHEDULER,
+                "IM-009 assigns Scheduler observation of Effect Identity to Scheduler without transferring domain facts"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/scheduler_unknown_outcome_runtime",
+                SCHEDULER,
+                ValidationCategory.SCHEDULER,
+                "IM-009 assigns Scheduler Unknown Outcome runtime state to Scheduler"
         );
         contract(
                 builder,
@@ -1468,7 +1540,7 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureId.of(id),
                 kind.name(),
                 SCHEDULER,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
                 source,
                 description
         ));

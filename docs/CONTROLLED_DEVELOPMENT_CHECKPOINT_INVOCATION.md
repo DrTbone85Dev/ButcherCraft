@@ -67,9 +67,9 @@ is identity parsing only; it never treats user input as a filesystem path.
 ## Restoration Safety
 
 Live loaded-world restoration is intentionally rejected by the command surface.
-The repository does not yet expose a Scheduler Runtime Authority pause/swap
-boundary or a service-level Clock/Scheduler replacement boundary that can prove
-safe mutation during an active server lifecycle.
+The repository does not yet expose a service-level Clock/Scheduler pause/swap
+replacement boundary that can prove safe mutation during an active server
+lifecycle.
 
 The controlled harness can restore Clock and Scheduler together through the
 existing coordinator. This proves owner preparation, all-or-nothing

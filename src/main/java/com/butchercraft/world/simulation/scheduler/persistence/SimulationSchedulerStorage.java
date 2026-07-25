@@ -1,10 +1,13 @@
 package com.butchercraft.world.simulation.scheduler.persistence;
 
 import com.butchercraft.world.simulation.scheduler.BuiltInSimulationStages;
+import com.butchercraft.world.simulation.scheduler.HandlerEffectType;
 import com.butchercraft.world.simulation.scheduler.RetryPolicy;
 import com.butchercraft.world.simulation.scheduler.RetryPolicyType;
 import com.butchercraft.world.simulation.scheduler.ScheduledSimulationWork;
 import com.butchercraft.world.simulation.scheduler.SchedulerSchema;
+import com.butchercraft.world.simulation.scheduler.SchedulerEffectIdentity;
+import com.butchercraft.world.simulation.scheduler.SchedulerInvocationIdentity;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerRegistry;
 import com.butchercraft.world.simulation.scheduler.SimulationStageDefinition;
@@ -115,11 +118,10 @@ public final class SimulationSchedulerStorage {
             SchedulerDocument document = Objects.requireNonNull(
                     GSON.fromJson(json, SchedulerDocument.class), "scheduler persistence root"
             );
-            if (document.schemaVersion() != SchedulerSchema.CURRENT_VERSION) {
-                throw new IllegalArgumentException("Unsupported scheduler schema version: " + document.schemaVersion());
-            }
+            int documentSchema = requireDocumentSchema(document.schemaVersion());
             SimulationStageRegistry stages = SimulationStageRegistry.of(
-                    requireList(document.stages(), "stages").stream().map(SimulationSchedulerStorage::fromStageRecord)
+                    requireList(document.stages(), "stages").stream()
+                            .map(record -> fromStageRecord(record, documentSchema))
                             .toList()
             );
             validateBuiltInStages(stages);
@@ -127,8 +129,8 @@ public final class SimulationSchedulerStorage {
             List<SimulationWorkRuntime> runtimes = new ArrayList<>();
             for (WorkRecord record : requireList(document.work(), "work")) {
                 WorkRecord value = Objects.requireNonNull(record, "work record");
-                definitions.add(fromDefinitionRecord(value.definition()));
-                runtimes.add(fromRuntimeRecord(value.runtime()));
+                definitions.add(fromDefinitionRecord(value.definition(), documentSchema));
+                runtimes.add(fromRuntimeRecord(value.runtime(), documentSchema));
             }
             return new SimulationSchedulerManager(
                     stages, handlerRegistry, SimulationSchedulerRegistry.of(definitions), runtimes,
@@ -146,12 +148,12 @@ public final class SimulationSchedulerStorage {
         );
     }
 
-    private static SimulationStageDefinition fromStageRecord(StageRecord record) {
+    private static SimulationStageDefinition fromStageRecord(StageRecord record, int documentSchema) {
         Objects.requireNonNull(record, "stage record");
         return new SimulationStageDefinition(
                 SimulationStageId.of(record.id()), record.displayName(), record.executionOrder(),
                 StageFailurePolicy.fromSerializedName(record.defaultFailurePolicy()),
-                record.allowsSameTickEnqueue(), record.schemaVersion()
+                record.allowsSameTickEnqueue(), recordSchema(record.schemaVersion(), documentSchema)
         );
     }
 
@@ -180,7 +182,7 @@ public final class SimulationSchedulerStorage {
         );
     }
 
-    private static ScheduledSimulationWork fromDefinitionRecord(DefinitionRecord record) {
+    private static ScheduledSimulationWork fromDefinitionRecord(DefinitionRecord record, int documentSchema) {
         Objects.requireNonNull(record, "work definition");
         OriginRecord origin = Objects.requireNonNull(record.origin(), "work origin");
         RetryRecord retry = Objects.requireNonNull(record.retryPolicy(), "retry policy");
@@ -203,7 +205,7 @@ public final class SimulationSchedulerStorage {
                 optionalLong(record.expirationTick()),
                 requireList(record.references(), "work references").stream().map(reference ->
                         new WorkReference(reference.referenceType(), reference.referenceId())).toList(),
-                record.generationDepth(), record.schemaVersion()
+                record.generationDepth(), recordSchema(record.schemaVersion(), documentSchema)
         );
     }
 
@@ -213,11 +215,19 @@ public final class SimulationSchedulerStorage {
                 runtime.attemptCount(), runtime.lastUpdatedSimulationTick(), optionalLong(runtime.startedTick()),
                 optionalLong(runtime.completedTick()), optionalLong(runtime.nextEligibleTick()),
                 runtime.lastFailureCode().map(WorkFailureCode::serializedName).orElse(null),
-                runtime.diagnosticSummary().orElse(null), toPayloadRecords(runtime.resultSummary()), runtime.revision()
+                runtime.diagnosticSummary().orElse(null), toPayloadRecords(runtime.resultSummary()),
+                runtime.lastInvocationIdentity().map(SchedulerInvocationIdentity::value).orElse(null),
+                runtime.lastEffectIdentity().map(SchedulerEffectIdentity::value).orElse(null),
+                runtime.lastEffectType().map(HandlerEffectType::name).orElse(null),
+                runtime.effectPolicyIdentity().orElse(null),
+                runtime.effectOwnerSubsystemId().orElse(null),
+                runtime.ownerResultIdentity().orElse(null),
+                runtime.effectContentDigest().orElse(null),
+                runtime.revision()
         );
     }
 
-    private static SimulationWorkRuntime fromRuntimeRecord(RuntimeRecord record) {
+    private static SimulationWorkRuntime fromRuntimeRecord(RuntimeRecord record, int documentSchema) {
         Objects.requireNonNull(record, "work runtime");
         return new SimulationWorkRuntime(
                 SimulationWorkId.of(record.workId()), SimulationWorkStatus.fromSerializedName(record.status()),
@@ -225,7 +235,14 @@ public final class SimulationSchedulerStorage {
                 optionalLong(record.completedTick()), optionalLong(record.nextEligibleTick()),
                 Optional.ofNullable(record.lastFailureCode()).map(WorkFailureCode::fromSerializedName),
                 Optional.ofNullable(record.diagnosticSummary()), fromPayloadRecords(record.resultSummary()),
-                record.revision(), record.schemaVersion()
+                Optional.ofNullable(record.lastInvocationIdentity()).map(SchedulerInvocationIdentity::of),
+                Optional.ofNullable(record.lastEffectIdentity()).map(SchedulerEffectIdentity::of),
+                Optional.ofNullable(record.lastEffectType()).map(HandlerEffectType::valueOf),
+                Optional.ofNullable(record.effectPolicyIdentity()),
+                Optional.ofNullable(record.effectOwnerSubsystemId()),
+                Optional.ofNullable(record.ownerResultIdentity()),
+                Optional.ofNullable(record.effectContentDigest()),
+                record.revision(), recordSchema(record.schemaVersion(), documentSchema)
         );
     }
 
@@ -245,10 +262,18 @@ public final class SimulationSchedulerStorage {
         for (SimulationStageDefinition expected : BuiltInSimulationStages.definitions()) {
             SimulationStageDefinition actual = stages.find(expected.id()).orElseThrow(() ->
                     new IllegalArgumentException("Scheduler persistence is missing built-in stage: " + expected.id()));
-            if (!actual.equals(expected)) {
+            if (!sameStageShape(actual, expected)) {
                 throw new IllegalArgumentException("Built-in scheduler stage definition has changed: " + expected.id());
             }
         }
+    }
+
+    private static boolean sameStageShape(SimulationStageDefinition actual, SimulationStageDefinition expected) {
+        return actual.id().equals(expected.id())
+                && actual.displayName().equals(expected.displayName())
+                && actual.executionOrder() == expected.executionOrder()
+                && actual.defaultFailurePolicy() == expected.defaultFailurePolicy()
+                && actual.allowsSameTickEnqueue() == expected.allowsSameTickEnqueue();
     }
 
     private void moveIntoPlace(Path temporary) throws IOException {
@@ -269,6 +294,18 @@ public final class SimulationSchedulerStorage {
 
     private static <T> List<T> requireList(List<T> values, String label) {
         return List.copyOf(Objects.requireNonNull(values, label));
+    }
+
+    private static int requireDocumentSchema(Integer value) {
+        int schema = Objects.requireNonNull(value, "scheduler schema version");
+        if (schema < SchedulerSchema.LEGACY_VERSION || schema > SchedulerSchema.CURRENT_VERSION) {
+            throw new IllegalArgumentException("Unsupported scheduler schema version: " + schema);
+        }
+        return schema;
+    }
+
+    private static int recordSchema(Integer value, int documentSchema) {
+        return value == null ? documentSchema : value;
     }
 
     private record SchedulerDocument(
@@ -342,6 +379,13 @@ public final class SimulationSchedulerStorage {
             @SerializedName("last_failure_code") String lastFailureCode,
             @SerializedName("diagnostic_summary") String diagnosticSummary,
             @SerializedName("result_summary") List<PayloadRecord> resultSummary,
+            @SerializedName("last_invocation_identity") String lastInvocationIdentity,
+            @SerializedName("last_effect_identity") String lastEffectIdentity,
+            @SerializedName("last_effect_type") String lastEffectType,
+            @SerializedName("effect_policy_identity") String effectPolicyIdentity,
+            @SerializedName("effect_owner_subsystem_id") String effectOwnerSubsystemId,
+            @SerializedName("owner_result_identity") String ownerResultIdentity,
+            @SerializedName("effect_content_digest") String effectContentDigest,
             Long revision
     ) { }
 }

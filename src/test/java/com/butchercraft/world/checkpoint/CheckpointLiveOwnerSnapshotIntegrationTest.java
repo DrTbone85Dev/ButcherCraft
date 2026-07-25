@@ -13,7 +13,10 @@ import com.butchercraft.world.simulation.scheduler.BuiltInSimulationStages;
 import com.butchercraft.world.simulation.scheduler.HandlerEffectType;
 import com.butchercraft.world.simulation.scheduler.RetryPolicy;
 import com.butchercraft.world.simulation.scheduler.ScheduledSimulationWork;
+import com.butchercraft.world.simulation.scheduler.SchedulerEffectPolicy;
+import com.butchercraft.world.simulation.scheduler.SimulationExecutionBudget;
 import com.butchercraft.world.simulation.scheduler.SimulationExecutionContext;
+import com.butchercraft.world.simulation.scheduler.SimulationPipeline;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
 import com.butchercraft.world.simulation.scheduler.SimulationStageRegistry;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandler;
@@ -22,7 +25,9 @@ import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkOutcome;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkRequest;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkResult;
+import com.butchercraft.world.simulation.scheduler.SimulationWorkStatus;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkTypeId;
+import com.butchercraft.world.simulation.scheduler.WorkFailureCode;
 import com.butchercraft.world.simulation.scheduler.WorkOrigin;
 import com.butchercraft.world.simulation.scheduler.WorkPayload;
 import com.butchercraft.world.simulation.scheduler.WorkPriority;
@@ -104,6 +109,61 @@ class CheckpointLiveOwnerSnapshotIntegrationTest {
         assertEquals(tick, restored.get().lastFinalizedSimulationTick());
         assertEquals(1, restored.get().registry().size());
         assertEquals(manager.nextSubmissionSequence(), restored.get().nextSubmissionSequence());
+    }
+
+    @Test
+    void schedulerSnapshotRestoresUnknownOutcomeWithoutAutomaticRetry() {
+        SimulationWorkTypeId type = SimulationWorkTypeId.of("test:checkpoint_unknown");
+        SimulationWorkId workId = SimulationWorkId.of("test:checkpoint_unknown_work");
+        SimulationWorkHandlerRegistry registry = new SimulationWorkHandlerRegistry(List.of(
+                nonRepeatableThrowingHandler(type)
+        ));
+        SimulationSchedulerManager manager = new SimulationSchedulerManager(
+                SimulationStageRegistry.builtIn(),
+                registry,
+                0L
+        );
+        SimulationWorkRequest request = new SimulationWorkRequest(
+                workId,
+                type,
+                BuiltInSimulationStages.EXECUTION,
+                1L,
+                WorkPriority.NORMAL,
+                WorkOrigin.of("test:checkpoint", 0L, "test:unknown_outcome"),
+                WorkPayload.empty(),
+                RetryPolicy.nextTick(),
+                2,
+                OptionalLong.empty(),
+                List.of()
+        );
+        assertTrue(manager.submit(request, 0L).accepted());
+        new SimulationPipeline(manager, SimulationExecutionBudget.standard()).execute(1L);
+        CheckpointOwnerSnapshotContext context = context(1L, 1L);
+        CheckpointOwnerSnapshotPayload payload = new SimulationSchedulerCheckpointSnapshotProvider(manager)
+                .capture(context)
+                .snapshot().orElseThrow()
+                .payload();
+        String payloadJson = new String(payload.payloadBytes(), StandardCharsets.UTF_8);
+        AtomicReference<SimulationSchedulerManager> restored = new AtomicReference<>();
+
+        CheckpointOwnerRestorationPreparation preparation = new SimulationSchedulerCheckpointSnapshotRestorer(
+                registry,
+                restored::get,
+                restored::set
+        ).prepare(restorationRequest(payload, context));
+        assertTrue(preparation.successful());
+        assertTrue(preparation.candidate().orElseThrow().publish().successful());
+        new SimulationPipeline(restored.get(), SimulationExecutionBudget.standard()).execute(2L);
+
+        assertTrue(payloadJson.contains("\"status\": \"unknown_outcome\""));
+        assertTrue(payloadJson.contains("\"last_invocation_identity\""));
+        assertTrue(payloadJson.contains("\"last_effect_identity\""));
+        assertTrue(payloadJson.contains("\"effect_policy_identity\""));
+        var runtime = restored.get().runtimeFor(workId).orElseThrow();
+        assertEquals(SimulationWorkStatus.UNKNOWN_OUTCOME, runtime.status());
+        assertEquals(1, runtime.attemptCount());
+        assertEquals(WorkFailureCode.NON_REPEATABLE_OUTCOME_UNKNOWN,
+                runtime.lastFailureCode().orElseThrow());
     }
 
     @Test
@@ -884,6 +944,39 @@ class CheckpointLiveOwnerSnapshotIntegrationTest {
                 );
             }
         }));
+    }
+
+    private SimulationWorkHandler nonRepeatableThrowingHandler(SimulationWorkTypeId type) {
+        return new SimulationWorkHandler() {
+            @Override
+            public SimulationWorkTypeId supportedTypeId() {
+                return type;
+            }
+
+            @Override
+            public HandlerEffectType effectType() {
+                return HandlerEffectType.NON_REPEATABLE;
+            }
+
+            @Override
+            public SchedulerEffectPolicy effectPolicy() {
+                return SchedulerEffectPolicy.nonRepeatable(
+                        type,
+                        "test:checkpoint_owner",
+                        "test checkpoint unknown-outcome policy"
+                );
+            }
+
+            @Override
+            public WorkValidationResult validate(ScheduledSimulationWork work) {
+                return WorkValidationResult.acceptedResult();
+            }
+
+            @Override
+            public SimulationWorkResult execute(SimulationExecutionContext context) {
+                throw new IllegalStateException("checkpoint unknown outcome");
+            }
+        };
     }
 
     private List<CheckpointOwnerId> requiredClockSchedulerOwners() {

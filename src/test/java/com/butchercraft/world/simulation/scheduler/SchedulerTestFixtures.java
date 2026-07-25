@@ -19,9 +19,26 @@ final class SchedulerTestFixtures {
             Function<ScheduledSimulationWork, WorkValidationResult> validation,
             Function<SimulationExecutionContext, SimulationWorkResult> execution
     ) {
+        return handler(
+                type,
+                HandlerEffectType.READ_ONLY,
+                SchedulerEffectPolicy.defaultFor(type, HandlerEffectType.READ_ONLY),
+                validation,
+                execution
+        );
+    }
+
+    static SimulationWorkHandler handler(
+            SimulationWorkTypeId type,
+            HandlerEffectType effectType,
+            SchedulerEffectPolicy effectPolicy,
+            Function<ScheduledSimulationWork, WorkValidationResult> validation,
+            Function<SimulationExecutionContext, SimulationWorkResult> execution
+    ) {
         return new SimulationWorkHandler() {
             @Override public SimulationWorkTypeId supportedTypeId() { return type; }
-            @Override public HandlerEffectType effectType() { return HandlerEffectType.READ_ONLY; }
+            @Override public HandlerEffectType effectType() { return effectType; }
+            @Override public SchedulerEffectPolicy effectPolicy() { return effectPolicy; }
             @Override public WorkValidationResult validate(ScheduledSimulationWork work) {
                 return validation.apply(work);
             }
@@ -43,6 +60,29 @@ final class SchedulerTestFixtures {
 
     static SimulationWorkRequest request(
             String id,
+            SimulationWorkTypeId type,
+            SimulationStageId stage,
+            long submissionTick,
+            long scheduledTick
+    ) {
+        return request(id, type, stage, submissionTick, scheduledTick, WorkPriority.NORMAL, RetryPolicy.never(), 1);
+    }
+
+    static SimulationWorkRequest request(
+            String id,
+            SimulationStageId stage,
+            long submissionTick,
+            long scheduledTick,
+            WorkPriority priority,
+            RetryPolicy retryPolicy,
+            int maximumAttempts
+    ) {
+        return request(id, TYPE, stage, submissionTick, scheduledTick, priority, retryPolicy, maximumAttempts);
+    }
+
+    static SimulationWorkRequest request(
+            String id,
+            SimulationWorkTypeId type,
             SimulationStageId stage,
             long submissionTick,
             long scheduledTick,
@@ -51,7 +91,7 @@ final class SchedulerTestFixtures {
             int maximumAttempts
     ) {
         return new SimulationWorkRequest(
-                SimulationWorkId.of(id), TYPE, stage, scheduledTick, priority,
+                SimulationWorkId.of(id), type, stage, scheduledTick, priority,
                 WorkOrigin.of("test:scheduler", submissionTick, "test:unit_test"),
                 WorkPayload.empty(), retryPolicy, maximumAttempts, OptionalLong.empty(), List.of()
         );

@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class SimulationSchedulerManager {
     private final SimulationStageRegistry stageRegistry;
@@ -24,6 +25,7 @@ public final class SimulationSchedulerManager {
     private SimulationSchedulerRegistry registry;
     private long nextSubmissionSequence;
     private long lastFinalizedSimulationTick;
+    private final AtomicBoolean runtimeAuthorityExecuting = new AtomicBoolean();
 
     public SimulationSchedulerManager(
             SimulationStageRegistry stageRegistry,
@@ -176,7 +178,9 @@ public final class SimulationSchedulerManager {
             return SchedulerOperationResult.failure(WorkFailureCode.UNKNOWN_WORK, "Unknown simulation work: " + id);
         }
         if (runtime.status().isTerminal() || runtime.status() == SimulationWorkStatus.RUNNING) {
-            return SchedulerOperationResult.failure(WorkFailureCode.INVALID_STATUS,
+            WorkFailureCode code = runtime.status() == SimulationWorkStatus.RUNNING
+                    ? WorkFailureCode.ACTIVE_CANCELLATION_UNSUPPORTED : WorkFailureCode.INVALID_STATUS;
+            return SchedulerOperationResult.failure(code,
                     "Work cannot be cancelled from status " + runtime.status());
         }
         if (tick < runtime.lastUpdatedSimulationTick()) {
@@ -235,6 +239,23 @@ public final class SimulationSchedulerManager {
         return runtime.snapshot();
     }
 
+    synchronized SimulationWorkRuntime start(
+            SimulationWorkId id,
+            long tick,
+            SchedulerInvocationIdentity invocationIdentity,
+            Optional<SchedulerEffectIdentity> effectIdentity,
+            SchedulerEffectPolicy policy
+    ) {
+        SimulationWorkRuntime runtime = requiredRuntime(id);
+        change(runtime, () -> runtime.start(tick, invocationIdentity, effectIdentity, policy));
+        return runtime.snapshot();
+    }
+
+    synchronized void observeEffect(SimulationWorkId id, SchedulerEffectObservation observation) {
+        SimulationWorkRuntime runtime = requiredRuntime(id);
+        change(runtime, () -> runtime.observeEffect(observation));
+    }
+
     synchronized void complete(SimulationWorkId id, long tick, WorkPayload summary) {
         SimulationWorkRuntime runtime = requiredRuntime(id);
         change(runtime, () -> runtime.complete(tick, summary));
@@ -257,6 +278,11 @@ public final class SimulationSchedulerManager {
         change(runtime, () -> runtime.fail(tick, code, reason));
     }
 
+    synchronized void unknownOutcome(SimulationWorkId id, long tick, WorkFailureCode code, String reason) {
+        SimulationWorkRuntime runtime = requiredRuntime(id);
+        change(runtime, () -> runtime.unknownOutcome(tick, code, reason));
+    }
+
     synchronized void finalizeTick(long tick) {
         long expected = Math.addExact(lastFinalizedSimulationTick, 1L);
         if (tick != expected) {
@@ -267,6 +293,29 @@ public final class SimulationSchedulerManager {
 
     public synchronized boolean hasRunningWork() {
         return !byStatus.get(SimulationWorkStatus.RUNNING).isEmpty();
+    }
+
+    public boolean tryBeginRuntimeAuthority() {
+        return runtimeAuthorityExecuting.compareAndSet(false, true);
+    }
+
+    public void endRuntimeAuthority() {
+        if (!runtimeAuthorityExecuting.compareAndSet(true, false)) {
+            throw new IllegalStateException("Scheduler Runtime Authority was not active");
+        }
+    }
+
+    public boolean hasActiveRuntimeAuthority() {
+        return runtimeAuthorityExecuting.get();
+    }
+
+    synchronized Optional<SchedulerEffectObservation> effectObservationFor(SchedulerEffectIdentity identity) {
+        Objects.requireNonNull(identity, "identity");
+        return runtimes.values().stream()
+                .map(SimulationWorkRuntime::effectObservation)
+                .flatMap(Optional::stream)
+                .filter(observation -> observation.effectIdentity().equals(identity))
+                .findFirst();
     }
 
     public synchronized void validateForPersistence() {

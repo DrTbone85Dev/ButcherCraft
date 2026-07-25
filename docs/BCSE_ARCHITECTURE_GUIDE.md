@@ -78,7 +78,7 @@ object graph.
 | --- | --- |
 | World Identity and player identity | Implemented with deterministic generation and separate persistence |
 | Simulation Clock and calendar events | Implemented and authoritative |
-| Work Scheduler | Implemented as a bounded six-stage pipeline |
+| Work Scheduler | Implemented as a bounded six-stage pipeline with live Scheduler effect enforcement |
 | Goods, Actors, Inventory, Orders, and Contracts | Implemented foundations |
 | Transactions | Implemented validation, atomic Inventory mutation, audit, persistence, and explicit replay |
 | Production | Implemented generic definitions, runtime, Scheduler handler, persistence, and Transaction-backed completion |
@@ -89,8 +89,10 @@ object graph.
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 The live Scheduler currently contains Production and Economic Planning
-handlers. The accepted six stages remain at orders 100 through 600. There is no
-Allocation stage 350, Allocation Work handler, generic Execution service, or
+handlers, deterministic Invocation Identity, consequential Effect Identity
+observation, Unknown Outcome runtime state, and world-scoped dispatch
+authority. The accepted six stages remain at orders 100 through 600. There is
+no Allocation stage 350, Allocation Work handler, generic Execution service, or
 live Allocation-to-Execution gate.
 
 ## 4. High-Level Kernel Diagram

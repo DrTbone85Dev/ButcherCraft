@@ -180,10 +180,11 @@ Recovery APIs.
 
 The command surface exposes capture, list, validate, inspect-selected, exact
 generation inspection, and a restore-selected safety rejection. Live
-loaded-world restoration remains gated because no safe Scheduler Runtime
-Authority pause/swap boundary exists. A controlled Java harness proves
-coordinated Clock/Scheduler restoration and owner rollback semantics without
-changing normal world save/load behavior.
+loaded-world restoration remains gated because no service-level Clock/Scheduler
+pause/swap boundary is registered for normal world startup or gameplay
+recovery. A controlled Java harness proves coordinated Clock/Scheduler
+restoration and owner rollback semantics without changing normal world
+save/load behavior.
 
 ## Deferred Work
 

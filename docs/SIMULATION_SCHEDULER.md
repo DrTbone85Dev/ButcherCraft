@@ -1,6 +1,6 @@
 # Deterministic Simulation Scheduler
 
-Status: implemented in v0.9.0-alpha.1 Phase 19
+Status: implemented in v0.9.0-alpha.1 Phase 19, with IM-009 live effect enforcement
 
 This document defines ButcherCraft's deterministic simulation work scheduler and execution pipeline. `CONSTITUTION.md` remains the governing authority. The scheduler is orchestration infrastructure only: it decides when registered work is eligible, in which stable order it runs, and how much may run in one authoritative simulation tick.
 
@@ -15,7 +15,7 @@ recovery hook, cadence, command, or gameplay feature.
 
 `SimulationClock` owns authoritative simulation time. The scheduler receives a tick and never advances, derives, or substitutes time. Wall-clock time, Java timers, frame rate, Minecraft time-of-day, random UUID generation, and background executors never affect eligibility or outcomes.
 
-Schema 1 uses a strict sequential policy:
+The live Scheduler uses a strict sequential policy:
 
 - The next pipeline call must be exactly `last_finalized_simulation_tick + 1`.
 - Duplicate and backward ticks are rejected explicitly.
@@ -27,10 +27,11 @@ The live service runs on `ServerTickEvent.Post` after the authoritative clock's 
 
 ## Checkpoint Participation
 
-The Scheduler checkpoint provider wraps Scheduler-owned schema-1 persistence
+The Scheduler checkpoint provider wraps Scheduler-owned schema-2 persistence
 content plus a Scheduler Configuration Identity as opaque checkpoint payload
 bytes. The restorer parses and validates the payload inside the Scheduler
-owner boundary, including existing `RUNNING` persistence rejection.
+owner boundary, including existing `RUNNING` persistence rejection and
+`UNKNOWN_OUTCOME` preservation.
 
 Checkpoint Recovery validates only cross-owner relationships, such as Clock
 tick matching Scheduler `last_finalized_simulation_tick`. It does not parse or
@@ -88,15 +89,16 @@ Mutable lifecycle state belongs only to `SimulationWorkRuntime`, which the manag
 SCHEDULED -> ELIGIBLE -> RUNNING -> COMPLETED
     |           |          |----> RETRY_WAIT -> ELIGIBLE
     |           |          |----> DEFERRED   -> ELIGIBLE
-    |           |          `----> FAILED
-    |           |----> DEFERRED
+    |           |          |----> FAILED
+    |           |          `----> UNKNOWN_OUTCOME
+    |           |----> DEFERRED / FAILED
     |           |----> CANCELLED / EXPIRED
     `---------------> CANCELLED / EXPIRED
 ```
 
-`COMPLETED`, `FAILED`, `CANCELLED`, and `EXPIRED` are irreversible. Attempts and runtime revisions are monotonic. Cancellation requires a nonterminal, non-running record and a non-backward authoritative tick. Work expires only after its expiration tick, allowing execution on the expiration tick itself.
+`COMPLETED`, `FAILED`, `CANCELLED`, `EXPIRED`, and `UNKNOWN_OUTCOME` are irreversible. Attempts and runtime revisions are monotonic. Cancellation requires a nonterminal, non-running record and a non-backward authoritative tick. Work expires only after its expiration tick, allowing execution on the expiration tick itself.
 
-Persisting `RUNNING` work is forbidden. Save refuses it, and load rejects it. Schema 1 does not silently rerun or complete interrupted non-idempotent work.
+Persisting `RUNNING` work is forbidden. Save refuses it, and load rejects it. Schema 2 does not silently rerun or complete interrupted consequential work. Schema 1 records load as legacy records without fabricated Invocation Identity, Effect Identity, or owner result evidence.
 
 ## Handlers
 
@@ -111,7 +113,26 @@ A handler validates its payload, receives an immutable `SimulationExecutionConte
 
 Persisted Work whose type has no registered handler rejects the whole scheduler load. It is never discarded. Phase 20 installs the internal `butchercraft:production_run` handler before scheduler loading. Phase 21 also installs `butchercraft:economic_planning_cycle` and ensures one persistent continuation Work exists after Planning loads. No public handler registration lifecycle is established.
 
-The scheduler cannot roll back arbitrary external side effects. Handlers must validate before mutation, and economic quantity mutations must continue through the Transaction Framework. Unexpected handler exceptions become explicit failed Work records and reports.
+The scheduler cannot roll back arbitrary external side effects. Handlers must validate before mutation, and economic quantity mutations must continue through the Transaction Framework. Unexpected read-only handler exceptions become explicit failed Work records and reports. Unexpected consequential handler exceptions after invocation begins become `UNKNOWN_OUTCOME`.
+
+## Live Effect Enforcement
+
+IM-009 turns handler effect declarations into live Scheduler-owned policy. Every bounded handler attempt receives deterministic `SchedulerInvocationIdentity` that binds Work id, handler type, attempt number, authoritative tick, canonical payload digest, and effect-policy identity.
+
+Consequential handlers receive a stable `SchedulerEffectIdentity` for the logical effect. Retries may have different Invocation Identity while referring to the same Effect Identity. `READ_ONLY` handlers do not receive Effect Identity.
+
+| Effect type | Completion | Retry | Generated Work | Exception after invocation |
+| --- | --- | --- | --- | --- |
+| `READ_ONLY` | Handler result is sufficient. | Allowed by deterministic retry policy. | Allowed within Scheduler generation rules. | Fails with `HANDLER_EXCEPTION`. |
+| `IDEMPOTENT` | Requires compatible owner result observation. | Allowed only with compatible identity/result evidence. | Requires owner result observation. | `UNKNOWN_OUTCOME`. |
+| `TRANSACTION_BACKED` | Requires authoritative Transaction result evidence. | Requires compatible owner result evidence. | Not allowed by default. | `UNKNOWN_OUTCOME`. |
+| `NON_REPEATABLE` | Requires owner result evidence unless explicitly gated. | Not automatically retried. | Not allowed. | `UNKNOWN_OUTCOME`. |
+
+`UNKNOWN_OUTCOME` means the platform cannot prove whether a consequential effect occurred. It is a Scheduler runtime state, not storage artifact quarantine. It is terminal for automatic execution, persists in Scheduler state, survives Clock/Scheduler checkpoint round trip, and requires future owner/operator reconciliation outside IM-009.
+
+Scheduler observes `SchedulerEffectObservation` records published by handlers. The observation carries Effect Identity, effect type, owner subsystem id, owner-result identity, and owner-published content digest. The same Effect Identity with the same canonical content may be observed safely. The same Effect Identity with different content fails explicitly as a conflict. Scheduler does not infer Transaction success from Transaction id, absence of failure, timeout, or missing Work.
+
+`SimulationSchedulerManager` owns the world-scoped Scheduler Runtime Authority. Recursive, nested, or parallel pipeline execution for the same manager is rejected with `SCHEDULER_AUTHORITY_ALREADY_EXECUTING`.
 
 ## Deterministic Ordering
 
@@ -147,7 +168,7 @@ Handlers return `COMPLETED`, `DEFERRED`, `RETRY`, or `FAILED` with an execution 
 
 Retry policies are `NEVER`, `NEXT_TICK`, `FIXED_INTERVAL`, `EXPONENTIAL_SIMULATION_INTERVAL`, and `HANDLER_REQUESTED`. All calculations use exact simulation ticks, enforce maximum attempts and optional maximum retry tick, and reject overflow. There is no jitter or implicit randomness.
 
-Unexpected exceptions are caught at the pipeline boundary and recorded as `HANDLER_EXCEPTION`. Invalid ticks, payloads, results, generated batches, retries, and budgets use typed `WorkFailureCode` values. Transient tick and stage reports summarize all attempted Work without becoming authoritative persisted state.
+Invalid ticks, payloads, results, generated batches, retries, and budgets use typed `WorkFailureCode` values. Effect-policy failures include missing Invocation Identity, missing required Effect Identity, conflicting effect content, missing authoritative result, illegal retry, illegal generated Work, active cancellation unsupported, and automatic retry blocked by Unknown Outcome. Transient tick and stage reports summarize all attempted Work without becoming authoritative persisted state.
 
 ## Same-Tick Generation
 
@@ -173,11 +194,14 @@ Scheduler state persists independently at:
 <world>/butchercraft/simulation_scheduler.json
 ```
 
-Schema version 1 stores:
+Schema version 2 stores:
 
 - stage definitions;
 - immutable Work definitions;
 - exactly one runtime record per Work;
+- last Invocation Identity, where an attempt exists;
+- last Effect Identity and effect policy identity for consequential attempts;
+- observed owner result identity and content digest, when the owner published a result;
 - next authoritative submission sequence;
 - last finalized simulation tick.
 
@@ -216,8 +240,16 @@ PLANNING parent -> atomic generated batch for EXECUTION at tick N
 ### Handler Failure
 
 ```text
-RUNNING -> typed FAILED or caught exception -> persisted FAILED runtime
+RUNNING -> typed FAILED or read-only caught exception -> persisted FAILED runtime
         -> apply stage failure policy -> continue/stop stage/stop tick/fail pipeline
+```
+
+### Unknown Consequential Outcome
+
+```text
+RUNNING consequential Work -> missing proof or exception after invocation begins
+                            -> UNKNOWN_OUTCOME
+                            -> no automatic retry or reinvocation
 ```
 
 ### Save And Reload
@@ -260,9 +292,13 @@ The Planning and Production handlers retain these boundaries: Scheduler owns eli
 - **SS-0015:** The scheduler performs no economic domain behavior.
 - **SS-0016:** The scheduler never bypasses domain validation or mutation authority.
 - **SS-0017:** Runtime query results are immutable snapshots.
-- **SS-0018:** Pipeline execution is non-reentrant.
+- **SS-0018:** Pipeline execution is world-scoped and non-reentrant.
 - **SS-0019:** Wall-clock time never determines simulation outcomes.
 - **SS-0020:** Persisted scheduler state is schema-versioned and deterministic.
+- **SS-0021:** Every live handler attempt has deterministic Invocation Identity.
+- **SS-0022:** Consequential effects use stable Effect Identity where required.
+- **SS-0023:** Scheduler observes owner results but never owns domain facts.
+- **SS-0024:** Unknown consequential outcomes are never automatically retried.
 
 ## Measured Phase 19 Scale
 
@@ -278,8 +314,9 @@ The million-record definition/runtime scale is intentionally split from combined
 
 ## Known Limitations And Extension Points
 
-- Schema 1 has no catch-up, partial-tick resume, migration, crash recovery, or automatic reconciliation with a mismatched clock.
+- Schema 2 has no catch-up, partial-tick resume, broad world migration, startup crash recovery, or automatic reconciliation with a mismatched clock.
 - The live registry contains the internal Production Run and Economic Planning Cycle handlers. Planning ensures one continuation Work and may submit Production Work for accepted open Order-line Needs, but no live industry Process is registered and no gameplay executes.
+- Planning remains classified as `NON_REPEATABLE` with a cadence-gated continuation policy. Planning Cadence migration is not implemented in IM-009.
 - Reports are transient and no profiling/audit UI exists.
 - The scheduler cannot provide global rollback for side effects performed outside transaction-backed handlers.
 - Handler registration is internal and not a stable public API.

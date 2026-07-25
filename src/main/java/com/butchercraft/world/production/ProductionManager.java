@@ -7,6 +7,7 @@ import com.butchercraft.world.economy.order.OrderId;
 import com.butchercraft.world.production.scheduler.ProductionWorkTypes;
 import com.butchercraft.world.simulation.scheduler.BuiltInSimulationStages;
 import com.butchercraft.world.simulation.scheduler.RetryPolicy;
+import com.butchercraft.world.simulation.scheduler.SchedulerEffectObservation;
 import com.butchercraft.world.simulation.scheduler.SimulationExecutionContext;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
@@ -367,7 +368,8 @@ public final class ProductionManager {
         }
         if (plan.latestCompletionTick().isPresent() && tick > plan.latestCompletionTick().orElseThrow()) {
             mutate(runtime, () -> runtime.expire(tick));
-            return completedWork(tick, cost, runId);
+            return failedWork(tick, WorkFailureCode.WORK_EXPIRED,
+                    "Production Work expired before Transaction-backed completion", cost);
         }
         List<ProductionFailure> readiness = validator.validateReadiness(plan, process, tick);
         if (!readiness.isEmpty()) {
@@ -430,8 +432,14 @@ public final class ProductionManager {
                     "Production completion Transaction did not publish authoritative result evidence",
                     transaction.id().value()
             );
-            return handleTransactionFailure(runtime, failure, process, tick, cost, runId);
+            mutate(runtime, () -> runtime.fail(failure, tick));
+            return failedWork(tick, WorkFailureCode.PRODUCTION_COMPLETION_WITHOUT_AUTHORITATIVE_RESULT,
+                    failure.message(), cost);
         }
+        SchedulerEffectObservation observation = SchedulerEffectObservation.transactionResult(
+                context.effectIdentity().orElseThrow(),
+                result.resultEvidence().orElseThrow().resultContentDigest()
+        );
         EconomicTransaction applied = dependencies.transactionManager().find(transaction.id()).orElseThrow();
         if (applied.status() != TransactionStatus.APPLIED) {
             ProductionFailure failure = ProductionFailure.of(
@@ -442,7 +450,7 @@ public final class ProductionManager {
             return handleTransactionFailure(runtime, failure, process, tick, cost, runId);
         }
         mutate(runtime, () -> runtime.complete(transaction.id(), tick));
-        return completedWork(tick, cost, runId);
+        return completedWork(tick, cost, runId, observation);
     }
 
     public synchronized ProductionOperationResult<ProductionRunSnapshot> cancel(
@@ -719,17 +727,13 @@ public final class ProductionManager {
         );
     }
 
-    private static SimulationWorkResult completedWork(long tick, int cost, ProductionRunId runId) {
-        return new SimulationWorkResult(
-                SimulationWorkOutcome.COMPLETED,
-                Optional.empty(),
-                List.of(),
-                OptionalLong.empty(),
-                List.of(),
-                resultPayload(runId),
-                cost,
-                tick
-        );
+    private static SimulationWorkResult completedWork(
+            long tick,
+            int cost,
+            ProductionRunId runId,
+            SchedulerEffectObservation observation
+    ) {
+        return SimulationWorkResult.completed(tick, cost, resultPayload(runId), observation);
     }
 
     private static SimulationWorkResult failedWork(

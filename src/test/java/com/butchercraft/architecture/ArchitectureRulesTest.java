@@ -673,7 +673,7 @@ class ArchitectureRulesTest {
         ValidationContext context = ArchitectureValidationTestFixtures.validContext();
 
         assertTrue(context.schedulerEffects().stream().allMatch(effect ->
-                effect.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                effect.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.platformIdentities().stream().allMatch(identity ->
                 identity.disposition() == ArchitectureValidationDisposition.DOCUMENTATION_ONLY));
         assertTrue(context.platformContracts().stream()
@@ -719,10 +719,23 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/transaction_consumption_authority",
                         "butchercraft:platform_contract/serialized_transaction_owner_boundary",
                         "butchercraft:platform_contract/transaction_live_duplicate_conflict_behavior",
-                        "butchercraft:platform_contract/transaction_live_result_evidence"
+                        "butchercraft:platform_contract/transaction_live_result_evidence",
+                        "butchercraft:platform_contract/scheduler_runtime_authority",
+                        "butchercraft:platform_contract/scheduler_observes_domain_results",
+                        "butchercraft:platform_contract/scheduler_live_effect_enforcement",
+                        "butchercraft:platform_contract/scheduler_invocation_identity_runtime",
+                        "butchercraft:platform_contract/scheduler_effect_identity_runtime",
+                        "butchercraft:platform_contract/scheduler_effect_retry_matrix",
+                        "butchercraft:platform_contract/scheduler_unknown_outcome_runtime",
+                        "butchercraft:platform_contract/scheduler_owner_result_observation",
+                        "butchercraft:platform_contract/scheduler_parallel_reentrancy_prohibition",
+                        "butchercraft:platform_contract/production_transaction_backed_scheduler_conformance"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/scheduler_world")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.runtimeAuthorities().stream()
                 .filter(authority -> authority.ownerId().value().equals("butchercraft:execution"))
                 .allMatch(authority ->

@@ -50,10 +50,13 @@ calendar, and pending Clock-owned calendar events. It contains no wall-clock
 timestamps.
 
 Simulation Scheduler owns the checkpoint payload for Scheduler runtime state.
-The payload wraps the existing Scheduler schema-1 JSON and the Scheduler
+The payload wraps Scheduler schema-2 JSON and the Scheduler
 configuration identity. It contains stage definitions, Work definitions, Work
-runtime records, next submission sequence, and last finalized simulation tick.
-Existing Scheduler validation still rejects persisted `RUNNING` Work.
+runtime records, Invocation Identity and Effect Identity metadata where present,
+owner result observation metadata where present, next submission sequence, and
+last finalized simulation tick. Existing Scheduler validation still rejects
+persisted `RUNNING` Work and preserves `UNKNOWN_OUTCOME` records without
+automatic reinvocation.
 
 World Identity owns deterministic external-root digest derivation. Checkpoint
 Recovery consumes the resulting root reference but does not serialize,

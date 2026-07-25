@@ -99,7 +99,8 @@ final class SimulationSchedulerCheckpointSnapshotCodec {
     private static void appendHandler(StringBuilder builder, SimulationWorkHandler handler) {
         builder.append("handler:")
                 .append(handler.supportedTypeId().value()).append(':')
-                .append(handler.effectType().name())
+                .append(handler.effectType().name()).append(':')
+                .append(handler.effectPolicy().policyIdentity())
                 .append('\n');
     }
 

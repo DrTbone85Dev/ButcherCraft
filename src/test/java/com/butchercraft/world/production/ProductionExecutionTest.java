@@ -6,6 +6,7 @@ import com.butchercraft.world.simulation.scheduler.SimulationPipeline;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
 import com.butchercraft.world.simulation.scheduler.SimulationStageRegistry;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandlerRegistry;
+import com.butchercraft.world.simulation.scheduler.SimulationWorkStatus;
 import com.butchercraft.world.transaction.TransactionStatus;
 import com.butchercraft.world.transaction.TransactionType;
 import com.butchercraft.world.economy.order.GoodQuantity;
@@ -38,6 +39,7 @@ class ProductionExecutionTest {
         assertEquals(ProductionRunStatus.COMPLETED, run.status());
         assertEquals(run.requiredWorkUnits(), run.currentWorkUnits());
         assertTrue(run.completionTransactionId().isPresent());
+        assertEquals(run.id().value() + "/completion", run.completionTransactionId().orElseThrow().value());
         assertEquals(18L, context.dependencies().inventoryManager().quantityIn(
                 ProductionTestFixtures.INPUT_INVENTORY, ProductionTestFixtures.INPUT));
         assertEquals(1L, context.dependencies().inventoryManager().quantityIn(
@@ -54,6 +56,15 @@ class ProductionExecutionTest {
         assertTrue(context.dependencies().transactionManager()
                 .resultEvidenceFor(run.completionTransactionId().orElseThrow())
                 .isPresent());
+        var evidence = context.dependencies().transactionManager()
+                .resultEvidenceFor(run.completionTransactionId().orElseThrow())
+                .orElseThrow();
+        var schedulerRuntime = scheduler.runtimeFor(run.scheduledWorkId().orElseThrow()).orElseThrow();
+        assertEquals(SimulationWorkStatus.COMPLETED, schedulerRuntime.status());
+        assertTrue(schedulerRuntime.lastInvocationIdentity().isPresent());
+        assertTrue(schedulerRuntime.lastEffectIdentity().isPresent());
+        assertEquals("butchercraft:transactions", schedulerRuntime.effectOwnerSubsystemId().orElseThrow());
+        assertEquals(evidence.resultContentDigest(), schedulerRuntime.effectContentDigest().orElseThrow());
         assertTrue(context.dependencies().orderManager().definitions().isEmpty());
     }
 
