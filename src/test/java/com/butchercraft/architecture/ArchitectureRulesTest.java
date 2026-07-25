@@ -781,7 +781,13 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/workstation_owner_result_publication",
                         "butchercraft:platform_contract/workstation_itemstack_mutation_boundary",
                         "butchercraft:platform_contract/execution_first_player_facing_handler",
-                        "butchercraft:platform_contract/scheduler_dispatched_workstation_execution"
+                        "butchercraft:platform_contract/scheduler_dispatched_workstation_execution",
+                        "butchercraft:platform_contract/grinder_gametest_registration_verification",
+                        "butchercraft:platform_contract/grinder_gametest_placement_verification",
+                        "butchercraft:platform_contract/grinder_gametest_end_to_end_execution",
+                        "butchercraft:platform_contract/grinder_gametest_duplicate_safety",
+                        "butchercraft:platform_contract/grinder_gametest_save_load_safety",
+                        "butchercraft:platform_contract/grinder_gametest_uncertain_state_safety"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

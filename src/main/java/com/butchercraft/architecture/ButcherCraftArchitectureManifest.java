@@ -592,6 +592,36 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-012 First Player-Facing Workstation Execution Vertical Slice",
                 "The selected workstation effect is applied only when Scheduler dispatches the generic Execution Work");
+        platformContract(builder, "butchercraft:platform_contract/grinder_gametest_registration_verification",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
+                "ButcherCraft in-world grinder GameTests are registered and executed by runGameTestServer");
+        platformContract(builder, "butchercraft:platform_contract/grinder_gametest_placement_verification",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
+                "Automated server-world tests verify grinder placement, block entity creation, and idle owner state");
+        platformContract(builder, "butchercraft:platform_contract/grinder_gametest_end_to_end_execution",
+                ValidationCategory.EXECUTION, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
+                "Automated server-world tests verify one beef-trim grinder operation through live Execution completion");
+        platformContract(builder, "butchercraft:platform_contract/grinder_gametest_duplicate_safety",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
+                "Automated server-world tests verify repeated interaction and later ticks do not duplicate work or output");
+        platformContract(builder, "butchercraft:platform_contract/grinder_gametest_save_load_safety",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
+                "Automated serialization-level tests verify pre-effect resume and completed-state non-duplication");
+        platformContract(builder, "butchercraft:platform_contract/grinder_gametest_uncertain_state_safety",
+                ValidationCategory.EXECUTION, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-013 Grinder Vertical Slice GameTest and Runtime Hardening",
+                "Automated server-world tests verify malformed and uncertain restored grinder states stop visibly without mutation");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {

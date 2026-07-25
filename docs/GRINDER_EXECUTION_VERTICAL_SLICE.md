@@ -1,6 +1,6 @@
 # Grinder Execution Vertical Slice
 
-Status: IM-012 implemented.
+Status: IM-012 implemented. IM-013 automated server-world verification added.
 
 This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
 
@@ -64,6 +64,22 @@ The workstation controller persists active Execution operation identity, domain 
 
 Safe pre-effect processing may resume. If persisted active Execution state is malformed or an unresolved committed effect is detected, processing moves to a visible error state and does not recreate output. Runtime authorization authority is not persisted.
 
+## Automated GameTest Coverage
+
+IM-013 adds ButcherCraft GameTests under the `butchercraft` namespace, executed by `runGameTestServer` with the committed `empty_5x4x5` template. The Gradle run task copies committed GameTest structure files into the development game directory before launching the GameTest server so a clean checkout does not require manual structure preparation.
+
+The tests verify:
+
+- GameTest discovery and nonzero server execution.
+- Grinder block placement, block entity creation, idle state, empty slots, and absence of an active Execution operation.
+- Valid beef-trim insertion through the workstation inventory path, 60 server-tick processing, one ground-beef output, one consumed input, owner result evidence, Execution success, and Scheduler completion.
+- Repeated insertion/use during processing and continued ticks after completion do not duplicate Execution operations, Scheduler Work, or output.
+- Closing an opened test interaction does not cancel server-side processing.
+- Block-entity NBT serialization and restoration preserves safe pre-effect progress and does not duplicate completed output.
+- Changed input, blocked output, malformed restored state, and uncertain consequential restored state fail visibly without fabricating output or retrying automatically.
+
+The save/load coverage is serialization-level block-entity coverage. It does not claim chunk unload/reload, full world reload, server-restart recovery, coordinated checkpoint recovery, or operator reconciliation coverage.
+
 ## Remaining Gates
 
 - General workstation Execution framework.
@@ -74,3 +90,5 @@ Safe pre-effect processing may resume. If persisted active Execution state is ma
 - Allocation and Planning automation.
 - Operator recovery UI for unknown outcomes.
 - Automatic checkpoint recovery and Evidence archival.
+- Manual client usability approval.
+- Chunk unload/reload, world reload, and full server-restart recovery tests.

@@ -141,10 +141,10 @@ public final class EconomicPlanningService {
                 .stageId(BuiltInSimulationStages.PLANNING)
                 .scheduledTick(nextEligibleTick)
                 .priority(WorkPriority.NORMAL)
-                .origin(new WorkOrigin(
-                        "butchercraft:economic_planning", Optional.of("butchercraft:framework"),
-                        Optional.empty(), authoritativeTick, "butchercraft:planning_service",
-                        Optional.empty(), Optional.empty()
+                .origin(WorkOrigin.of(
+                        "butchercraft:economic_planning",
+                        authoritativeTick,
+                        "butchercraft:planning_service"
                 ))
                 .payload(new WorkPayload(List.of(WorkPayloadEntry.identifier(
                         EconomicPlanningWorkHandler.POLICY_PAYLOAD_KEY,
