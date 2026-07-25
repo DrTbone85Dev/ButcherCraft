@@ -66,10 +66,10 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 
 ## Execution Strategies
 
-`WorkstationProcessingController` delegates processing preparation and commit to a `WorkstationExecutionStrategy`.
+`WorkstationProcessingController` delegates processing preparation and commit to a `WorkstationExecutionStrategy`. IM-012 adds one optional Execution coordinator path for the live Grinder slice; machines without that coordinator continue to use the direct controller completion path.
 
 - The default legacy strategy preserves the existing processing transaction path.
-- The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path.
+- The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path. The IM-012 grinder slice also issues workstation-owned Execution authorization and applies its consequential ItemStack effect only through Scheduler-dispatched generic Execution.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
 - `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
 - Development workstation and any future un-migrated processing workstations remain on the legacy strategy until explicitly migrated.

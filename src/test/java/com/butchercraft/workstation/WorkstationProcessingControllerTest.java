@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -148,12 +149,55 @@ class WorkstationProcessingControllerTest {
         assertTrue(restored.inventory.output().isEmpty());
     }
 
+    @Test
+    void malformedPersistedExecutionStateStopsProcessingAndPreservesInventory() {
+        Harness source = Harness.create();
+        source.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+        source.tick();
+
+        CompoundTag inventoryTag = source.inventory.serializeNBT(RegistryAccess.EMPTY);
+        CompoundTag controllerTag = new CompoundTag();
+        source.controller.saveAdditional(controllerTag, RegistryAccess.EMPTY);
+        controllerTag.putString(
+                "ActiveExecutionOperation",
+                "butchercraft:execution_operation/v1/0000000000000000000000000000000000000000000000000000000000000000"
+        );
+
+        Harness restored = Harness.createWithCoordinator(new RejectingExecutionCoordinator());
+        restored.inventory.deserializeNBT(RegistryAccess.EMPTY, inventoryTag);
+        restored.controller.loadAdditional(controllerTag, RegistryAccess.EMPTY);
+
+        assertEquals(WorkstationState.ERROR, restored.controller.state());
+        assertEquals(WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                restored.controller.lastFailure().orElseThrow().code());
+        assertFalse(restored.inventory.input().isEmpty());
+        assertTrue(restored.inventory.output().isEmpty());
+    }
+
+    @Test
+    void executionBackedControllerRequiresAuthoritativeServerTickContext() {
+        Harness harness = Harness.createWithCoordinator(new RejectingExecutionCoordinator());
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+
+        harness.tick();
+
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                harness.controller.lastFailure().orElseThrow().code());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.output().isEmpty());
+    }
+
     private record Harness(
             WorkstationInventory inventory,
             WorkstationProcessingController controller,
             AtomicInteger changes
     ) {
         static Harness create() {
+            return createWithCoordinator(null);
+        }
+
+        static Harness createWithCoordinator(WorkstationExecutionCoordinator coordinator) {
             AtomicInteger changes = new AtomicInteger();
             WorkstationCapability workstationCapability = DevelopmentWorkstationFixtures.capability();
             WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
@@ -163,13 +207,23 @@ class WorkstationProcessingControllerTest {
                             capability,
                             stack
                     );
-            WorkstationProcessingController controller = new WorkstationProcessingController(
-                    inventory,
-                    workstationCapability,
-                    lookup,
-                    DevelopmentProductItemMappings.fixtureMapping(),
-                    changes::incrementAndGet
-            );
+            WorkstationProcessingController controller = coordinator == null
+                    ? new WorkstationProcessingController(
+                            inventory,
+                            workstationCapability,
+                            lookup,
+                            DevelopmentProductItemMappings.fixtureMapping(),
+                            changes::incrementAndGet
+                    )
+                    : new WorkstationProcessingController(
+                            inventory,
+                            workstationCapability,
+                            lookup,
+                            DevelopmentProductItemMappings.fixtureMapping(),
+                            WorkstationExecutionStrategy.legacy(),
+                            coordinator,
+                            changes::incrementAndGet
+                    );
             inventory.setInputLocked(controller::inputLocked);
             inventory.setOutputExtractionAllowed(controller::outputExtractionAllowed);
             return new Harness(inventory, controller, changes);
@@ -188,6 +242,31 @@ class WorkstationProcessingControllerTest {
 
         void tick() {
             controller.serverTick(null);
+        }
+    }
+
+    private static final class RejectingExecutionCoordinator implements WorkstationExecutionCoordinator {
+        @Override
+        public WorkstationExecutionStartResult start(WorkstationExecutionStartRequest request) {
+            throw new AssertionError("Coordinator must not be reached without server context");
+        }
+
+        @Override
+        public WorkstationExecutionDispatchResult dispatch(WorkstationExecutionDispatchRequest request) {
+            throw new AssertionError("Coordinator must not be reached without server context");
+        }
+
+        @Override
+        public WorkstationExecutionCancelResult cancel(WorkstationExecutionCancelRequest request) {
+            throw new AssertionError("Coordinator must not be reached without server context");
+        }
+
+        @Override
+        public Optional<WorkstationExecutionObservation> observe(
+                com.butchercraft.world.execution.ExecutionOperationId operationId,
+                WorkstationTickContext context
+        ) {
+            return Optional.empty();
         }
     }
 }

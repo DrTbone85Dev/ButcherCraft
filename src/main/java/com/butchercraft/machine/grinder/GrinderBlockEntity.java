@@ -2,9 +2,13 @@ package com.butchercraft.machine.grinder;
 
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.registration.ModBlockEntityTypes;
+import com.butchercraft.machine.grinder.execution.GrinderExecutionCoordinator;
 import com.butchercraft.workstation.WorkstationExecutionStrategy;
+import com.butchercraft.workstation.WorkstationExecutionEffectResult;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
+import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
+import com.butchercraft.world.execution.ExecutionOperationId;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -23,7 +27,8 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
                 GrinderWorkstation.capability(),
                 new WorkstationOperationResolver(),
                 DevelopmentProductItemMappings.fixtureMapping(),
-                WorkstationExecutionStrategy.transformation()
+                WorkstationExecutionStrategy.transformation(),
+                GrinderExecutionCoordinator.INSTANCE
         );
     }
 
@@ -34,6 +39,14 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
     @Override
     public Component getDisplayName() {
         return Component.translatable("container.butchercraft.grinder");
+    }
+
+    public WorkstationExecutionEffectResult completeScheduledExecution(
+            ExecutionOperationId operationId,
+            ExecutionDomainEffectIdentity domainEffectIdentity,
+            long authoritativeTick
+    ) {
+        return super.completeScheduledExecution(operationId, domainEffectIdentity, authoritativeTick);
     }
 
     @Nullable

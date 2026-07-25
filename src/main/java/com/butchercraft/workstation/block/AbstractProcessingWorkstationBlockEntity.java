@@ -3,16 +3,21 @@ package com.butchercraft.workstation.block;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.workstation.DevelopmentProductItemMapping;
 import com.butchercraft.workstation.WorkstationCapability;
+import com.butchercraft.workstation.WorkstationExecutionCoordinator;
+import com.butchercraft.workstation.WorkstationExecutionEffectResult;
 import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailure;
+import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationOperationLookup;
 import com.butchercraft.workstation.WorkstationProcessingController;
 import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.WorkstationTickContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -70,16 +75,39 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
             DevelopmentProductItemMapping outputMapping,
             WorkstationExecutionStrategy executionStrategy
     ) {
+        this(type, pos, blockState, capability, resolver, outputMapping, executionStrategy, null);
+    }
+
+    protected AbstractProcessingWorkstationBlockEntity(
+            BlockEntityType<?> type,
+            BlockPos pos,
+            BlockState blockState,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            WorkstationExecutionCoordinator executionCoordinator
+    ) {
         super(type, pos, blockState, capability);
         this.resolver = Objects.requireNonNull(resolver, "resolver");
-        this.controller = new WorkstationProcessingController(
-                inventory(),
-                capability,
-                resolver,
-                Objects.requireNonNull(outputMapping, "outputMapping"),
-                Objects.requireNonNull(executionStrategy, "executionStrategy"),
-                this::markChanged
-        );
+        this.controller = executionCoordinator == null
+                ? new WorkstationProcessingController(
+                        inventory(),
+                        capability,
+                        resolver,
+                        Objects.requireNonNull(outputMapping, "outputMapping"),
+                        Objects.requireNonNull(executionStrategy, "executionStrategy"),
+                        this::markChanged
+                )
+                : new WorkstationProcessingController(
+                        inventory(),
+                        capability,
+                        resolver,
+                        Objects.requireNonNull(outputMapping, "outputMapping"),
+                        Objects.requireNonNull(executionStrategy, "executionStrategy"),
+                        executionCoordinator,
+                        this::markChanged
+                );
         inventory().setInputLocked(controller::inputLocked);
         inventory().setOutputExtractionAllowed(controller::outputExtractionAllowed);
         inventory().setInputSlotValidator(this::canAcceptInput);
@@ -104,13 +132,22 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
             T blockEntity
     ) {
         if (!level.isClientSide) {
-            blockEntity.tickController(level.registryAccess());
+            if (level instanceof ServerLevel serverLevel) {
+                blockEntity.tickController(new WorkstationTickContext(serverLevel, pos));
+            } else {
+                blockEntity.tickController(level.registryAccess());
+            }
         }
     }
 
     @Override
     protected void beforeDropContents() {
-        controller.cancelPreservingInput();
+        WorkstationTickContext context = currentTickContext();
+        if (context == null) {
+            controller.cancelPreservingInput();
+        } else {
+            controller.cancelPreservingInput(context);
+        }
     }
 
     @Override
@@ -150,6 +187,29 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
         controller.serverTick(registryAccess);
     }
 
+    protected final void tickController(WorkstationTickContext tickContext) {
+        controller.serverTickWithContext(tickContext);
+    }
+
+    protected WorkstationExecutionEffectResult completeScheduledExecution(
+            com.butchercraft.world.execution.ExecutionOperationId operationId,
+            com.butchercraft.world.execution.ExecutionDomainEffectIdentity domainEffectIdentity,
+            long authoritativeTick
+    ) {
+        if (level == null) {
+            return WorkstationExecutionEffectResult.rejected(WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Workstation level is unavailable during scheduled Execution effect"
+            ));
+        }
+        return controller.completeScheduledExecution(
+                level.registryAccess(),
+                operationId,
+                domainEffectIdentity,
+                authoritativeTick
+        );
+    }
+
     @Override
     protected void onInventoryChanged() {
         controller.onInventoryChanged();
@@ -157,5 +217,11 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
 
     private void markChanged() {
         setChanged();
+    }
+
+    private WorkstationTickContext currentTickContext() {
+        return level instanceof ServerLevel serverLevel
+                ? new WorkstationTickContext(serverLevel, worldPosition)
+                : null;
     }
 }

@@ -776,7 +776,12 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/scheduler_unknown_outcome_runtime",
                         "butchercraft:platform_contract/scheduler_owner_result_observation",
                         "butchercraft:platform_contract/scheduler_parallel_reentrancy_prohibition",
-                        "butchercraft:platform_contract/production_transaction_backed_scheduler_conformance"
+                        "butchercraft:platform_contract/production_transaction_backed_scheduler_conformance",
+                        "butchercraft:platform_contract/workstation_player_execution_slice",
+                        "butchercraft:platform_contract/workstation_owner_result_publication",
+                        "butchercraft:platform_contract/workstation_itemstack_mutation_boundary",
+                        "butchercraft:platform_contract/execution_first_player_facing_handler",
+                        "butchercraft:platform_contract/scheduler_dispatched_workstation_execution"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

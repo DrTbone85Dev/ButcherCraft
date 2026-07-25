@@ -60,6 +60,7 @@ public final class ButcherCraftArchitectureManifest {
     private static final ArchitectureId CHECKPOINT_RECOVERY = id("butchercraft:checkpoint_recovery");
     private static final ArchitectureId ALLOCATION = id("butchercraft:allocation");
     private static final ArchitectureId EXECUTION = id("butchercraft:execution");
+    private static final ArchitectureId WORKSTATION = id("butchercraft:workstation");
     private static final ArchitectureId RESOURCE_AUTHORITIES =
             id("butchercraft:resource_authorities");
     private static final ArchitectureId WORLD_SCOPE = id("butchercraft:scope/world");
@@ -123,6 +124,7 @@ public final class ButcherCraftArchitectureManifest {
         ));
         builder.component(component(ALLOCATION, "Resource Allocation", "com.butchercraft.world.allocation"));
         builder.component(component(EXECUTION, "Execution", "com.butchercraft.world.execution"));
+        builder.component(component(WORKSTATION, "Workstations", "com.butchercraft.workstation"));
         builder.component(component(
                 RESOURCE_AUTHORITIES,
                 "External Resource Authorities",
@@ -565,6 +567,31 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
                 "RFC-0022 M22E-M22F and RFC-0023 Draft 2",
                 "Future Allocation integration depends on finalized Execution contracts and remains separately gated");
+        platformContract(builder, "butchercraft:platform_contract/workstation_player_execution_slice",
+                ValidationCategory.EXECUTION, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
+                "One grinder workstation operation issues workstation-owned Execution authorization and completes through generic Execution");
+        platformContract(builder, "butchercraft:platform_contract/workstation_owner_result_publication",
+                ValidationCategory.EXECUTION, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
+                "The workstation owner publishes immutable owner result evidence before Execution succeeds");
+        platformContract(builder, "butchercraft:platform_contract/workstation_itemstack_mutation_boundary",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
+                "The selected grinder slice mutates workstation-owned ItemStack slots, not economic Inventory runtime");
+        platformContract(builder, "butchercraft:platform_contract/execution_first_player_facing_handler",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
+                "Execution registers one live player-facing grinder handler through the generic Scheduler work type");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_dispatched_workstation_execution",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
+                "The selected workstation effect is applied only when Scheduler dispatches the generic Execution Work");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -630,6 +657,11 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/execution_result_evidence", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_unknown_outcome_runtime", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_persistence", EXECUTION);
+        own(builder, "butchercraft:responsibility/workstation_state", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_slot_inventory", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_operation_preconditions", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_execution_authorization_issuance", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_owner_result_evidence", WORKSTATION);
         own(builder, "butchercraft:responsibility/allocation_requests", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_sets", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_commitments", ALLOCATION);
@@ -1140,6 +1172,41 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.ALLOCATION,
                 "RFC-0022 M22D preserves external authority over Capacity definitions"
         );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_state",
+                WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "IM-012 keeps workstation visible state owned by the workstation subsystem"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_slot_inventory",
+                WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "IM-012 keeps grinder input and output ItemStack slots owned by the workstation subsystem"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_operation_preconditions",
+                WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "IM-012 keeps recipe applicability and effect preconditions owned by the workstation subsystem"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_execution_authorization_issuance",
+                WORKSTATION,
+                ValidationCategory.EXECUTION,
+                "IM-012 allows one workstation-owned authorization source for the grinder vertical slice"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_owner_result_evidence",
+                WORKSTATION,
+                ValidationCategory.EXECUTION,
+                "IM-012 assigns the selected grinder Authoritative Result to the workstation owner"
+        );
     }
 
     private static void addDependencies(ValidationContextBuilder builder) {
@@ -1171,6 +1238,10 @@ public final class ButcherCraftArchitectureManifest {
         depends(builder, PLANNING, PRODUCTION);
         depends(builder, PLANNING, SCHEDULER);
         depends(builder, EXECUTION, SCHEDULER);
+        depends(builder, WORKSTATION, EXECUTION);
+        depends(builder, WORKSTATION, SCHEDULER);
+        depends(builder, WORKSTATION, SIMULATION);
+        depends(builder, WORKSTATION, WORLD_IDENTITY);
 
         forbid(
                 builder,
@@ -1402,7 +1473,7 @@ public final class ButcherCraftArchitectureManifest {
                 PLATFORM_ARCHITECTURE,
                 WORLD_IDENTITY, SIMULATION, BUSINESS_RUNTIME, WORKFORCE, GOODS, ACTORS,
                 INVENTORY, TRANSACTIONS, ORDERS, SCHEDULER, PRODUCTION, PLANNING,
-                EVIDENCE_LIFECYCLE, CHECKPOINT_RECOVERY, ALLOCATION, EXECUTION,
+                EVIDENCE_LIFECYCLE, CHECKPOINT_RECOVERY, ALLOCATION, EXECUTION, WORKSTATION,
                 RESOURCE_AUTHORITIES
         ).stream()
                 .sorted()

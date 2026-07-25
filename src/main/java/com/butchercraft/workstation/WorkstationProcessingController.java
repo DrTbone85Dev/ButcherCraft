@@ -2,6 +2,10 @@ package com.butchercraft.workstation;
 
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.result.OperationResult;
+import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
+import com.butchercraft.world.execution.ExecutionOperationId;
+import com.butchercraft.world.execution.ExecutionOwnerResultEvidence;
+import com.butchercraft.world.execution.ExecutionStatus;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -9,8 +13,12 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,12 +32,23 @@ public final class WorkstationProcessingController {
     private static final String RESERVED_INPUTS_TAG = "ReservedInputs";
     private static final String RESERVED_INPUT_INDEX_TAG = "InputIndex";
     private static final String COMPLETION_COMMITTED_TAG = "CompletionCommitted";
+    private static final String ACTIVE_EXECUTION_OPERATION_TAG = "ActiveExecutionOperation";
+    private static final String ACTIVE_DOMAIN_EFFECT_TAG = "ActiveDomainEffect";
+    private static final String EXECUTION_WORK_SUBMITTED_TAG = "ExecutionWorkSubmitted";
+    private static final String FROZEN_INPUT_IDENTITY_TAG = "FrozenInputIdentity";
+    private static final String EXPECTED_OUTPUT_IDENTITY_TAG = "ExpectedOutputIdentity";
+    private static final String SOURCE_FRESHNESS_IDENTITY_TAG = "SourceFreshnessIdentity";
+    private static final String OWNER_RESULT_IDENTITY_TAG = "OwnerResultIdentity";
+    private static final String OWNER_RESULT_DIGEST_TAG = "OwnerResultDigest";
+    private static final String OWNER_RESULT_CONTENT_DIGEST_TAG = "OwnerResultContentDigest";
+    private static final String OWNER_SUBSYSTEM_ID = "butchercraft:workstation";
 
     private final WorkstationInventory inventory;
     private final WorkstationCapability capability;
     private final WorkstationOperationLookup resolver;
     private final DevelopmentProductItemMapping outputMapping;
     private final WorkstationExecutionStrategy executionStrategy;
+    private final Optional<WorkstationExecutionCoordinator> executionCoordinator;
     private final Runnable changed;
 
     private WorkstationState state = WorkstationState.IDLE;
@@ -40,6 +59,13 @@ public final class WorkstationProcessingController {
     private ItemStack reservedInputSnapshot = ItemStack.EMPTY;
     private List<ItemStack> reservedInputSnapshots = List.of();
     private boolean completionCommitted;
+    private ExecutionOperationId activeExecutionOperationId;
+    private ExecutionDomainEffectIdentity activeDomainEffectIdentity;
+    private boolean executionWorkSubmitted;
+    private String frozenInputIdentity;
+    private String expectedOutputIdentity;
+    private String sourceFreshnessIdentity;
+    private ExecutionOwnerResultEvidence ownerResultEvidence;
 
     public WorkstationProcessingController(
             WorkstationInventory inventory,
@@ -59,11 +85,42 @@ public final class WorkstationProcessingController {
             WorkstationExecutionStrategy executionStrategy,
             Runnable changed
     ) {
+        this(inventory, capability, resolver, outputMapping, executionStrategy, Optional.empty(), changed);
+    }
+
+    public WorkstationProcessingController(
+            WorkstationInventory inventory,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            WorkstationExecutionCoordinator executionCoordinator,
+            Runnable changed
+    ) {
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.capability = Objects.requireNonNull(capability, "capability");
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
         this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");
+        this.executionCoordinator = Optional.of(Objects.requireNonNull(executionCoordinator, "executionCoordinator"));
+        this.changed = Objects.requireNonNull(changed, "changed");
+    }
+
+    private WorkstationProcessingController(
+            WorkstationInventory inventory,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            Optional<WorkstationExecutionCoordinator> executionCoordinator,
+            Runnable changed
+    ) {
+        this.inventory = Objects.requireNonNull(inventory, "inventory");
+        this.capability = Objects.requireNonNull(capability, "capability");
+        this.resolver = Objects.requireNonNull(resolver, "resolver");
+        this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
+        this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");
+        this.executionCoordinator = Objects.requireNonNull(executionCoordinator, "executionCoordinator");
         this.changed = Objects.requireNonNull(changed, "changed");
     }
 
@@ -114,6 +171,15 @@ public final class WorkstationProcessingController {
     }
 
     public void serverTick(RegistryAccess registryAccess) {
+        serverTick(registryAccess, null);
+    }
+
+    public void serverTickWithContext(WorkstationTickContext tickContext) {
+        Objects.requireNonNull(tickContext, "tickContext");
+        serverTick(tickContext.registryAccess(), tickContext);
+    }
+
+    private void serverTick(RegistryAccess registryAccess, WorkstationTickContext tickContext) {
         if (state == WorkstationState.IDLE) {
             if (!inventory.input().isEmpty()) {
                 setState(WorkstationState.READY);
@@ -123,11 +189,15 @@ public final class WorkstationProcessingController {
         }
 
         if (state == WorkstationState.READY) {
-            startProcessing(registryAccess);
+            startProcessing(registryAccess, tickContext);
             return;
         }
 
         if (state == WorkstationState.PROCESSING) {
+            observeExecutionTerminalState(tickContext);
+            if (state != WorkstationState.PROCESSING) {
+                return;
+            }
             if (inventory.input().isEmpty()) {
                 block(WorkstationFailure.of(WorkstationFailureCode.NO_INPUT, "Reserved input is missing during processing"));
                 return;
@@ -138,7 +208,11 @@ public final class WorkstationProcessingController {
             }
             elapsedTicks = Math.min(totalTicks, elapsedTicks + 1);
             if (elapsedTicks >= totalTicks) {
-                complete(registryAccess);
+                if (executionCoordinator.isPresent()) {
+                    dispatchScheduledEffect(tickContext);
+                } else {
+                    complete(registryAccess);
+                }
             } else {
                 changed.run();
             }
@@ -151,7 +225,23 @@ public final class WorkstationProcessingController {
     }
 
     public void cancelPreservingInput() {
+        cancelPreservingInput(null);
+    }
+
+    public void cancelPreservingInput(WorkstationTickContext tickContext) {
         if (state == WorkstationState.PROCESSING || state == WorkstationState.BLOCKED || state == WorkstationState.READY) {
+            if (activeExecutionOperationId != null && executionCoordinator.isPresent() && tickContext != null) {
+                WorkstationExecutionCancelResult cancelled = executionCoordinator.orElseThrow().cancel(
+                        new WorkstationExecutionCancelRequest(
+                                tickContext,
+                                activeExecutionOperationId,
+                                "Workstation processing was cancelled before effect application"
+                        )
+                );
+                if (!cancelled.accepted()) {
+                    lastFailure = cancelled.failure().orElseThrow();
+                }
+            }
             resetRuntimeProgress();
             state = WorkstationState.IDLE;
             changed.run();
@@ -186,6 +276,27 @@ public final class WorkstationProcessingController {
             }
         }
         tag.putBoolean(COMPLETION_COMMITTED_TAG, completionCommitted);
+        if (activeExecutionOperationId != null) {
+            tag.putString(ACTIVE_EXECUTION_OPERATION_TAG, activeExecutionOperationId.value());
+        }
+        if (activeDomainEffectIdentity != null) {
+            tag.putString(ACTIVE_DOMAIN_EFFECT_TAG, activeDomainEffectIdentity.value());
+        }
+        tag.putBoolean(EXECUTION_WORK_SUBMITTED_TAG, executionWorkSubmitted);
+        if (frozenInputIdentity != null) {
+            tag.putString(FROZEN_INPUT_IDENTITY_TAG, frozenInputIdentity);
+        }
+        if (expectedOutputIdentity != null) {
+            tag.putString(EXPECTED_OUTPUT_IDENTITY_TAG, expectedOutputIdentity);
+        }
+        if (sourceFreshnessIdentity != null) {
+            tag.putString(SOURCE_FRESHNESS_IDENTITY_TAG, sourceFreshnessIdentity);
+        }
+        if (ownerResultEvidence != null) {
+            tag.putString(OWNER_RESULT_IDENTITY_TAG, ownerResultEvidence.ownerResultIdentity());
+            tag.putString(OWNER_RESULT_DIGEST_TAG, ownerResultEvidence.ownerResultDigest());
+            tag.putString(OWNER_RESULT_CONTENT_DIGEST_TAG, ownerResultEvidence.contentDigest());
+        }
     }
 
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -206,6 +317,23 @@ public final class WorkstationProcessingController {
                     : ItemStack.EMPTY;
             reservedInputSnapshots = loadReservedInputs(tag, registries);
             completionCommitted = tag.getBoolean(COMPLETION_COMMITTED_TAG);
+            activeExecutionOperationId = tag.contains(ACTIVE_EXECUTION_OPERATION_TAG, Tag.TAG_STRING)
+                    ? ExecutionOperationId.of(tag.getString(ACTIVE_EXECUTION_OPERATION_TAG))
+                    : null;
+            activeDomainEffectIdentity = tag.contains(ACTIVE_DOMAIN_EFFECT_TAG, Tag.TAG_STRING)
+                    ? new ExecutionDomainEffectIdentity(tag.getString(ACTIVE_DOMAIN_EFFECT_TAG))
+                    : null;
+            executionWorkSubmitted = tag.getBoolean(EXECUTION_WORK_SUBMITTED_TAG);
+            frozenInputIdentity = tag.contains(FROZEN_INPUT_IDENTITY_TAG, Tag.TAG_STRING)
+                    ? tag.getString(FROZEN_INPUT_IDENTITY_TAG)
+                    : null;
+            expectedOutputIdentity = tag.contains(EXPECTED_OUTPUT_IDENTITY_TAG, Tag.TAG_STRING)
+                    ? tag.getString(EXPECTED_OUTPUT_IDENTITY_TAG)
+                    : null;
+            sourceFreshnessIdentity = tag.contains(SOURCE_FRESHNESS_IDENTITY_TAG, Tag.TAG_STRING)
+                    ? tag.getString(SOURCE_FRESHNESS_IDENTITY_TAG)
+                    : null;
+            ownerResultEvidence = loadOwnerResultEvidence(tag);
             validateLoadedRuntimeState();
         } catch (RuntimeException exception) {
             state = WorkstationState.ERROR;
@@ -217,7 +345,7 @@ public final class WorkstationProcessingController {
         }
     }
 
-    private void startProcessing(RegistryAccess registryAccess) {
+    private void startProcessing(RegistryAccess registryAccess, WorkstationTickContext tickContext) {
         if (state == WorkstationState.PROCESSING) {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Processing is already active"));
             return;
@@ -242,6 +370,13 @@ public final class WorkstationProcessingController {
             ));
             return;
         }
+        if (executionCoordinator.isPresent() && tickContext == null) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Execution-backed workstation processing requires an authoritative server tick context"
+            ));
+            return;
+        }
 
         selectedOperationId = operation.operationId();
         elapsedTicks = 0;
@@ -249,11 +384,42 @@ public final class WorkstationProcessingController {
         reservedInputSnapshot = inventory.input().copy();
         reservedInputSnapshots = inventory.inputs().stream().map(ItemStack::copy).toList();
         completionCommitted = false;
+        activeExecutionOperationId = null;
+        activeDomainEffectIdentity = null;
+        executionWorkSubmitted = false;
+        frozenInputIdentity = null;
+        expectedOutputIdentity = null;
+        sourceFreshnessIdentity = null;
+        ownerResultEvidence = null;
+        if (executionCoordinator.isPresent()) {
+            WorkstationExecutionStartResult startResult = executionCoordinator.orElseThrow().start(
+                    new WorkstationExecutionStartRequest(
+                            tickContext,
+                            capability,
+                            operation,
+                            reservedInputSnapshots,
+                            prepared.proposedOutputs()
+                    )
+            );
+            if (!startResult.accepted()) {
+                resetRuntimeProgress();
+                block(startResult.failure().orElseThrow());
+                return;
+            }
+            activeExecutionOperationId = startResult.operationId().orElseThrow();
+            activeDomainEffectIdentity = startResult.domainEffectIdentity().orElseThrow();
+            frozenInputIdentity = startResult.frozenInputIdentity().orElseThrow();
+            expectedOutputIdentity = startResult.expectedOutputIdentity().orElseThrow();
+            sourceFreshnessIdentity = startResult.sourceFreshnessIdentity().orElseThrow();
+        }
         clearFailure();
         setState(WorkstationState.PROCESSING);
     }
 
     private void retryBlockedCompletion(RegistryAccess registryAccess) {
+        if (activeExecutionOperationId != null) {
+            return;
+        }
         if (inventory.input().isEmpty()) {
             resetToIdle();
             return;
@@ -264,20 +430,128 @@ public final class WorkstationProcessingController {
         }
     }
 
+    private void observeExecutionTerminalState(WorkstationTickContext tickContext) {
+        if (activeExecutionOperationId == null || executionCoordinator.isEmpty() || tickContext == null) {
+            return;
+        }
+        Optional<WorkstationExecutionObservation> observation =
+                executionCoordinator.orElseThrow().observe(activeExecutionOperationId, tickContext);
+        if (observation.isEmpty()) {
+            return;
+        }
+        ExecutionStatus status = observation.orElseThrow().status();
+        if (status == ExecutionStatus.SUCCEEDED) {
+            if (state != WorkstationState.COMPLETE) {
+                block(WorkstationFailure.of(
+                        WorkstationFailureCode.EXECUTION_RESULT_REJECTED,
+                        "Execution succeeded but workstation completion state was not published"
+                ));
+            }
+            return;
+        }
+        if (status.terminal()) {
+            block(observation.orElseThrow().terminalFailure().orElseGet(() -> WorkstationFailure.of(
+                    WorkstationFailureCode.EXECUTION_RESULT_REJECTED,
+                    "Execution operation reached terminal status " + status.serializedName()
+            )));
+        }
+    }
+
+    private void dispatchScheduledEffect(WorkstationTickContext tickContext) {
+        if (activeExecutionOperationId == null) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Execution-backed workstation reached completion without an active Execution operation"
+            ));
+            return;
+        }
+        if (tickContext == null) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Execution-backed workstation completion requires an authoritative server tick context"
+            ));
+            return;
+        }
+        WorkstationExecutionDispatchResult dispatched = executionCoordinator.orElseThrow().dispatch(
+                new WorkstationExecutionDispatchRequest(tickContext, activeExecutionOperationId)
+        );
+        if (!dispatched.accepted()) {
+            block(dispatched.failure().orElseThrow());
+            return;
+        }
+        executionWorkSubmitted = true;
+        changed.run();
+    }
+
+    public WorkstationExecutionEffectResult completeScheduledExecution(
+            RegistryAccess registryAccess,
+            ExecutionOperationId operationId,
+            ExecutionDomainEffectIdentity domainEffectIdentity,
+            long authoritativeTick
+    ) {
+        Objects.requireNonNull(operationId, "operationId");
+        Objects.requireNonNull(domainEffectIdentity, "domainEffectIdentity");
+        if (activeExecutionOperationId == null || !activeExecutionOperationId.equals(operationId)) {
+            return WorkstationExecutionEffectResult.rejected(WorkstationFailure.of(
+                    WorkstationFailureCode.EXECUTION_RESULT_REJECTED,
+                    "Scheduled Execution operation does not match the active workstation operation"
+            ));
+        }
+        if (activeDomainEffectIdentity == null || !activeDomainEffectIdentity.equals(domainEffectIdentity)) {
+            return WorkstationExecutionEffectResult.rejected(WorkstationFailure.of(
+                    WorkstationFailureCode.EXECUTION_RESULT_REJECTED,
+                    "Scheduled Execution domain Effect Identity does not match the workstation operation"
+            ));
+        }
+        if (state == WorkstationState.COMPLETE && ownerResultEvidence != null) {
+            return WorkstationExecutionEffectResult.accepted(ownerResultEvidence);
+        }
+        if (state != WorkstationState.PROCESSING) {
+            return WorkstationExecutionEffectResult.rejected(WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Workstation is not processing when Execution effect is dispatched"
+            ));
+        }
+        if (elapsedTicks < totalTicks) {
+            return WorkstationExecutionEffectResult.rejected(WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Workstation received Execution effect before processing duration completed"
+            ));
+        }
+        Optional<ExecutionOwnerResultEvidence> completed = complete(registryAccess, operationId, domainEffectIdentity,
+                authoritativeTick);
+        return completed
+                .map(WorkstationExecutionEffectResult::accepted)
+                .orElseGet(() -> WorkstationExecutionEffectResult.rejected(lastFailure().orElseGet(() ->
+                        WorkstationFailure.of(
+                                WorkstationFailureCode.RESULT_CREATION_FAILED,
+                                "Workstation effect failed without a typed failure"
+                        ))));
+    }
+
     private void complete(RegistryAccess registryAccess) {
+        complete(registryAccess, activeExecutionOperationId, activeDomainEffectIdentity, -1L);
+    }
+
+    private Optional<ExecutionOwnerResultEvidence> complete(
+            RegistryAccess registryAccess,
+            ExecutionOperationId executionOperationId,
+            ExecutionDomainEffectIdentity domainEffectIdentity,
+            long authoritativeTick
+    ) {
         if (completionCommitted) {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Completion was already committed"));
-            return;
+            return Optional.empty();
         }
         if (!inventory.outputsEmpty()) {
             block(WorkstationFailure.of(WorkstationFailureCode.OUTPUT_OCCUPIED, "Output slot is occupied at completion"));
-            return;
+            return Optional.empty();
         }
 
         WorkstationOperationResolution resolution = resolver.resolve(registryAccess, capability, inventory.input());
         if (!resolution.succeeded()) {
             block(resolution.failure().orElseThrow());
-            return;
+            return Optional.empty();
         }
         ResolvedWorkstationOperation operation = resolution.operation().orElseThrow();
         if (selectedOperationId != null && !selectedOperationId.equals(operation.operationId())) {
@@ -286,7 +560,7 @@ public final class WorkstationProcessingController {
                     operation.operationId(),
                     "Resolved operation changed before completion"
             ));
-            return;
+            return Optional.empty();
         }
 
         OperationResult committed = executionStrategy.commit(capability, operation, inventory, outputMapping);
@@ -295,7 +569,7 @@ public final class WorkstationProcessingController {
                     failureCodeForResult(committed, WorkstationFailureCode.RESULT_CREATION_FAILED),
                     committed.failureReason().map(reason -> reason.message()).orElse("Processing transaction did not produce committed outputs")
             ));
-            return;
+            return Optional.empty();
         }
         if (committed.committedOutputs().size() > capability.outputSlots()
                 || committed.committedOutputs().size() > inventory.outputSlotCount()) {
@@ -303,7 +577,7 @@ public final class WorkstationProcessingController {
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
                     "Processing transaction produced more outputs than this workstation can hold"
             ));
-            return;
+            return Optional.empty();
         }
 
         List<ItemStack> outputStacks = new ArrayList<>();
@@ -320,7 +594,7 @@ public final class WorkstationProcessingController {
                         ResourceLocation.parse(outputProduct.typeId().value()),
                         "No development item mapping exists for output product"
                 ));
-                return;
+                return Optional.empty();
             }
             outputStacks.add(output.orElseThrow());
         }
@@ -337,13 +611,25 @@ public final class WorkstationProcessingController {
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
                     "Unable to create a workstation inventory commit plan: " + exception.getMessage()
             ));
-            return;
+            return Optional.empty();
         }
 
+        ExecutionOwnerResultEvidence resultEvidence = executionOperationId == null || domainEffectIdentity == null
+                ? null
+                : ownerResultEvidence(
+                        executionOperationId,
+                        domainEffectIdentity,
+                        operation,
+                        committed.committedOutputs(),
+                        authoritativeTick
+                );
         try {
             completionCommitted = true;
             commitPlan.commit();
             elapsedTicks = totalTicks;
+            if (resultEvidence != null) {
+                ownerResultEvidence = resultEvidence;
+            }
             clearFailure();
             setState(WorkstationState.COMPLETE);
         } catch (RuntimeException exception) {
@@ -352,7 +638,9 @@ public final class WorkstationProcessingController {
                     WorkstationFailureCode.RESULT_CREATION_FAILED,
                     "Output insertion failed and workstation inventory was restored"
             ));
+            return Optional.empty();
         }
+        return Optional.ofNullable(resultEvidence);
     }
 
     private void block(WorkstationFailure failure) {
@@ -378,6 +666,13 @@ public final class WorkstationProcessingController {
         reservedInputSnapshot = ItemStack.EMPTY;
         reservedInputSnapshots = List.of();
         completionCommitted = false;
+        activeExecutionOperationId = null;
+        activeDomainEffectIdentity = null;
+        executionWorkSubmitted = false;
+        frozenInputIdentity = null;
+        expectedOutputIdentity = null;
+        sourceFreshnessIdentity = null;
+        ownerResultEvidence = null;
     }
 
     private void setState(WorkstationState next) {
@@ -404,6 +699,27 @@ public final class WorkstationProcessingController {
                         "Active processing state had no reserved input snapshot after load"
                 );
                 resetRuntimeProgress();
+            }
+            if (state == WorkstationState.PROCESSING && completionCommitted) {
+                state = WorkstationState.ERROR;
+                lastFailure = WorkstationFailure.of(
+                        WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                        "Active processing state had an unresolved committed effect after load"
+                );
+                resetRuntimeProgress();
+            }
+            if (state == WorkstationState.PROCESSING && activeExecutionOperationId != null) {
+                if (activeDomainEffectIdentity == null
+                        || frozenInputIdentity == null
+                        || expectedOutputIdentity == null
+                        || sourceFreshnessIdentity == null) {
+                    state = WorkstationState.ERROR;
+                    lastFailure = WorkstationFailure.of(
+                            WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                            "Execution-backed processing state was incomplete after load"
+                    );
+                    resetRuntimeProgress();
+                }
             }
         }
         if (state == WorkstationState.COMPLETE && inventory.outputsEmpty()) {
@@ -451,6 +767,78 @@ public final class WorkstationProcessingController {
         return List.of();
     }
 
+    private ExecutionOwnerResultEvidence loadOwnerResultEvidence(CompoundTag tag) {
+        if (activeDomainEffectIdentity == null
+                || !tag.contains(OWNER_RESULT_IDENTITY_TAG, Tag.TAG_STRING)
+                || !tag.contains(OWNER_RESULT_DIGEST_TAG, Tag.TAG_STRING)
+                || !tag.contains(OWNER_RESULT_CONTENT_DIGEST_TAG, Tag.TAG_STRING)) {
+            return null;
+        }
+        return new ExecutionOwnerResultEvidence(
+                com.butchercraft.world.execution.ExecutionSchema.CURRENT_VERSION,
+                OWNER_SUBSYSTEM_ID,
+                tag.getString(OWNER_RESULT_IDENTITY_TAG),
+                activeDomainEffectIdentity,
+                tag.getString(OWNER_RESULT_DIGEST_TAG),
+                tag.getString(OWNER_RESULT_CONTENT_DIGEST_TAG)
+        );
+    }
+
+    private ExecutionOwnerResultEvidence ownerResultEvidence(
+            ExecutionOperationId executionOperationId,
+            ExecutionDomainEffectIdentity domainEffectIdentity,
+            ResolvedWorkstationOperation operation,
+            List<Product> outputProducts,
+            long authoritativeTick
+    ) {
+        String ownerResultDigest = ownerResultDigest(
+                executionOperationId,
+                domainEffectIdentity,
+                operation,
+                outputProducts,
+                authoritativeTick
+        );
+        String ownerResultIdentity = "butchercraft:workstation_result/v1/" + digestIdSuffix(ownerResultDigest);
+        return ExecutionOwnerResultEvidence.of(
+                OWNER_SUBSYSTEM_ID,
+                ownerResultIdentity,
+                domainEffectIdentity,
+                ownerResultDigest
+        );
+    }
+
+    private String ownerResultDigest(
+            ExecutionOperationId executionOperationId,
+            ExecutionDomainEffectIdentity domainEffectIdentity,
+            ResolvedWorkstationOperation operation,
+            List<Product> outputProducts,
+            long authoritativeTick
+    ) {
+        CanonicalDigest digest = CanonicalDigest.create("butchercraft:workstation_owner_result")
+                .add(executionOperationId.value())
+                .add(domainEffectIdentity.value())
+                .add(selectedOperationId == null ? "" : selectedOperationId.toString())
+                .add(operation.operationId().toString())
+                .add(frozenInputIdentity == null ? "" : frozenInputIdentity)
+                .add(expectedOutputIdentity == null ? "" : expectedOutputIdentity)
+                .add(sourceFreshnessIdentity == null ? "" : sourceFreshnessIdentity)
+                .add(authoritativeTick)
+                .add(outputProducts.size());
+        for (Product product : outputProducts) {
+            digest.add(product.typeId().value())
+                    .add(product.sourceCategory().id().value())
+                    .add(product.processingState().id().value())
+                    .add(product.quantity().amount())
+                    .add(product.quantity().unit().id())
+                    .add(product.quality().score());
+        }
+        return digest.finish();
+    }
+
+    private static String digestIdSuffix(String digest) {
+        return digest.substring("sha256:".length());
+    }
+
     private static WorkstationFailureCode failureCodeForResult(OperationResult result, WorkstationFailureCode fallback) {
         return result.failureReason()
                 .map(reason -> switch (reason.code()) {
@@ -461,5 +849,44 @@ public final class WorkstationProcessingController {
                     default -> fallback;
                 })
                 .orElse(fallback);
+    }
+
+    private static final class CanonicalDigest {
+        private final MessageDigest digest;
+
+        private CanonicalDigest(String domain) {
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException exception) {
+                throw new IllegalStateException("SHA-256 is required", exception);
+            }
+            add(domain);
+        }
+
+        static CanonicalDigest create(String domain) {
+            return new CanonicalDigest(domain);
+        }
+
+        CanonicalDigest add(String value) {
+            byte[] bytes = Objects.requireNonNull(value, "value").getBytes(StandardCharsets.UTF_8);
+            digest.update((byte) bytes.length);
+            digest.update((byte) (bytes.length >>> 8));
+            digest.update((byte) (bytes.length >>> 16));
+            digest.update((byte) (bytes.length >>> 24));
+            digest.update(bytes);
+            return this;
+        }
+
+        CanonicalDigest add(long value) {
+            return add(Long.toString(value));
+        }
+
+        CanonicalDigest add(int value) {
+            return add(Integer.toString(value));
+        }
+
+        String finish() {
+            return "sha256:" + HexFormat.of().formatHex(digest.digest());
+        }
     }
 }
