@@ -202,6 +202,21 @@ public final class ButcherCraftArchitectureManifest {
                 "ADR-01 Evidence Lifecycle",
                 "Evidence Lifecycle owns classification, retention, archival, compaction records, "
                         + "integrity verification, and query policy");
+        platformContract(builder, "butchercraft:platform_contract/evidence_classification_foundation",
+                ValidationCategory.GENERAL, EVIDENCE_LIFECYCLE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-002 Evidence Lifecycle Foundation",
+                "Evidence Lifecycle provides canonical pure-Java evidence classification primitives");
+        platformContract(builder, "butchercraft:platform_contract/evidence_retention_policy_foundation",
+                ValidationCategory.GENERAL, EVIDENCE_LIFECYCLE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-002 Evidence Lifecycle Foundation",
+                "Evidence Lifecycle provides versioned explicit retention-policy input primitives");
+        platformContract(builder, "butchercraft:platform_contract/evidence_retention_decision_foundation",
+                ValidationCategory.GENERAL, EVIDENCE_LIFECYCLE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-002 Evidence Lifecycle Foundation",
+                "Evidence Lifecycle provides deterministic retention decisions and typed lifecycle failures");
         platformContract(builder, "butchercraft:platform_contract/evidence_not_fact_owner",
                 ValidationCategory.OWNERSHIP, EVIDENCE_LIFECYCLE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
@@ -223,6 +238,173 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
                 "Platform Canonicalization Addendum and ADR-02 Checkpoint Recovery",
                 "Checkpoint Recovery publishes the Platform Determinism Manifest while each source owns entries");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_generation_identity_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-003 Checkpoint Recovery Foundation",
+                "Checkpoint Recovery provides canonical pure-Java checkpoint generation identity primitives");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_owner_snapshot_metadata_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-003 Checkpoint Recovery Foundation",
+                "Checkpoint Recovery describes owner snapshot metadata without owning owner snapshot content");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_generation_manifest_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-003 Checkpoint Recovery Foundation",
+                "Checkpoint Recovery provides deterministic generation manifest and head-record metadata");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_integrity_validation_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-003 Checkpoint Recovery Foundation",
+                "Checkpoint Recovery validates generation metadata, predecessor chains, heads, and required owners");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_recovery_selection_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-003 Checkpoint Recovery Foundation",
+                "Checkpoint Recovery deterministically selects the latest valid committed generation from explicit inputs");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_rollback_selection_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-003 Checkpoint Recovery Foundation",
+                "Checkpoint Recovery validates explicit rollback intent and selects committed rollback targets");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_filesystem_store_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery provides an explicit-root filesystem checkpoint store foundation");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_staged_generation_publication_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery writes owner payloads and manifests through a non-authoritative staging directory");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_immutable_generation_publication_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery publishes immutable final generation directories and rejects identity conflicts");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_head_publication_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery publishes dual-slot checkpoint head records with canonical head digests");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_filesystem_digest_validation_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery validates owner payload, owner manifest, generation manifest, and head digests");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_filesystem_recovery_selection_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery scans filesystem inputs deterministically and selects the last valid committed generation");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_storage_artifact_classification_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-005 Minimal Filesystem Checkpoint Publication",
+                "Checkpoint Recovery classifies incomplete, corrupt, invalid, and uncommitted storage artifacts");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_live_clock_owner_snapshot_provider_foundation",
+                ValidationCategory.PERSISTENCE, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-006 Minimal Live Owner Snapshot Integration",
+                "Simulation Clock provides owner-controlled checkpoint snapshot capture and restoration foundation");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_live_scheduler_owner_snapshot_provider_foundation",
+                ValidationCategory.PERSISTENCE, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-006 Minimal Live Owner Snapshot Integration",
+                "Simulation Scheduler provides owner-controlled checkpoint snapshot capture and restoration foundation");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_owner_controlled_restoration_candidate_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-006 Minimal Live Owner Snapshot Integration",
+                "Checkpoint Recovery coordinates owner-prepared restoration candidates without parsing owner payloads");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_clock_scheduler_cross_owner_validation_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-006 Minimal Live Owner Snapshot Integration",
+                "Checkpoint Recovery validates Clock and Scheduler snapshot relationships through owner metadata");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_coordinated_restoration_boundary_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-006 Minimal Live Owner Snapshot Integration",
+                "Checkpoint Recovery prepares all required owners before coordinated restoration publication and owner-supplied rollback");
+        platformContract(builder, "butchercraft:platform_contract/world_identity_external_root_validation_foundation",
+                ValidationCategory.PERSISTENCE, WORLD_IDENTITY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-006 Minimal Live Owner Snapshot Integration",
+                "World Identity provides deterministic external-root identity and digest references for checkpoints");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_development_capture_invocation_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-007 Controlled Development Checkpoint Invocation",
+                "Development-only invocation can capture Clock and Scheduler snapshots through existing checkpoint APIs");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_development_generation_inspection_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-007 Controlled Development Checkpoint Invocation",
+                "Development-only invocation can list and inspect committed checkpoint generations without exposing payloads");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_development_integrity_validation_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-007 Controlled Development Checkpoint Invocation",
+                "Development-only invocation can validate heads, manifests, owner payload digests, predecessor chains, "
+                        + "World Identity, and Platform Determinism Manifest references");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_development_root_world_scoping_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-007 Controlled Development Checkpoint Invocation",
+                "Development checkpoint roots are normalized, world-scoped, and separate from normal save files");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_development_controlled_restoration_harness_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-007 Controlled Development Checkpoint Invocation",
+                "Development harness can prove coordinated Clock and Scheduler restoration without making live-world restore automatic");
+        platformContract(builder, "butchercraft:platform_contract/checkpoint_development_live_restore_safety_gate",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-007 Controlled Development Checkpoint Invocation",
+                "Development command surface rejects loaded-world restoration until a safe runtime boundary is authorized");
+        platformContract(builder, "butchercraft:platform_contract/transaction_proposal_identity_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions provide a canonical Proposal Identity distinct from Transaction identity");
+        platformContract(builder, "butchercraft:platform_contract/inventory_freshness_identity_foundation",
+                ValidationCategory.TRANSACTIONS, INVENTORY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Inventory provides source-owned Inventory Freshness Identity primitives without a global revision");
+        platformContract(builder, "butchercraft:platform_contract/transaction_validation_plan_identity_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions provide canonical immutable Validation Plan Identity primitives");
+        platformContract(builder, "butchercraft:platform_contract/transaction_validation_binding_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions bind Proposal Identity, Inventory Freshness Identity, Validation Plan Identity, "
+                        + "and explicit validation inputs as pure foundation data");
+        platformContract(builder, "butchercraft:platform_contract/validation_consumption_authority_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions provide private single-use Validation Consumption Authority primitives");
+        platformContract(builder, "butchercraft:platform_contract/transaction_result_evidence_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions provide authoritative result evidence binding validation identities and terminal result");
+        platformContract(builder, "butchercraft:platform_contract/transaction_duplicate_conflict_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions provide duplicate observation and conflicting proposal classification primitives");
+        platformContract(builder, "butchercraft:platform_contract/transaction_binding_validation_checks_foundation",
+                ValidationCategory.TRANSACTIONS, TRANSACTIONS,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-004 Transaction Validation Binding Foundation",
+                "Transactions provide deterministic typed validation checks for binding and evidence mismatches");
         platformContract(builder, "butchercraft:platform_contract/transaction_validation_binding",
                 ValidationCategory.TRANSACTIONS, TRANSACTIONS,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
@@ -294,15 +476,26 @@ public final class ButcherCraftArchitectureManifest {
 
     private static void addOwnership(ValidationContextBuilder builder) {
         own(builder, "butchercraft:responsibility/world_identity", WORLD_IDENTITY);
+        own(builder, "butchercraft:responsibility/world_identity_external_root_digest", WORLD_IDENTITY);
         own(builder, "butchercraft:responsibility/simulation_time", SIMULATION);
+        own(builder, "butchercraft:responsibility/simulation_clock_checkpoint_snapshot_content", SIMULATION);
         own(builder, "butchercraft:responsibility/business_runtime", BUSINESS_RUNTIME);
         own(builder, "butchercraft:responsibility/workforce_definitions", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
         own(builder, "butchercraft:responsibility/economic_actor_definitions", ACTORS);
         own(builder, "butchercraft:responsibility/inventory_quantities", INVENTORY);
+        own(builder, "butchercraft:responsibility/inventory_freshness_identity", INVENTORY);
         own(builder, "butchercraft:responsibility/economic_mutations", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/transaction_proposal_identity", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/transaction_validation_plan_identity", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/transaction_validation_bindings", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/validation_consumption_authority", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/transaction_result_evidence", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/transaction_duplicate_conflict_decisions", TRANSACTIONS);
+        own(builder, "butchercraft:responsibility/transaction_binding_failure_reporting", TRANSACTIONS);
         own(builder, "butchercraft:responsibility/order_intent", ORDERS);
         own(builder, "butchercraft:responsibility/work_eligibility", SCHEDULER);
+        own(builder, "butchercraft:responsibility/scheduler_checkpoint_snapshot_content", SCHEDULER);
         own(builder, "butchercraft:responsibility/production_processes", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_plans", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_run_runtime", PRODUCTION);
@@ -320,6 +513,25 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/allocation_commitment_selection", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_observation_snapshots", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_provider_framework", ALLOCATION);
+        own(builder, "butchercraft:responsibility/evidence_classification", EVIDENCE_LIFECYCLE);
+        own(builder, "butchercraft:responsibility/evidence_retention_policy_inputs", EVIDENCE_LIFECYCLE);
+        own(builder, "butchercraft:responsibility/evidence_retention_decisions", EVIDENCE_LIFECYCLE);
+        own(builder, "butchercraft:responsibility/evidence_lifecycle_failure_reporting", EVIDENCE_LIFECYCLE);
+        own(builder, "butchercraft:responsibility/checkpoint_generation_identity", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_owner_snapshot_metadata", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_generation_manifests", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_head_records", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_integrity_validation", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_recovery_selection", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_rollback_selection", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_recovery_diagnostics", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_filesystem_store", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_storage_layout", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_head_publication", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_storage_artifact_classification", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_owner_snapshot_coordination", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_cross_owner_validation", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/checkpoint_coordinated_restoration_boundary", CHECKPOINT_RECOVERY);
         own(builder, "butchercraft:responsibility/resource_definitions", RESOURCE_AUTHORITIES);
         own(builder, "butchercraft:responsibility/capacity_definitions", RESOURCE_AUTHORITIES);
 
@@ -332,6 +544,27 @@ public final class ButcherCraftArchitectureManifest {
         );
         contract(
                 builder,
+                "butchercraft:responsibility/world_identity_external_root_digest",
+                WORLD_IDENTITY,
+                ValidationCategory.PERSISTENCE,
+                "IM-006 assigns checkpoint external-root identity and digest derivation to World Identity"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/simulation_clock_checkpoint_snapshot_content",
+                SIMULATION,
+                ValidationCategory.PERSISTENCE,
+                "IM-006 assigns Clock checkpoint payload content, schema, validation, and restoration to Clock"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/scheduler_checkpoint_snapshot_content",
+                SCHEDULER,
+                ValidationCategory.PERSISTENCE,
+                "IM-006 assigns Scheduler checkpoint payload content, schema, validation, and restoration to Scheduler"
+        );
+        contract(
+                builder,
                 "butchercraft:responsibility/inventory_quantities",
                 INVENTORY,
                 ValidationCategory.OWNERSHIP,
@@ -339,10 +572,115 @@ public final class ButcherCraftArchitectureManifest {
         );
         contract(
                 builder,
+                "butchercraft:responsibility/inventory_freshness_identity",
+                INVENTORY,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 assign source-owned Inventory Freshness Identity to Inventory"
+        );
+        contract(
+                builder,
                 "butchercraft:responsibility/economic_mutations",
                 TRANSACTIONS,
                 ValidationCategory.TRANSACTIONS,
                 "AI-0006 assigns economic mutation to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/transaction_proposal_identity",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 assign canonical Proposal Identity to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/transaction_validation_plan_identity",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 assign immutable Validation Plan Identity to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/transaction_validation_bindings",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 assign validation binding ownership to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/validation_consumption_authority",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 keep Validation Consumption Authority private, single-use, and Transaction-owned"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/transaction_result_evidence",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 assign authoritative Transaction result evidence to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/transaction_duplicate_conflict_decisions",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "ADR-03 and IM-004 assign duplicate observation and Transaction identity conflict policy to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/transaction_binding_failure_reporting",
+                TRANSACTIONS,
+                ValidationCategory.TRANSACTIONS,
+                "IM-004 assigns typed validation binding failure reporting to Transactions"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_filesystem_store",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-005 assigns explicit-root filesystem checkpoint storage to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_storage_layout",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-005 assigns deterministic checkpoint staging, generation, head, and quarantine layout to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_head_publication",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-005 assigns dual head-slot publication mechanics to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_storage_artifact_classification",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-005 assigns filesystem Quarantined Artifact classification to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_owner_snapshot_coordination",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-006 assigns explicit owner snapshot capture coordination to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_cross_owner_validation",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-006 assigns Clock/Scheduler relationship validation to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_coordinated_restoration_boundary",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-006 assigns all-or-nothing owner restoration coordination and owner-supplied rollback orchestration to Checkpoint Recovery"
         );
         contract(
                 builder,
@@ -458,6 +796,90 @@ public final class ButcherCraftArchitectureManifest {
         );
         contract(
                 builder,
+                "butchercraft:responsibility/evidence_classification",
+                EVIDENCE_LIFECYCLE,
+                ValidationCategory.GENERAL,
+                "IM-002 assigns canonical evidence classification primitives to Evidence Lifecycle"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/evidence_retention_policy_inputs",
+                EVIDENCE_LIFECYCLE,
+                ValidationCategory.GENERAL,
+                "IM-002 assigns retention-policy input primitives to Evidence Lifecycle"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/evidence_retention_decisions",
+                EVIDENCE_LIFECYCLE,
+                ValidationCategory.GENERAL,
+                "IM-002 assigns deterministic retention decisions to Evidence Lifecycle"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/evidence_lifecycle_failure_reporting",
+                EVIDENCE_LIFECYCLE,
+                ValidationCategory.GENERAL,
+                "IM-002 assigns typed lifecycle failure reporting to Evidence Lifecycle"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_generation_identity",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns checkpoint generation identity primitives to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_owner_snapshot_metadata",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns owner snapshot metadata descriptors to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_generation_manifests",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns generation manifest metadata to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_head_records",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns head record metadata to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_integrity_validation",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns metadata integrity validation to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_recovery_selection",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns deterministic recovery selection to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_rollback_selection",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns rollback target selection to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/checkpoint_recovery_diagnostics",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-003 assigns typed checkpoint recovery diagnostics to Checkpoint Recovery"
+        );
+        contract(
+                builder,
                 "butchercraft:responsibility/resource_definitions",
                 RESOURCE_AUTHORITIES,
                 ValidationCategory.ALLOCATION,
@@ -551,6 +973,30 @@ public final class ButcherCraftArchitectureManifest {
         );
         forbid(
                 builder,
+                TRANSACTIONS,
+                SCHEDULER,
+                "Transaction binding foundation cannot consume Scheduler runtime or effects"
+        );
+        forbid(
+                builder,
+                TRANSACTIONS,
+                PRODUCTION,
+                "Transaction binding foundation cannot consume Production semantics"
+        );
+        forbid(
+                builder,
+                TRANSACTIONS,
+                CHECKPOINT_RECOVERY,
+                "Transaction binding foundation cannot publish checkpoints or select persistence generations"
+        );
+        forbid(
+                builder,
+                TRANSACTIONS,
+                EVIDENCE_LIFECYCLE,
+                "Transaction binding foundation emits Transaction-owned evidence without consuming Evidence Lifecycle"
+        );
+        forbid(
+                builder,
                 SCHEDULER,
                 PLANNING,
                 "Scheduler eligibility remains independent from Planning policy"
@@ -609,6 +1055,96 @@ public final class ButcherCraftArchitectureManifest {
                 ALLOCATION,
                 RESOURCE_AUTHORITIES,
                 "M22D provider adapters translate external authority without a concrete Allocation dependency"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                PLANNING,
+                "Evidence Lifecycle foundation classifies owner evidence without consuming Planning implementation"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                SCHEDULER,
+                "Evidence Lifecycle foundation does not enforce Scheduler effects or runtime state"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                TRANSACTIONS,
+                "Evidence Lifecycle foundation does not define Transaction validation or mutation authority"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                PRODUCTION,
+                "Evidence Lifecycle foundation does not own Production facts or runtime state"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                ALLOCATION,
+                "Evidence Lifecycle foundation does not consume Allocation implementation or authorization"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                EXECUTION,
+                "Evidence Lifecycle foundation does not require Execution implementation"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                INVENTORY,
+                "Evidence Lifecycle foundation does not inspect or own Inventory state"
+        );
+        forbid(
+                builder,
+                EVIDENCE_LIFECYCLE,
+                CHECKPOINT_RECOVERY,
+                "Evidence Lifecycle foundation does not publish checkpoint generations or recover state"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                PLANNING,
+                "Checkpoint Recovery foundation references Planning only through owner snapshot metadata"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                SCHEDULER,
+                "Checkpoint Recovery foundation references Scheduler only through owner snapshot metadata"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                TRANSACTIONS,
+                "Checkpoint Recovery foundation references Transactions only through owner snapshot metadata"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                PRODUCTION,
+                "Checkpoint Recovery foundation references Production only through owner snapshot metadata"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                INVENTORY,
+                "Checkpoint Recovery foundation references Inventory only through owner snapshot metadata"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                ALLOCATION,
+                "Checkpoint Recovery foundation does not consume Allocation implementation or authorization"
+        );
+        forbid(
+                builder,
+                CHECKPOINT_RECOVERY,
+                EXECUTION,
+                "Checkpoint Recovery foundation does not require Execution implementation"
         );
     }
 

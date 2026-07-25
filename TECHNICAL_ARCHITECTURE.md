@@ -130,6 +130,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.packaging` | Minecraft-independent retail packaging definitions, supply-reference serialization, datapack validation, and registry access. |
 | `com.butchercraft.registration` | Blocks, items, creative tabs, block entities, menus, entity types, data components, attachment types, recipe serializers. |
 | `com.butchercraft.config` | Common/server/client config definitions and preset mapping. |
+| `com.butchercraft.development.checkpoint` | Development-only checkpoint invocation adapter, deterministic world-scoped checkpoint-root resolution, diagnostic formatting, reentrancy guard, and controlled restoration harness. It owns no subsystem state, checkpoint selection, publication policy, or gameplay behavior. |
 | `com.butchercraft.api` | Future documented public API after real module consumers validate contracts; not currently implemented or stable. |
 | `com.butchercraft.api.product` | Future product ids, traits, and quality/freshness contracts. |
 | `com.butchercraft.api.processing` | Future public process definitions and station interaction contracts. |
@@ -142,15 +143,19 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world` | Minecraft-facing world identity service, immutable generated world snapshot access, business runtime service, and server lifecycle integration. |
 | `com.butchercraft.world.player` | Pure player legacy template domain, career profiles, starting scenarios, and scenario registry. |
 | `com.butchercraft.world.player.runtime` | Runtime player identity creation, immutable player identity registry, independent player identity persistence, and server-login initialization. |
-| `com.butchercraft.world.simulation` | Simulation clock, configurable calendar, event scheduler, event bus, independent simulation-state persistence, and server tick lifecycle integration. |
-| `com.butchercraft.world.simulation.scheduler` | Pure immutable simulation Work definitions, separate runtime lifecycle, stable stages, handler contracts, deterministic indexes, bounded pipeline, reports, and schema-versioned persistence. |
+| `com.butchercraft.world.simulation` | Simulation clock, configurable calendar, event scheduler, event bus, independent simulation-state persistence, Clock-owned checkpoint snapshot provider/restorer foundation, and server tick lifecycle integration. |
+| `com.butchercraft.world.simulation.scheduler` | Pure immutable simulation Work definitions, separate runtime lifecycle, stable stages, handler contracts, deterministic indexes, bounded pipeline, reports, schema-versioned persistence, and Scheduler-owned checkpoint snapshot provider/restorer foundation. |
 | `com.butchercraft.world.business.runtime` | Pure business runtime state, hours, shifts, operational status, runtime registry, manager transitions, event listener, validation, and JSON persistence. |
 | `com.butchercraft.world.workforce` | Pure workforce definitions, positions, staffing rules, shift assignments, skill levels, certifications, registry, manager lookup, validation, and JSON persistence. |
 | `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
 | `com.butchercraft.world.inventory` | Pure actor-owned inventory containers, hierarchical storage nodes, capacity metadata, exact runtime Good quantities, typed entry metadata, deterministic registry, manager validation, and JSON persistence. |
+| `com.butchercraft.world.inventory.freshness` | Pure Inventory-owned freshness identity foundation for deterministic source-owned Inventory Freshness Identity components. It introduces no global Inventory revision, runtime migration, or persistence schema change. |
+| `com.butchercraft.world.transaction.binding` | Pure Transaction-owned validation binding foundation for Proposal Identity, Validation Plan Identity, Validation Consumption Authority, duplicate/conflict classification, result evidence identity, and typed binding failures. It is not wired into live Transaction execution or persistence. |
 | `com.butchercraft.world.planning` | Pure immutable Planning artifacts, exact Needs and capacity claims, deterministic candidate evaluation and selection, typed Production submission, cycle reports, and six-file JSON persistence. |
 | `com.butchercraft.world.allocation` | Pure Resource Allocation definitions, deterministic AllocationSet lifecycle and Cycle execution, detached Capacity accounting, atomic Commitment publication, immutable registries, views, history, queries, reports, traces, and typed validation. |
+| `com.butchercraft.world.evidence` | Pure Evidence Lifecycle foundation for owner metadata, evidence identity validation, classification, retention-policy inputs, deterministic retention decisions, and typed lifecycle failures. It owns no subsystem facts, persistence, archive movement, checkpoint recovery, or gameplay behavior. |
+| `com.butchercraft.world.checkpoint` | Pure Checkpoint Recovery foundation for generation identity, owner snapshot metadata, generation manifests, head records, integrity validation, explicit-root filesystem publication, dual-head recovery selection, rollback selection, owner snapshot coordination, all-or-nothing restoration coordination, storage artifact classification, and typed checkpoint failures. It owns no owner snapshot content, live save hooks, startup recovery, migration, automatic runtime activation, or gameplay behavior. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -178,8 +183,15 @@ The current package layout already aligns with the platform direction and requir
 - `com.butchercraft.world.goods` owns immutable economic definitions and relationships. It stores no inventory quantities, prices, production state, or ItemStacks.
 - `com.butchercraft.world.economy.actor` owns immutable participant definitions and separate in-memory runtime status. Actors reference Goods, Business Runtime, and Workforce only through stable ids and store no inventory, production, pricing, transport, or ItemStack state.
 - `com.butchercraft.world.inventory` owns economic quantity and location state independently from Minecraft inventories. It references actors, Goods, and storage nodes by stable ids and imports no Minecraft, NeoForge, Container, menu, slot, or ItemStack APIs.
+- `com.butchercraft.world.inventory.freshness` owns Inventory Freshness Identity primitives only. It does not define a global Inventory revision, mutate Inventory, publish checkpoints, or persist new schema.
+- `com.butchercraft.world.transaction.binding` owns validation binding foundation primitives only. It does not change live `TransactionManager`, `TransactionValidator`, `TransactionExecutor`, replay, transaction persistence, Inventory mutation, Scheduler dispatch, Planning cycles, Production runs, Execution, Allocation, Checkpoint Recovery, or Evidence Lifecycle.
 - `com.butchercraft.world.production` owns industry-neutral executable Process and Plan definitions plus separately owned Run runtime state. It references other authorities by stable ids, advances only through supplied simulation ticks, and never mutates Inventory directly.
 - `com.butchercraft.world.allocation` owns immutable Requests, AllocationSets, and Commitments; AllocationSet lifecycle; the explicit deterministic Allocation Cycle; detached cycle-local Capacity accounting; atomic Commitment publication; and immutable registries, reports, traces, history, and queries. Authoritative providers retain Resource and Capacity ownership. Allocation references other subsystems only by stable external identity and has no persistence, Scheduler stage, live provider, Planning handoff, or Production execution gate.
+- `com.butchercraft.world.evidence` owns evidence classification, owner metadata, identity validation, retention-policy input, retention-decision, and lifecycle-failure primitives only. Source subsystems retain ownership of their facts and runtime state. The package has no persistence, archive, checkpoint, migration, subsystem pruning, or runtime integration.
+- `com.butchercraft.world.checkpoint` owns checkpoint generation identity, owner snapshot metadata, generation manifests, head records, metadata integrity validation, explicit-root filesystem checkpoint publication, deterministic recovery selection, rollback selection, storage artifact classification, explicit owner snapshot coordination, Clock/Scheduler relationship validation, all-or-nothing restoration coordination including owner-supplied rollback on attempted publication failure, and checkpoint diagnostics only. Source subsystems retain authority over snapshot content and runtime state. The package has no live save hook, startup recovery, archive, migration, owner payload parser, Evidence Lifecycle integration, or gameplay behavior.
+- `com.butchercraft.world.simulation.checkpoint` owns the Clock checkpoint payload schema, Clock snapshot validation, and restored Clock publication candidate. It reuses Clock-owned `SimulationState` serialization and is not registered into server lifecycle events.
+- `com.butchercraft.world.simulation.scheduler.checkpoint` owns the Scheduler checkpoint payload schema, Scheduler snapshot validation, and restored Scheduler publication candidate. It reuses Scheduler-owned schema-1 persistence serialization and is not registered into server lifecycle events.
+- `com.butchercraft.development.checkpoint` owns only the development invocation adapter for explicit checkpoint capture, list, validate, inspect, and controlled harness restoration proof. It is gated behind the existing development diagnostic config and does not register startup recovery, automatic cadence, save-hook replacement, live-world restoration, or gameplay behavior.
 - `com.butchercraft.engine`, `transformation`, `product.definition`, `packaging.definition`, and their serialization models remain pure Java foundations.
 - `com.butchercraft.content` coordinates validated immutable content snapshots.
 - `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
@@ -214,6 +226,7 @@ Required boundaries:
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
 - The Packaging Table consumes the same workstation framework with only the `butchercraft:packaging` capability. Retail packaging output is selected through processing-operation and product packaging metadata, while supply requirements come from packaging definitions rather than table code branches.
 - World Identity remains an immutable generated snapshot. Runtime player identity records are stored separately at `<world>/butchercraft/player_identities.json` and reference world settlement, property, business, ownership, and family ids without embedding or mutating those world records.
+- Checkpoint Recovery references World Identity as an immutable external root through a World-Identity-owned identity, schema version, and digest. It does not serialize, rewrite, migrate, or replace World Identity.
 - ButcherCraft simulated world time is owned by `SimulationClock`, not Minecraft time-of-day. Future systems must schedule work through `SimulationScheduler` and observe rollover events through `SimulationEventBus` instead of owning independent timers.
 - Business Identity remains immutable inside World Identity. Mutable business runtime state is stored separately at `<world>/butchercraft/business_runtime.json`, references businesses by `BusinessId`, and responds to daily and weekly simulation rollover events without owning an independent clock.
 - Workforce definitions are organizational structure, not employee records. They persist separately at `<world>/butchercraft/workforce_definitions.json`, reference businesses by `BusinessId`, reference Business Runtime shift ids, and resolve required positions for a current shift without assigning workers.
@@ -361,6 +374,8 @@ Phase 17 introduces `com.butchercraft.world.transaction` as the universal state-
 
 `TransactionService` depends on `InventoryService` and owns world lifecycle persistence at `<world>/butchercraft/transactions.json`. The transaction package remains pure Java; only the service imports Minecraft and NeoForge APIs. Production supplies its explicit change plan through this existing authority; transaction validation still decides whether the whole batch can commit.
 
+IM-004 adds `com.butchercraft.world.transaction.binding` and `com.butchercraft.world.inventory.freshness` as foundation-only support for the approved Transaction Validation Authority ADR. These packages provide Proposal Identity, Inventory Freshness Identity, Validation Plan Identity, Validation Consumption Authority, duplicate/conflict classification, and result-evidence binding primitives. They are not yet integrated with live Transaction submission, execution, replay, or persistence, so existing runtime behavior and save schemas remain unchanged.
+
 Future systems decide why a change is requested, then submit a transaction. They must not mutate `InventoryRuntime` or inventory quantities directly. See `docs/TRANSACTION_FRAMEWORK.md` for the schema, pipelines, audit rules, persistence contract, and examples.
 
 ## Orders And Contracts Architecture
@@ -384,6 +399,23 @@ Six stable broad stages order immutable `ScheduledSimulationWork` records. `Simu
 `SimulationPipeline` executes a bounded prefix using positive item, stage, work-unit, generation, same-tick, retry, and depth budgets. Handler failures are typed and isolated by stage policy. Generated requests commit atomically and may run in the same tick only in a later unstarted stage that permits enqueue. The scheduler never mutates Inventory or interprets Orders, Contracts, production policy, logistics, or markets.
 
 `SimulationSchedulerService` initializes after `OrderContractService`, executes after the Simulation Clock's post-tick listener, and persists schema-1 state at `<world>/butchercraft/simulation_scheduler.json`. Unknown persisted Work types, mismatched clock ticks, and persisted `RUNNING` state fail visibly. Phase 20 installs `butchercraft:production_run`; Phase 21 installs `butchercraft:economic_planning_cycle` before scheduler loading and keeps one deferred continuation Work in the PLANNING stage. No public runtime registration API is established. See `docs/SIMULATION_SCHEDULER.md` for schemas, lifecycle, ordering, invariants, measured scale, and limitations.
+
+IM-006 adds explicit checkpoint snapshot providers and restorers for the
+Simulation Clock and Simulation Scheduler only. Clock snapshots wrap
+Clock-owned `SimulationState`; Scheduler snapshots wrap Scheduler-owned
+schema-1 persistence content. Coordinated restoration validates that the Clock
+tick and Scheduler finalized tick match before publishing either restored
+owner state. This checkpoint path is explicit API/test integration only and is
+not registered as a save hook, startup recovery hook, cadence, command, or
+gameplay feature.
+
+IM-007 adds a development-only diagnostic invocation path for Clock/Scheduler
+checkpoint capture, listing, validation, and inspection. It stores development
+checkpoint generations under
+`<world>/butchercraft/development_checkpoints`, separate from normal save
+files. The command surface rejects live loaded-world restoration; a controlled
+Java harness proves coordinated Clock/Scheduler restoration without changing
+server lifecycle behavior.
 
 ## Industry-Neutral Production Architecture
 

@@ -78,7 +78,8 @@ public final class ButcherCraftDiagnostics {
                 .then(Commands.literal("info")
                         .executes(context -> runInfo(context.getSource())))
                 .then(Commands.literal("diagnostic")
-                        .executes(context -> runDiagnostic(context.getSource()))));
+                        .executes(context -> runDiagnostic(context.getSource()))
+                        .then(DevelopmentCheckpointCommands.branch())));
     }
 
     private static int runInfo(net.minecraft.commands.CommandSourceStack source) {

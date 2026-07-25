@@ -6,6 +6,11 @@ This document defines ButcherCraft's deterministic simulation work scheduler and
 
 The pure Java domain is `com.butchercraft.world.simulation.scheduler`. `SimulationSchedulerService` is the only Minecraft/NeoForge lifecycle adapter. The earlier `com.butchercraft.world.simulation.SimulationScheduler` remains the focused calendar-event queue owned by the Simulation Clock; Phase 19 does not remove or repurpose it.
 
+IM-006 adds `com.butchercraft.world.simulation.scheduler.checkpoint` for
+explicit Scheduler-owned checkpoint snapshot capture and restoration
+candidates. It is pure Java and is not registered as a save hook, startup
+recovery hook, cadence, command, or gameplay feature.
+
 ## Authority And Time
 
 `SimulationClock` owns authoritative simulation time. The scheduler receives a tick and never advances, derives, or substitutes time. Wall-clock time, Java timers, frame rate, Minecraft time-of-day, random UUID generation, and background executors never affect eligibility or outcomes.
@@ -19,6 +24,17 @@ Schema 1 uses a strict sequential policy:
 - Every accepted tick is finalized once, including bounded or failure-policy-stopped ticks.
 
 The live service runs on `ServerTickEvent.Post` after the authoritative clock's listener. It initializes after `OrderContractService`, reads the already-advanced clock value, executes once, and saves on server stop.
+
+## Checkpoint Participation
+
+The Scheduler checkpoint provider wraps Scheduler-owned schema-1 persistence
+content plus a Scheduler Configuration Identity as opaque checkpoint payload
+bytes. The restorer parses and validates the payload inside the Scheduler
+owner boundary, including existing `RUNNING` persistence rejection.
+
+Checkpoint Recovery validates only cross-owner relationships, such as Clock
+tick matching Scheduler `last_finalized_simulation_tick`. It does not parse or
+mutate Scheduler internals directly.
 
 ## Stable Stages
 

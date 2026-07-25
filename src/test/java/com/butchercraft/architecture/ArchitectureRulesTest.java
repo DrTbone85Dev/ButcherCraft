@@ -139,6 +139,125 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersEvidenceLifecycleFoundationAsPartialImplementation() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/evidence_classification_foundation")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/evidence_retention_policy_foundation")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/evidence_retention_decision_foundation")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/evidence_policy_ownership")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/checkpoint_publication")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+    }
+
+    @Test
+    void currentManifestRegistersCheckpointRecoveryFoundationAsPartialImplementation() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedFoundationContracts = List.of(
+                "butchercraft:platform_contract/checkpoint_generation_identity_foundation",
+                "butchercraft:platform_contract/checkpoint_owner_snapshot_metadata_foundation",
+                "butchercraft:platform_contract/checkpoint_generation_manifest_foundation",
+                "butchercraft:platform_contract/checkpoint_integrity_validation_foundation",
+                "butchercraft:platform_contract/checkpoint_recovery_selection_foundation",
+                "butchercraft:platform_contract/checkpoint_rollback_selection_foundation",
+                "butchercraft:platform_contract/checkpoint_filesystem_store_foundation",
+                "butchercraft:platform_contract/checkpoint_staged_generation_publication_foundation",
+                "butchercraft:platform_contract/checkpoint_immutable_generation_publication_foundation",
+                "butchercraft:platform_contract/checkpoint_head_publication_foundation",
+                "butchercraft:platform_contract/checkpoint_filesystem_digest_validation_foundation",
+                "butchercraft:platform_contract/checkpoint_filesystem_recovery_selection_foundation",
+                "butchercraft:platform_contract/checkpoint_storage_artifact_classification_foundation",
+                "butchercraft:platform_contract/checkpoint_live_clock_owner_snapshot_provider_foundation",
+                "butchercraft:platform_contract/checkpoint_live_scheduler_owner_snapshot_provider_foundation",
+                "butchercraft:platform_contract/checkpoint_owner_controlled_restoration_candidate_foundation",
+                "butchercraft:platform_contract/checkpoint_clock_scheduler_cross_owner_validation_foundation",
+                "butchercraft:platform_contract/checkpoint_coordinated_restoration_boundary_foundation",
+                "butchercraft:platform_contract/world_identity_external_root_validation_foundation",
+                "butchercraft:platform_contract/checkpoint_development_capture_invocation_foundation",
+                "butchercraft:platform_contract/checkpoint_development_generation_inspection_foundation",
+                "butchercraft:platform_contract/checkpoint_development_integrity_validation_foundation",
+                "butchercraft:platform_contract/checkpoint_development_root_world_scoping_foundation",
+                "butchercraft:platform_contract/checkpoint_development_controlled_restoration_harness_foundation",
+                "butchercraft:platform_contract/checkpoint_development_live_restore_safety_gate"
+        );
+
+        for (String contractId : implementedFoundationContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/checkpoint_publication")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/checkpoint_owner_snapshots")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/platform_determinism_manifest")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+    }
+
+    @Test
+    void currentManifestRegistersTransactionValidationBindingFoundationAsPartialImplementation() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedFoundationContracts = List.of(
+                "butchercraft:platform_contract/transaction_proposal_identity_foundation",
+                "butchercraft:platform_contract/inventory_freshness_identity_foundation",
+                "butchercraft:platform_contract/transaction_validation_plan_identity_foundation",
+                "butchercraft:platform_contract/transaction_validation_binding_foundation",
+                "butchercraft:platform_contract/validation_consumption_authority_foundation",
+                "butchercraft:platform_contract/transaction_result_evidence_foundation",
+                "butchercraft:platform_contract/transaction_duplicate_conflict_foundation",
+                "butchercraft:platform_contract/transaction_binding_validation_checks_foundation"
+        );
+
+        for (String contractId : implementedFoundationContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/transaction_validation_binding")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/transaction_consumption_authority")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.platformContracts().stream()
+                .anyMatch(contract -> contract.id().value()
+                        .equals("butchercraft:platform_contract/serialized_transaction_owner_boundary")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -560,8 +679,45 @@ class ArchitectureRulesTest {
         assertTrue(context.platformIdentities().stream().allMatch(identity ->
                 identity.disposition() == ArchitectureValidationDisposition.DOCUMENTATION_ONLY));
         assertTrue(context.platformContracts().stream()
-                .filter(contract -> !contract.id().value()
-                        .equals("butchercraft:platform_contract/execution_independent_of_allocation"))
+                .filter(contract -> !List.of(
+                        "butchercraft:platform_contract/execution_independent_of_allocation",
+                        "butchercraft:platform_contract/evidence_classification_foundation",
+                        "butchercraft:platform_contract/evidence_retention_policy_foundation",
+                        "butchercraft:platform_contract/evidence_retention_decision_foundation",
+                        "butchercraft:platform_contract/checkpoint_generation_identity_foundation",
+                        "butchercraft:platform_contract/checkpoint_owner_snapshot_metadata_foundation",
+                        "butchercraft:platform_contract/checkpoint_generation_manifest_foundation",
+                        "butchercraft:platform_contract/checkpoint_integrity_validation_foundation",
+                        "butchercraft:platform_contract/checkpoint_recovery_selection_foundation",
+                        "butchercraft:platform_contract/checkpoint_rollback_selection_foundation",
+                        "butchercraft:platform_contract/checkpoint_filesystem_store_foundation",
+                        "butchercraft:platform_contract/checkpoint_staged_generation_publication_foundation",
+                        "butchercraft:platform_contract/checkpoint_immutable_generation_publication_foundation",
+                        "butchercraft:platform_contract/checkpoint_head_publication_foundation",
+                        "butchercraft:platform_contract/checkpoint_filesystem_digest_validation_foundation",
+                        "butchercraft:platform_contract/checkpoint_filesystem_recovery_selection_foundation",
+                        "butchercraft:platform_contract/checkpoint_storage_artifact_classification_foundation",
+                        "butchercraft:platform_contract/checkpoint_live_clock_owner_snapshot_provider_foundation",
+                        "butchercraft:platform_contract/checkpoint_live_scheduler_owner_snapshot_provider_foundation",
+                        "butchercraft:platform_contract/checkpoint_owner_controlled_restoration_candidate_foundation",
+                        "butchercraft:platform_contract/checkpoint_clock_scheduler_cross_owner_validation_foundation",
+                        "butchercraft:platform_contract/checkpoint_coordinated_restoration_boundary_foundation",
+                        "butchercraft:platform_contract/world_identity_external_root_validation_foundation",
+                        "butchercraft:platform_contract/checkpoint_development_capture_invocation_foundation",
+                        "butchercraft:platform_contract/checkpoint_development_generation_inspection_foundation",
+                        "butchercraft:platform_contract/checkpoint_development_integrity_validation_foundation",
+                        "butchercraft:platform_contract/checkpoint_development_root_world_scoping_foundation",
+                        "butchercraft:platform_contract/checkpoint_development_controlled_restoration_harness_foundation",
+                        "butchercraft:platform_contract/checkpoint_development_live_restore_safety_gate",
+                        "butchercraft:platform_contract/transaction_proposal_identity_foundation",
+                        "butchercraft:platform_contract/inventory_freshness_identity_foundation",
+                        "butchercraft:platform_contract/transaction_validation_plan_identity_foundation",
+                        "butchercraft:platform_contract/transaction_validation_binding_foundation",
+                        "butchercraft:platform_contract/validation_consumption_authority_foundation",
+                        "butchercraft:platform_contract/transaction_result_evidence_foundation",
+                        "butchercraft:platform_contract/transaction_duplicate_conflict_foundation",
+                        "butchercraft:platform_contract/transaction_binding_validation_checks_foundation"
+                ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
         assertTrue(context.runtimeAuthorities().stream()
