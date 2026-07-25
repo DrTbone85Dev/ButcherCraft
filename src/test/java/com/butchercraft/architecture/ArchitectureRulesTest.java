@@ -256,6 +256,39 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersGenericExecutionRuntimeFoundationAsPartialImplementation() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedExecutionContracts = List.of(
+                "butchercraft:platform_contract/execution_authorization_evidence",
+                "butchercraft:platform_contract/execution_private_authorization_consumption",
+                "butchercraft:platform_contract/execution_lifecycle_runtime",
+                "butchercraft:platform_contract/execution_handler_boundary",
+                "butchercraft:platform_contract/execution_scheduler_handler_boundary",
+                "butchercraft:platform_contract/execution_owner_result_evidence",
+                "butchercraft:platform_contract/execution_duplicate_conflict_behavior",
+                "butchercraft:platform_contract/execution_unknown_outcome_runtime",
+                "butchercraft:platform_contract/execution_minimal_persistence",
+                "butchercraft:platform_contract/execution_independent_of_allocation"
+        );
+
+        for (String contractId : implementedExecutionContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/execution_world")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.dependencies().stream().anyMatch(dependency ->
+                dependency.consumerId().value().equals("butchercraft:execution")
+                        && dependency.providerId().value().equals("butchercraft:simulation_scheduler")));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:execution_operations")
+                        && descriptor.ownerId().value().equals("butchercraft:execution")));
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -679,6 +712,15 @@ class ArchitectureRulesTest {
         assertTrue(context.platformContracts().stream()
                 .filter(contract -> !List.of(
                         "butchercraft:platform_contract/execution_independent_of_allocation",
+                        "butchercraft:platform_contract/execution_authorization_evidence",
+                        "butchercraft:platform_contract/execution_private_authorization_consumption",
+                        "butchercraft:platform_contract/execution_lifecycle_runtime",
+                        "butchercraft:platform_contract/execution_handler_boundary",
+                        "butchercraft:platform_contract/execution_scheduler_handler_boundary",
+                        "butchercraft:platform_contract/execution_owner_result_evidence",
+                        "butchercraft:platform_contract/execution_duplicate_conflict_behavior",
+                        "butchercraft:platform_contract/execution_unknown_outcome_runtime",
+                        "butchercraft:platform_contract/execution_minimal_persistence",
                         "butchercraft:platform_contract/evidence_classification_foundation",
                         "butchercraft:platform_contract/evidence_retention_policy_foundation",
                         "butchercraft:platform_contract/evidence_retention_decision_foundation",
@@ -745,9 +787,8 @@ class ArchitectureRulesTest {
                 .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/planning_world")
                         && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.runtimeAuthorities().stream()
-                .filter(authority -> authority.ownerId().value().equals("butchercraft:execution"))
-                .allMatch(authority ->
-                        authority.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/execution_world")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
     }
 
     private static ValidationResult validate(ValidationRule rule, ValidationContext context) {

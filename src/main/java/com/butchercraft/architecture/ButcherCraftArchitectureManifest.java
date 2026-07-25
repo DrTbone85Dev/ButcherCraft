@@ -27,6 +27,8 @@ import com.butchercraft.architecture.validation.SimulationInvariantType;
 import com.butchercraft.architecture.validation.ValidationCategory;
 import com.butchercraft.architecture.validation.ValidationContext;
 import com.butchercraft.architecture.validation.ValidationContextBuilder;
+import com.butchercraft.world.execution.ExecutionSchema;
+import com.butchercraft.world.execution.ExecutionWorkTypes;
 import com.butchercraft.world.planning.EconomicPlanningWorkHandler;
 import com.butchercraft.world.production.ProductionSchema;
 import com.butchercraft.world.production.scheduler.ProductionWorkTypes;
@@ -510,9 +512,49 @@ public final class ButcherCraftArchitectureManifest {
                 "Production Scheduler Work completes only after APPLIED Transaction result evidence is observed");
         platformContract(builder, "butchercraft:platform_contract/execution_authorization_evidence",
                 ValidationCategory.EXECUTION, EXECUTION,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "RFC-0023 Draft 2",
-                "Execution consumes explicit Execution Authorization Evidence rather than requiring Allocation");
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution consumes explicit immutable Execution Authorization Evidence rather than requiring Allocation");
+        platformContract(builder, "butchercraft:platform_contract/execution_private_authorization_consumption",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Live Execution authorization is private, single-use, runtime-only, and Execution-owned");
+        platformContract(builder, "butchercraft:platform_contract/execution_lifecycle_runtime",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution owns operation lifecycle, attempts, input freeze identity, and terminal runtime state");
+        platformContract(builder, "butchercraft:platform_contract/execution_handler_boundary",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution invokes deterministic registered handlers without transferring owner-domain fact authority");
+        platformContract(builder, "butchercraft:platform_contract/execution_scheduler_handler_boundary",
+                ValidationCategory.SCHEDULER, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution integrates with Scheduler through one generic idempotent Scheduler handler and owner observations");
+        platformContract(builder, "butchercraft:platform_contract/execution_owner_result_evidence",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Successful Execution completion requires owner-published result evidence before Scheduler completion");
+        platformContract(builder, "butchercraft:platform_contract/execution_duplicate_conflict_behavior",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution observes duplicate authorization content and rejects conflicting same-identity authorization");
+        platformContract(builder, "butchercraft:platform_contract/execution_unknown_outcome_runtime",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution represents unresolved consequential outcomes explicitly as Unknown Outcome");
+        platformContract(builder, "butchercraft:platform_contract/execution_minimal_persistence",
+                ValidationCategory.PERSISTENCE, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "Execution persists versioned operation runtime, attempts, immutable authorization evidence, and results");
         platformContract(builder, "butchercraft:platform_contract/execution_independent_of_allocation",
                 ValidationCategory.DEPENDENCIES, EXECUTION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -539,9 +581,9 @@ public final class ButcherCraftArchitectureManifest {
                 "RFC-0022 M22B",
                 "Allocation runtime lifecycle authority is declared for each loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/execution_world",
-                EXECUTION, ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "RFC-0023 Draft 2",
-                "Future generic Execution authority is declared for each loaded world");
+                EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-011 Generic Execution Runtime Foundation",
+                "One generic Execution Runtime Authority is declared for each loaded world");
     }
 
     private static void addOwnership(ValidationContextBuilder builder) {
@@ -579,6 +621,15 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/planning_cycle_publication", PLANNING);
         own(builder, "butchercraft:responsibility/planning_decisions", PLANNING);
         own(builder, "butchercraft:responsibility/approved_plans", PLANNING);
+        own(builder, "butchercraft:responsibility/execution_operation_identity", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_authorization_consumption", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_lifecycle", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_attempts", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_handler_registry", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_domain_effect_identity", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_result_evidence", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_unknown_outcome_runtime", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_persistence", EXECUTION);
         own(builder, "butchercraft:responsibility/allocation_requests", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_sets", ALLOCATION);
         own(builder, "butchercraft:responsibility/allocation_commitments", ALLOCATION);
@@ -832,6 +883,69 @@ public final class ButcherCraftArchitectureManifest {
         );
         contract(
                 builder,
+                "butchercraft:responsibility/execution_operation_identity",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns deterministic operation identity to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_authorization_consumption",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 keeps live authorization consumption private, single-use, and Execution-owned"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_lifecycle",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns operation lifecycle and cancellation-before-start state to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_attempts",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns bounded attempt records to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_handler_registry",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns the explicit generic Execution handler registry to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_domain_effect_identity",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns domain Effect Identity to Execution while Scheduler owns Scheduler Effect Identity"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_result_evidence",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns terminal Execution result evidence publication to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_unknown_outcome_runtime",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-011 assigns explicit Unknown Outcome runtime state to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_persistence",
+                EXECUTION,
+                ValidationCategory.PERSISTENCE,
+                "IM-011 assigns versioned generic Execution operation persistence to Execution"
+        );
+        contract(
+                builder,
                 "butchercraft:responsibility/production_plans",
                 PRODUCTION,
                 ValidationCategory.PRODUCTION,
@@ -1056,6 +1170,7 @@ public final class ButcherCraftArchitectureManifest {
         depends(builder, PLANNING, ORDERS);
         depends(builder, PLANNING, PRODUCTION);
         depends(builder, PLANNING, SCHEDULER);
+        depends(builder, EXECUTION, SCHEDULER);
 
         forbid(
                 builder,
@@ -1318,6 +1433,8 @@ public final class ButcherCraftArchitectureManifest {
                 OrderingPolicy.CANONICAL_ID,
                 List.of(
                         workType(EconomicPlanningWorkHandler.TYPE.value(), BuiltInSimulationStages.PLANNING.value()),
+                        workType(ExecutionWorkTypes.GENERIC_EXECUTION_OPERATION.value(),
+                                BuiltInSimulationStages.EXECUTION.value()),
                         workType(ProductionWorkTypes.PRODUCTION_RUN.value(), BuiltInSimulationStages.EXECUTION.value())
                 ).stream().sorted(Comparator.comparing(RegistryEntryDescriptor::id)).toList()
         ));
@@ -1427,6 +1544,16 @@ public final class ButcherCraftArchitectureManifest {
                 OrderingPolicy.CANONICAL_ID,
                 new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.PLANNING.value())
         );
+        persistence(
+                builder,
+                "butchercraft:execution_operations",
+                "butchercraft/" + ExecutionSchema.FILE_NAME,
+                EXECUTION,
+                ExecutionSchema.CURRENT_VERSION,
+                PersistenceDataKind.SEPARATED_DEFINITIONS_AND_RUNTIME,
+                OrderingPolicy.CANONICAL_ID,
+                new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.EXECUTION.value())
+        );
     }
 
     private static void addSchedulerEffects(ValidationContextBuilder builder) {
@@ -1487,6 +1614,9 @@ public final class ButcherCraftArchitectureManifest {
         invariant(builder, "butchercraft:invariant/planning_cadence_bounded",
                 SimulationInvariantType.KNOWN_INVARIANT,
                 "Planning cadence is bounded by periodic eligibility, minimum separation, and no burst catch-up");
+        invariant(builder, "butchercraft:invariant/execution_bounded_runtime",
+                SimulationInvariantType.BOUNDED_WORK,
+                "Execution runtime work, attempts, active operations, and pending owner results are bounded");
     }
 
     private static ArchitectureComponent component(ArchitectureId id, String name, String packageRoot) {
