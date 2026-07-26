@@ -25,6 +25,11 @@ public final class ModCapabilities {
         );
         event.registerBlockEntity(
                 Capabilities.ItemHandler.BLOCK,
+                ModBlockEntityTypes.PATTY_FORMER.get(),
+                (blockEntity, side) -> blockEntity.inventory()
+        );
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
                 ModBlockEntityTypes.PACKAGING_TABLE.get(),
                 (blockEntity, side) -> blockEntity.inventory()
         );

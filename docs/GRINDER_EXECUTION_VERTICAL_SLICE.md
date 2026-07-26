@@ -1,8 +1,8 @@
 # Grinder Execution Vertical Slice
 
-Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation. IM-017 expands the promoted Grinder catalog to six trim-to-ground products.
+Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation. IM-017 expands the promoted Grinder catalog to six trim-to-ground products. IM-018 uses the Grinder as the first step in the manual Grinder to Patty Former Production chain.
 
-This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration beyond the IM-016 promoted Grinder observation path, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
+This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration beyond the IM-016 promoted Grinder observation path and IM-018 narrow manual two-step chain, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
 
 ## Selected Slice
 
@@ -130,7 +130,7 @@ The promoted Grinder operation set is exactly Beef, Pork, Chicken, Buffalo, Lamb
 
 - General workstation Execution framework.
 - Bandsaw, Packaging Table, and development workstation Execution migration.
-- Additional Production-backed workstation execution beyond the promoted Grinder path.
+- Additional Production-backed workstation execution beyond the promoted Grinder path and IM-018 narrow manual two-step chain.
 - Economic Inventory and Transaction integration for player workstations.
 - Allocation and Planning automation.
 - Operator recovery UI for unknown outcomes.

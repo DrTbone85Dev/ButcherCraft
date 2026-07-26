@@ -19,6 +19,8 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/beef_trim");
     private static final ResourceLocation GROUND_BEEF_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_beef");
+    private static final ResourceLocation BEEF_PATTIES_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/beef_patties");
     private static final ResourceLocation PORK_TRIM_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/pork_trim");
     private static final ResourceLocation GROUND_PORK_TEXTURE =
@@ -51,6 +53,7 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.DEVELOPMENT_TEST_ITEM.get());
         generatedItem(ModItems.BEEF_TRIM.get(), BEEF_TRIM_TEXTURE);
         generatedItem(ModItems.GROUND_BEEF.get(), GROUND_BEEF_TEXTURE);
+        generatedItem(ModItems.BEEF_PATTIES.get(), BEEF_PATTIES_TEXTURE);
         generatedItem(ModItems.RETAIL_GROUND_BEEF_TEST.get(), RETAIL_GROUND_BEEF_TEXTURE);
         generatedItem(ModItems.PORK_TRIM.get(), PORK_TRIM_TEXTURE);
         generatedItem(ModItems.GROUND_PORK.get(), GROUND_PORK_TEXTURE);

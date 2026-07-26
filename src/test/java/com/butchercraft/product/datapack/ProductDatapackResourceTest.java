@@ -22,6 +22,7 @@ class ProductDatapackResourceTest {
     private static final List<String> EXPECTED_BUNDLED_PRODUCT_IDS = List.of(
             "butchercraft:beef_trim",
             "butchercraft:ground_beef",
+            "butchercraft:beef_patties",
             "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",
@@ -99,7 +100,7 @@ class ProductDatapackResourceTest {
     void builtInRegistryIsLoadedFromProductDatapackResources() {
         ProductRegistry registry = BuiltInProductRegistry.builtInRegistry();
 
-        assertEquals(37, registry.size());
+        assertEquals(38, registry.size());
         assertEquals(EXPECTED_BUNDLED_PRODUCT_IDS, registry.stream()
                         .map(definition -> definition.id().value())
                         .toList());

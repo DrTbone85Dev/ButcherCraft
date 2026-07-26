@@ -23,6 +23,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.RETAIL_LABEL_ROLL.get(), "Retail Label Roll");
         add(ModItems.BEEF_TRIM.get(), "Beef Trim");
         add(ModItems.GROUND_BEEF.get(), "Ground Beef");
+        add(ModItems.BEEF_PATTIES.get(), "Beef Patties");
         add(ModItems.RETAIL_GROUND_BEEF_TEST.get(), "Retail Ground Beef Test Product");
         add(ModItems.PORK_TRIM.get(), "Pork Trim");
         add(ModItems.GROUND_PORK.get(), "Ground Pork");
@@ -59,11 +60,13 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.SIRLOIN_STEAK_TEST.get(), "Sirloin Steak Test Product");
         add(ModItems.TRI_TIP_TEST.get(), "Tri-Tip Test Product");
         add(ModBlocks.GRINDER.get(), "Grinder");
+        add(ModBlocks.PATTY_FORMER.get(), "Patty Former");
         add(ModBlocks.BANDSAW.get(), "Industrial Bandsaw");
         add(ModBlocks.BANDSAW_UPPER.get(), "Industrial Bandsaw");
         add(ModBlocks.PACKAGING_TABLE.get(), "Packaging Table");
         add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
         add("container.butchercraft.grinder", "Grinder");
+        add("container.butchercraft.patty_former", "Patty Former");
         add("container.butchercraft.bandsaw", "Industrial Bandsaw");
         add("container.butchercraft.packaging_table", "Packaging Table");
         add("container.butchercraft.packaging_table.slot.meat", "Meat");
@@ -85,6 +88,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("definition.butchercraft.processing_profile.poultry", "Poultry");
         add("definition.butchercraft.product.beef_trim", "Beef Trim");
         add("definition.butchercraft.product.ground_beef", "Ground Beef");
+        add("definition.butchercraft.product.beef_patties", "Beef Patties");
         add("definition.butchercraft.product.retail_ground_beef", "Retail Ground Beef");
         add("definition.butchercraft.product.pork_trim", "Pork Trim");
         add("definition.butchercraft.product.ground_pork", "Ground Pork");
@@ -126,6 +130,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("definition.butchercraft.processing_operation.grind_bison", "Grind Buffalo");
         add("definition.butchercraft.processing_operation.grind_lamb", "Grind Lamb");
         add("definition.butchercraft.processing_operation.grind_venison", "Grind Venison");
+        add("definition.butchercraft.processing_operation.form_beef_patties", "Form Beef Patties");
         add("definition.butchercraft.processing_operation.break_beef_forequarter", "Break Beef Forequarter");
         add("definition.butchercraft.processing_operation.break_beef_hindquarter", "Break Beef Hindquarter");
         add("definition.butchercraft.processing_operation.cut_beef_short_loin", "Cut Beef Short Loin");

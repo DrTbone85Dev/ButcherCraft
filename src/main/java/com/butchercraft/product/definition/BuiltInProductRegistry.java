@@ -13,6 +13,7 @@ public final class BuiltInProductRegistry {
     public static final List<String> BUILT_IN_RESOURCE_PATHS = List.of(
             "data/butchercraft/butchercraft/content/product/beef_trim.json",
             "data/butchercraft/butchercraft/content/product/ground_beef.json",
+            "data/butchercraft/butchercraft/content/product/beef_patties.json",
             "data/butchercraft/butchercraft/content/product/retail_ground_beef.json",
             "data/butchercraft/butchercraft/content/product/pork_trim.json",
             "data/butchercraft/butchercraft/content/product/ground_pork.json",
@@ -52,6 +53,7 @@ public final class BuiltInProductRegistry {
 
     public static final EngineId BEEF_TRIM = EngineId.of("butchercraft:beef_trim");
     public static final EngineId GROUND_BEEF = EngineId.of("butchercraft:ground_beef");
+    public static final EngineId BEEF_PATTIES = EngineId.of("butchercraft:beef_patties");
     public static final EngineId RETAIL_GROUND_BEEF = EngineId.of("butchercraft:retail_ground_beef");
     public static final EngineId PORK_TRIM = EngineId.of("butchercraft:pork_trim");
     public static final EngineId GROUND_PORK = EngineId.of("butchercraft:ground_pork");
@@ -97,6 +99,7 @@ public final class BuiltInProductRegistry {
 
     public static final EngineId TAG_TRIM = EngineId.of("butchercraft:trait/trim");
     public static final EngineId TAG_GROUND = EngineId.of("butchercraft:trait/ground");
+    public static final EngineId TAG_PATTIES = EngineId.of("butchercraft:trait/patties");
     public static final EngineId TAG_FOREQUARTER = EngineId.of("butchercraft:trait/forequarter");
     public static final EngineId TAG_PRIMAL = EngineId.of("butchercraft:trait/primal");
     public static final EngineId TAG_HINDQUARTER = EngineId.of("butchercraft:trait/hindquarter");

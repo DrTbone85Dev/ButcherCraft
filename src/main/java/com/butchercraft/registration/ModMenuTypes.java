@@ -3,6 +3,7 @@ package com.butchercraft.registration;
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawMenu;
 import com.butchercraft.machine.grinder.GrinderMenu;
+import com.butchercraft.machine.pattyformer.PattyFormerMenu;
 import com.butchercraft.machine.packaging.PackagingTableMenu;
 import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
 import net.minecraft.core.registries.Registries;
@@ -26,6 +27,12 @@ public final class ModMenuTypes {
             GRINDER = MENU_TYPES.register(
                     "grinder",
                     () -> IMenuTypeExtension.create(GrinderMenu::new)
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PattyFormerMenu>>
+            PATTY_FORMER = MENU_TYPES.register(
+                    "patty_former",
+                    () -> IMenuTypeExtension.create(PattyFormerMenu::new)
             );
 
     public static final DeferredHolder<MenuType<?>, MenuType<BandsawMenu>>

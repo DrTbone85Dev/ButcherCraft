@@ -209,6 +209,7 @@ public final class ContentSnapshotService {
     public static Set<EngineId> knownCapabilities() {
         return Set.of(
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING,
+                BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING,
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW
         );
     }

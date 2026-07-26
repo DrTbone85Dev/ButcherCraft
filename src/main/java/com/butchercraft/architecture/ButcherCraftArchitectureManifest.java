@@ -570,23 +570,23 @@ public final class ButcherCraftArchitectureManifest {
         platformContract(builder, "butchercraft:platform_contract/workstation_player_execution_slice",
                 ValidationCategory.EXECUTION, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
-                "Promoted grinder workstation operations issue workstation-owned Execution authorization and complete through generic Execution");
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice and IM-018 Patty Former",
+                "Promoted workstation operations issue workstation-owned Execution authorization and complete through generic Execution");
         platformContract(builder, "butchercraft:platform_contract/workstation_owner_result_publication",
                 ValidationCategory.EXECUTION, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice and IM-018 Patty Former",
                 "The workstation owner publishes immutable owner result evidence before Execution succeeds");
         platformContract(builder, "butchercraft:platform_contract/workstation_itemstack_mutation_boundary",
                 ValidationCategory.OWNERSHIP, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
-                "The selected grinder slice mutates workstation-owned ItemStack slots, not economic Inventory runtime");
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice and IM-018 Patty Former",
+                "Promoted workstation slices mutate workstation-owned ItemStack slots, not economic Inventory runtime");
         platformContract(builder, "butchercraft:platform_contract/execution_first_player_facing_handler",
                 ValidationCategory.EXECUTION, EXECUTION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-012 First Player-Facing Workstation Execution Vertical Slice",
-                "Execution registers one live player-facing grinder handler through the generic Scheduler work type");
+                "IM-012 First Player-Facing Workstation Execution Vertical Slice and IM-018 Patty Former",
+                "Execution registers live player-facing workstation handlers through the generic Scheduler work type");
         platformContract(builder, "butchercraft:platform_contract/scheduler_dispatched_workstation_execution",
                 ValidationCategory.SCHEDULER, SCHEDULER,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -692,6 +692,56 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-016 Grinder Integration with the Production Framework",
                 "Production persists Grinder-assigned Run references and Production-owned completion evidence without duplicating Grinder or Execution state");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_gameplay_workstation",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "The Patty Former is a craftable promoted gameplay workstation with registered block, item, menu, screen, loot table, localization, model, and placeholder textures");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_ground_beef_process",
+                ValidationCategory.REGISTRIES, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Ground Beef to Beef Patties is one canonical Patty Former process selected through product and transformation definitions");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_execution_handler",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Execution registers a Patty Former operation handler through the existing generic Execution runtime");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_owner_result_publication",
+                ValidationCategory.EXECUTION, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "The Patty Former publishes workstation-owned result evidence before Execution can report success");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_duplicate_safety",
+                ValidationCategory.SCHEDULER, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Patty Former interaction, Scheduler dispatch, owner-result observation, serialization, and repeated ticks do not duplicate output");
+        platformContract(builder, "butchercraft:platform_contract/production_two_step_workstation_chain",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Production can represent one ordered Grinder then Patty Former workstation chain for a single Production Run");
+        platformContract(builder, "butchercraft:platform_contract/production_manual_transfer_boundary",
+                ValidationCategory.OWNERSHIP, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Production records the manual-transfer wait state without moving ItemStacks or inferring transfer from Grinder completion");
+        platformContract(builder, "butchercraft:platform_contract/production_chain_product_flow_validation",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Production validates that the first chain step output product identity matches the second step input product identity");
+        platformContract(builder, "butchercraft:platform_contract/production_chain_persistence_references",
+                ValidationCategory.PERSISTENCE, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Production persists ordered chain steps, observed Execution identities, owner-result evidence references, status, and completion evidence without duplicating workstation state");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_chain_gametest_coverage",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-018 Patty Former and First Multi-Workstation Production Chain",
+                "Automated server-world GameTests cover Patty Former behavior and the manual Grinder to Patty Former chain");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -744,6 +794,8 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/production_run_runtime", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_workstation_assignment", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_workstation_completion_evidence", PRODUCTION);
+        own(builder, "butchercraft:responsibility/production_workstation_chain", PRODUCTION);
+        own(builder, "butchercraft:responsibility/production_product_flow_identity_validation", PRODUCTION);
         own(builder, "butchercraft:responsibility/planning_cadence_configuration", PLANNING);
         own(builder, "butchercraft:responsibility/planning_trigger_identity", PLANNING);
         own(builder, "butchercraft:responsibility/planning_input_capture", PLANNING);
@@ -1097,14 +1149,28 @@ public final class ButcherCraftArchitectureManifest {
                 "butchercraft:responsibility/production_workstation_assignment",
                 PRODUCTION,
                 ValidationCategory.PRODUCTION,
-                "IM-016 assigns Grinder workstation assignment references to Production"
+                "IM-016 and IM-018 assign workstation observation references to Production"
         );
         contract(
                 builder,
                 "butchercraft:responsibility/production_workstation_completion_evidence",
                 PRODUCTION,
                 ValidationCategory.PRODUCTION,
-                "IM-016 assigns Production-owned Grinder completion evidence to Production"
+                "IM-016 and IM-018 assign Production-owned workstation completion evidence to Production"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/production_workstation_chain",
+                PRODUCTION,
+                ValidationCategory.PRODUCTION,
+                "IM-018 assigns ordered workstation-chain state and completion evidence to Production"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/production_product_flow_identity_validation",
+                PRODUCTION,
+                ValidationCategory.PRODUCTION,
+                "IM-018 assigns chain product-flow identity validation to Production"
         );
         contract(
                 builder,
@@ -1300,7 +1366,7 @@ public final class ButcherCraftArchitectureManifest {
                 "butchercraft:responsibility/workstation_slot_inventory",
                 WORKSTATION,
                 ValidationCategory.OWNERSHIP,
-                "IM-012 keeps grinder input and output ItemStack slots owned by the workstation subsystem"
+                "IM-012 and IM-018 keep promoted workstation ItemStack slots owned by the workstation subsystem"
         );
         contract(
                 builder,
@@ -1314,14 +1380,14 @@ public final class ButcherCraftArchitectureManifest {
                 "butchercraft:responsibility/workstation_execution_authorization_issuance",
                 WORKSTATION,
                 ValidationCategory.EXECUTION,
-                "IM-012 allows one workstation-owned authorization source for the grinder vertical slice"
+                "IM-012 and IM-018 allow promoted workstations to issue workstation-owned authorization"
         );
         contract(
                 builder,
                 "butchercraft:responsibility/workstation_owner_result_evidence",
                 WORKSTATION,
                 ValidationCategory.EXECUTION,
-                "IM-012 assigns the selected grinder Authoritative Result to the workstation owner"
+                "IM-012 and IM-018 assign promoted workstation Authoritative Results to the workstation owner"
         );
     }
 

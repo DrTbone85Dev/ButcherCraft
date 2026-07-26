@@ -20,8 +20,10 @@ public final class ModCreativeModeTabs {
                     .icon(() -> ModItems.GRINDER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.GRINDER.get());
+                        output.accept(ModItems.PATTY_FORMER.get());
                         output.accept(ModItems.BEEF_TRIM.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance());
+                        output.accept(ModItems.BEEF_PATTIES.get().getDefaultInstance());
                         output.accept(ModItems.PORK_TRIM.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_PORK.get().getDefaultInstance());
                         output.accept(ModItems.CHICKEN_TRIM.get().getDefaultInstance());

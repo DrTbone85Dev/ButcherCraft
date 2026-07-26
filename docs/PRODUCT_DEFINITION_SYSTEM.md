@@ -1,12 +1,12 @@
 # ButcherCraft Product Definition System
 
-Status: v0.8.0 Sprint C retail product registry foundation, with IM-017 Grinder product expansion
+Status: v0.8.0 Sprint C retail product registry foundation, with IM-018 Patty Former product expansion
 
 ## Purpose
 
 The Product Definition System gives stable product ids an authoritative pure Java source of descriptive data. It is separate from Minecraft ItemStack product snapshots, existing datapack-backed processing product definitions, and temporary development item mappings.
 
-This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof. Sprint C adds physical packaging supply references at the packaging-definition layer without changing product metadata. Sprint D uses the packaging metadata for the first Packaging Table execution flow. IM-017 adds the promoted Grinder recipe expansion products through the same registry path.
+This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof. Sprint C adds physical packaging supply references at the packaging-definition layer without changing product metadata. Sprint D uses the packaging metadata for the first Packaging Table execution flow. IM-017 adds the promoted Grinder recipe expansion products through the same registry path. IM-018 adds Beef Patties for the Patty Former through that path.
 
 ## Package
 
@@ -107,6 +107,12 @@ butchercraft:ground_venison
 
 The existing `butchercraft:bison_trim` and `butchercraft:ground_bison` product ids are retained and presented to players as Buffalo Trim and Ground Buffalo.
 
+IM-018 adds the first Patty Former product:
+
+```text
+butchercraft:beef_patties
+```
+
 Version 0.6.7 added the minimum current Bandsaw proof products:
 
 ```text
@@ -120,7 +126,7 @@ butchercraft:beef_fat
 butchercraft:beef_bone
 ```
 
-Version 0.6.9 moves these definitions into bundled content snapshot JSON resources under `data/butchercraft/butchercraft/content/product`. This path is separate from the existing Minecraft datapack registry path `data/butchercraft/butchercraft/product`, which continues to use the richer processing `ProductDefinition` codec. All content snapshot products use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
+Version 0.6.9 moves these definitions into bundled content snapshot JSON resources under `data/butchercraft/butchercraft/content/product`. This path is separate from the existing Minecraft datapack registry path `data/butchercraft/butchercraft/product`, which continues to use the richer processing `ProductDefinition` codec. All content snapshot products use `gram` as the default quantity unit. Trim products use the `butchercraft:trait/trim` tag. Ground products use the `butchercraft:trait/ground` tag. Beef Patties use the `butchercraft:trait/patties` tag. Bandsaw proof products use the minimum forequarter, primal, fat, and bone tags needed for registry queries and validation.
 
 Version 0.7.0 adds the first beef fabrication expansion products:
 

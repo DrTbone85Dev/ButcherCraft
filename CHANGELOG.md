@@ -7,6 +7,9 @@
 - Promoted the first playable Grinder workstation flow for normal gameplay.
 - Added player-facing Beef Trim to Ground Beef processing.
 - Added player-facing Pork Trim to Ground Pork processing.
+- Added the craftable Patty Former workstation.
+- Added player-facing Ground Beef to Beef Patties processing.
+- Added the first manual Grinder to Patty Former production chain.
 - Added craftable Grinder gameplay access while retaining existing compatible registry ids.
 - Integrated promoted Grinder completion with the Production Framework through Production-owned assignment and completion evidence.
 
@@ -16,6 +19,7 @@
 - Enforced live Scheduler side-effect policy and deterministic handler boundaries.
 - Added live Planning Cadence enforcement for bounded, explicit Planning execution.
 - Added Production observation of promoted workstation operations without moving Grinder, Execution, Scheduler, or Transaction authority.
+- Added Production-owned ordered chain state, product-flow identity validation, manual-transfer waiting state, and chain completion evidence for the Grinder to Patty Former path.
 - Preserved the RFC-0022 Allocation foundations while keeping Allocation out of live Grinder gameplay.
 
 ### Stability

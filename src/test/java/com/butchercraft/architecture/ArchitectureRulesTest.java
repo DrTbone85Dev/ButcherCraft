@@ -331,6 +331,38 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersPattyFormerAndProductionChainAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedPattyFormerContracts = List.of(
+                "butchercraft:platform_contract/patty_former_gameplay_workstation",
+                "butchercraft:platform_contract/patty_former_ground_beef_process",
+                "butchercraft:platform_contract/patty_former_execution_handler",
+                "butchercraft:platform_contract/patty_former_owner_result_publication",
+                "butchercraft:platform_contract/patty_former_duplicate_safety",
+                "butchercraft:platform_contract/production_two_step_workstation_chain",
+                "butchercraft:platform_contract/production_manual_transfer_boundary",
+                "butchercraft:platform_contract/production_chain_product_flow_validation",
+                "butchercraft:platform_contract/production_chain_persistence_references",
+                "butchercraft:platform_contract/patty_former_chain_gametest_coverage"
+        );
+
+        for (String contractId : implementedPattyFormerContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/production_workstation_chain")
+                        && assignment.ownerId().value().equals("butchercraft:production")));
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/production_product_flow_identity_validation")
+                        && assignment.ownerId().value().equals("butchercraft:production")));
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -843,7 +875,17 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/production_grinder_completion_evidence",
                         "butchercraft:platform_contract/production_grinder_authority_boundary",
                         "butchercraft:platform_contract/production_grinder_duplicate_safety",
-                        "butchercraft:platform_contract/production_grinder_persistence_references"
+                        "butchercraft:platform_contract/production_grinder_persistence_references",
+                        "butchercraft:platform_contract/patty_former_gameplay_workstation",
+                        "butchercraft:platform_contract/patty_former_ground_beef_process",
+                        "butchercraft:platform_contract/patty_former_execution_handler",
+                        "butchercraft:platform_contract/patty_former_owner_result_publication",
+                        "butchercraft:platform_contract/patty_former_duplicate_safety",
+                        "butchercraft:platform_contract/production_two_step_workstation_chain",
+                        "butchercraft:platform_contract/production_manual_transfer_boundary",
+                        "butchercraft:platform_contract/production_chain_product_flow_validation",
+                        "butchercraft:platform_contract/production_chain_persistence_references",
+                        "butchercraft:platform_contract/patty_former_chain_gametest_coverage"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

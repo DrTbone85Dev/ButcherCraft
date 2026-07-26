@@ -22,6 +22,7 @@ public record ProductionRunSnapshot(
         Optional<SimulationWorkId> scheduledWorkId,
         Optional<TransactionId> completionTransactionId,
         Optional<ProductionWorkstationAssignment> workstationAssignment,
+        Optional<ProductionWorkstationChain> workstationChain,
         Optional<ProductionFailureCode> failureCode,
         Optional<String> failureSummary,
         long revision,
@@ -42,6 +43,7 @@ public record ProductionRunSnapshot(
         scheduledWorkId = Objects.requireNonNull(scheduledWorkId, "scheduledWorkId");
         completionTransactionId = Objects.requireNonNull(completionTransactionId, "completionTransactionId");
         workstationAssignment = Objects.requireNonNull(workstationAssignment, "workstationAssignment");
+        workstationChain = Objects.requireNonNull(workstationChain, "workstationChain");
         failureCode = Objects.requireNonNull(failureCode, "failureCode");
         failureSummary = Objects.requireNonNull(failureSummary, "failureSummary")
                 .map(value -> ProductionValidation.requireText(value, "Production failure summary", 2_048));
@@ -54,9 +56,53 @@ public record ProductionRunSnapshot(
                 completedTick,
                 completionTransactionId,
                 workstationAssignment,
+                workstationChain,
                 scheduledWorkId,
                 failureCode,
                 failureSummary
+        );
+    }
+
+    public ProductionRunSnapshot(
+            ProductionRunId id,
+            ProductionPlanId planId,
+            ProductionRunStatus status,
+            long lastUpdatedSimulationTick,
+            OptionalLong startedTick,
+            OptionalLong pausedTick,
+            OptionalLong completedTick,
+            long requiredWorkUnits,
+            long currentWorkUnits,
+            int executionAttemptCount,
+            OptionalLong nextEligibleTick,
+            Optional<SimulationWorkId> scheduledWorkId,
+            Optional<TransactionId> completionTransactionId,
+            Optional<ProductionWorkstationAssignment> workstationAssignment,
+            Optional<ProductionFailureCode> failureCode,
+            Optional<String> failureSummary,
+            long revision,
+            int schemaVersion
+    ) {
+        this(
+                id,
+                planId,
+                status,
+                lastUpdatedSimulationTick,
+                startedTick,
+                pausedTick,
+                completedTick,
+                requiredWorkUnits,
+                currentWorkUnits,
+                executionAttemptCount,
+                nextEligibleTick,
+                scheduledWorkId,
+                completionTransactionId,
+                workstationAssignment,
+                Optional.empty(),
+                failureCode,
+                failureSummary,
+                revision,
+                schemaVersion
         );
     }
 
@@ -68,6 +114,7 @@ public record ProductionRunSnapshot(
             OptionalLong completedTick,
             Optional<TransactionId> completionTransactionId,
             Optional<ProductionWorkstationAssignment> workstationAssignment,
+            Optional<ProductionWorkstationChain> workstationChain,
             Optional<SimulationWorkId> scheduledWorkId,
             Optional<ProductionFailureCode> failureCode,
             Optional<String> failureSummary
@@ -78,8 +125,12 @@ public record ProductionRunSnapshot(
         boolean hasWorkstationCompletion = workstationAssignment
                 .flatMap(ProductionWorkstationAssignment::completionEvidence)
                 .isPresent();
+        boolean hasChainCompletion = workstationChain
+                .flatMap(ProductionWorkstationChain::completionEvidence)
+                .isPresent();
         int completionAuthorityCount = (completionTransactionId.isPresent() ? 1 : 0)
-                + (hasWorkstationCompletion ? 1 : 0);
+                + (hasWorkstationCompletion ? 1 : 0)
+                + (hasChainCompletion ? 1 : 0);
         if (status == ProductionRunStatus.COMPLETED
                 && (completedTick.isEmpty() || completionAuthorityCount != 1
                 || currentWorkUnits != requiredWorkUnits)) {
@@ -94,9 +145,27 @@ public record ProductionRunSnapshot(
         if (scheduledWorkId.isPresent() && workstationAssignment.isPresent()) {
             throw new IllegalArgumentException("Production Scheduler Work and workstation assignment are mutually exclusive");
         }
-        if (status == ProductionRunStatus.AWAITING_TRANSACTION && workstationAssignment.isPresent()) {
+        if (scheduledWorkId.isPresent() && workstationChain.isPresent()) {
+            throw new IllegalArgumentException("Production Scheduler Work and workstation chains are mutually exclusive");
+        }
+        if (workstationAssignment.isPresent() && workstationChain.isPresent()) {
+            throw new IllegalArgumentException("Production run cannot use both single and chain workstation assignment");
+        }
+        if (status == ProductionRunStatus.AWAITING_TRANSACTION
+                && (workstationAssignment.isPresent() || workstationChain.isPresent())) {
             throw new IllegalArgumentException("Workstation-assigned Production runs do not await Transactions");
         }
+        workstationChain.ifPresent(chain -> {
+            if (status == ProductionRunStatus.COMPLETED && chain.status() != ProductionWorkstationChainStatus.COMPLETE) {
+                throw new IllegalArgumentException("Completed Production chain Run requires complete chain status");
+            }
+            if (chain.completionEvidence().isPresent()) {
+                ProductionChainCompletionEvidence evidence = chain.completionEvidence().orElseThrow();
+                if (!evidence.digestMatches()) {
+                    throw new IllegalArgumentException("Production chain completion evidence digest mismatch");
+                }
+            }
+        });
         if (status == ProductionRunStatus.PAUSED && pausedTick.isEmpty()) {
             throw new IllegalArgumentException("Paused production run requires a pause tick");
         }

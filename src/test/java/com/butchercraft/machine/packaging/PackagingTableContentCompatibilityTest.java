@@ -3,6 +3,7 @@ package com.butchercraft.machine.packaging;
 import com.butchercraft.content.ContentSnapshotService;
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
+import com.butchercraft.machine.pattyformer.PattyFormerWorkstation;
 import com.butchercraft.packaging.definition.BuiltInPackagingRegistry;
 import com.butchercraft.product.definition.BuiltInProductRegistry;
 import com.butchercraft.transformation.BuiltInTransformationRegistry;
@@ -29,9 +30,9 @@ class PackagingTableContentCompatibilityTest {
 
         var snapshot = ContentSnapshotService.loadBundledSnapshot();
 
-        assertEquals(37, snapshot.products().size());
+        assertEquals(38, snapshot.products().size());
         assertEquals(4, snapshot.packaging().size());
-        assertEquals(11, snapshot.transformations().size());
+        assertEquals(12, snapshot.transformations().size());
         assertTrue(PackagingTableWorkstation.capability().supportsWorkstationCapability(
                 com.butchercraft.processing.definition.BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PACKAGING
         ));
@@ -41,6 +42,8 @@ class PackagingTableContentCompatibilityTest {
     void existingWorkstationCapabilitiesRemainUnchanged() {
         assertEquals(1, GrinderWorkstation.capability().inputSlots());
         assertEquals(1, GrinderWorkstation.capability().outputSlots());
+        assertEquals(1, PattyFormerWorkstation.capability().inputSlots());
+        assertEquals(1, PattyFormerWorkstation.capability().outputSlots());
         assertEquals(1, BandsawWorkstation.capability().inputSlots());
         assertEquals(8, BandsawWorkstation.capability().outputSlots());
         assertEquals(3, PackagingTableWorkstation.capability().inputSlots());

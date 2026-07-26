@@ -1,6 +1,7 @@
 package com.butchercraft.world;
 
 import com.butchercraft.machine.grinder.execution.GrinderExecutionOperationHandler;
+import com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionOperationHandler;
 import com.butchercraft.world.execution.ExecutionHandlerRegistry;
 import com.butchercraft.world.execution.ExecutionManager;
 import com.butchercraft.world.execution.ExecutionRuntimeConfiguration;
@@ -88,7 +89,8 @@ public final class ExecutionService {
 
     private static ExecutionHandlerRegistry defaultHandlerRegistry(MinecraftServer server) {
         return new ExecutionHandlerRegistry(java.util.List.of(
-                new GrinderExecutionOperationHandler(server)
+                new GrinderExecutionOperationHandler(server),
+                new PattyFormerExecutionOperationHandler(server)
         ));
     }
 

@@ -41,9 +41,9 @@ class ContentSnapshotServiceTest {
         );
 
         assertTrue(result.succeeded(), result::describeErrors);
-        assertEquals(37, ContentSnapshotService.currentProductRegistry().size());
+        assertEquals(38, ContentSnapshotService.currentProductRegistry().size());
         assertEquals(4, ContentSnapshotService.currentPackagingRegistry().size());
-        assertEquals(11, ContentSnapshotService.currentTransformationRegistry().size());
+        assertEquals(12, ContentSnapshotService.currentTransformationRegistry().size());
         assertEquals(previous.products().stream().toList(), ContentSnapshotService.currentProductRegistry().stream().toList());
         assertEquals(previous.packaging().stream().toList(), ContentSnapshotService.currentPackagingRegistry().stream().toList());
         assertEquals(previous.transformations().stream().toList(),
@@ -275,6 +275,7 @@ class ContentSnapshotServiceTest {
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:grind_bison")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:grind_lamb")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:grind_venison")));
+        assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:form_beef_patties")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:break_beef_forequarter")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:break_beef_hindquarter")));
         assertTrue(snapshot.transformations().contains(TransformationId.of("butchercraft:cut_beef_short_loin")));
@@ -304,6 +305,7 @@ class ContentSnapshotServiceTest {
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_hindquarter")));
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:tri_tip")));
         assertTrue(snapshot.products().contains(EngineId.of("butchercraft:retail_ground_beef")));
+        assertTrue(snapshot.products().contains(EngineId.of("butchercraft:beef_patties")));
     }
 
     @Test
@@ -317,7 +319,7 @@ class ContentSnapshotServiceTest {
                     "Missing bundled product from content snapshot: " + fileName
             );
         }
-        assertEquals(37, snapshot.products().size());
+        assertEquals(38, snapshot.products().size());
     }
 
     @Test

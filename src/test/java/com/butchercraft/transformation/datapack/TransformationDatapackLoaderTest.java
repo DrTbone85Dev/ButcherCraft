@@ -26,6 +26,7 @@ class TransformationDatapackLoaderTest {
             "butchercraft:grind_bison",
             "butchercraft:grind_lamb",
             "butchercraft:grind_venison",
+            "butchercraft:form_beef_patties",
             "butchercraft:break_beef_forequarter",
             "butchercraft:break_beef_hindquarter",
             "butchercraft:cut_beef_short_loin",
@@ -141,6 +142,7 @@ class TransformationDatapackLoaderTest {
                 BuiltInProductRegistry.builtInRegistry(),
                 Set.of(
                         BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING,
+                        BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING,
                         BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW
                 )
         );

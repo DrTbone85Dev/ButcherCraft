@@ -4,6 +4,7 @@ import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawBlock;
 import com.butchercraft.machine.bandsaw.BandsawUpperBlock;
 import com.butchercraft.machine.grinder.GrinderBlock;
+import com.butchercraft.machine.pattyformer.PattyFormerBlock;
 import com.butchercraft.machine.packaging.PackagingTableBlock;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -28,6 +29,15 @@ public final class ModBlocks {
             BLOCKS.registerBlock(
                     "grinder",
                     GrinderBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(2.5F)
+                            .sound(SoundType.METAL)
+            );
+
+    public static final DeferredBlock<PattyFormerBlock> PATTY_FORMER =
+            BLOCKS.registerBlock(
+                    "patty_former",
+                    PattyFormerBlock::new,
                     BlockBehaviour.Properties.of()
                             .strength(2.5F)
                             .sound(SoundType.METAL)

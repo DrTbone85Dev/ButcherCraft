@@ -145,12 +145,13 @@ Thirty-one product-bearing items are registered through the current fixture-back
 
 They appear in the ButcherCraft creative tab and receive default product data from `ProductTestItem.getDefaultInstance()`.
 
-Beef Trim, Ground Beef, Pork Trim, Ground Pork, Chicken Trim, Ground Chicken, Buffalo Trim, Ground Buffalo, Lamb Trim, Ground Lamb, Venison Trim, and Ground Venison are ordinary promoted Grinder gameplay products. Beef, Pork, and Buffalo retain existing compatibility item registry ids where they already existed. Other product items remain development fixtures. Default values are still development-stage balance, not final production balance:
+Beef Trim, Ground Beef, Pork Trim, Ground Pork, Chicken Trim, Ground Chicken, Buffalo Trim, Ground Buffalo, Lamb Trim, Ground Lamb, Venison Trim, Ground Venison, and Beef Patties are ordinary promoted workstation gameplay products. Beef, Pork, and Buffalo retain existing compatibility item registry ids where they already existed. Other product items remain development fixtures. Default values are still development-stage balance, not final production balance:
 
 | Item | Product type | Source | State | Quantity | Quality |
 | --- | --- | --- | --- | --- | --- |
 | Beef Trim | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Beef | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
+| Beef Patties | `butchercraft:beef_patties` | `butchercraft:beef` | `butchercraft:patties` | `900 gram` | `700` |
 | Retail Ground Beef Test Product | `butchercraft:retail_ground_beef` | `butchercraft:beef` | `butchercraft:retail_packaged` | `900 gram` | `700` |
 | Pork Trim | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Pork | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
@@ -189,7 +190,7 @@ Beef Trim, Ground Beef, Pork Trim, Ground Pork, Chicken Trim, Ground Chicken, Bu
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
-Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining their legacy registry ids for compatibility. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. The development-only mapping derives product definition ids from item default product data; it is still not a general product item factory.
+Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining their legacy registry ids for compatibility. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. IM-018 promotes Beef Patties for Patty Former gameplay. The development-only mapping derives product definition ids from item default product data; it is still not a general product item factory.
 
 ## Tooltip Behavior
 

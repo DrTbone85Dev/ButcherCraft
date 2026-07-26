@@ -1,6 +1,6 @@
 # ButcherCraft Asset Manifest
 
-Status: v0.8.0E asset framework baseline plus promoted Grinder assets through IM-017
+Status: v0.8.0E asset framework baseline plus promoted Grinder assets through IM-017 and Patty Former assets through IM-018
 
 ## Purpose
 
@@ -14,7 +14,7 @@ Status values used here:
 - `Review Required` - needs in-game art review after final art is supplied.
 - `Deferred` - registered or documented for future gameplay, not currently part of the first packaging flow.
 
-No current ButcherCraft v0.8.0 visual asset is production approved.
+No current ButcherCraft visual asset is production approved.
 
 ## Canonical Resource Structure
 
@@ -50,6 +50,8 @@ No current ButcherCraft v0.8.0 visual asset is production approved.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Grinder block model | `butchercraft:block/grinder` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/grinder.json` | Yes | JSON model within 0-16 block bounds | Framework Ready | Yes | Stainless steel grinder body | `assets/butchercraft/blockstates/grinder.json` | `butchercraft:block/workstation/grinder_frame`, `butchercraft:block/workstation/grinder_surface`, `butchercraft:block/workstation/grinder_feed` | Shape and texture targets are stable enough for the promoted Grinder gameplay slice. | Review Required |
 | Grinder item model | `butchercraft:item/grinder` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/grinder.json` | Yes | Parent block model | Framework Ready | Yes | Same as block | `butchercraft:block/grinder` | Same as block | Inherits generated block model. | Review Required |
+| Patty Former block model | `butchercraft:block/patty_former` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/patty_former.json` | Yes | JSON model within 0-16 block bounds | Framework Ready | Yes | Stainless steel patty press body | `assets/butchercraft/blockstates/patty_former.json` | `butchercraft:block/workstation/patty_former_frame`, `butchercraft:block/workstation/patty_former_surface`, `butchercraft:block/workstation/patty_former_press` | Shape and texture targets are stable enough for the IM-018 Patty Former gameplay slice. | Review Required |
+| Patty Former item model | `butchercraft:item/patty_former` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/patty_former.json` | Yes | Parent block model | Framework Ready | Yes | Same as block | `butchercraft:block/patty_former` | Same as block | Inherits generated block model. | Review Required |
 | Bandsaw lower block model | `butchercraft:block/bandsaw` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/bandsaw.json` | Yes | JSON model within 0-16 block bounds | Placeholder | Yes | Stainless steel bandsaw body | `assets/butchercraft/blockstates/bandsaw.json` | `butchercraft:item/development_test_item` | Paired block behavior is production gameplay; visuals are not final. | Review Required |
 | Bandsaw upper block model | `butchercraft:block/bandsaw_upper` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/bandsaw_upper.json` | Yes | JSON model within 0-16 block bounds | Placeholder | Yes | Stainless steel upper frame | `assets/butchercraft/blockstates/bandsaw_upper.json` | `butchercraft:item/development_test_item` | Must preserve two-block readability after final art. | Review Required |
 | Bandsaw item model | `butchercraft:item/bandsaw` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/bandsaw.json` | Yes | Parent lower block model | Placeholder | Yes | Same as lower block | `butchercraft:block/bandsaw` | Same as lower block | Item uses lower block representation. | Review Required |
@@ -71,6 +73,7 @@ No current ButcherCraft v0.8.0 visual asset is production approved.
 | Ground Lamb | `butchercraft:ground_lamb` | Promoted product item | `butchercraft:ground_lamb` | `src/generated/resources/assets/butchercraft/models/item/ground_lamb.json` | Yes | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic ground lamb | `minecraft:item/generated` | `butchercraft:item/product/ground_lamb` | New IM-017 promoted Grinder product. | Review Required |
 | Venison Trim | `butchercraft:venison_trim` | Promoted product item | `butchercraft:venison_trim` | `src/generated/resources/assets/butchercraft/models/item/venison_trim.json` | Yes | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic raw venison trim | `minecraft:item/generated` | `butchercraft:item/product/venison_trim` | New IM-017 promoted Grinder product. | Review Required |
 | Ground Venison | `butchercraft:ground_venison` | Promoted product item | `butchercraft:ground_venison` | `src/generated/resources/assets/butchercraft/models/item/ground_venison.json` | Yes | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic ground venison | `minecraft:item/generated` | `butchercraft:item/product/ground_venison` | New IM-017 promoted Grinder product. | Review Required |
+| Beef Patties | `butchercraft:beef_patties` | Promoted product item | `butchercraft:beef_patties` | `src/generated/resources/assets/butchercraft/models/item/beef_patties.json` | Yes | 16x16 PNG texture | Framework Ready | Yes | Abstract non-graphic formed beef patties | `minecraft:item/generated` | `butchercraft:item/product/beef_patties` | New IM-018 promoted Patty Former product. | Review Required |
 
 ## Development Product Fixture Audit
 

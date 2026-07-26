@@ -29,6 +29,7 @@ public final class BuiltInProcessingDefinitions {
                 Map.ofEntries(
                         Map.entry(BuiltInDefinitionIds.BEEF_TRIM, beefTrimProduct()),
                         Map.entry(BuiltInDefinitionIds.GROUND_BEEF, groundBeefProduct()),
+                        Map.entry(BuiltInDefinitionIds.BEEF_PATTIES, beefPattiesProduct()),
                         Map.entry(BuiltInDefinitionIds.RETAIL_GROUND_BEEF, retailGroundBeefProduct()),
                         Map.entry(BuiltInDefinitionIds.PORK_TRIM, porkTrimProduct()),
                         Map.entry(BuiltInDefinitionIds.GROUND_PORK, groundPorkProduct()),
@@ -72,6 +73,7 @@ public final class BuiltInProcessingDefinitions {
                         Map.entry(BuiltInDefinitionIds.GRIND_BISON, grindBisonOperation()),
                         Map.entry(BuiltInDefinitionIds.GRIND_LAMB, grindLambOperation()),
                         Map.entry(BuiltInDefinitionIds.GRIND_VENISON, grindVenisonOperation()),
+                        Map.entry(BuiltInDefinitionIds.FORM_BEEF_PATTIES, formBeefPattiesOperation()),
                         Map.entry(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER, breakBeefForequarterOperation()),
                         Map.entry(BuiltInDefinitionIds.BREAK_BEEF_HINDQUARTER, breakBeefHindquarterOperation()),
                         Map.entry(BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN, cutBeefShortLoinOperation()),
@@ -99,6 +101,7 @@ public final class BuiltInProcessingDefinitions {
     public static void bootstrapProducts(BootstrapContext<ProductDefinition> context) {
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_TRIM), beefTrimProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_BEEF), groundBeefProduct());
+        context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.BEEF_PATTIES), beefPattiesProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.RETAIL_GROUND_BEEF), retailGroundBeefProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.PORK_TRIM), porkTrimProduct());
         context.register(key(ModDataPackRegistries.PRODUCT, BuiltInDefinitionIds.GROUND_PORK), groundPorkProduct());
@@ -228,6 +231,7 @@ public final class BuiltInProcessingDefinitions {
         context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.GRIND_BISON), grindBisonOperation());
         context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.GRIND_LAMB), grindLambOperation());
         context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.GRIND_VENISON), grindVenisonOperation());
+        context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.FORM_BEEF_PATTIES), formBeefPattiesOperation());
         context.register(
                 key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER),
                 breakBeefForequarterOperation()
@@ -299,12 +303,14 @@ public final class BuiltInProcessingDefinitions {
                 BuiltInDefinitionIds.PROFILE_CATEGORY_RED_MEAT,
                 List.of(
                         BuiltInDefinitionIds.OPERATION_CATEGORY_GRINDING,
+                        BuiltInDefinitionIds.OPERATION_CATEGORY_FORMING,
                         BuiltInDefinitionIds.OPERATION_CATEGORY_FABRICATION,
                         BuiltInDefinitionIds.OPERATION_CATEGORY_PACKAGING
                 ),
                 List.of(
                         BuiltInDefinitionIds.WORKFLOW_STAGE_PRIMARY_PROCESSING,
                         BuiltInDefinitionIds.WORKFLOW_STAGE_SIZE_REDUCTION,
+                        BuiltInDefinitionIds.WORKFLOW_STAGE_FORMING,
                         BuiltInDefinitionIds.WORKFLOW_STAGE_FABRICATION,
                         BuiltInDefinitionIds.WORKFLOW_STAGE_RETAIL_PACKAGING
                 ),
@@ -330,6 +336,22 @@ public final class BuiltInProcessingDefinitions {
 
     public static ProductDefinition groundBeefProduct() {
         return groundProduct("definition.butchercraft.product.ground_beef", BuiltInDefinitionIds.BEEF);
+    }
+
+    public static ProductDefinition beefPattiesProduct() {
+        return new ProductDefinition(
+                "definition.butchercraft.product.beef_patties",
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.BEEF,
+                BuiltInDefinitionIds.id("patties"),
+                "gram",
+                true,
+                BoneState.BONELESS,
+                true,
+                List.of(BuiltInDefinitionIds.id("trait/patties")),
+                false,
+                true
+        );
     }
 
     public static ProductDefinition retailGroundBeefProduct() {
@@ -575,6 +597,29 @@ public final class BuiltInProcessingDefinitions {
                 "definition.butchercraft.processing_operation.grind_venison",
                 BuiltInDefinitionIds.VENISON_TRIM,
                 BuiltInDefinitionIds.GROUND_VENISON
+        );
+    }
+
+    public static ProcessingOperationDefinition formBeefPattiesOperation() {
+        return new ProcessingOperationDefinition(
+                "definition.butchercraft.processing_operation.form_beef_patties",
+                BuiltInDefinitionIds.OPERATION_CATEGORY_FORMING,
+                List.of(BuiltInDefinitionIds.RED_MEAT),
+                BuiltInDefinitionIds.GROUND_BEEF,
+                BuiltInDefinitionIds.BEEF_PATTIES,
+                BuiltInDefinitionIds.id("ground"),
+                BuiltInDefinitionIds.id("patties"),
+                3_000,
+                new YieldDefinition(1, 1),
+                0,
+                new QuantityDefinition(100, "gram"),
+                600,
+                500,
+                ZeroOutputPolicy.FORBID,
+                List.of(),
+                java.util.Optional.of(BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PATTY_FORMING),
+                false,
+                false
         );
     }
 

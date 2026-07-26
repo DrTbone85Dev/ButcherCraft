@@ -23,6 +23,7 @@ class TransformationRegistryTest {
             "butchercraft:grind_bison",
             "butchercraft:grind_lamb",
             "butchercraft:grind_venison",
+            "butchercraft:form_beef_patties",
             "butchercraft:break_beef_forequarter",
             "butchercraft:break_beef_hindquarter",
             "butchercraft:cut_beef_short_loin",
@@ -86,7 +87,7 @@ class TransformationRegistryTest {
     void builtInRegistryContainsExistingGrinderTransformations() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(11, registry.size());
+        assertEquals(12, registry.size());
         assertEquals(EXPECTED_BUILT_IN_TRANSFORMATION_IDS, registry.stream()
                 .map(definition -> definition.id().value())
                 .toList());
@@ -99,6 +100,12 @@ class TransformationRegistryTest {
                         "butchercraft:grind_venison"
                 ),
                 registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING)
+                        .map(definition -> definition.id().value())
+                        .toList());
+        assertEquals(List.of(
+                        "butchercraft:form_beef_patties"
+                ),
+                registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING)
                         .map(definition -> definition.id().value())
                         .toList());
         assertEquals(List.of(

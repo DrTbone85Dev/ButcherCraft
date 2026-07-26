@@ -1,12 +1,12 @@
 # ButcherCraft Datapack Transformations
 
-Status: v0.7.0 transformation loading within atomic content snapshots, with IM-017 Grinder recipe expansion
+Status: v0.7.0 transformation loading within atomic content snapshots, with IM-018 Patty Former process expansion
 
 ## Purpose
 
 Datapack transformation loading makes the immutable `TransformationRegistry` data-driven without changing the pure evaluator, executor, transaction engine, Grinder, or Bandsaw behavior.
 
-Version 0.6.8 loads transformation JSON resources, maps them to the existing serialized schema records, deserializes through the canonical transformation deserializer, and validates references. Version 0.6.9 loads transformations after candidate products and activates the product registry and transformation registry together only after the full content snapshot succeeds. Version 0.7.0 adds four more bundled Bandsaw transformation resources for the beef fabrication expansion without changing the loader. IM-017 adds four more bundled Grinder transformation resources without changing the loader.
+Version 0.6.8 loads transformation JSON resources, maps them to the existing serialized schema records, deserializes through the canonical transformation deserializer, and validates references. Version 0.6.9 loads transformations after candidate products and activates the product registry and transformation registry together only after the full content snapshot succeeds. Version 0.7.0 adds four more bundled Bandsaw transformation resources for the beef fabrication expansion without changing the loader. IM-017 adds four more bundled Grinder transformation resources without changing the loader. IM-018 adds the Patty Former `form_beef_patties` transformation without changing the loader.
 
 ## Resource Path
 
@@ -25,6 +25,7 @@ data/butchercraft/butchercraft/transformation/grind_chicken.json
 data/butchercraft/butchercraft/transformation/grind_bison.json
 data/butchercraft/butchercraft/transformation/grind_lamb.json
 data/butchercraft/butchercraft/transformation/grind_venison.json
+data/butchercraft/butchercraft/transformation/form_beef_patties.json
 data/butchercraft/butchercraft/transformation/break_beef_forequarter.json
 data/butchercraft/butchercraft/transformation/break_beef_hindquarter.json
 data/butchercraft/butchercraft/transformation/cut_beef_short_loin.json
@@ -108,6 +109,7 @@ The following transformations are now bundled datapack resources:
 - `butchercraft:grind_bison`
 - `butchercraft:grind_lamb`
 - `butchercraft:grind_venison`
+- `butchercraft:form_beef_patties`
 - `butchercraft:break_beef_forequarter`
 - `butchercraft:break_beef_hindquarter`
 - `butchercraft:cut_beef_short_loin`
@@ -118,15 +120,15 @@ Their ids, display names, capabilities, inputs, outputs, durations, yields, and 
 
 ## Runtime Behavior
 
-The Grinder and Bandsaw still resolve processing operations through the existing workstation resolver and processing definitions. The resolved operation id is looked up in the active transformation registry at execution time.
+The Grinder, Patty Former, and Bandsaw still resolve processing operations through the existing workstation resolver and processing definitions. The resolved operation id is looked up in the active transformation registry at execution time.
 
-The IM-017 Grinder expansion adds player-facing recipes by adding registered content and fixture item mappings. It does not change the transformation loader, Grinder controller, Execution, Scheduler, or owner-result architecture.
+The IM-017 Grinder expansion adds player-facing recipes by adding registered content and fixture item mappings. IM-018 adds the Patty Former transformation and handler through the same content snapshot and generic Execution architecture. Neither milestone changes the transformation loader.
 
 ## Out Of Scope
 
 This milestone does not add:
 
-- Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain and IM-017 Grinder trim-to-ground catalog.
+- Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain, IM-017 Grinder trim-to-ground catalog, and IM-018 Beef Patties proof.
 - Transformation schema migrations.
 - A general product-to-ItemStack factory.
 - Recipe-selection UI.

@@ -89,6 +89,18 @@ public final class ModItems {
 
     public static final DeferredItem<ProductTestItem> GROUND_BEEF = GROUND_BEEF_TEST;
 
+    public static final DeferredItem<ProductTestItem> BEEF_PATTIES = ITEMS.register(
+            "beef_patties",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:beef_patties"),
+                    ProductCategory.BEEF,
+                    ProcessingState.fromId(EngineId.of("butchercraft:patties")),
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
     /**
      * Development-only product fixture used to verify Packaging Table output.
      */
@@ -407,6 +419,9 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> GRINDER =
             ITEMS.registerSimpleBlockItem(ModBlocks.GRINDER, new Item.Properties());
+
+    public static final DeferredItem<BlockItem> PATTY_FORMER =
+            ITEMS.registerSimpleBlockItem(ModBlocks.PATTY_FORMER, new Item.Properties());
 
     public static final DeferredItem<BlockItem> BANDSAW =
             ITEMS.registerSimpleBlockItem(ModBlocks.BANDSAW, new Item.Properties());

@@ -18,6 +18,7 @@ public class ProductDatapackLoaderTest {
     private static final List<String> EXPECTED_BUNDLED_PRODUCT_IDS = List.of(
             "butchercraft:beef_trim",
             "butchercraft:ground_beef",
+            "butchercraft:beef_patties",
             "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",

@@ -1,6 +1,7 @@
 {
   "allowed_operation_categories": [
     "butchercraft:operation_category/grinding",
+    "butchercraft:operation_category/forming",
     "butchercraft:operation_category/fabrication",
     "butchercraft:operation_category/packaging"
   ],
@@ -10,6 +11,7 @@
   "required_workflow_stages": [
     "butchercraft:workflow_stage/primary_processing",
     "butchercraft:workflow_stage/size_reduction",
+    "butchercraft:workflow_stage/forming",
     "butchercraft:workflow_stage/fabrication",
     "butchercraft:workflow_stage/retail_packaging"
   ]
