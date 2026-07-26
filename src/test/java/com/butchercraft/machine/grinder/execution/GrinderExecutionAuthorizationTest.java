@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,31 +42,37 @@ class GrinderExecutionAuthorizationTest {
     }
 
     @Test
-    void promotedGrinderOperationsAreBeefAndPorkOnly() {
-        assertTrue(GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(BuiltInDefinitionIds.GRIND_BEEF));
-        assertTrue(GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(BuiltInDefinitionIds.GRIND_PORK));
-        assertFalse(GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(BuiltInDefinitionIds.GRIND_BISON));
-        assertEquals(2, GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.size());
+    void promotedGrinderOperationsAreExactlyTheSixRecipeCatalogOperations() {
+        assertEquals(Set.of(
+                BuiltInDefinitionIds.GRIND_BEEF,
+                BuiltInDefinitionIds.GRIND_PORK,
+                BuiltInDefinitionIds.GRIND_CHICKEN,
+                BuiltInDefinitionIds.GRIND_BISON,
+                BuiltInDefinitionIds.GRIND_LAMB,
+                BuiltInDefinitionIds.GRIND_VENISON
+        ), GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS);
     }
 
     @Test
-    void grinderProcessIdentityDiffersBetweenPromotedProcesses() {
+    void grinderProcessIdentityDiffersBetweenAllPromotedProcesses() {
         WorkstationOperationResolver resolver = new WorkstationOperationResolver();
-        var beef = resolver.resolve(
-                BuiltInProcessingDefinitions.builtInView(),
-                GrinderWorkstation.capability(),
-                ModItems.BEEF_TRIM.get().getDefaultInstance()
-        ).operation().orElseThrow();
-        var pork = resolver.resolve(
-                BuiltInProcessingDefinitions.builtInView(),
-                GrinderWorkstation.capability(),
-                ModItems.PORK_TRIM.get().getDefaultInstance()
-        ).operation().orElseThrow();
+        List<String> identities = List.of(
+                ModItems.BEEF_TRIM,
+                ModItems.PORK_TRIM,
+                ModItems.CHICKEN_TRIM,
+                ModItems.BUFFALO_TRIM,
+                ModItems.LAMB_TRIM,
+                ModItems.VENISON_TRIM
+        ).stream()
+                .map(item -> resolver.resolve(
+                        BuiltInProcessingDefinitions.builtInView(),
+                        GrinderWorkstation.capability(),
+                        item.get().getDefaultInstance()
+                ).operation().orElseThrow())
+                .map(GrinderExecutionIdentities::operationIdentity)
+                .toList();
 
-        assertNotEquals(
-                GrinderExecutionIdentities.operationIdentity(beef),
-                GrinderExecutionIdentities.operationIdentity(pork)
-        );
+        assertEquals(6, Set.copyOf(identities).size());
     }
 
     @Test

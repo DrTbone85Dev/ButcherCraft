@@ -627,15 +627,15 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-014 Grinder Gameplay Promotion and Hardening",
                 "The promoted Grinder path presents Beef Trim and Ground Beef as player-facing content while retaining legacy registry compatibility");
-        platformContract(builder, "butchercraft:platform_contract/grinder_two_promoted_processes",
+        platformContract(builder, "butchercraft:platform_contract/grinder_six_promoted_processes",
                 ValidationCategory.GENERAL, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
-                "The Grinder promotes exactly two live trim-to-ground flows: Beef Trim to Ground Beef and Pork Trim to Ground Pork");
+                "IM-017 Grinder Recipe Expansion Framework",
+                "The Grinder promotes exactly six live trim-to-ground flows: Beef, Pork, Chicken, Buffalo, Lamb, and Venison");
         platformContract(builder, "butchercraft:platform_contract/grinder_deterministic_multi_process_resolution",
                 ValidationCategory.REGISTRIES, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
+                "IM-017 Grinder Recipe Expansion Framework",
                 "Grinder process selection resolves from authoritative product data and registry definitions with deterministic ambiguity rejection");
         platformContract(builder, "butchercraft:platform_contract/grinder_process_specific_execution_identity",
                 ValidationCategory.EXECUTION, EXECUTION,
@@ -647,11 +647,11 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
                 "Workstation owner result evidence binds the selected Grinder process and committed output products");
-        platformContract(builder, "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
+        platformContract(builder, "butchercraft:platform_contract/grinder_recipe_catalog_gametest_coverage",
                 ValidationCategory.GENERAL, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-015 Second Grinder Recipe and Player Acceptance Hardening",
-                "Automated server-world tests verify the promoted Pork Trim Grinder flow, isolation, serialization resume, duplicate safety, and active break safety");
+                "IM-017 Grinder Recipe Expansion Framework",
+                "Automated server-world tests verify every promoted Grinder flow, coexistence, isolation, serialization resume, duplicate safety, blocked output, wrong-output prevention, and unsupported input rejection");
         platformContract(builder, "butchercraft:platform_contract/grinder_survival_obtainability",
                 ValidationCategory.GENERAL, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,

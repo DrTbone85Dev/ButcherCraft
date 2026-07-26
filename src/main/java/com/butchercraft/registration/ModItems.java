@@ -143,7 +143,37 @@ public final class ModItems {
     public static final DeferredItem<ProductTestItem> GROUND_PORK = GROUND_PORK_TEST;
 
     /**
-     * Development-only product fixture used to prove data-driven grinding beyond fixed engine source categories.
+     * Promoted Chicken Trim gameplay item.
+     */
+    public static final DeferredItem<ProductTestItem> CHICKEN_TRIM = ITEMS.register(
+            "chicken_trim",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:chicken_trim"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:chicken")),
+                    ProcessingState.RAW,
+                    1_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Promoted Ground Chicken gameplay item.
+     */
+    public static final DeferredItem<ProductTestItem> GROUND_CHICKEN = ITEMS.register(
+            "ground_chicken",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:ground_chicken"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:chicken")),
+                    ProcessingState.PREPARED,
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Promoted Buffalo Trim gameplay item. The original bison registry id is retained for save compatibility.
      */
     public static final DeferredItem<ProductTestItem> BISON_TRIM_TEST = ITEMS.register(
             "bison_trim_test",
@@ -158,13 +188,76 @@ public final class ModItems {
     );
 
     /**
-     * Development-only product fixture used to prove data-driven grinding beyond fixed engine source categories.
+     * Promoted Ground Buffalo gameplay item. The original bison registry id is retained for save compatibility.
      */
     public static final DeferredItem<ProductTestItem> GROUND_BISON_TEST = ITEMS.register(
             "ground_bison_test",
             () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
                     EngineId.of("butchercraft:ground_bison"),
                     ProductCategory.fromId(EngineId.of("butchercraft:bison")),
+                    ProcessingState.PREPARED,
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    public static final DeferredItem<ProductTestItem> BUFFALO_TRIM = BISON_TRIM_TEST;
+    public static final DeferredItem<ProductTestItem> GROUND_BUFFALO = GROUND_BISON_TEST;
+
+    /**
+     * Promoted Lamb Trim gameplay item.
+     */
+    public static final DeferredItem<ProductTestItem> LAMB_TRIM = ITEMS.register(
+            "lamb_trim",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:lamb_trim"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:lamb")),
+                    ProcessingState.RAW,
+                    1_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Promoted Ground Lamb gameplay item.
+     */
+    public static final DeferredItem<ProductTestItem> GROUND_LAMB = ITEMS.register(
+            "ground_lamb",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:ground_lamb"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:lamb")),
+                    ProcessingState.PREPARED,
+                    900,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Promoted Venison Trim gameplay item.
+     */
+    public static final DeferredItem<ProductTestItem> VENISON_TRIM = ITEMS.register(
+            "venison_trim",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:venison_trim"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:venison")),
+                    ProcessingState.RAW,
+                    1_000,
+                    QuantityUnit.GRAM,
+                    700
+            ))
+    );
+
+    /**
+     * Promoted Ground Venison gameplay item.
+     */
+    public static final DeferredItem<ProductTestItem> GROUND_VENISON = ITEMS.register(
+            "ground_venison",
+            () -> new ProductTestItem(new Item.Properties(), ProductStackData.fromEngineValues(
+                    EngineId.of("butchercraft:ground_venison"),
+                    ProductCategory.fromId(EngineId.of("butchercraft:venison")),
                     ProcessingState.PREPARED,
                     900,
                     QuantityUnit.GRAM,

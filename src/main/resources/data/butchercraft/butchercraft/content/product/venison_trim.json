@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:venison_trim",
+  "display_name": "Venison Trim",
+  "category": "butchercraft:venison",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/trim"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

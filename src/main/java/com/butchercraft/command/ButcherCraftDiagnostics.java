@@ -57,10 +57,22 @@ public final class ButcherCraftDiagnostics {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "pork_trim_test");
     private static final ResourceLocation GROUND_PORK_TEST_ITEM_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_pork_test");
+    private static final ResourceLocation CHICKEN_TRIM_ITEM_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "chicken_trim");
+    private static final ResourceLocation GROUND_CHICKEN_ITEM_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_chicken");
     private static final ResourceLocation BISON_TRIM_TEST_ITEM_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "bison_trim_test");
     private static final ResourceLocation GROUND_BISON_TEST_ITEM_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_bison_test");
+    private static final ResourceLocation LAMB_TRIM_ITEM_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "lamb_trim");
+    private static final ResourceLocation GROUND_LAMB_ITEM_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_lamb");
+    private static final ResourceLocation VENISON_TRIM_ITEM_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "venison_trim");
+    private static final ResourceLocation GROUND_VENISON_ITEM_ID =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "ground_venison");
     private static final ResourceLocation BEEF_FOREQUARTER_TEST_ITEM_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "beef_forequarter_test");
     private static final ResourceLocation DEVELOPMENT_WORKSTATION_BLOCK_ID =
@@ -112,22 +124,38 @@ public final class ButcherCraftDiagnostics {
         boolean groundBeefTestItemRegistered = BuiltInRegistries.ITEM.containsKey(GROUND_BEEF_TEST_ITEM_ID);
         boolean porkTrimTestItemRegistered = BuiltInRegistries.ITEM.containsKey(PORK_TRIM_TEST_ITEM_ID);
         boolean groundPorkTestItemRegistered = BuiltInRegistries.ITEM.containsKey(GROUND_PORK_TEST_ITEM_ID);
+        boolean chickenTrimItemRegistered = BuiltInRegistries.ITEM.containsKey(CHICKEN_TRIM_ITEM_ID);
+        boolean groundChickenItemRegistered = BuiltInRegistries.ITEM.containsKey(GROUND_CHICKEN_ITEM_ID);
         boolean bisonTrimTestItemRegistered = BuiltInRegistries.ITEM.containsKey(BISON_TRIM_TEST_ITEM_ID);
         boolean groundBisonTestItemRegistered = BuiltInRegistries.ITEM.containsKey(GROUND_BISON_TEST_ITEM_ID);
+        boolean lambTrimItemRegistered = BuiltInRegistries.ITEM.containsKey(LAMB_TRIM_ITEM_ID);
+        boolean groundLambItemRegistered = BuiltInRegistries.ITEM.containsKey(GROUND_LAMB_ITEM_ID);
+        boolean venisonTrimItemRegistered = BuiltInRegistries.ITEM.containsKey(VENISON_TRIM_ITEM_ID);
+        boolean groundVenisonItemRegistered = BuiltInRegistries.ITEM.containsKey(GROUND_VENISON_ITEM_ID);
         boolean beefForequarterTestItemRegistered = BuiltInRegistries.ITEM.containsKey(BEEF_FOREQUARTER_TEST_ITEM_ID);
         ProductRoundTripDiagnostic productRoundTrip = verifyFreshProductStackRoundTrip();
         DefinitionRegistryLoadResult definitionRegistries = DefinitionRegistryView.fromRegistryAccess(source.registryAccess());
         ProcessingDefinitionResolver resolver = new ProcessingDefinitionResolver(definitionRegistries.view());
         DefinitionResolution<SpeciesDefinition> beefDefinition = resolver.resolveSpecies(BuiltInDefinitionIds.BEEF);
         DefinitionResolution<SpeciesDefinition> porkDefinition = resolver.resolveSpecies(BuiltInDefinitionIds.PORK);
+        DefinitionResolution<SpeciesDefinition> chickenDefinition = resolver.resolveSpecies(BuiltInDefinitionIds.CHICKEN);
         DefinitionResolution<SpeciesDefinition> bisonDefinition = resolver.resolveSpecies(BuiltInDefinitionIds.BISON);
+        DefinitionResolution<SpeciesDefinition> lambDefinition = resolver.resolveSpecies(BuiltInDefinitionIds.LAMB);
+        DefinitionResolution<SpeciesDefinition> venisonDefinition = resolver.resolveSpecies(BuiltInDefinitionIds.VENISON);
         DefinitionResolution<ProcessingProfileDefinition> redMeatProfile = resolver.resolveProcessingProfile(BuiltInDefinitionIds.RED_MEAT);
+        DefinitionResolution<ProcessingProfileDefinition> poultryProfile = resolver.resolveProcessingProfile(BuiltInDefinitionIds.POULTRY);
         DefinitionResolution<ProductDefinition> beefTrimDefinition = resolver.resolveProduct(BuiltInDefinitionIds.BEEF_TRIM);
         DefinitionResolution<ProductDefinition> groundBeefDefinition = resolver.resolveProduct(BuiltInDefinitionIds.GROUND_BEEF);
         DefinitionResolution<ProductDefinition> porkTrimDefinition = resolver.resolveProduct(BuiltInDefinitionIds.PORK_TRIM);
         DefinitionResolution<ProductDefinition> groundPorkDefinition = resolver.resolveProduct(BuiltInDefinitionIds.GROUND_PORK);
+        DefinitionResolution<ProductDefinition> chickenTrimDefinition = resolver.resolveProduct(BuiltInDefinitionIds.CHICKEN_TRIM);
+        DefinitionResolution<ProductDefinition> groundChickenDefinition = resolver.resolveProduct(BuiltInDefinitionIds.GROUND_CHICKEN);
         DefinitionResolution<ProductDefinition> bisonTrimDefinition = resolver.resolveProduct(BuiltInDefinitionIds.BISON_TRIM);
         DefinitionResolution<ProductDefinition> groundBisonDefinition = resolver.resolveProduct(BuiltInDefinitionIds.GROUND_BISON);
+        DefinitionResolution<ProductDefinition> lambTrimDefinition = resolver.resolveProduct(BuiltInDefinitionIds.LAMB_TRIM);
+        DefinitionResolution<ProductDefinition> groundLambDefinition = resolver.resolveProduct(BuiltInDefinitionIds.GROUND_LAMB);
+        DefinitionResolution<ProductDefinition> venisonTrimDefinition = resolver.resolveProduct(BuiltInDefinitionIds.VENISON_TRIM);
+        DefinitionResolution<ProductDefinition> groundVenisonDefinition = resolver.resolveProduct(BuiltInDefinitionIds.GROUND_VENISON);
         DefinitionResolution<ProductDefinition> beefForequarterDefinition = resolver.resolveProduct(BuiltInDefinitionIds.BEEF_FOREQUARTER);
         DefinitionResolution<ProductDefinition> beefChuckDefinition = resolver.resolveProduct(BuiltInDefinitionIds.BEEF_CHUCK);
         DefinitionResolution<ProductDefinition> beefBoneDefinition = resolver.resolveProduct(BuiltInDefinitionIds.BEEF_BONE);
@@ -135,8 +163,14 @@ public final class ButcherCraftDiagnostics {
                 resolver.resolveOperation(BuiltInDefinitionIds.GRIND_BEEF);
         DefinitionResolution<ResolvedProcessingOperationDefinition> grindPorkOperation =
                 resolver.resolveOperation(BuiltInDefinitionIds.GRIND_PORK);
+        DefinitionResolution<ResolvedProcessingOperationDefinition> grindChickenOperation =
+                resolver.resolveOperation(BuiltInDefinitionIds.GRIND_CHICKEN);
         DefinitionResolution<ResolvedProcessingOperationDefinition> grindBisonOperation =
                 resolver.resolveOperation(BuiltInDefinitionIds.GRIND_BISON);
+        DefinitionResolution<ResolvedProcessingOperationDefinition> grindLambOperation =
+                resolver.resolveOperation(BuiltInDefinitionIds.GRIND_LAMB);
+        DefinitionResolution<ResolvedProcessingOperationDefinition> grindVenisonOperation =
+                resolver.resolveOperation(BuiltInDefinitionIds.GRIND_VENISON);
         DefinitionResolution<ResolvedProcessingOperationDefinition> breakBeefForequarterOperation =
                 resolver.resolveOperation(BuiltInDefinitionIds.BREAK_BEEF_FOREQUARTER);
         ProcessingGraph graph = ProcessingGraph.fromDefinitions(definitionRegistries.view());
@@ -146,7 +180,10 @@ public final class ButcherCraftDiagnostics {
         boolean initialGraphValid = definitionRegistries.allRegistriesAvailable() && !definitionReport.hasErrors();
         boolean beefTrimToGroundBeefExists = graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.GROUND_BEEF);
         boolean porkTrimToGroundPorkExists = graph.hasDirectTransformation(BuiltInDefinitionIds.PORK_TRIM, BuiltInDefinitionIds.GROUND_PORK);
+        boolean chickenTrimToGroundChickenExists = graph.hasDirectTransformation(BuiltInDefinitionIds.CHICKEN_TRIM, BuiltInDefinitionIds.GROUND_CHICKEN);
         boolean bisonTrimToGroundBisonExists = graph.hasDirectTransformation(BuiltInDefinitionIds.BISON_TRIM, BuiltInDefinitionIds.GROUND_BISON);
+        boolean lambTrimToGroundLambExists = graph.hasDirectTransformation(BuiltInDefinitionIds.LAMB_TRIM, BuiltInDefinitionIds.GROUND_LAMB);
+        boolean venisonTrimToGroundVenisonExists = graph.hasDirectTransformation(BuiltInDefinitionIds.VENISON_TRIM, BuiltInDefinitionIds.GROUND_VENISON);
         boolean beefForequarterToChuckExists = graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_FOREQUARTER, BuiltInDefinitionIds.BEEF_CHUCK);
         boolean beefForequarterToBoneExists = graph.hasDirectTransformation(BuiltInDefinitionIds.BEEF_FOREQUARTER, BuiltInDefinitionIds.BEEF_BONE);
         WorkstationDiagnostic workstationDiagnostic = verifyWorkstation(source.registryAccess());
@@ -165,8 +202,14 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Ground beef test product registered: " + groundBeefTestItemRegistered), false);
         source.sendSuccess(() -> Component.literal("Pork trim test product registered: " + porkTrimTestItemRegistered), false);
         source.sendSuccess(() -> Component.literal("Ground pork test product registered: " + groundPorkTestItemRegistered), false);
-        source.sendSuccess(() -> Component.literal("Bison trim test product registered: " + bisonTrimTestItemRegistered), false);
-        source.sendSuccess(() -> Component.literal("Ground bison test product registered: " + groundBisonTestItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Chicken trim product registered: " + chickenTrimItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Ground chicken product registered: " + groundChickenItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Buffalo trim product registered with retained bison id: " + bisonTrimTestItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Ground buffalo product registered with retained bison id: " + groundBisonTestItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Lamb trim product registered: " + lambTrimItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Ground lamb product registered: " + groundLambItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Venison trim product registered: " + venisonTrimItemRegistered), false);
+        source.sendSuccess(() -> Component.literal("Ground venison product registered: " + groundVenisonItemRegistered), false);
         source.sendSuccess(() -> Component.literal("Beef forequarter test product registered: " + beefForequarterTestItemRegistered), false);
         source.sendSuccess(() -> Component.literal("Fresh product stack round trip: " + productRoundTrip.roundTripSucceeded()), false);
         source.sendSuccess(() -> Component.literal("Product quantity survives round trip: " + productRoundTrip.quantityPreserved()), false);
@@ -177,25 +220,41 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Processing-operation registry available: " + definitionRegistries.processingOperationRegistryAvailable()), false);
         source.sendSuccess(() -> Component.literal("Beef definition resolved: " + beefDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Pork definition resolved: " + porkDefinition.succeeded()), false);
-        source.sendSuccess(() -> Component.literal("Bison definition resolved: " + bisonDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Chicken definition resolved: " + chickenDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Buffalo definition resolved with retained bison id: " + bisonDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Lamb definition resolved: " + lambDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Venison definition resolved: " + venisonDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Red-meat profile resolved: " + redMeatProfile.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Poultry profile resolved: " + poultryProfile.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Beef trim definition resolved: " + beefTrimDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Ground beef definition resolved: " + groundBeefDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Pork trim definition resolved: " + porkTrimDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Ground pork definition resolved: " + groundPorkDefinition.succeeded()), false);
-        source.sendSuccess(() -> Component.literal("Bison trim definition resolved: " + bisonTrimDefinition.succeeded()), false);
-        source.sendSuccess(() -> Component.literal("Ground bison definition resolved: " + groundBisonDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Chicken trim definition resolved: " + chickenTrimDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Ground chicken definition resolved: " + groundChickenDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Buffalo trim definition resolved with retained bison id: " + bisonTrimDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Ground buffalo definition resolved with retained bison id: " + groundBisonDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Lamb trim definition resolved: " + lambTrimDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Ground lamb definition resolved: " + groundLambDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Venison trim definition resolved: " + venisonTrimDefinition.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Ground venison definition resolved: " + groundVenisonDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Beef forequarter definition resolved: " + beefForequarterDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Beef chuck definition resolved: " + beefChuckDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Beef bone definition resolved: " + beefBoneDefinition.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Grind-beef operation resolved: " + grindBeefOperation.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Grind-pork operation resolved: " + grindPorkOperation.succeeded()), false);
-        source.sendSuccess(() -> Component.literal("Grind-bison operation resolved: " + grindBisonOperation.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Grind-chicken operation resolved: " + grindChickenOperation.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Grind-buffalo operation resolved with retained bison id: " + grindBisonOperation.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Grind-lamb operation resolved: " + grindLambOperation.succeeded()), false);
+        source.sendSuccess(() -> Component.literal("Grind-venison operation resolved: " + grindVenisonOperation.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Break-beef-forequarter operation resolved: " + breakBeefForequarterOperation.succeeded()), false);
         source.sendSuccess(() -> Component.literal("Initial processing graph validates: " + initialGraphValid), false);
         source.sendSuccess(() -> Component.literal("Beef Trim -> Ground Beef direct transformation exists: " + beefTrimToGroundBeefExists), false);
         source.sendSuccess(() -> Component.literal("Pork Trim -> Ground Pork direct transformation exists: " + porkTrimToGroundPorkExists), false);
-        source.sendSuccess(() -> Component.literal("Bison Trim -> Ground Bison direct transformation exists: " + bisonTrimToGroundBisonExists), false);
+        source.sendSuccess(() -> Component.literal("Chicken Trim -> Ground Chicken direct transformation exists: " + chickenTrimToGroundChickenExists), false);
+        source.sendSuccess(() -> Component.literal("Buffalo Trim -> Ground Buffalo direct transformation exists with retained bison ids: " + bisonTrimToGroundBisonExists), false);
+        source.sendSuccess(() -> Component.literal("Lamb Trim -> Ground Lamb direct transformation exists: " + lambTrimToGroundLambExists), false);
+        source.sendSuccess(() -> Component.literal("Venison Trim -> Ground Venison direct transformation exists: " + venisonTrimToGroundVenisonExists), false);
         source.sendSuccess(() -> Component.literal("Beef Forequarter -> Beef Chuck direct transformation exists: " + beefForequarterToChuckExists), false);
         source.sendSuccess(() -> Component.literal("Beef Forequarter -> Beef Bone direct transformation exists: " + beefForequarterToBoneExists), false);
         source.sendSuccess(() -> Component.literal("Development workstation block registered: " + workstationDiagnostic.blockRegistered()), false);
@@ -214,14 +273,23 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Grinder capability available: " + grinderDiagnostic.capabilityAvailable()), false);
         source.sendSuccess(() -> Component.literal("Built-in grind_beef supports Grinder capability: " + grinderDiagnostic.grindBeefSupportsCapability()), false);
         source.sendSuccess(() -> Component.literal("Built-in grind_pork supports Grinder capability: " + grinderDiagnostic.grindPorkSupportsCapability()), false);
-        source.sendSuccess(() -> Component.literal("Built-in grind_bison supports Grinder capability: " + grinderDiagnostic.grindBisonSupportsCapability()), false);
+        source.sendSuccess(() -> Component.literal("Built-in grind_chicken supports Grinder capability: " + grinderDiagnostic.grindChickenSupportsCapability()), false);
+        source.sendSuccess(() -> Component.literal("Built-in grind_bison supports Grinder capability for Buffalo: " + grinderDiagnostic.grindBisonSupportsCapability()), false);
+        source.sendSuccess(() -> Component.literal("Built-in grind_lamb supports Grinder capability: " + grinderDiagnostic.grindLambSupportsCapability()), false);
+        source.sendSuccess(() -> Component.literal("Built-in grind_venison supports Grinder capability: " + grinderDiagnostic.grindVenisonSupportsCapability()), false);
         source.sendSuccess(() -> Component.literal("Beef Trim resolves to grind_beef for Grinder: " + grinderDiagnostic.beefTrimResolvesToGrindBeef()), false);
         source.sendSuccess(() -> Component.literal("Pork Trim resolves to grind_pork for Grinder: " + grinderDiagnostic.porkTrimResolvesToGrindPork()), false);
-        source.sendSuccess(() -> Component.literal("Bison Trim resolves to grind_bison for Grinder: " + grinderDiagnostic.bisonTrimResolvesToGrindBison()), false);
+        source.sendSuccess(() -> Component.literal("Chicken Trim resolves to grind_chicken for Grinder: " + grinderDiagnostic.chickenTrimResolvesToGrindChicken()), false);
+        source.sendSuccess(() -> Component.literal("Buffalo Trim resolves to grind_bison for Grinder: " + grinderDiagnostic.bisonTrimResolvesToGrindBison()), false);
+        source.sendSuccess(() -> Component.literal("Lamb Trim resolves to grind_lamb for Grinder: " + grinderDiagnostic.lambTrimResolvesToGrindLamb()), false);
+        source.sendSuccess(() -> Component.literal("Venison Trim resolves to grind_venison for Grinder: " + grinderDiagnostic.venisonTrimResolvesToGrindVenison()), false);
         source.sendSuccess(() -> Component.literal("Grinder grind_beef duration resolves to 60 ticks: " + grinderDiagnostic.grindBeefDurationIs60Ticks()), false);
         source.sendSuccess(() -> Component.literal("Ground Beef output mapping resolves for Grinder: " + grinderDiagnostic.outputMappingResolves()), false);
         source.sendSuccess(() -> Component.literal("Ground Pork output mapping resolves for Grinder: " + grinderDiagnostic.groundPorkOutputMappingResolves()), false);
-        source.sendSuccess(() -> Component.literal("Ground Bison output mapping resolves for Grinder: " + grinderDiagnostic.groundBisonOutputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Ground Chicken output mapping resolves for Grinder: " + grinderDiagnostic.groundChickenOutputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Ground Buffalo output mapping resolves for Grinder: " + grinderDiagnostic.groundBisonOutputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Ground Lamb output mapping resolves for Grinder: " + grinderDiagnostic.groundLambOutputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Ground Venison output mapping resolves for Grinder: " + grinderDiagnostic.groundVenisonOutputMappingResolves()), false);
         source.sendSuccess(() -> Component.literal("Bandsaw block registered: " + bandsawDiagnostic.blockRegistered()), false);
         source.sendSuccess(() -> Component.literal("Bandsaw upper block registered: " + bandsawDiagnostic.upperBlockRegistered()), false);
         source.sendSuccess(() -> Component.literal("Bandsaw block entity registered: " + bandsawDiagnostic.blockEntityRegistered()), false);
@@ -361,14 +429,23 @@ public final class ButcherCraftDiagnostics {
         boolean capabilityAvailable = GrinderWorkstation.capability().supportsWorkstationCapability(GrinderWorkstation.CAPABILITY_ID);
         boolean grindBeefSupportsCapability = false;
         boolean grindPorkSupportsCapability = false;
+        boolean grindChickenSupportsCapability = false;
         boolean grindBisonSupportsCapability = false;
+        boolean grindLambSupportsCapability = false;
+        boolean grindVenisonSupportsCapability = false;
         boolean beefTrimResolvesToGrindBeef = false;
         boolean porkTrimResolvesToGrindPork = false;
+        boolean chickenTrimResolvesToGrindChicken = false;
         boolean bisonTrimResolvesToGrindBison = false;
+        boolean lambTrimResolvesToGrindLamb = false;
+        boolean venisonTrimResolvesToGrindVenison = false;
         boolean durationIs60Ticks = false;
         boolean outputMappingResolves = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BEEF);
         boolean groundPorkOutputMappingResolves = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_PORK);
+        boolean groundChickenOutputMappingResolves = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_CHICKEN);
         boolean groundBisonOutputMappingResolves = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BISON);
+        boolean groundLambOutputMappingResolves = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_LAMB);
+        boolean groundVenisonOutputMappingResolves = DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_VENISON);
         String detail = "";
 
         try {
@@ -378,8 +455,14 @@ public final class ButcherCraftDiagnostics {
                     definitionResolver.resolveOperation(BuiltInDefinitionIds.GRIND_BEEF);
             DefinitionResolution<ResolvedProcessingOperationDefinition> resolvedPorkOperation =
                     definitionResolver.resolveOperation(BuiltInDefinitionIds.GRIND_PORK);
+            DefinitionResolution<ResolvedProcessingOperationDefinition> resolvedChickenOperation =
+                    definitionResolver.resolveOperation(BuiltInDefinitionIds.GRIND_CHICKEN);
             DefinitionResolution<ResolvedProcessingOperationDefinition> resolvedBisonOperation =
                     definitionResolver.resolveOperation(BuiltInDefinitionIds.GRIND_BISON);
+            DefinitionResolution<ResolvedProcessingOperationDefinition> resolvedLambOperation =
+                    definitionResolver.resolveOperation(BuiltInDefinitionIds.GRIND_LAMB);
+            DefinitionResolution<ResolvedProcessingOperationDefinition> resolvedVenisonOperation =
+                    definitionResolver.resolveOperation(BuiltInDefinitionIds.GRIND_VENISON);
             grindBeefSupportsCapability = resolvedBeefOperation.succeeded()
                     && resolvedBeefOperation.orThrow().operation().workstationCapability()
                     .filter(GrinderWorkstation.CAPABILITY_ID::equals)
@@ -388,8 +471,20 @@ public final class ButcherCraftDiagnostics {
                     && resolvedPorkOperation.orThrow().operation().workstationCapability()
                     .filter(GrinderWorkstation.CAPABILITY_ID::equals)
                     .isPresent();
+            grindChickenSupportsCapability = resolvedChickenOperation.succeeded()
+                    && resolvedChickenOperation.orThrow().operation().workstationCapability()
+                    .filter(GrinderWorkstation.CAPABILITY_ID::equals)
+                    .isPresent();
             grindBisonSupportsCapability = resolvedBisonOperation.succeeded()
                     && resolvedBisonOperation.orThrow().operation().workstationCapability()
+                    .filter(GrinderWorkstation.CAPABILITY_ID::equals)
+                    .isPresent();
+            grindLambSupportsCapability = resolvedLambOperation.succeeded()
+                    && resolvedLambOperation.orThrow().operation().workstationCapability()
+                    .filter(GrinderWorkstation.CAPABILITY_ID::equals)
+                    .isPresent();
+            grindVenisonSupportsCapability = resolvedVenisonOperation.succeeded()
+                    && resolvedVenisonOperation.orThrow().operation().workstationCapability()
                     .filter(GrinderWorkstation.CAPABILITY_ID::equals)
                     .isPresent();
 
@@ -413,6 +508,14 @@ public final class ButcherCraftDiagnostics {
             if (porkResolution.succeeded()) {
                 porkTrimResolvesToGrindPork = BuiltInDefinitionIds.GRIND_PORK.equals(porkResolution.operation().orElseThrow().operationId());
             }
+            WorkstationOperationResolution chickenResolution = new WorkstationOperationResolver().resolve(
+                    registryAccess,
+                    GrinderWorkstation.capability(),
+                    ModItems.CHICKEN_TRIM.get().getDefaultInstance()
+            );
+            if (chickenResolution.succeeded()) {
+                chickenTrimResolvesToGrindChicken = BuiltInDefinitionIds.GRIND_CHICKEN.equals(chickenResolution.operation().orElseThrow().operationId());
+            }
             WorkstationOperationResolution bisonResolution = new WorkstationOperationResolver().resolve(
                     registryAccess,
                     GrinderWorkstation.capability(),
@@ -420,6 +523,22 @@ public final class ButcherCraftDiagnostics {
             );
             if (bisonResolution.succeeded()) {
                 bisonTrimResolvesToGrindBison = BuiltInDefinitionIds.GRIND_BISON.equals(bisonResolution.operation().orElseThrow().operationId());
+            }
+            WorkstationOperationResolution lambResolution = new WorkstationOperationResolver().resolve(
+                    registryAccess,
+                    GrinderWorkstation.capability(),
+                    ModItems.LAMB_TRIM.get().getDefaultInstance()
+            );
+            if (lambResolution.succeeded()) {
+                lambTrimResolvesToGrindLamb = BuiltInDefinitionIds.GRIND_LAMB.equals(lambResolution.operation().orElseThrow().operationId());
+            }
+            WorkstationOperationResolution venisonResolution = new WorkstationOperationResolver().resolve(
+                    registryAccess,
+                    GrinderWorkstation.capability(),
+                    ModItems.VENISON_TRIM.get().getDefaultInstance()
+            );
+            if (venisonResolution.succeeded()) {
+                venisonTrimResolvesToGrindVenison = BuiltInDefinitionIds.GRIND_VENISON.equals(venisonResolution.operation().orElseThrow().operationId());
             }
         } catch (RuntimeException exception) {
             detail = exception.getClass().getSimpleName();
@@ -432,14 +551,23 @@ public final class ButcherCraftDiagnostics {
                 capabilityAvailable,
                 grindBeefSupportsCapability,
                 grindPorkSupportsCapability,
+                grindChickenSupportsCapability,
                 grindBisonSupportsCapability,
+                grindLambSupportsCapability,
+                grindVenisonSupportsCapability,
                 beefTrimResolvesToGrindBeef,
                 porkTrimResolvesToGrindPork,
+                chickenTrimResolvesToGrindChicken,
                 bisonTrimResolvesToGrindBison,
+                lambTrimResolvesToGrindLamb,
+                venisonTrimResolvesToGrindVenison,
                 durationIs60Ticks,
                 outputMappingResolves,
                 groundPorkOutputMappingResolves,
+                groundChickenOutputMappingResolves,
                 groundBisonOutputMappingResolves,
+                groundLambOutputMappingResolves,
+                groundVenisonOutputMappingResolves,
                 detail
         );
     }
@@ -536,14 +664,23 @@ public final class ButcherCraftDiagnostics {
             boolean capabilityAvailable,
             boolean grindBeefSupportsCapability,
             boolean grindPorkSupportsCapability,
+            boolean grindChickenSupportsCapability,
             boolean grindBisonSupportsCapability,
+            boolean grindLambSupportsCapability,
+            boolean grindVenisonSupportsCapability,
             boolean beefTrimResolvesToGrindBeef,
             boolean porkTrimResolvesToGrindPork,
+            boolean chickenTrimResolvesToGrindChicken,
             boolean bisonTrimResolvesToGrindBison,
+            boolean lambTrimResolvesToGrindLamb,
+            boolean venisonTrimResolvesToGrindVenison,
             boolean grindBeefDurationIs60Ticks,
             boolean outputMappingResolves,
             boolean groundPorkOutputMappingResolves,
+            boolean groundChickenOutputMappingResolves,
             boolean groundBisonOutputMappingResolves,
+            boolean groundLambOutputMappingResolves,
+            boolean groundVenisonOutputMappingResolves,
             String detail
     ) {
     }

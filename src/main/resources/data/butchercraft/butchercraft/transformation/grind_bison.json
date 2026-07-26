@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "butchercraft:grind_bison",
-  "display_name": "Grind Bison",
+  "display_name": "Grind Buffalo",
   "required_capability": "butchercraft:grinding",
   "inputs": [
     {

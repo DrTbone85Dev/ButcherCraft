@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:chicken_trim",
+  "display_name": "Chicken Trim",
+  "category": "butchercraft:chicken",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/trim"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

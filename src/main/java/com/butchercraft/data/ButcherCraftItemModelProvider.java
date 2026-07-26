@@ -23,6 +23,22 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/pork_trim");
     private static final ResourceLocation GROUND_PORK_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_pork");
+    private static final ResourceLocation CHICKEN_TRIM_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/chicken_trim");
+    private static final ResourceLocation GROUND_CHICKEN_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_chicken");
+    private static final ResourceLocation BISON_TRIM_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/bison_trim");
+    private static final ResourceLocation GROUND_BISON_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_bison");
+    private static final ResourceLocation LAMB_TRIM_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/lamb_trim");
+    private static final ResourceLocation GROUND_LAMB_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_lamb");
+    private static final ResourceLocation VENISON_TRIM_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/venison_trim");
+    private static final ResourceLocation GROUND_VENISON_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/product/ground_venison");
     private static final ResourceLocation RETAIL_GROUND_BEEF_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/packaging/retail_ground_beef");
 
@@ -38,8 +54,14 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         generatedItem(ModItems.RETAIL_GROUND_BEEF_TEST.get(), RETAIL_GROUND_BEEF_TEXTURE);
         generatedItem(ModItems.PORK_TRIM.get(), PORK_TRIM_TEXTURE);
         generatedItem(ModItems.GROUND_PORK.get(), GROUND_PORK_TEXTURE);
-        placeholderProductItem(ModItems.BISON_TRIM_TEST.get());
-        placeholderProductItem(ModItems.GROUND_BISON_TEST.get());
+        generatedItem(ModItems.CHICKEN_TRIM.get(), CHICKEN_TRIM_TEXTURE);
+        generatedItem(ModItems.GROUND_CHICKEN.get(), GROUND_CHICKEN_TEXTURE);
+        generatedItem(ModItems.BUFFALO_TRIM.get(), BISON_TRIM_TEXTURE);
+        generatedItem(ModItems.GROUND_BUFFALO.get(), GROUND_BISON_TEXTURE);
+        generatedItem(ModItems.LAMB_TRIM.get(), LAMB_TRIM_TEXTURE);
+        generatedItem(ModItems.GROUND_LAMB.get(), GROUND_LAMB_TEXTURE);
+        generatedItem(ModItems.VENISON_TRIM.get(), VENISON_TRIM_TEXTURE);
+        generatedItem(ModItems.GROUND_VENISON.get(), GROUND_VENISON_TEXTURE);
         placeholderProductItem(ModItems.BEEF_FOREQUARTER_TEST.get());
         placeholderProductItem(ModItems.BEEF_CHUCK_TEST.get());
         placeholderProductItem(ModItems.BEEF_RIB_TEST.get());

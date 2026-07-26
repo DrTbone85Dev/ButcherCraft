@@ -1,18 +1,18 @@
 # Grinder Execution Vertical Slice
 
-Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation.
+Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation. IM-017 expands the promoted Grinder catalog to six trim-to-ground products.
 
 This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration beyond the IM-016 promoted Grinder observation path, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
 
 ## Selected Slice
 
-The selected operations are the existing promoted grinder transformations that accept one valid Beef Trim or Pork Trim product stack and produce one matching Ground Beef or Ground Pork output through the existing grinder menu, controller, transformation strategy, and workstation ItemStack commit plan.
+The selected operations are the existing promoted grinder transformations that accept one valid Beef, Pork, Chicken, Buffalo, Lamb, or Venison Trim product stack and produce one matching Ground product through the existing grinder menu, controller, transformation strategy, and workstation ItemStack commit plan.
 
 Both promoted operations use 60 server ticks, derived from the existing 3000 millisecond processing definition. Progress remains workstation-owned presentation state.
 
 ## Player Flow
 
-The player crafts or obtains the Grinder, places it, opens the menu, inserts a valid product-bearing Beef Trim or Pork Trim stack, observes processing progress through the existing menu data, waits for completion, and retrieves the matching Ground Beef or Ground Pork output from the output slot.
+The player crafts or obtains the Grinder, places it, opens the menu, inserts a valid product-bearing Beef, Pork, Chicken, Buffalo, Lamb, or Venison Trim stack, observes processing progress through the existing menu data, waits for completion, and retrieves the matching Ground output from the output slot.
 
 The client may display state, progress, and failure messages. It does not assert valid input, successful authorization, output contents, or Execution success.
 
@@ -32,7 +32,7 @@ The authorization binds:
 - world identity,
 - issuance tick and validity boundary.
 
-IM-015 makes the selected operation binding explicit in the authorization identity inputs. Beef and Pork operations therefore produce distinct Operation Identities even when they use the same workstation, duration, handler, and configuration.
+IM-015 makes the selected operation binding explicit in the authorization identity inputs. IM-017 verifies all six promoted Grinder operations produce distinct Operation Identities even when they use the same workstation, duration, handler, and configuration.
 
 Execution owns authorization consumption, deterministic Operation Identity, domain Effect Identity, lifecycle state, attempts, and Execution Result Evidence.
 
@@ -80,6 +80,7 @@ The tests verify:
 - Block-entity NBT serialization and restoration preserves safe pre-effect progress and does not duplicate completed output.
 - Changed input, blocked output, malformed restored state, and uncertain consequential restored state fail visibly without fabricating output or retrying automatically.
 - IM-015 adds focused Pork Trim coverage for live Execution completion, process isolation against Ground Beef output, serialization resume, duplicate interaction safety, and active block-break preservation.
+- IM-017 adds coverage for Chicken, Buffalo, Lamb, and Venison completion, duplicate safety, serialization resume, blocked output, and wrong-output prevention, plus coexistence, deterministic process lookup, and unsupported input rejection across the six promoted operations.
 
 The save/load coverage is serialization-level block-entity coverage. It does not claim chunk unload/reload, full world reload, server-restart recovery, coordinated checkpoint recovery, or operator reconciliation coverage.
 
@@ -114,10 +115,20 @@ The promoted Grinder is now production-capable for one narrow integration path. 
 
 Production completes the Run only after observing both Grinder owner result evidence and Execution result evidence. It records Production-owned completion evidence that references those identities and digests. It does not mutate Grinder ItemStack slots, issue or consume Execution authorization, infer success from elapsed time or Scheduler completion alone, duplicate Grinder state, or automatically rerun rejection, failure, cancellation-after-start, or `UNKNOWN_OUTCOME`.
 
+## IM-017 Recipe Expansion
+
+IM-017 promotes four additional trim-to-ground recipes through the same Grinder execution path:
+
+- Chicken Trim to Ground Chicken.
+- Buffalo Trim to Ground Buffalo, using retained `butchercraft:bison_*` registry identities.
+- Lamb Trim to Ground Lamb.
+- Venison Trim to Ground Venison.
+
+The promoted Grinder operation set is exactly Beef, Pork, Chicken, Buffalo, Lamb, and Venison. Each operation runs for 60 server ticks, resolves from authoritative product data and definitions, binds the selected operation into Execution identity, and publishes workstation owner result evidence before Execution success. No recipe adds species-specific Grinder code, a recipe-selection UI, Production automation, or new workstation behavior.
+
 ## Remaining Gates
 
 - General workstation Execution framework.
-- Additional promoted grinder operations beyond Beef Trim and Pork Trim.
 - Bandsaw, Packaging Table, and development workstation Execution migration.
 - Additional Production-backed workstation execution beyond the promoted Grinder path.
 - Economic Inventory and Transaction integration for player workstations.

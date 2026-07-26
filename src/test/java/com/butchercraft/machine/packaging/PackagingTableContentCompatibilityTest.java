@@ -29,9 +29,9 @@ class PackagingTableContentCompatibilityTest {
 
         var snapshot = ContentSnapshotService.loadBundledSnapshot();
 
-        assertEquals(31, snapshot.products().size());
+        assertEquals(37, snapshot.products().size());
         assertEquals(4, snapshot.packaging().size());
-        assertEquals(8, snapshot.transformations().size());
+        assertEquals(11, snapshot.transformations().size());
         assertTrue(PackagingTableWorkstation.capability().supportsWorkstationCapability(
                 com.butchercraft.processing.definition.BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PACKAGING
         ));

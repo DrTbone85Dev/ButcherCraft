@@ -21,15 +21,25 @@ class DefinitionDatagenResourceTest {
     private static final List<ExpectedTranslation> BUILT_IN_DEFINITION_TRANSLATIONS = List.of(
             new ExpectedTranslation("definition.butchercraft.species.beef", "Beef"),
             new ExpectedTranslation("definition.butchercraft.species.pork", "Pork"),
-            new ExpectedTranslation("definition.butchercraft.species.bison", "Bison"),
+            new ExpectedTranslation("definition.butchercraft.species.chicken", "Chicken"),
+            new ExpectedTranslation("definition.butchercraft.species.bison", "Buffalo"),
+            new ExpectedTranslation("definition.butchercraft.species.lamb", "Lamb"),
+            new ExpectedTranslation("definition.butchercraft.species.venison", "Venison"),
             new ExpectedTranslation("definition.butchercraft.processing_profile.red_meat", "Red Meat"),
+            new ExpectedTranslation("definition.butchercraft.processing_profile.poultry", "Poultry"),
             new ExpectedTranslation("definition.butchercraft.product.beef_trim", "Beef Trim"),
             new ExpectedTranslation("definition.butchercraft.product.ground_beef", "Ground Beef"),
             new ExpectedTranslation("definition.butchercraft.product.retail_ground_beef", "Retail Ground Beef"),
             new ExpectedTranslation("definition.butchercraft.product.pork_trim", "Pork Trim"),
             new ExpectedTranslation("definition.butchercraft.product.ground_pork", "Ground Pork"),
-            new ExpectedTranslation("definition.butchercraft.product.bison_trim", "Bison Trim"),
-            new ExpectedTranslation("definition.butchercraft.product.ground_bison", "Ground Bison"),
+            new ExpectedTranslation("definition.butchercraft.product.chicken_trim", "Chicken Trim"),
+            new ExpectedTranslation("definition.butchercraft.product.ground_chicken", "Ground Chicken"),
+            new ExpectedTranslation("definition.butchercraft.product.bison_trim", "Buffalo Trim"),
+            new ExpectedTranslation("definition.butchercraft.product.ground_bison", "Ground Buffalo"),
+            new ExpectedTranslation("definition.butchercraft.product.lamb_trim", "Lamb Trim"),
+            new ExpectedTranslation("definition.butchercraft.product.ground_lamb", "Ground Lamb"),
+            new ExpectedTranslation("definition.butchercraft.product.venison_trim", "Venison Trim"),
+            new ExpectedTranslation("definition.butchercraft.product.ground_venison", "Ground Venison"),
             new ExpectedTranslation("definition.butchercraft.product.beef_forequarter", "Beef Forequarter"),
             new ExpectedTranslation("definition.butchercraft.product.beef_chuck", "Beef Chuck"),
             new ExpectedTranslation("definition.butchercraft.product.beef_rib", "Beef Rib"),
@@ -56,7 +66,10 @@ class DefinitionDatagenResourceTest {
             new ExpectedTranslation("definition.butchercraft.product.tri_tip", "Tri-Tip"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_beef", "Grind Beef"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.grind_pork", "Grind Pork"),
-            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_bison", "Grind Bison"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_chicken", "Grind Chicken"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_bison", "Grind Buffalo"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_lamb", "Grind Lamb"),
+            new ExpectedTranslation("definition.butchercraft.processing_operation.grind_venison", "Grind Venison"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_forequarter", "Break Beef Forequarter"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.break_beef_hindquarter", "Break Beef Hindquarter"),
             new ExpectedTranslation("definition.butchercraft.processing_operation.cut_beef_short_loin", "Cut Beef Short Loin"),
@@ -69,15 +82,25 @@ class DefinitionDatagenResourceTest {
     void allBuiltInGeneratedDefinitionJsonFilesExist() {
         assertTrue(Files.isRegularFile(path("species/beef.json")));
         assertTrue(Files.isRegularFile(path("species/pork.json")));
+        assertTrue(Files.isRegularFile(path("species/chicken.json")));
         assertTrue(Files.isRegularFile(path("species/bison.json")));
+        assertTrue(Files.isRegularFile(path("species/lamb.json")));
+        assertTrue(Files.isRegularFile(path("species/venison.json")));
         assertTrue(Files.isRegularFile(path("processing_profile/red_meat.json")));
+        assertTrue(Files.isRegularFile(path("processing_profile/poultry.json")));
         assertTrue(Files.isRegularFile(path("product/beef_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_beef.json")));
         assertTrue(Files.isRegularFile(path("product/retail_ground_beef.json")));
         assertTrue(Files.isRegularFile(path("product/pork_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_pork.json")));
+        assertTrue(Files.isRegularFile(path("product/chicken_trim.json")));
+        assertTrue(Files.isRegularFile(path("product/ground_chicken.json")));
         assertTrue(Files.isRegularFile(path("product/bison_trim.json")));
         assertTrue(Files.isRegularFile(path("product/ground_bison.json")));
+        assertTrue(Files.isRegularFile(path("product/lamb_trim.json")));
+        assertTrue(Files.isRegularFile(path("product/ground_lamb.json")));
+        assertTrue(Files.isRegularFile(path("product/venison_trim.json")));
+        assertTrue(Files.isRegularFile(path("product/ground_venison.json")));
         assertTrue(Files.isRegularFile(path("product/beef_forequarter.json")));
         assertTrue(Files.isRegularFile(path("product/beef_chuck.json")));
         assertTrue(Files.isRegularFile(path("product/beef_rib.json")));
@@ -105,7 +128,10 @@ class DefinitionDatagenResourceTest {
         assertTrue(Files.isRegularFile(path("product/tri_tip.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_beef.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_pork.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/grind_chicken.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/grind_bison.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/grind_lamb.json")));
+        assertTrue(Files.isRegularFile(path("processing_operation/grind_venison.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/break_beef_forequarter.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/break_beef_hindquarter.json")));
         assertTrue(Files.isRegularFile(path("processing_operation/cut_beef_short_loin.json")));
@@ -118,15 +144,25 @@ class DefinitionDatagenResourceTest {
     void generatedDefinitionJsonUsesExpectedRegistryPathsAndDecodes() throws IOException {
         assertDecodes(SpeciesDefinition.CODEC, path("species/beef.json"));
         assertDecodes(SpeciesDefinition.CODEC, path("species/pork.json"));
+        assertDecodes(SpeciesDefinition.CODEC, path("species/chicken.json"));
         assertDecodes(SpeciesDefinition.CODEC, path("species/bison.json"));
+        assertDecodes(SpeciesDefinition.CODEC, path("species/lamb.json"));
+        assertDecodes(SpeciesDefinition.CODEC, path("species/venison.json"));
         assertDecodes(ProcessingProfileDefinition.CODEC, path("processing_profile/red_meat.json"));
+        assertDecodes(ProcessingProfileDefinition.CODEC, path("processing_profile/poultry.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_beef.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/retail_ground_beef.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/pork_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_pork.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/chicken_trim.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/ground_chicken.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/bison_trim.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/ground_bison.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/lamb_trim.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/ground_lamb.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/venison_trim.json"));
+        assertDecodes(ProductDefinition.CODEC, path("product/ground_venison.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_forequarter.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_chuck.json"));
         assertDecodes(ProductDefinition.CODEC, path("product/beef_rib.json"));
@@ -153,7 +189,10 @@ class DefinitionDatagenResourceTest {
         assertDecodes(ProductDefinition.CODEC, path("product/tri_tip.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_beef.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_pork.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_chicken.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_bison.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_lamb.json"));
+        assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/grind_venison.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/break_beef_forequarter.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/break_beef_hindquarter.json"));
         assertDecodes(ProcessingOperationDefinition.CODEC, path("processing_operation/cut_beef_short_loin.json"));

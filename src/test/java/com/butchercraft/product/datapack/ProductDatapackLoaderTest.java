@@ -21,8 +21,14 @@ public class ProductDatapackLoaderTest {
             "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",
+            "butchercraft:chicken_trim",
+            "butchercraft:ground_chicken",
             "butchercraft:bison_trim",
             "butchercraft:ground_bison",
+            "butchercraft:lamb_trim",
+            "butchercraft:ground_lamb",
+            "butchercraft:venison_trim",
+            "butchercraft:ground_venison",
             "butchercraft:beef_forequarter",
             "butchercraft:beef_chuck",
             "butchercraft:beef_rib",
@@ -143,7 +149,7 @@ public class ProductDatapackLoaderTest {
         )));
         ProductDatapackLoadResult unknownCategory = loader().load(resources(Map.entry(
                 "category",
-                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:venison", "gram")
+                product("butchercraft:beef_trim", "Beef Trim", "butchercraft:ostrich", "gram")
         )));
         ProductDatapackLoadResult unknownUnit = loader().load(resources(Map.entry(
                 "unit",

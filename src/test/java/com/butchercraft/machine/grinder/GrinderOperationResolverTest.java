@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,10 +38,12 @@ class GrinderOperationResolverTest {
 
     @Test
     void builtInGrindBeefRequiresGrinderCapability() {
-        assertEquals(
-                GrinderWorkstation.CAPABILITY_ID,
-                BuiltInProcessingDefinitions.grindBeefOperation().workstationCapability().orElseThrow()
-        );
+        assertGrindingCapability(BuiltInProcessingDefinitions.grindBeefOperation());
+        assertGrindingCapability(BuiltInProcessingDefinitions.grindPorkOperation());
+        assertGrindingCapability(BuiltInProcessingDefinitions.grindChickenOperation());
+        assertGrindingCapability(BuiltInProcessingDefinitions.grindBisonOperation());
+        assertGrindingCapability(BuiltInProcessingDefinitions.grindLambOperation());
+        assertGrindingCapability(BuiltInProcessingDefinitions.grindVenisonOperation());
     }
 
     @Test
@@ -53,25 +56,25 @@ class GrinderOperationResolverTest {
     }
 
     @Test
-    void promotedPorkAndBisonFixtureTrimFindSpeciesSpecificGrindingOperationsForGrinder() {
-        WorkstationOperationResolution pork = resolve(ModItems.PORK_TRIM.get().getDefaultInstance(), GrinderWorkstation.capability());
-        WorkstationOperationResolution bison = resolve(ModItems.BISON_TRIM_TEST.get().getDefaultInstance(), GrinderWorkstation.capability());
-
-        assertTrue(pork.succeeded(), pork.toString());
-        assertEquals(BuiltInDefinitionIds.GRIND_PORK, pork.operation().orElseThrow().operationId());
-        assertEquals(BuiltInDefinitionIds.GROUND_PORK, pork.operation().orElseThrow().definition().operation().outputProduct());
-        assertEquals(60, pork.operation().orElseThrow().totalTicks());
-
-        assertTrue(bison.succeeded(), bison.toString());
-        assertEquals(BuiltInDefinitionIds.GRIND_BISON, bison.operation().orElseThrow().operationId());
-        assertEquals(BuiltInDefinitionIds.GROUND_BISON, bison.operation().orElseThrow().definition().operation().outputProduct());
-        assertEquals(60, bison.operation().orElseThrow().totalTicks());
+    void allPromotedTrimProductsFindSpeciesSpecificGrindingOperationsForGrinder() {
+        for (RecipeCase recipe : promotedRecipes()) {
+            assertResolvesTo(recipe.input().get().getDefaultInstance(), recipe.operationId(), recipe.outputProductId());
+        }
     }
 
     @Test
-    void groundBeefFindsNoGrindOperation() {
-        assertFailure(resolve(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance(), GrinderWorkstation.capability()),
-                WorkstationFailureCode.NO_COMPATIBLE_OPERATION);
+    void groundProductsFindNoGrindOperation() {
+        for (var output : List.of(
+                ModItems.GROUND_BEEF,
+                ModItems.GROUND_PORK,
+                ModItems.GROUND_CHICKEN,
+                ModItems.GROUND_BUFFALO,
+                ModItems.GROUND_LAMB,
+                ModItems.GROUND_VENISON
+        )) {
+            assertFailure(resolve(output.get().getDefaultInstance(), GrinderWorkstation.capability()),
+                    WorkstationFailureCode.NO_COMPATIBLE_OPERATION);
+        }
     }
 
     @Test
@@ -141,6 +144,37 @@ class GrinderOperationResolverTest {
         return resolver.resolve(BuiltInProcessingDefinitions.builtInView(), capability, stack);
     }
 
+    private void assertResolvesTo(
+            ItemStack input,
+            ResourceLocation operationId,
+            ResourceLocation outputProductId
+    ) {
+        WorkstationOperationResolution result = resolve(input, GrinderWorkstation.capability());
+
+        assertTrue(result.succeeded(), result.toString());
+        assertEquals(operationId, result.operation().orElseThrow().operationId());
+        assertEquals(outputProductId, result.operation().orElseThrow().definition().operation().outputProduct());
+        assertEquals(60, result.operation().orElseThrow().totalTicks());
+    }
+
+    private static void assertGrindingCapability(ProcessingOperationDefinition operation) {
+        assertEquals(
+                GrinderWorkstation.CAPABILITY_ID,
+                operation.workstationCapability().orElseThrow()
+        );
+    }
+
+    private static List<RecipeCase> promotedRecipes() {
+        return List.of(
+                new RecipeCase(ModItems.BEEF_TRIM, BuiltInDefinitionIds.GRIND_BEEF, BuiltInDefinitionIds.GROUND_BEEF),
+                new RecipeCase(ModItems.PORK_TRIM, BuiltInDefinitionIds.GRIND_PORK, BuiltInDefinitionIds.GROUND_PORK),
+                new RecipeCase(ModItems.CHICKEN_TRIM, BuiltInDefinitionIds.GRIND_CHICKEN, BuiltInDefinitionIds.GROUND_CHICKEN),
+                new RecipeCase(ModItems.BUFFALO_TRIM, BuiltInDefinitionIds.GRIND_BISON, BuiltInDefinitionIds.GROUND_BISON),
+                new RecipeCase(ModItems.LAMB_TRIM, BuiltInDefinitionIds.GRIND_LAMB, BuiltInDefinitionIds.GROUND_LAMB),
+                new RecipeCase(ModItems.VENISON_TRIM, BuiltInDefinitionIds.GRIND_VENISON, BuiltInDefinitionIds.GROUND_VENISON)
+        );
+    }
+
     private static ItemStack beefTrimStack() {
         return ModItems.BEEF_TRIM_TEST.get().getDefaultInstance();
     }
@@ -159,5 +193,12 @@ class GrinderOperationResolverTest {
     private static void assertFailure(WorkstationOperationResolution result, WorkstationFailureCode code) {
         assertTrue(result.failure().isPresent(), result.toString());
         assertEquals(code, result.failure().orElseThrow().code());
+    }
+
+    private record RecipeCase(
+            net.neoforged.neoforge.registries.DeferredItem<? extends net.minecraft.world.item.Item> input,
+            ResourceLocation operationId,
+            ResourceLocation outputProductId
+    ) {
     }
 }

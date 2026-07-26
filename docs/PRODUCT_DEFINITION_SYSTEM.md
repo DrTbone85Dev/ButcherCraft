@@ -1,12 +1,12 @@
 # ButcherCraft Product Definition System
 
-Status: v0.8.0 Sprint C retail product registry foundation
+Status: v0.8.0 Sprint C retail product registry foundation, with IM-017 Grinder product expansion
 
 ## Purpose
 
 The Product Definition System gives stable product ids an authoritative pure Java source of descriptive data. It is separate from Minecraft ItemStack product snapshots, existing datapack-backed processing product definitions, and temporary development item mappings.
 
-This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof. Sprint C adds physical packaging supply references at the packaging-definition layer without changing product metadata. Sprint D uses the packaging metadata for the first Packaging Table execution flow.
+This foundation exists so transformation input and output product ids can be validated against product definitions without embedding product definition objects inside `TransformationDefinition`. Version 0.6.9 makes the current product definitions datapack-backed while keeping the pure product model independent of Minecraft. Version 0.7.0 expands the bundled product catalog for beef fabrication through the same datapack-backed path. Version 0.8.0 Sprint 2 adds optional packaging metadata and one retail packaged-product proof. Sprint C adds physical packaging supply references at the packaging-definition layer without changing product metadata. Sprint D uses the packaging metadata for the first Packaging Table execution flow. IM-017 adds the promoted Grinder recipe expansion products through the same registry path.
 
 ## Package
 
@@ -93,6 +93,19 @@ butchercraft:ground_pork
 butchercraft:bison_trim
 butchercraft:ground_bison
 ```
+
+IM-017 adds the current promoted Grinder expansion products:
+
+```text
+butchercraft:chicken_trim
+butchercraft:ground_chicken
+butchercraft:lamb_trim
+butchercraft:ground_lamb
+butchercraft:venison_trim
+butchercraft:ground_venison
+```
+
+The existing `butchercraft:bison_trim` and `butchercraft:ground_bison` product ids are retained and presented to players as Buffalo Trim and Ground Buffalo.
 
 Version 0.6.7 added the minimum current Bandsaw proof products:
 

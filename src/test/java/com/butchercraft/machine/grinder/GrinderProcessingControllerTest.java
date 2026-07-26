@@ -14,10 +14,13 @@ import com.butchercraft.workstation.WorkstationOperationLookup;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.WorkstationProcessingController;
 import com.butchercraft.workstation.WorkstationState;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.Item;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,17 +74,10 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
-    void completionProducesAdjustedPorkAndBisonThroughSameControllerPath() {
-        assertCompletesTo(
-                ModItems.PORK_TRIM.get().getDefaultInstance(),
-                "butchercraft:ground_pork",
-                "butchercraft:pork"
-        );
-        assertCompletesTo(
-                ModItems.BISON_TRIM_TEST.get().getDefaultInstance(),
-                "butchercraft:ground_bison",
-                "butchercraft:bison"
-        );
+    void completionProducesAllPromotedGroundProductsThroughSameControllerPath() {
+        for (RecipeCase recipe : promotedRecipes()) {
+            assertCompletesTo(recipe);
+        }
     }
 
     @Test
@@ -102,24 +98,26 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
-    void outputObstructionBlocksPromotedPorkCompletionSafely() {
-        Harness harness = Harness.create();
-        harness.inventory.setInputInternal(ModItems.PORK_TRIM.get().getDefaultInstance());
-        harness.tick();
-        harness.inventory.setOutputInternal(ModItems.GROUND_PORK.get().getDefaultInstance());
-
-        for (int i = 0; i < 60; i++) {
+    void outputObstructionBlocksAllPromotedCompletionsSafely() {
+        for (RecipeCase recipe : promotedRecipes()) {
+            Harness harness = Harness.create();
+            harness.inventory.setInputInternal(recipe.input().get().getDefaultInstance());
             harness.tick();
-        }
+            harness.inventory.setOutputInternal(recipe.output().get().getDefaultInstance());
 
-        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
-        assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED, harness.controller.lastFailure().orElseThrow().code());
-        assertFalse(harness.inventory.input().isEmpty());
-        assertEquals("butchercraft:pork_trim",
-                ProductStackAdapter.readProductData(harness.inventory.input()).orThrow().productTypeId());
-        assertFalse(harness.inventory.output().isEmpty());
-        assertEquals("butchercraft:ground_pork",
-                ProductStackAdapter.readProductData(harness.inventory.output()).orThrow().productTypeId());
+            for (int i = 0; i < 60; i++) {
+                harness.tick();
+            }
+
+            assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+            assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED, harness.controller.lastFailure().orElseThrow().code());
+            assertFalse(harness.inventory.input().isEmpty());
+            assertEquals(recipe.inputProductId(),
+                    ProductStackAdapter.readProductData(harness.inventory.input()).orThrow().productTypeId());
+            assertFalse(harness.inventory.output().isEmpty());
+            assertEquals(recipe.outputProductId(),
+                    ProductStackAdapter.readProductData(harness.inventory.output()).orThrow().productTypeId());
+        }
     }
 
     @Test
@@ -175,29 +173,31 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
-    void saveLoadMidProcessPreservesPromotedPorkProcessAndCompletes() {
-        Harness harness = Harness.create();
-        harness.inventory.setInputInternal(ModItems.PORK_TRIM.get().getDefaultInstance());
-        harness.tick();
-        for (int i = 0; i < 10; i++) {
+    void saveLoadMidProcessPreservesAllPromotedProcessesAndCompletes() {
+        for (RecipeCase recipe : promotedRecipes()) {
+            Harness harness = Harness.create();
+            harness.inventory.setInputInternal(recipe.input().get().getDefaultInstance());
             harness.tick();
+            for (int i = 0; i < 10; i++) {
+                harness.tick();
+            }
+
+            Harness restored = Harness.restoreFrom(harness);
+
+            assertEquals(WorkstationState.PROCESSING, restored.controller.state());
+            assertEquals(recipe.operationId(), restored.controller.selectedOperationId().orElseThrow());
+            assertEquals(10, restored.controller.elapsedTicks());
+            assertEquals(60, restored.controller.totalTicks());
+            assertFalse(restored.inventory.input().isEmpty());
+
+            for (int i = 0; i < 50; i++) {
+                restored.tick();
+            }
+
+            assertEquals(WorkstationState.COMPLETE, restored.controller.state());
+            assertEquals(recipe.outputProductId(),
+                    ProductStackAdapter.readProductData(restored.inventory.output()).orThrow().productTypeId());
         }
-
-        Harness restored = Harness.restoreFrom(harness);
-
-        assertEquals(WorkstationState.PROCESSING, restored.controller.state());
-        assertEquals(BuiltInDefinitionIds.GRIND_PORK, restored.controller.selectedOperationId().orElseThrow());
-        assertEquals(10, restored.controller.elapsedTicks());
-        assertEquals(60, restored.controller.totalTicks());
-        assertFalse(restored.inventory.input().isEmpty());
-
-        for (int i = 0; i < 50; i++) {
-            restored.tick();
-        }
-
-        assertEquals(WorkstationState.COMPLETE, restored.controller.state());
-        assertEquals("butchercraft:ground_pork",
-                ProductStackAdapter.readProductData(restored.inventory.output()).orThrow().productTypeId());
     }
 
     @Test
@@ -219,28 +219,30 @@ class GrinderProcessingControllerTest {
     }
 
     @Test
-    void saveLoadAfterPromotedPorkCompletionDoesNotDuplicateOutput() {
-        Harness harness = Harness.create();
-        harness.inventory.setInputInternal(ModItems.PORK_TRIM.get().getDefaultInstance());
-        harness.tick();
-        for (int i = 0; i < 60; i++) {
+    void saveLoadAfterAllPromotedCompletionsDoesNotDuplicateOutput() {
+        for (RecipeCase recipe : promotedRecipes()) {
+            Harness harness = Harness.create();
+            harness.inventory.setInputInternal(recipe.input().get().getDefaultInstance());
             harness.tick();
+            for (int i = 0; i < 60; i++) {
+                harness.tick();
+            }
+
+            Harness restored = Harness.restoreFrom(harness);
+            restored.tick();
+
+            assertEquals(WorkstationState.COMPLETE, restored.controller.state());
+            assertTrue(restored.inventory.input().isEmpty());
+            assertEquals(1, restored.inventory.output().getCount());
+            var data = ProductStackAdapter.readProductData(restored.inventory.output()).orThrow();
+            assertEquals(recipe.outputProductId(), data.productTypeId());
+            assertEquals(900, data.quantityValue());
         }
-
-        Harness restored = Harness.restoreFrom(harness);
-        restored.tick();
-
-        assertEquals(WorkstationState.COMPLETE, restored.controller.state());
-        assertTrue(restored.inventory.input().isEmpty());
-        assertEquals(1, restored.inventory.output().getCount());
-        var data = ProductStackAdapter.readProductData(restored.inventory.output()).orThrow();
-        assertEquals("butchercraft:ground_pork", data.productTypeId());
-        assertEquals(900, data.quantityValue());
     }
 
-    private static void assertCompletesTo(net.minecraft.world.item.ItemStack input, String outputProductId, String sourceId) {
+    private static void assertCompletesTo(RecipeCase recipe) {
         Harness harness = Harness.create();
-        harness.inventory.setInputInternal(input);
+        harness.inventory.setInputInternal(recipe.input().get().getDefaultInstance());
         harness.tick();
 
         for (int i = 0; i < 60; i++) {
@@ -250,10 +252,27 @@ class GrinderProcessingControllerTest {
         assertEquals(WorkstationState.COMPLETE, harness.controller.state());
         assertTrue(harness.inventory.input().isEmpty());
         var data = ProductStackAdapter.readProductData(harness.inventory.output()).orThrow();
-        assertEquals(outputProductId, data.productTypeId());
-        assertEquals(sourceId, data.sourceCategoryId());
+        assertEquals(recipe.outputProductId(), data.productTypeId());
+        assertEquals(recipe.sourceId(), data.sourceCategoryId());
         assertEquals(900, data.quantityValue());
         assertEquals(695, data.qualityScore());
+    }
+
+    private static List<RecipeCase> promotedRecipes() {
+        return List.of(
+                new RecipeCase(ModItems.BEEF_TRIM, ModItems.GROUND_BEEF, BuiltInDefinitionIds.GRIND_BEEF,
+                        "butchercraft:beef_trim", "butchercraft:ground_beef", "butchercraft:beef"),
+                new RecipeCase(ModItems.PORK_TRIM, ModItems.GROUND_PORK, BuiltInDefinitionIds.GRIND_PORK,
+                        "butchercraft:pork_trim", "butchercraft:ground_pork", "butchercraft:pork"),
+                new RecipeCase(ModItems.CHICKEN_TRIM, ModItems.GROUND_CHICKEN, BuiltInDefinitionIds.GRIND_CHICKEN,
+                        "butchercraft:chicken_trim", "butchercraft:ground_chicken", "butchercraft:chicken"),
+                new RecipeCase(ModItems.BUFFALO_TRIM, ModItems.GROUND_BUFFALO, BuiltInDefinitionIds.GRIND_BISON,
+                        "butchercraft:bison_trim", "butchercraft:ground_bison", "butchercraft:bison"),
+                new RecipeCase(ModItems.LAMB_TRIM, ModItems.GROUND_LAMB, BuiltInDefinitionIds.GRIND_LAMB,
+                        "butchercraft:lamb_trim", "butchercraft:ground_lamb", "butchercraft:lamb"),
+                new RecipeCase(ModItems.VENISON_TRIM, ModItems.GROUND_VENISON, BuiltInDefinitionIds.GRIND_VENISON,
+                        "butchercraft:venison_trim", "butchercraft:ground_venison", "butchercraft:venison")
+        );
     }
 
     private record Harness(
@@ -322,5 +341,15 @@ class GrinderProcessingControllerTest {
                 1,
                 1
         );
+    }
+
+    private record RecipeCase(
+            net.neoforged.neoforge.registries.DeferredItem<? extends Item> input,
+            net.neoforged.neoforge.registries.DeferredItem<? extends Item> output,
+            ResourceLocation operationId,
+            String inputProductId,
+            String outputProductId,
+            String sourceId
+    ) {
     }
 }

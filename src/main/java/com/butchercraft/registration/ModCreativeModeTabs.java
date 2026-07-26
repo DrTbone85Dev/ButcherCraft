@@ -24,10 +24,16 @@ public final class ModCreativeModeTabs {
                         output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance());
                         output.accept(ModItems.PORK_TRIM.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_PORK.get().getDefaultInstance());
+                        output.accept(ModItems.CHICKEN_TRIM.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_CHICKEN.get().getDefaultInstance());
+                        output.accept(ModItems.BUFFALO_TRIM.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_BUFFALO.get().getDefaultInstance());
+                        output.accept(ModItems.LAMB_TRIM.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_LAMB.get().getDefaultInstance());
+                        output.accept(ModItems.VENISON_TRIM.get().getDefaultInstance());
+                        output.accept(ModItems.GROUND_VENISON.get().getDefaultInstance());
                         output.accept(ModItems.DEVELOPMENT_TEST_ITEM.get());
                         output.accept(ModItems.RETAIL_GROUND_BEEF_TEST.get().getDefaultInstance());
-                        output.accept(ModItems.BISON_TRIM_TEST.get().getDefaultInstance());
-                        output.accept(ModItems.GROUND_BISON_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_FOREQUARTER_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_CHUCK_TEST.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_RIB_TEST.get().getDefaultInstance());

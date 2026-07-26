@@ -145,7 +145,7 @@ Thirty-one product-bearing items are registered through the current fixture-back
 
 They appear in the ButcherCraft creative tab and receive default product data from `ProductTestItem.getDefaultInstance()`.
 
-Beef Trim, Ground Beef, Pork Trim, and Ground Pork are ordinary promoted Grinder gameplay products while retaining their legacy `*_test` item registry ids for save compatibility. Other product items remain development fixtures. Default values are still development-stage balance, not final production balance:
+Beef Trim, Ground Beef, Pork Trim, Ground Pork, Chicken Trim, Ground Chicken, Buffalo Trim, Ground Buffalo, Lamb Trim, Ground Lamb, Venison Trim, and Ground Venison are ordinary promoted Grinder gameplay products. Beef, Pork, and Buffalo retain existing compatibility item registry ids where they already existed. Other product items remain development fixtures. Default values are still development-stage balance, not final production balance:
 
 | Item | Product type | Source | State | Quantity | Quality |
 | --- | --- | --- | --- | --- | --- |
@@ -154,8 +154,14 @@ Beef Trim, Ground Beef, Pork Trim, and Ground Pork are ordinary promoted Grinder
 | Retail Ground Beef Test Product | `butchercraft:retail_ground_beef` | `butchercraft:beef` | `butchercraft:retail_packaged` | `900 gram` | `700` |
 | Pork Trim | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Pork | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
-| Bison Trim Test Product | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
-| Ground Bison Test Product | `butchercraft:ground_bison` | `butchercraft:bison` | `butchercraft:ground` | `900 gram` | `700` |
+| Chicken Trim | `butchercraft:chicken_trim` | `butchercraft:chicken` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Chicken | `butchercraft:ground_chicken` | `butchercraft:chicken` | `butchercraft:ground` | `900 gram` | `700` |
+| Buffalo Trim | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Buffalo | `butchercraft:ground_bison` | `butchercraft:bison` | `butchercraft:ground` | `900 gram` | `700` |
+| Lamb Trim | `butchercraft:lamb_trim` | `butchercraft:lamb` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Lamb | `butchercraft:ground_lamb` | `butchercraft:lamb` | `butchercraft:ground` | `900 gram` | `700` |
+| Venison Trim | `butchercraft:venison_trim` | `butchercraft:venison` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Venison | `butchercraft:ground_venison` | `butchercraft:venison` | `butchercraft:ground` | `900 gram` | `700` |
 | Beef Forequarter Test Product | `butchercraft:beef_forequarter` | `butchercraft:beef` | `butchercraft:forequarter` | `100000 gram` | `700` |
 | Beef Chuck Test Product | `butchercraft:beef_chuck` | `butchercraft:beef` | `butchercraft:primal` | `30000 gram` | `695` |
 | Beef Rib Test Product | `butchercraft:beef_rib` | `butchercraft:beef` | `butchercraft:primal` | `10000 gram` | `695` |

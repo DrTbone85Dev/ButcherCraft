@@ -16,8 +16,14 @@ public final class BuiltInProductRegistry {
             "data/butchercraft/butchercraft/content/product/retail_ground_beef.json",
             "data/butchercraft/butchercraft/content/product/pork_trim.json",
             "data/butchercraft/butchercraft/content/product/ground_pork.json",
+            "data/butchercraft/butchercraft/content/product/chicken_trim.json",
+            "data/butchercraft/butchercraft/content/product/ground_chicken.json",
             "data/butchercraft/butchercraft/content/product/bison_trim.json",
             "data/butchercraft/butchercraft/content/product/ground_bison.json",
+            "data/butchercraft/butchercraft/content/product/lamb_trim.json",
+            "data/butchercraft/butchercraft/content/product/ground_lamb.json",
+            "data/butchercraft/butchercraft/content/product/venison_trim.json",
+            "data/butchercraft/butchercraft/content/product/ground_venison.json",
             "data/butchercraft/butchercraft/content/product/beef_forequarter.json",
             "data/butchercraft/butchercraft/content/product/beef_chuck.json",
             "data/butchercraft/butchercraft/content/product/beef_rib.json",
@@ -49,8 +55,14 @@ public final class BuiltInProductRegistry {
     public static final EngineId RETAIL_GROUND_BEEF = EngineId.of("butchercraft:retail_ground_beef");
     public static final EngineId PORK_TRIM = EngineId.of("butchercraft:pork_trim");
     public static final EngineId GROUND_PORK = EngineId.of("butchercraft:ground_pork");
+    public static final EngineId CHICKEN_TRIM = EngineId.of("butchercraft:chicken_trim");
+    public static final EngineId GROUND_CHICKEN = EngineId.of("butchercraft:ground_chicken");
     public static final EngineId BISON_TRIM = EngineId.of("butchercraft:bison_trim");
     public static final EngineId GROUND_BISON = EngineId.of("butchercraft:ground_bison");
+    public static final EngineId LAMB_TRIM = EngineId.of("butchercraft:lamb_trim");
+    public static final EngineId GROUND_LAMB = EngineId.of("butchercraft:ground_lamb");
+    public static final EngineId VENISON_TRIM = EngineId.of("butchercraft:venison_trim");
+    public static final EngineId GROUND_VENISON = EngineId.of("butchercraft:ground_venison");
     public static final EngineId BEEF_FOREQUARTER = EngineId.of("butchercraft:beef_forequarter");
     public static final EngineId BEEF_CHUCK = EngineId.of("butchercraft:beef_chuck");
     public static final EngineId BEEF_RIB = EngineId.of("butchercraft:beef_rib");
@@ -78,7 +90,10 @@ public final class BuiltInProductRegistry {
 
     public static final EngineId CATEGORY_BEEF = EngineId.of("butchercraft:beef");
     public static final EngineId CATEGORY_PORK = EngineId.of("butchercraft:pork");
+    public static final EngineId CATEGORY_CHICKEN = EngineId.of("butchercraft:chicken");
     public static final EngineId CATEGORY_BISON = EngineId.of("butchercraft:bison");
+    public static final EngineId CATEGORY_LAMB = EngineId.of("butchercraft:lamb");
+    public static final EngineId CATEGORY_VENISON = EngineId.of("butchercraft:venison");
 
     public static final EngineId TAG_TRIM = EngineId.of("butchercraft:trait/trim");
     public static final EngineId TAG_GROUND = EngineId.of("butchercraft:trait/ground");

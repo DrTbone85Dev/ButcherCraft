@@ -26,8 +26,22 @@ class ProductDataAssetsTest {
         assertTrue(language.contains("\"item.butchercraft.ground_pork_test\""));
         assertEquals("Pork Trim", languageJson.get("item.butchercraft.pork_trim_test").getAsString());
         assertEquals("Ground Pork", languageJson.get("item.butchercraft.ground_pork_test").getAsString());
+        assertTrue(language.contains("\"item.butchercraft.chicken_trim\""));
+        assertTrue(language.contains("\"item.butchercraft.ground_chicken\""));
+        assertEquals("Chicken Trim", languageJson.get("item.butchercraft.chicken_trim").getAsString());
+        assertEquals("Ground Chicken", languageJson.get("item.butchercraft.ground_chicken").getAsString());
         assertTrue(language.contains("\"item.butchercraft.bison_trim_test\""));
         assertTrue(language.contains("\"item.butchercraft.ground_bison_test\""));
+        assertEquals("Buffalo Trim", languageJson.get("item.butchercraft.bison_trim_test").getAsString());
+        assertEquals("Ground Buffalo", languageJson.get("item.butchercraft.ground_bison_test").getAsString());
+        assertTrue(language.contains("\"item.butchercraft.lamb_trim\""));
+        assertTrue(language.contains("\"item.butchercraft.ground_lamb\""));
+        assertEquals("Lamb Trim", languageJson.get("item.butchercraft.lamb_trim").getAsString());
+        assertEquals("Ground Lamb", languageJson.get("item.butchercraft.ground_lamb").getAsString());
+        assertTrue(language.contains("\"item.butchercraft.venison_trim\""));
+        assertTrue(language.contains("\"item.butchercraft.ground_venison\""));
+        assertEquals("Venison Trim", languageJson.get("item.butchercraft.venison_trim").getAsString());
+        assertEquals("Ground Venison", languageJson.get("item.butchercraft.ground_venison").getAsString());
         assertTrue(language.contains("\"item.butchercraft.beef_forequarter_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_chuck_test\""));
         assertTrue(language.contains("\"item.butchercraft.beef_rib_test\""));
@@ -71,6 +85,30 @@ class ProductDataAssetsTest {
         assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
                 "src/main/resources/assets/butchercraft/textures/item/product/ground_pork.png"
         )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/chicken_trim.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/ground_chicken.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/bison_trim.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/ground_bison.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/lamb_trim.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/ground_lamb.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/venison_trim.png"
+        )));
+        assertTrue(Files.isRegularFile(TestProjectPaths.projectPath(
+                "src/main/resources/assets/butchercraft/textures/item/product/ground_venison.png"
+        )));
         assertGeneratedModel(
                 TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/beef_trim_test.json"),
                 "butchercraft:item/product/beef_trim"
@@ -87,9 +125,39 @@ class ProductDataAssetsTest {
                 TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_pork_test.json"),
                 "butchercraft:item/product/ground_pork"
         );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/chicken_trim.json"),
+                "butchercraft:item/product/chicken_trim"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/ground_chicken.json"),
+                "butchercraft:item/product/ground_chicken"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/bison_trim_test.json"),
+                "butchercraft:item/product/bison_trim"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_bison_test.json"),
+                "butchercraft:item/product/ground_bison"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/lamb_trim.json"),
+                "butchercraft:item/product/lamb_trim"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/ground_lamb.json"),
+                "butchercraft:item/product/ground_lamb"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/venison_trim.json"),
+                "butchercraft:item/product/venison_trim"
+        );
+        assertGeneratedModel(
+                TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/ground_venison.json"),
+                "butchercraft:item/product/ground_venison"
+        );
         assertRetailGroundBeefModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/retail_ground_beef_test.json"));
-        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/bison_trim_test.json"));
-        assertPlaceholderModel(TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/models/item/ground_bison_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_forequarter_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_chuck_test.json"));
         assertPlaceholderModel(TestProjectPaths.projectPath("src/generated/resources/assets/butchercraft/models/item/beef_rib_test.json"));

@@ -25,8 +25,14 @@ class ProductDatapackResourceTest {
             "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",
+            "butchercraft:chicken_trim",
+            "butchercraft:ground_chicken",
             "butchercraft:bison_trim",
             "butchercraft:ground_bison",
+            "butchercraft:lamb_trim",
+            "butchercraft:ground_lamb",
+            "butchercraft:venison_trim",
+            "butchercraft:ground_venison",
             "butchercraft:beef_forequarter",
             "butchercraft:beef_chuck",
             "butchercraft:beef_rib",
@@ -93,7 +99,7 @@ class ProductDatapackResourceTest {
     void builtInRegistryIsLoadedFromProductDatapackResources() {
         ProductRegistry registry = BuiltInProductRegistry.builtInRegistry();
 
-        assertEquals(31, registry.size());
+        assertEquals(37, registry.size());
         assertEquals(EXPECTED_BUNDLED_PRODUCT_IDS, registry.stream()
                         .map(definition -> definition.id().value())
                         .toList());

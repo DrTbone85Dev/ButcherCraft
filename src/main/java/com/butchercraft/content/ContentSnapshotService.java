@@ -199,7 +199,10 @@ public final class ContentSnapshotService {
         return Set.of(
                 BuiltInProductRegistry.CATEGORY_BEEF,
                 BuiltInProductRegistry.CATEGORY_PORK,
-                BuiltInProductRegistry.CATEGORY_BISON
+                BuiltInProductRegistry.CATEGORY_CHICKEN,
+                BuiltInProductRegistry.CATEGORY_BISON,
+                BuiltInProductRegistry.CATEGORY_LAMB,
+                BuiltInProductRegistry.CATEGORY_VENISON
         );
     }
 

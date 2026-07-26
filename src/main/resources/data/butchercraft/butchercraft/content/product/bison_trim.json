@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "butchercraft:bison_trim",
-  "display_name": "Bison Trim",
+  "display_name": "Buffalo Trim",
   "category": "butchercraft:bison",
   "default_quantity_unit": "gram",
   "tags": [

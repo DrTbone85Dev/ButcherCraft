@@ -41,5 +41,13 @@ class GrinderRegistrationTest {
         assertTrue(source.contains("output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance())"));
         assertTrue(source.contains("output.accept(ModItems.PORK_TRIM.get().getDefaultInstance())"));
         assertTrue(source.contains("output.accept(ModItems.GROUND_PORK.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.CHICKEN_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_CHICKEN.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.BUFFALO_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_BUFFALO.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.LAMB_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_LAMB.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.VENISON_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_VENISON.get().getDefaultInstance())"));
     }
 }

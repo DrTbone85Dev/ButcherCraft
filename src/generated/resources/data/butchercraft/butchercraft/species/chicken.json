@@ -1,0 +1,7 @@
+{
+  "display_name_key": "definition.butchercraft.species.chicken",
+  "enabled": true,
+  "processing_profile": "butchercraft:poultry",
+  "product_family": "butchercraft:chicken",
+  "products_edible": true
+}

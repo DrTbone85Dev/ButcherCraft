@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:ground_venison",
+  "display_name": "Ground Venison",
+  "category": "butchercraft:venison",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/ground"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

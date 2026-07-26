@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "butchercraft:ground_bison",
-  "display_name": "Ground Bison",
+  "display_name": "Ground Buffalo",
   "category": "butchercraft:bison",
   "default_quantity_unit": "gram",
   "tags": [

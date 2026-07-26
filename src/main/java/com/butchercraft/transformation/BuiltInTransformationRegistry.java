@@ -13,7 +13,10 @@ public final class BuiltInTransformationRegistry {
     public static final List<String> BUILT_IN_RESOURCE_PATHS = List.of(
             "data/butchercraft/butchercraft/transformation/grind_beef.json",
             "data/butchercraft/butchercraft/transformation/grind_pork.json",
+            "data/butchercraft/butchercraft/transformation/grind_chicken.json",
             "data/butchercraft/butchercraft/transformation/grind_bison.json",
+            "data/butchercraft/butchercraft/transformation/grind_lamb.json",
+            "data/butchercraft/butchercraft/transformation/grind_venison.json",
             "data/butchercraft/butchercraft/transformation/break_beef_forequarter.json",
             "data/butchercraft/butchercraft/transformation/break_beef_hindquarter.json",
             "data/butchercraft/butchercraft/transformation/cut_beef_short_loin.json",

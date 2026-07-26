@@ -294,11 +294,11 @@ class ArchitectureRulesTest {
 
         List<String> implementedPromotionContracts = List.of(
                 "butchercraft:platform_contract/grinder_promoted_gameplay_content",
-                "butchercraft:platform_contract/grinder_two_promoted_processes",
+                "butchercraft:platform_contract/grinder_six_promoted_processes",
                 "butchercraft:platform_contract/grinder_deterministic_multi_process_resolution",
                 "butchercraft:platform_contract/grinder_process_specific_execution_identity",
                 "butchercraft:platform_contract/grinder_process_specific_owner_results",
-                "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
+                "butchercraft:platform_contract/grinder_recipe_catalog_gametest_coverage",
                 "butchercraft:platform_contract/grinder_survival_obtainability",
                 "butchercraft:platform_contract/grinder_player_visible_status_sync",
                 "butchercraft:platform_contract/grinder_active_break_preservation"
@@ -831,11 +831,11 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/grinder_gametest_save_load_safety",
                         "butchercraft:platform_contract/grinder_gametest_uncertain_state_safety",
                         "butchercraft:platform_contract/grinder_promoted_gameplay_content",
-                        "butchercraft:platform_contract/grinder_two_promoted_processes",
+                        "butchercraft:platform_contract/grinder_six_promoted_processes",
                         "butchercraft:platform_contract/grinder_deterministic_multi_process_resolution",
                         "butchercraft:platform_contract/grinder_process_specific_execution_identity",
                         "butchercraft:platform_contract/grinder_process_specific_owner_results",
-                        "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
+                        "butchercraft:platform_contract/grinder_recipe_catalog_gametest_coverage",
                         "butchercraft:platform_contract/grinder_survival_obtainability",
                         "butchercraft:platform_contract/grinder_player_visible_status_sync",
                         "butchercraft:platform_contract/grinder_active_break_preservation",

@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, with v0.8.0 Packaging Table gameplay
+Status: Milestones 2B through 2E workstation framework, v0.8.0 Packaging Table gameplay, and IM-017 six-product Grinder recipe expansion
 
 ## Purpose
 
@@ -142,8 +142,14 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:ground_beef` -> `butchercraft:ground_beef_test`
 - `butchercraft:pork_trim` -> `butchercraft:pork_trim_test`
 - `butchercraft:ground_pork` -> `butchercraft:ground_pork_test`
-- `butchercraft:bison_trim` -> `butchercraft:bison_trim_test`
-- `butchercraft:ground_bison` -> `butchercraft:ground_bison_test`
+- `butchercraft:chicken_trim` -> `butchercraft:chicken_trim`
+- `butchercraft:ground_chicken` -> `butchercraft:ground_chicken`
+- `butchercraft:bison_trim` -> `butchercraft:bison_trim_test` (player-facing Buffalo Trim)
+- `butchercraft:ground_bison` -> `butchercraft:ground_bison_test` (player-facing Ground Buffalo)
+- `butchercraft:lamb_trim` -> `butchercraft:lamb_trim`
+- `butchercraft:ground_lamb` -> `butchercraft:ground_lamb`
+- `butchercraft:venison_trim` -> `butchercraft:venison_trim`
+- `butchercraft:ground_venison` -> `butchercraft:ground_venison`
 - `butchercraft:beef_forequarter` -> `butchercraft:beef_forequarter_test`
 - `butchercraft:beef_chuck` -> `butchercraft:beef_chuck_test`
 - `butchercraft:beef_rib` -> `butchercraft:beef_rib_test`
@@ -169,7 +175,7 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:sirloin_steak` -> `butchercraft:sirloin_steak_test`
 - `butchercraft:tri_tip` -> `butchercraft:tri_tip_test`
 
-This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
+This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. IM-017 adds Chicken, Buffalo, Lamb, and Venison trim-to-ground products through the same explicit mapping; Buffalo retains the existing `butchercraft:bison_*` identities. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
 
 ## Development Workstation
 
@@ -179,7 +185,7 @@ Temporary block:
 butchercraft:development_processing_workstation
 ```
 
-The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim product fixtures, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground product fixture.
+The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current mapped trim product fixtures, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground product fixture.
 
 ## Bandsaw Machine
 
