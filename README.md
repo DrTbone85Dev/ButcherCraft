@@ -83,6 +83,8 @@ The trim, ground, Beef Patties, forequarter, and beef fabrication products are d
 
 `butchercraft:patty_former` is the current Patty Former proof block. It uses `butchercraft:patty_forming` and the same Workstation, Execution, Scheduler, and owner-result path to process Ground Beef into Beef Patties. Ground Beef transfer from the Grinder to the Patty Former is manual.
 
+`butchercraft:production_order` is the current narrow player-facing control item for the fixed Beef Patties chain. It creates or inspects one Beef Trim to Grinder to Ground Beef to Patty Former to Beef Patties Production Run, assigns the two workstations through server-validated block interaction, and displays manual-transfer guidance without moving items automatically.
+
 `butchercraft:bandsaw` is the current Bandsaw proof block. It uses `butchercraft:bandsaw`, the same processing graph/resolver/controller path, and the atomic transformation execution bridge to process Beef Forequarter, Beef Hindquarter, and selected beef primal test products into ordered beef fabrication outputs, including Packer Brisket, T-Bone Steak, Porterhouse Steak, Top Round, Sirloin Steak, and Tri-Tip, without product-specific Bandsaw behavior.
 
 `butchercraft:packaging_table` is the v0.8.0 Packaging Table foundation block. It appears in the ButcherCraft creative tab, can be placed, opens a placeholder inventory GUI with Meat, Tray, Wrap, and Result slots, persists inventory, and exposes item-handler inventory capability. Sprint 2 adds datapack-backed retail product definitions and a `package_retail` graph operation. Sprint C adds Foam Tray, Plastic Wrap Roll, Vacuum Bag, Butcher Paper Roll, Freezer Paper Roll, and Retail Label Roll supply items, plus data-only supply references on packaging definitions. The table does not package products, consume supplies, or execute operations yet.
@@ -109,6 +111,8 @@ The immutable Order and Contract intent model, runtime lifecycles, transaction-l
 The deterministic simulation Work definition, lifecycle, ordering, budgets, same-tick rules, strict clock policy, persistence, and extension boundaries are documented in `docs/SIMULATION_SCHEDULER.md`.
 
 The industry-neutral Production Process, Plan, and Run schemas, scheduler integration, transaction-backed completion, persistence, and extension boundaries are documented in `docs/PRODUCTION_FRAMEWORK.md`.
+
+The player-facing Production Order item, fixed Beef Patties chain, workstation assignment, read-only progress presentation, manual-transfer guidance, failure mapping, and remaining gates are documented in `docs/PRODUCTION_ORDER.md`.
 
 The deterministic Observation-to-Approved-Plan pipeline, ownership rules, exact allocation policy, Production submission adapter, six-file persistence contract, and deferred scope are documented in `docs/ECONOMIC_PLANNING_ENGINE.md`.
 

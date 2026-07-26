@@ -5,6 +5,7 @@ import com.butchercraft.engine.EngineId;
 import com.butchercraft.engine.product.ProcessingState;
 import com.butchercraft.engine.product.ProductCategory;
 import com.butchercraft.engine.quantity.QuantityUnit;
+import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.butchercraft.product.component.ProductStackData;
 import com.butchercraft.product.component.ProductStackPackagingData;
 import com.butchercraft.product.item.ProductTestItem;
@@ -99,6 +100,11 @@ public final class ModItems {
                     QuantityUnit.GRAM,
                     700
             ))
+    );
+
+    public static final DeferredItem<ProductionOrderItem> PRODUCTION_ORDER = ITEMS.register(
+            "production_order",
+            () -> new ProductionOrderItem(new Item.Properties())
     );
 
     /**

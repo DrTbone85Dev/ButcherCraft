@@ -1,6 +1,7 @@
 package com.butchercraft.machine.grinder;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
+import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -84,6 +85,9 @@ public final class GrinderBlock extends BaseEntityBlock {
             InteractionHand hand,
             BlockHitResult hitResult
     ) {
+        if (stack.getItem() instanceof ProductionOrderItem orderItem) {
+            return orderItem.useOnWorkstation(stack, level, pos, player, hand);
+        }
         return openMenu(level, pos, player)
                 ? ItemInteractionResult.sidedSuccess(level.isClientSide)
                 : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;

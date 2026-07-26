@@ -885,7 +885,14 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/production_manual_transfer_boundary",
                         "butchercraft:platform_contract/production_chain_product_flow_validation",
                         "butchercraft:platform_contract/production_chain_persistence_references",
-                        "butchercraft:platform_contract/patty_former_chain_gametest_coverage"
+                        "butchercraft:platform_contract/patty_former_chain_gametest_coverage",
+                        "butchercraft:platform_contract/production_order_beef_patties_run_creation",
+                        "butchercraft:platform_contract/production_order_fixed_two_step_template",
+                        "butchercraft:platform_contract/production_order_workstation_assignment",
+                        "butchercraft:platform_contract/production_order_read_only_progress_presentation",
+                        "butchercraft:platform_contract/production_order_manual_transfer_guidance",
+                        "butchercraft:platform_contract/production_order_failure_guidance",
+                        "butchercraft:platform_contract/production_order_gametest_coverage"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

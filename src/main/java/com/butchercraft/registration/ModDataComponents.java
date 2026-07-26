@@ -1,6 +1,7 @@
 package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.productioncontrol.ProductionOrderData;
 import com.butchercraft.product.component.ProductStackData;
 import net.minecraft.core.component.DataComponentType;
 import net.neoforged.bus.api.IEventBus;
@@ -15,6 +16,12 @@ public final class ModDataComponents {
             DATA_COMPONENTS.registerComponentType("product_data", builder -> builder
                     .persistent(ProductStackData.CODEC)
                     .networkSynchronized(ProductStackData.STREAM_CODEC)
+                    .cacheEncoding());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ProductionOrderData>> PRODUCTION_ORDER =
+            DATA_COMPONENTS.registerComponentType("production_order", builder -> builder
+                    .persistent(ProductionOrderData.CODEC)
+                    .networkSynchronized(ProductionOrderData.STREAM_CODEC)
                     .cacheEncoding());
 
     private ModDataComponents() {

@@ -21,6 +21,7 @@ public final class ModCreativeModeTabs {
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.GRINDER.get());
                         output.accept(ModItems.PATTY_FORMER.get());
+                        output.accept(ModItems.PRODUCTION_ORDER.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_TRIM.get().getDefaultInstance());
                         output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance());
                         output.accept(ModItems.BEEF_PATTIES.get().getDefaultInstance());

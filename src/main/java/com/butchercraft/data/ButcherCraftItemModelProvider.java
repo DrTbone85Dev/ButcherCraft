@@ -54,6 +54,7 @@ final class ButcherCraftItemModelProvider extends ItemModelProvider {
         generatedItem(ModItems.BEEF_TRIM.get(), BEEF_TRIM_TEXTURE);
         generatedItem(ModItems.GROUND_BEEF.get(), GROUND_BEEF_TEXTURE);
         generatedItem(ModItems.BEEF_PATTIES.get(), BEEF_PATTIES_TEXTURE);
+        generatedItem(ModItems.PRODUCTION_ORDER.get(), DEVELOPMENT_PLACEHOLDER_TEXTURE);
         generatedItem(ModItems.RETAIL_GROUND_BEEF_TEST.get(), RETAIL_GROUND_BEEF_TEXTURE);
         generatedItem(ModItems.PORK_TRIM.get(), PORK_TRIM_TEXTURE);
         generatedItem(ModItems.GROUND_PORK.get(), GROUND_PORK_TEXTURE);

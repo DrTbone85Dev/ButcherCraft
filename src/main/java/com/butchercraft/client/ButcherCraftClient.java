@@ -6,6 +6,7 @@ import com.butchercraft.client.screen.GrinderScreen;
 import com.butchercraft.client.screen.PackagingTableScreen;
 import com.butchercraft.client.screen.PattyFormerScreen;
 import com.butchercraft.client.screen.ProcessingWorkstationScreen;
+import com.butchercraft.client.screen.ProductionOrderScreen;
 import com.butchercraft.registration.ModClientRegistrationStatus;
 import com.butchercraft.registration.ModMenuTypes;
 import net.neoforged.api.distmarker.Dist;
@@ -25,10 +26,12 @@ public final class ButcherCraftClient {
         event.register(ModMenuTypes.PATTY_FORMER.get(), PattyFormerScreen::new);
         event.register(ModMenuTypes.BANDSAW.get(), BandsawScreen::new);
         event.register(ModMenuTypes.PACKAGING_TABLE.get(), PackagingTableScreen::new);
+        event.register(ModMenuTypes.PRODUCTION_ORDER.get(), ProductionOrderScreen::new);
         ModClientRegistrationStatus.markDevelopmentWorkstationScreenRegistered();
         ModClientRegistrationStatus.markGrinderScreenRegistered();
         ModClientRegistrationStatus.markPattyFormerScreenRegistered();
         ModClientRegistrationStatus.markBandsawScreenRegistered();
         ModClientRegistrationStatus.markPackagingTableScreenRegistered();
+        ModClientRegistrationStatus.markProductionOrderScreenRegistered();
     }
 }

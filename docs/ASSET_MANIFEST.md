@@ -1,6 +1,6 @@
 # ButcherCraft Asset Manifest
 
-Status: v0.8.0E asset framework baseline plus promoted Grinder assets through IM-017 and Patty Former assets through IM-018
+Status: v0.8.0E asset framework baseline plus promoted Grinder assets through IM-017, Patty Former assets through IM-018, and Production Order placeholder asset through IM-019
 
 ## Purpose
 
@@ -56,6 +56,12 @@ No current ButcherCraft visual asset is production approved.
 | Bandsaw upper block model | `butchercraft:block/bandsaw_upper` | Workstation block model | `src/generated/resources/assets/butchercraft/models/block/bandsaw_upper.json` | Yes | JSON model within 0-16 block bounds | Placeholder | Yes | Stainless steel upper frame | `assets/butchercraft/blockstates/bandsaw_upper.json` | `butchercraft:item/development_test_item` | Must preserve two-block readability after final art. | Review Required |
 | Bandsaw item model | `butchercraft:item/bandsaw` | Workstation item model | `src/generated/resources/assets/butchercraft/models/item/bandsaw.json` | Yes | Parent lower block model | Placeholder | Yes | Same as lower block | `butchercraft:block/bandsaw` | Same as lower block | Item uses lower block representation. | Review Required |
 | Development Processing Workstation | `butchercraft:development_processing_workstation` | Development fixture block/item | `src/main/resources/assets/butchercraft/models/block/development_processing_workstation.json` | No | JSON model and generated item parent | Placeholder | Yes | Development-only fixture | Hand-authored block and item models | `butchercraft:item/development_test_item` | Legacy diagnostic fixture retained for tests. | Deferred |
+
+## Production Control Asset Audit
+
+| Asset name | Registry/resource id | Category | Source path | Generated | Required dimensions | Current status | Placeholder | Intended material | Model dependency | Texture dependency | Notes | In-game review |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Production Order | `butchercraft:production_order` | Player-facing control item | `src/generated/resources/assets/butchercraft/models/item/production_order.json` | Yes | 16x16 PNG texture | Placeholder | Yes | Production order marker | `minecraft:item/generated` | `butchercraft:item/development_test_item` | IM-019 control item reuses the existing development marker until final UI/art polish is scheduled. | Review Required |
 
 ## Promoted Product Asset Section
 

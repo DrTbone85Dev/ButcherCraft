@@ -742,6 +742,41 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-018 Patty Former and First Multi-Workstation Production Chain",
                 "Automated server-world GameTests cover Patty Former behavior and the manual Grinder to Patty Former chain");
+        platformContract(builder, "butchercraft:platform_contract/production_order_beef_patties_run_creation",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "A player-facing Production Order creates or observes exactly one fixed Beef Patties Production Run");
+        platformContract(builder, "butchercraft:platform_contract/production_order_fixed_two_step_template",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "The Production Order binds only the fixed Beef Trim to Grinder to Ground Beef to Patty Former to Beef Patties chain");
+        platformContract(builder, "butchercraft:platform_contract/production_order_workstation_assignment",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "Production validates player-driven Grinder and Patty Former assignments without trusting client-provided workstation type");
+        platformContract(builder, "butchercraft:platform_contract/production_order_read_only_progress_presentation",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "The Production Order presents workstation-owned state and progress through read-only snapshots");
+        platformContract(builder, "butchercraft:platform_contract/production_order_manual_transfer_guidance",
+                ValidationCategory.OWNERSHIP, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "The Production Order exposes the manual-transfer boundary without moving Ground Beef or mutating workstation slots");
+        platformContract(builder, "butchercraft:platform_contract/production_order_failure_guidance",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "Typed Production and workstation states are mapped to player-facing failure and recovery-required guidance");
+        platformContract(builder, "butchercraft:platform_contract/production_order_gametest_coverage",
+                ValidationCategory.GENERAL, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-019 Manual Production Chain UI and Player Guidance",
+                "Twenty-seven automated server-world GameTests cover Production Order creation, assignment, guidance, progress, failure visibility, and completion");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -796,6 +831,8 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/production_workstation_completion_evidence", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_workstation_chain", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_product_flow_identity_validation", PRODUCTION);
+        own(builder, "butchercraft:responsibility/production_player_facing_run_creation", PRODUCTION);
+        own(builder, "butchercraft:responsibility/production_player_visible_chain_status", PRODUCTION);
         own(builder, "butchercraft:responsibility/planning_cadence_configuration", PLANNING);
         own(builder, "butchercraft:responsibility/planning_trigger_identity", PLANNING);
         own(builder, "butchercraft:responsibility/planning_input_capture", PLANNING);
