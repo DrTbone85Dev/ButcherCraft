@@ -6,7 +6,7 @@ Target: Minecraft 1.21.1, NeoForge, Java 21
 
 Scope: flagship Meat Processing player experience and its historical expansion direction
 
-This document preserves the original player-facing design and rationale for Meat Processing. Phase 13 broadens ButcherCraft Core into a regional simulation platform without discarding this experience. Active platform direction is defined by `VISION.md`, `CORE_PRINCIPLES.md`, and `MODULES.md`.
+This document preserves the original player-facing design and rationale for Meat Processing. Phase 13 broadens ButcherCraft Core into a regional simulation platform without discarding this experience. Active platform direction is defined by `VISION.md`, `CORE_PRINCIPLES.md`, and `MODULES.md`. The canonical gameplay philosophy for future business simulation and player progression is `docs/BUSINESS_SIMULATION_BIBLE.md`.
 
 ## Core Player Experience
 

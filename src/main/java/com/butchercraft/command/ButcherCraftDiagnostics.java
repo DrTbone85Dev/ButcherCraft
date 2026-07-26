@@ -32,6 +32,8 @@ import com.butchercraft.workstation.PrototypeProcessingContextValues;
 import com.butchercraft.workstation.WorkstationDuration;
 import com.butchercraft.workstation.WorkstationOperationResolution;
 import com.butchercraft.workstation.WorkstationOperationResolver;
+import com.butchercraft.world.simulation.time.WorldTimeService;
+import com.butchercraft.world.simulation.time.WorldTimeStatusSnapshot;
 import com.mojang.brigadier.Command;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.Commands;
@@ -89,6 +91,9 @@ public final class ButcherCraftDiagnostics {
         event.getDispatcher().register(Commands.literal(ButcherCraft.MOD_ID)
                 .then(Commands.literal("info")
                         .executes(context -> runInfo(context.getSource())))
+                .then(Commands.literal("time")
+                        .then(Commands.literal("status")
+                                .executes(context -> runTimeStatus(context.getSource()))))
                 .then(Commands.literal("diagnostic")
                         .executes(context -> runDiagnostic(context.getSource()))
                         .then(DevelopmentCheckpointCommands.branch())));
@@ -107,6 +112,40 @@ public final class ButcherCraftDiagnostics {
                 new InfoMessageLine("commands.butchercraft.info.version", List.of(modVersion)),
                 new InfoMessageLine("commands.butchercraft.info.status", List.of())
         );
+    }
+
+    private static int runTimeStatus(net.minecraft.commands.CommandSourceStack source) {
+        WorldTimeStatusSnapshot snapshot = WorldTimeService.INSTANCE.currentSnapshot(source.getServer())
+                .orElse(null);
+        if (snapshot == null) {
+            source.sendSuccess(() -> Component.literal("ButcherCraft world time source is unavailable."), false);
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("ButcherCraft World Time"), false);
+        source.sendSuccess(() -> Component.literal("Scaling enabled: " + snapshot.scalingEnabled()), false);
+        source.sendSuccess(() -> Component.literal("Configured day length: "
+                + snapshot.configuredDayLengthMinutes() + " minutes"), false);
+        source.sendSuccess(() -> Component.literal("Scale ratio: " + snapshot.scaleNumerator()
+                + "/" + snapshot.scaleDenominator() + " day-time units per server tick"), false);
+        source.sendSuccess(() -> Component.literal("gameTime: " + snapshot.gameTime()), false);
+        source.sendSuccess(() -> Component.literal("dayTime: " + snapshot.dayTime()), false);
+        source.sendSuccess(() -> Component.literal("Business calendar: day "
+                + snapshot.businessCalendar().businessDayIndex() + " "
+                + snapshot.businessTimeDisplay()), false);
+        source.sendSuccess(() -> Component.literal("World day identity: "
+                + snapshot.businessCalendar().worldDayIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Configuration identity: "
+                + snapshot.configurationIdentity().value()), false);
+        source.sendSuccess(() -> Component.literal("Source dimension: "
+                + snapshot.sourceDimensionIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Accumulator remainder: "
+                + snapshot.accumulatorRemainderNumerator()), false);
+        source.sendSuccess(() -> Component.literal("Last movement: "
+                + snapshot.movementClassification().serializedName()), false);
+        source.sendSuccess(() -> Component.literal("External conflict detected: "
+                + snapshot.externalConflictDetected()), false);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int runDiagnostic(net.minecraft.commands.CommandSourceStack source) {

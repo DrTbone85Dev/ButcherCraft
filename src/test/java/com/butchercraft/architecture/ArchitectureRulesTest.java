@@ -363,6 +363,44 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersWorldTimeAndBusinessCalendarFoundationAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedWorldTimeContracts = List.of(
+                "butchercraft:platform_contract/configurable_minecraft_day_length",
+                "butchercraft:platform_contract/deterministic_scaled_day_time_accumulator",
+                "butchercraft:platform_contract/business_calendar_day_time_derivation",
+                "butchercraft:platform_contract/world_time_no_catch_up_rule",
+                "butchercraft:platform_contract/world_time_dimension_policy",
+                "butchercraft:platform_contract/world_time_client_display_synchronization",
+                "butchercraft:platform_contract/world_time_diagnostics"
+        );
+
+        for (String contractId : implementedWorldTimeContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.ownerId().value().equals("butchercraft:simulation")
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/world_time")
+                        && authority.ownerId().value().equals("butchercraft:simulation")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:world_time_state")
+                        && descriptor.ownerId().value().equals("butchercraft:simulation")
+                        && descriptor.path().equals("butchercraft/world_time.json")));
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/scaled_day_time_advancement")
+                        && assignment.ownerId().value().equals("butchercraft:simulation")));
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/business_calendar_derivation")
+                        && assignment.ownerId().value().equals("butchercraft:simulation")));
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -892,7 +930,14 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/production_order_read_only_progress_presentation",
                         "butchercraft:platform_contract/production_order_manual_transfer_guidance",
                         "butchercraft:platform_contract/production_order_failure_guidance",
-                        "butchercraft:platform_contract/production_order_gametest_coverage"
+                        "butchercraft:platform_contract/production_order_gametest_coverage",
+                        "butchercraft:platform_contract/configurable_minecraft_day_length",
+                        "butchercraft:platform_contract/deterministic_scaled_day_time_accumulator",
+                        "butchercraft:platform_contract/business_calendar_day_time_derivation",
+                        "butchercraft:platform_contract/world_time_no_catch_up_rule",
+                        "butchercraft:platform_contract/world_time_dimension_policy",
+                        "butchercraft:platform_contract/world_time_client_display_synchronization",
+                        "butchercraft:platform_contract/world_time_diagnostics"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

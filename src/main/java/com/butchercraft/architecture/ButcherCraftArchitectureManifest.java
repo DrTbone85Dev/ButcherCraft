@@ -777,9 +777,48 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-019 Manual Production Chain UI and Player Guidance",
                 "Twenty-seven automated server-world GameTests cover Production Order creation, assignment, guidance, progress, failure visibility, and completion");
+        platformContract(builder, "butchercraft:platform_contract/configurable_minecraft_day_length",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "Simulation owns server-authoritative configuration and scaled Minecraft day-time progression");
+        platformContract(builder, "butchercraft:platform_contract/deterministic_scaled_day_time_accumulator",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "World time uses rational day-time advancement and persists the fractional accumulator remainder");
+        platformContract(builder, "butchercraft:platform_contract/business_calendar_day_time_derivation",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "Business Calendar snapshots derive from the scaled Minecraft dayTime source without owning an independent clock");
+        platformContract(builder, "butchercraft:platform_contract/world_time_no_catch_up_rule",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "Forward and backward day-time jumps update observations directly and do not generate burst Scheduler, Planning, or Production catch-up");
+        platformContract(builder, "butchercraft:platform_contract/world_time_dimension_policy",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "Schema-1 world time derives the shared Business Calendar from the Overworld and ignores fixed-time dimensions");
+        platformContract(builder, "butchercraft:platform_contract/world_time_client_display_synchronization",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "World time synchronizes bounded display snapshots to clients without serializing private accumulator authority");
+        platformContract(builder, "butchercraft:platform_contract/world_time_diagnostics",
+                ValidationCategory.SIMULATION, SIMULATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "Diagnostics expose scaled day-time status, Business Calendar identity, movement classification, and external conflict state");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
+        runtimeAuthority(builder, "butchercraft:runtime_authority/world_time",
+                SIMULATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-021 Configurable Minecraft Day Length and Business Calendar Foundation",
+                "One Simulation-owned World Time runtime authority controls scaled dayTime per loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/scheduler_world",
                 SCHEDULER, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-009 Scheduler Effects Live Enforcement",
@@ -803,6 +842,12 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/world_identity_external_root_digest", WORLD_IDENTITY);
         own(builder, "butchercraft:responsibility/simulation_time", SIMULATION);
         own(builder, "butchercraft:responsibility/simulation_clock_checkpoint_snapshot_content", SIMULATION);
+        own(builder, "butchercraft:responsibility/world_time_scale_configuration", SIMULATION);
+        own(builder, "butchercraft:responsibility/scaled_day_time_advancement", SIMULATION);
+        own(builder, "butchercraft:responsibility/world_day_identity", SIMULATION);
+        own(builder, "butchercraft:responsibility/business_calendar_derivation", SIMULATION);
+        own(builder, "butchercraft:responsibility/world_time_jump_observation", SIMULATION);
+        own(builder, "butchercraft:responsibility/world_time_client_display_sync", SIMULATION);
         own(builder, "butchercraft:responsibility/business_runtime", BUSINESS_RUNTIME);
         own(builder, "butchercraft:responsibility/workforce_definitions", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
@@ -893,6 +938,48 @@ public final class ButcherCraftArchitectureManifest {
                 SIMULATION,
                 ValidationCategory.OWNERSHIP,
                 "AI-0022 assigns authoritative simulation time to the Simulation Clock"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/world_time_scale_configuration",
+                SIMULATION,
+                ValidationCategory.SIMULATION,
+                "IM-021 assigns scaled day-time configuration identity to the Simulation owner"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/scaled_day_time_advancement",
+                SIMULATION,
+                ValidationCategory.SIMULATION,
+                "IM-021 assigns scaled Minecraft dayTime advancement to the Simulation-owned World Time service"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/world_day_identity",
+                SIMULATION,
+                ValidationCategory.SIMULATION,
+                "IM-021 assigns world-day identity derivation to the Simulation-owned Business Calendar foundation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/business_calendar_derivation",
+                SIMULATION,
+                ValidationCategory.SIMULATION,
+                "IM-021 assigns Business Calendar derivation from dayTime to Simulation without transferring Planning authority"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/world_time_jump_observation",
+                SIMULATION,
+                ValidationCategory.SIMULATION,
+                "IM-021 assigns sleep, command, and external day-time jump observations to the Simulation owner"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/world_time_client_display_sync",
+                SIMULATION,
+                ValidationCategory.SIMULATION,
+                "IM-021 assigns bounded display-only client synchronization to the Simulation-owned World Time service"
         );
         contract(
                 builder,
@@ -1761,6 +1848,8 @@ public final class ButcherCraftArchitectureManifest {
                 WORLD_IDENTITY, 1, PersistenceDataKind.IMMUTABLE_DEFINITIONS, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:simulation_state", "butchercraft/simulation_state.json",
                 SIMULATION, 1, PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:world_time_state", "butchercraft/world_time.json",
+                SIMULATION, 1, PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:business_runtime", "butchercraft/business_runtime.json",
                 BUSINESS_RUNTIME, 1, PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:workforce_definitions", "butchercraft/workforce_definitions.json",
@@ -1907,6 +1996,12 @@ public final class ButcherCraftArchitectureManifest {
         invariant(builder, "butchercraft:invariant/execution_bounded_runtime",
                 SimulationInvariantType.BOUNDED_WORK,
                 "Execution runtime work, attempts, active operations, and pending owner results are bounded");
+        invariant(builder, "butchercraft:invariant/deterministic_scaled_day_time",
+                SimulationInvariantType.REPLAY_COMPATIBILITY,
+                "Scaled Minecraft dayTime advances from explicit configuration and rational accumulator state");
+        invariant(builder, "butchercraft:invariant/world_time_no_burst_catch_up",
+                SimulationInvariantType.BOUNDED_WORK,
+                "dayTime jumps update Business Calendar observation without replaying skipped Scheduler, Planning, or Production intervals");
     }
 
     private static ArchitectureComponent component(ArchitectureId id, String name, String packageRoot) {
