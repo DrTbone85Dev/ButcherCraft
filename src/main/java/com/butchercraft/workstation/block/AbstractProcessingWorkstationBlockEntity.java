@@ -10,6 +10,8 @@ import com.butchercraft.workstation.WorkstationFailure;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationOperationLookup;
 import com.butchercraft.workstation.WorkstationProcessingController;
+import com.butchercraft.workstation.WorkstationProductionRequestResult;
+import com.butchercraft.workstation.WorkstationProductionSnapshot;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationTickContext;
 import net.minecraft.core.BlockPos;
@@ -189,6 +191,14 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
 
     protected final void tickController(WorkstationTickContext tickContext) {
         controller.serverTickWithContext(tickContext);
+    }
+
+    public final WorkstationProductionSnapshot productionSnapshot() {
+        return controller.productionSnapshot();
+    }
+
+    public final WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
+        return controller.requestProductionProcessing(tickContext);
     }
 
     protected WorkstationExecutionEffectResult completeScheduledExecution(

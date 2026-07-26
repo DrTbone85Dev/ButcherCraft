@@ -1,8 +1,8 @@
 # Grinder Execution Vertical Slice
 
-Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process.
+Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation.
 
-This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
+This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration beyond the IM-016 promoted Grinder observation path, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
 
 ## Selected Slice
 
@@ -108,12 +108,18 @@ IM-015 promotes Pork Trim and Ground Pork presentation for the Grinder while ret
 
 The existing bison grinding definition remains prototype fixture content. It verifies data-driven definitions and resolver behavior but is not included in the promoted live Grinder Execution authorization set.
 
+## IM-016 Production Observation
+
+The promoted Grinder is now production-capable for one narrow integration path. Production may assign a Run to a Grinder workstation identity and promoted Grinder process identity, ask the existing Grinder controller to process through normal validation, and observe the resulting Execution Operation Identity.
+
+Production completes the Run only after observing both Grinder owner result evidence and Execution result evidence. It records Production-owned completion evidence that references those identities and digests. It does not mutate Grinder ItemStack slots, issue or consume Execution authorization, infer success from elapsed time or Scheduler completion alone, duplicate Grinder state, or automatically rerun rejection, failure, cancellation-after-start, or `UNKNOWN_OUTCOME`.
+
 ## Remaining Gates
 
 - General workstation Execution framework.
 - Additional promoted grinder operations beyond Beef Trim and Pork Trim.
 - Bandsaw, Packaging Table, and development workstation Execution migration.
-- Production-backed workstation execution.
+- Additional Production-backed workstation execution beyond the promoted Grinder path.
 - Economic Inventory and Transaction integration for player workstations.
 - Allocation and Planning automation.
 - Operator recovery UI for unknown outcomes.

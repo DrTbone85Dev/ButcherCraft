@@ -24,7 +24,7 @@ public final class ProductionRunRuntime {
                 id, planId, ProductionRunStatus.PLANNED, requireTick(simulationTick),
                 OptionalLong.empty(), OptionalLong.empty(), OptionalLong.empty(),
                 requiredWorkUnits, 0L, 0, OptionalLong.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), 0L, ProductionSchema.CURRENT_VERSION
+                Optional.empty(), Optional.empty(), Optional.empty(), 0L, ProductionSchema.CURRENT_VERSION
         ));
     }
 
@@ -98,6 +98,9 @@ public final class ProductionRunRuntime {
     }
 
     public synchronized void awaitTransaction(long tick) {
+        if (state.workstationAssignment().isPresent()) {
+            throw new IllegalStateException("Workstation-assigned Production runs do not await Transactions");
+        }
         if (state.status() != ProductionRunStatus.RUNNING || state.currentWorkUnits() != state.requiredWorkUnits()) {
             throw new IllegalStateException("Production transaction requires complete progress");
         }
@@ -113,9 +116,87 @@ public final class ProductionRunRuntime {
         if (state.completionTransactionId().isPresent()) {
             throw new IllegalStateException("Production completion Transaction is already recorded");
         }
+        if (state.workstationAssignment().flatMap(ProductionWorkstationAssignment::completionEvidence).isPresent()) {
+            throw new IllegalStateException("Production run already has workstation completion evidence");
+        }
         replace(ProductionRunStatus.COMPLETED, tick, state.requiredWorkUnits(), state.executionAttemptCount(),
                 OptionalLong.empty(), state.scheduledWorkId(), Optional.of(transactionId),
                 Optional.empty(), Optional.empty(), state.startedTick(), OptionalLong.empty(), OptionalLong.of(tick));
+    }
+
+    public synchronized void assignWorkstation(ProductionWorkstationAssignment assignment, long tick) {
+        Objects.requireNonNull(assignment, "assignment");
+        requireNonterminal();
+        if (state.scheduledWorkId().isPresent() || state.completionTransactionId().isPresent()) {
+            throw new IllegalStateException("Production run already has a different completion path");
+        }
+        if (state.status() == ProductionRunStatus.AWAITING_TRANSACTION
+                || state.status() == ProductionRunStatus.SCHEDULED
+                || state.status() == ProductionRunStatus.RUNNING
+                || state.status() == ProductionRunStatus.PAUSED) {
+            throw new IllegalStateException("Production run is not eligible for workstation assignment");
+        }
+        if (state.workstationAssignment().isPresent()) {
+            ProductionWorkstationAssignment existing = state.workstationAssignment().orElseThrow();
+            if (existing.sameTarget(assignment.workstationIdentity(), assignment.processIdentity())
+                    && !existing.executionStarted()) {
+                return;
+            }
+            throw new IllegalStateException("Production run already has a workstation assignment");
+        }
+        ProductionRunStatus nextStatus = state.status() == ProductionRunStatus.PLANNED
+                || state.status() == ProductionRunStatus.BLOCKED
+                ? ProductionRunStatus.READY
+                : state.status();
+        replace(nextStatus, tick, state.currentWorkUnits(), state.executionAttemptCount(),
+                OptionalLong.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                state.startedTick(), OptionalLong.empty(), state.completedTick(), Optional.of(assignment));
+    }
+
+    public synchronized void bindWorkstationExecution(
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            long tick
+    ) {
+        requireNonterminal();
+        ProductionWorkstationAssignment assignment = requireWorkstationAssignment(workstationIdentity, processIdentity);
+        ProductionWorkstationAssignment updated = assignment.withExecutionOperation(executionOperationIdentity);
+        boolean alreadyBound = assignment.executionOperationIdentity().isPresent();
+        OptionalLong started = state.startedTick().isPresent() ? state.startedTick() : OptionalLong.of(requireTick(tick));
+        replace(ProductionRunStatus.RUNNING, tick, state.currentWorkUnits(),
+                alreadyBound ? state.executionAttemptCount() : Math.addExact(state.executionAttemptCount(), 1),
+                OptionalLong.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                started, OptionalLong.empty(), state.completedTick(), Optional.of(updated));
+    }
+
+    public synchronized void completeFromWorkstation(
+            ProductionWorkstationCompletionEvidence evidence,
+            long tick
+    ) {
+        Objects.requireNonNull(evidence, "evidence");
+        if (state.status() == ProductionRunStatus.COMPLETED
+                && state.workstationAssignment().flatMap(ProductionWorkstationAssignment::completionEvidence)
+                .filter(evidence::equals)
+                .isPresent()) {
+            return;
+        }
+        requireNonterminal();
+        if (!evidence.runId().equals(state.id())) {
+            throw new IllegalStateException("Production workstation completion references a different Run");
+        }
+        if (evidence.completedSimulationTick() != requireTick(tick)) {
+            throw new IllegalArgumentException("Production workstation completion tick mismatch");
+        }
+        ProductionWorkstationAssignment assignment = requireWorkstationAssignment(
+                evidence.workstationIdentity(),
+                evidence.processIdentity()
+        );
+        ProductionWorkstationAssignment updated = assignment.withCompletionEvidence(evidence);
+        replace(ProductionRunStatus.COMPLETED, tick, state.requiredWorkUnits(), state.executionAttemptCount(),
+                OptionalLong.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                state.startedTick().isPresent() ? state.startedTick() : OptionalLong.of(tick),
+                OptionalLong.empty(), OptionalLong.of(tick), Optional.of(updated));
     }
 
     public synchronized void fail(ProductionFailure failure, long tick) {
@@ -128,6 +209,9 @@ public final class ProductionRunRuntime {
 
     public synchronized void cancel(String reason, long tick) {
         requireNonterminal();
+        if (state.workstationAssignment().filter(ProductionWorkstationAssignment::executionStarted).isPresent()) {
+            throw new IllegalStateException("Workstation-owned processing has already begun");
+        }
         replace(ProductionRunStatus.CANCELLED, tick, state.currentWorkUnits(), state.executionAttemptCount(),
                 OptionalLong.empty(), state.scheduledWorkId(), state.completionTransactionId(),
                 Optional.of(ProductionFailureCode.INVALID_STATUS),
@@ -169,12 +253,44 @@ public final class ProductionRunRuntime {
             OptionalLong pausedTick,
             OptionalLong completedTick
     ) {
+        replace(status, tick, progress, attempts, nextEligibleTick, workId, transactionId, failureCode,
+                failureSummary, startedTick, pausedTick, completedTick, state.workstationAssignment());
+    }
+
+    private void replace(
+            ProductionRunStatus status,
+            long tick,
+            long progress,
+            int attempts,
+            OptionalLong nextEligibleTick,
+            Optional<SimulationWorkId> workId,
+            Optional<TransactionId> transactionId,
+            Optional<ProductionFailureCode> failureCode,
+            Optional<String> failureSummary,
+            OptionalLong startedTick,
+            OptionalLong pausedTick,
+            OptionalLong completedTick,
+            Optional<ProductionWorkstationAssignment> workstationAssignment
+    ) {
         requireCurrentOrFutureTick(tick);
         state = new ProductionRunSnapshot(
                 state.id(), state.planId(), status, tick, startedTick, pausedTick, completedTick,
                 state.requiredWorkUnits(), progress, attempts, nextEligibleTick, workId, transactionId,
-                failureCode, failureSummary, Math.addExact(state.revision(), 1L), state.schemaVersion()
+                workstationAssignment, failureCode, failureSummary, Math.addExact(state.revision(), 1L),
+                state.schemaVersion()
         );
+    }
+
+    private ProductionWorkstationAssignment requireWorkstationAssignment(
+            String workstationIdentity,
+            String processIdentity
+    ) {
+        ProductionWorkstationAssignment assignment = state.workstationAssignment()
+                .orElseThrow(() -> new IllegalStateException("Production run has no workstation assignment"));
+        if (!assignment.sameTarget(workstationIdentity, processIdentity)) {
+            throw new IllegalStateException("Production workstation assignment target mismatch");
+        }
+        return assignment;
     }
 
     private void requireCurrentOrFutureTick(long tick) {

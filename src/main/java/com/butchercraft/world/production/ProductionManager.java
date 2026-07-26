@@ -50,6 +50,8 @@ public final class ProductionManager {
             new EnumMap<>(ProductionRunStatus.class);
     private final Map<SimulationWorkId, ProductionRunId> runByWork = new LinkedHashMap<>();
     private final Map<TransactionId, ProductionRunId> runByTransaction = new LinkedHashMap<>();
+    private final Map<String, ProductionRunId> runByWorkstationExecution = new LinkedHashMap<>();
+    private final Map<String, ProductionRunId> runByWorkstationCompletionEvidence = new LinkedHashMap<>();
     private final NavigableMap<Long, LinkedHashSet<ProductionRunId>> completedByTick = new TreeMap<>();
     private final NavigableMap<Long, LinkedHashSet<ProductionRunId>> failedByTick = new TreeMap<>();
     private ProductionProcessRegistry processRegistry;
@@ -246,6 +248,24 @@ public final class ProductionManager {
         return runId == null ? Optional.empty() : findRun(runId);
     }
 
+    public synchronized Optional<ProductionRunSnapshot> findByWorkstationExecution(String executionOperationIdentity) {
+        String identity = ProductionValidation.requireExternalIdentity(
+                executionOperationIdentity,
+                "Execution operation identity"
+        );
+        ProductionRunId runId = runByWorkstationExecution.get(identity);
+        return runId == null ? Optional.empty() : findRun(runId);
+    }
+
+    public synchronized Optional<ProductionRunSnapshot> findByWorkstationCompletionEvidence(String evidenceIdentity) {
+        String identity = ProductionValidation.requireExternalIdentity(
+                evidenceIdentity,
+                "Production workstation completion evidence identity"
+        );
+        ProductionRunId runId = runByWorkstationCompletionEvidence.get(identity);
+        return runId == null ? Optional.empty() : findRun(runId);
+    }
+
     public synchronized List<ProductionRunSnapshot> activeRuns() {
         return runs().stream().filter(run -> !run.status().isTerminal()).toList();
     }
@@ -272,6 +292,203 @@ public final class ProductionManager {
                 .latestCompletionTick().stream().anyMatch(deadline -> deadline < tick)).toList();
     }
 
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> assignWorkstation(
+            ProductionRunId runId,
+            String workstationIdentity,
+            String processIdentity,
+            long tick
+    ) {
+        ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
+        if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
+        ProductionRunSnapshot current = runtime.snapshot();
+        ProductionWorkstationAssignment assignment;
+        try {
+            assignment = ProductionWorkstationAssignment.assigned(workstationIdentity, processIdentity);
+        } catch (IllegalArgumentException exception) {
+            return rejected(ProductionFailureCode.VALIDATION_FAILED,
+                    message(exception, "Invalid Production workstation assignment"), runId.value());
+        }
+        if (current.workstationAssignment().isPresent()) {
+            ProductionWorkstationAssignment existing = current.workstationAssignment().orElseThrow();
+            if (existing.sameTarget(assignment.workstationIdentity(), assignment.processIdentity())) {
+                return ProductionOperationResult.accepted(current);
+            }
+            return rejected(ProductionFailureCode.WORKSTATION_ASSIGNMENT_CONFLICT,
+                    "Production run is already assigned to a different workstation process", runId.value());
+        }
+        if (current.status().isTerminal()) {
+            return rejected(ProductionFailureCode.TERMINAL_RUN, "Production run is terminal", runId.value());
+        }
+        try {
+            mutate(runtime, () -> runtime.assignWorkstation(assignment, tick));
+        } catch (RuntimeException exception) {
+            return rejected(ProductionFailureCode.WORKSTATION_ASSIGNMENT_CONFLICT,
+                    message(exception, "Production workstation assignment was rejected"), runId.value());
+        }
+        return ProductionOperationResult.accepted(runtime.snapshot());
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> recordWorkstationExecution(
+            ProductionRunId runId,
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            long tick
+    ) {
+        ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
+        if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
+        ProductionRunSnapshot current = runtime.snapshot();
+        String executionIdentity;
+        try {
+            executionIdentity = ProductionValidation.requireExternalIdentity(
+                    executionOperationIdentity,
+                    "Execution operation identity"
+            );
+            ProductionValidation.requireExternalIdentity(workstationIdentity, "Production workstation identity");
+            ProductionValidation.requireExternalIdentity(processIdentity, "Production process identity");
+        } catch (IllegalArgumentException exception) {
+            return rejected(ProductionFailureCode.VALIDATION_FAILED,
+                    message(exception, "Invalid Production workstation execution binding"), runId.value());
+        }
+        ProductionRunId duplicate = runByWorkstationExecution.get(executionIdentity);
+        if (duplicate != null && !duplicate.equals(runId)) {
+            return rejected(ProductionFailureCode.WORKSTATION_EXECUTION_CONFLICT,
+                    "Execution operation is already bound to a different Production run", executionIdentity);
+        }
+        if (current.workstationAssignment().isPresent()
+                && !current.workstationAssignment().orElseThrow().sameTarget(workstationIdentity, processIdentity)) {
+            return rejected(ProductionFailureCode.WORKSTATION_EXECUTION_CONFLICT,
+                    "Production workstation execution target does not match the Run assignment", runId.value());
+        }
+        if (current.workstationAssignment()
+                .flatMap(ProductionWorkstationAssignment::executionOperationIdentity)
+                .filter(executionIdentity::equals)
+                .isPresent()) {
+            return ProductionOperationResult.accepted(current);
+        }
+        if (current.status() == ProductionRunStatus.COMPLETED
+                && current.workstationAssignment()
+                .flatMap(ProductionWorkstationAssignment::executionOperationIdentity)
+                .filter(executionIdentity::equals)
+                .isPresent()) {
+            return ProductionOperationResult.accepted(current);
+        }
+        if (current.status().isTerminal()) {
+            return rejected(ProductionFailureCode.TERMINAL_RUN, "Production run is terminal", runId.value());
+        }
+        if (current.workstationAssignment().isEmpty()) {
+            return rejected(ProductionFailureCode.WORKSTATION_ASSIGNMENT_CONFLICT,
+                    "Production run has no workstation assignment", runId.value());
+        }
+        try {
+            mutate(runtime, () -> runtime.bindWorkstationExecution(
+                    workstationIdentity,
+                    processIdentity,
+                    executionIdentity,
+                    tick
+            ));
+        } catch (RuntimeException exception) {
+            return rejected(ProductionFailureCode.WORKSTATION_EXECUTION_CONFLICT,
+                    message(exception, "Production workstation execution binding was rejected"), runId.value());
+        }
+        return ProductionOperationResult.accepted(runtime.snapshot());
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> completeFromWorkstation(
+            ProductionRunId runId,
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            String executionTerminalStatus,
+            String ownerResultIdentity,
+            String ownerResultContentDigest,
+            String executionResultEvidenceIdentity,
+            String executionResultContentDigest,
+            long tick
+    ) {
+        ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
+        if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
+        ProductionRunSnapshot current = runtime.snapshot();
+        ProductionWorkstationCompletionEvidence evidence;
+        try {
+            evidence = ProductionWorkstationCompletionEvidence.published(
+                    runId,
+                    workstationIdentity,
+                    processIdentity,
+                    executionOperationIdentity,
+                    executionTerminalStatus,
+                    ownerResultIdentity,
+                    ownerResultContentDigest,
+                    executionResultEvidenceIdentity,
+                    executionResultContentDigest,
+                    tick
+            );
+        } catch (IllegalArgumentException exception) {
+            return rejected(ProductionFailureCode.VALIDATION_FAILED,
+                    message(exception, "Invalid Production workstation completion evidence"), runId.value());
+        }
+        ProductionRunId duplicateExecution = runByWorkstationExecution.get(evidence.executionOperationIdentity());
+        if (duplicateExecution != null && !duplicateExecution.equals(runId)) {
+            return rejected(ProductionFailureCode.WORKSTATION_EXECUTION_CONFLICT,
+                    "Execution operation is already bound to a different Production run",
+                    evidence.executionOperationIdentity());
+        }
+        ProductionRunId duplicateEvidence = runByWorkstationCompletionEvidence.get(evidence.evidenceIdentity());
+        if (duplicateEvidence != null && !duplicateEvidence.equals(runId)) {
+            return rejected(ProductionFailureCode.WORKSTATION_EXECUTION_CONFLICT,
+                    "Production completion evidence is already bound to a different run",
+                    evidence.evidenceIdentity());
+        }
+        if (current.status() == ProductionRunStatus.COMPLETED) {
+            boolean duplicateCompletion = current.workstationAssignment()
+                    .flatMap(ProductionWorkstationAssignment::completionEvidence)
+                    .filter(evidence::equals)
+                    .isPresent();
+            if (duplicateCompletion) return ProductionOperationResult.accepted(current);
+            return rejected(ProductionFailureCode.WORKSTATION_EXECUTION_CONFLICT,
+                    "Production run already has different completion evidence", runId.value());
+        }
+        if (current.status().isTerminal()) {
+            return rejected(ProductionFailureCode.TERMINAL_RUN, "Production run is terminal", runId.value());
+        }
+        if (current.workstationAssignment().isEmpty()
+                || current.workstationAssignment().orElseThrow().executionOperationIdentity().isEmpty()) {
+            return rejected(ProductionFailureCode.WORKSTATION_COMPLETION_NOT_READY,
+                    "Production run has not observed Grinder Execution yet", runId.value());
+        }
+        try {
+            mutate(runtime, () -> runtime.completeFromWorkstation(evidence, tick));
+        } catch (RuntimeException exception) {
+            return rejected(ProductionFailureCode.WORKSTATION_COMPLETION_NOT_READY,
+                    message(exception, "Production workstation completion was rejected"), runId.value());
+        }
+        return ProductionOperationResult.accepted(runtime.snapshot());
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> recordWorkstationRejection(
+            ProductionRunId runId,
+            String message,
+            long tick
+    ) {
+        return failFromWorkstation(runId, ProductionFailureCode.WORKSTATION_REJECTED, message, tick);
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> recordWorkstationFailure(
+            ProductionRunId runId,
+            String message,
+            long tick
+    ) {
+        return failFromWorkstation(runId, ProductionFailureCode.WORKSTATION_FAILED, message, tick);
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> recordWorkstationUnknownOutcome(
+            ProductionRunId runId,
+            String message,
+            long tick
+    ) {
+        return failFromWorkstation(runId, ProductionFailureCode.WORKSTATION_UNKNOWN_OUTCOME, message, tick);
+    }
+
     public synchronized ProductionOperationResult<ProductionRunSnapshot> schedule(
             ProductionRunId runId,
             SimulationSchedulerManager scheduler,
@@ -289,6 +506,13 @@ public final class ProductionManager {
                     ProductionFailureCode.WORK_ALREADY_BOUND,
                     "Production run already has scheduled Work",
                     current.scheduledWorkId().orElseThrow().value()
+            );
+        }
+        if (current.workstationAssignment().isPresent()) {
+            return rejected(
+                    ProductionFailureCode.WORK_ALREADY_BOUND,
+                    "Production run is assigned to workstation-owned execution",
+                    runId.value()
             );
         }
         ProductionPlanDefinition plan = planRegistry.find(current.planId()).orElseThrow();
@@ -465,6 +689,10 @@ public final class ProductionManager {
         if (current.status().isTerminal()) {
             return rejected(ProductionFailureCode.TERMINAL_RUN, "Production run is terminal", runId.value());
         }
+        if (current.workstationAssignment().filter(ProductionWorkstationAssignment::executionStarted).isPresent()) {
+            return rejected(ProductionFailureCode.INVALID_STATUS,
+                    "Production cannot cancel after Grinder processing begins", runId.value());
+        }
         if (current.scheduledWorkId().isPresent()) {
             com.butchercraft.world.simulation.scheduler.SchedulerOperationResult cancelled =
                     scheduler.cancel(current.scheduledWorkId().orElseThrow(), tick, reason);
@@ -506,6 +734,39 @@ public final class ProductionManager {
         }
         validateDefinitions();
         validateLoadedRunReferences();
+    }
+
+    private ProductionOperationResult<ProductionRunSnapshot> failFromWorkstation(
+            ProductionRunId runId,
+            ProductionFailureCode code,
+            String message,
+            long tick
+    ) {
+        ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
+        if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
+        ProductionRunSnapshot current = runtime.snapshot();
+        if (current.status().isTerminal()) {
+            if (current.failureCode().filter(code::equals).isPresent()) {
+                return ProductionOperationResult.accepted(current);
+            }
+            return rejected(ProductionFailureCode.TERMINAL_RUN, "Production run is terminal", runId.value());
+        }
+        if (current.workstationAssignment().isEmpty()) {
+            return rejected(ProductionFailureCode.WORKSTATION_ASSIGNMENT_CONFLICT,
+                    "Production run has no workstation assignment", runId.value());
+        }
+        ProductionFailure failure = ProductionFailure.of(
+                code,
+                ProductionValidation.requireText(message, "Production workstation failure message", 2_048),
+                runId.value()
+        );
+        try {
+            mutate(runtime, () -> runtime.fail(failure, tick));
+        } catch (RuntimeException exception) {
+            return rejected(ProductionFailureCode.INVALID_STATUS,
+                    message(exception, "Production workstation failure could not be recorded"), runId.value());
+        }
+        return ProductionOperationResult.accepted(runtime.snapshot());
     }
 
     private SimulationWorkResult handleTransactionFailure(
@@ -617,6 +878,14 @@ public final class ProductionManager {
                     throw new IllegalArgumentException("Production completion Transaction is not APPLIED");
                 }
             }
+            run.workstationAssignment().ifPresent(assignment -> assignment.completionEvidence().ifPresent(evidence -> {
+                if (!evidence.runId().equals(run.id())) {
+                    throw new IllegalArgumentException("Production workstation completion references the wrong Run");
+                }
+                if (!evidence.digestMatches()) {
+                    throw new IllegalArgumentException("Production workstation completion evidence digest mismatch");
+                }
+            }));
         }
     }
 
@@ -646,6 +915,23 @@ public final class ProductionManager {
                 throw new IllegalArgumentException("Transaction completes multiple production Runs");
             }
         });
+        run.workstationAssignment().flatMap(ProductionWorkstationAssignment::executionOperationIdentity)
+                .ifPresent(identity -> {
+                    ProductionRunId duplicate = runByWorkstationExecution.putIfAbsent(identity, run.id());
+                    if (duplicate != null && !duplicate.equals(run.id())) {
+                        throw new IllegalArgumentException("Execution operation is bound to multiple production Runs");
+                    }
+                });
+        run.workstationAssignment().flatMap(ProductionWorkstationAssignment::completionEvidence)
+                .ifPresent(evidence -> {
+                    ProductionRunId duplicate = runByWorkstationCompletionEvidence.putIfAbsent(
+                            evidence.evidenceIdentity(),
+                            run.id()
+                    );
+                    if (duplicate != null && !duplicate.equals(run.id())) {
+                        throw new IllegalArgumentException("Production completion evidence is bound to multiple Runs");
+                    }
+                });
         if (run.status() == ProductionRunStatus.COMPLETED) {
             completedByTick.computeIfAbsent(run.completedTick().orElseThrow(),
                     ignored -> new LinkedHashSet<>()).add(run.id());
@@ -660,6 +946,11 @@ public final class ProductionManager {
         runsByStatus.get(run.status()).remove(run.id());
         run.scheduledWorkId().ifPresent(runByWork::remove);
         run.completionTransactionId().ifPresent(runByTransaction::remove);
+        run.workstationAssignment().flatMap(ProductionWorkstationAssignment::executionOperationIdentity)
+                .ifPresent(runByWorkstationExecution::remove);
+        run.workstationAssignment().flatMap(ProductionWorkstationAssignment::completionEvidence)
+                .map(ProductionWorkstationCompletionEvidence::evidenceIdentity)
+                .ifPresent(runByWorkstationCompletionEvidence::remove);
         if (run.status() == ProductionRunStatus.COMPLETED) {
             removeTickIndex(completedByTick, run.completedTick().orElseThrow(), run.id());
         }

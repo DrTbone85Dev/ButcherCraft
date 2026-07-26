@@ -312,6 +312,25 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersProductionGrinderIntegrationAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedIntegrationContracts = List.of(
+                "butchercraft:platform_contract/production_grinder_assignment_binding",
+                "butchercraft:platform_contract/production_grinder_completion_evidence",
+                "butchercraft:platform_contract/production_grinder_authority_boundary",
+                "butchercraft:platform_contract/production_grinder_duplicate_safety",
+                "butchercraft:platform_contract/production_grinder_persistence_references"
+        );
+
+        for (String contractId : implementedIntegrationContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -819,7 +838,12 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
                         "butchercraft:platform_contract/grinder_survival_obtainability",
                         "butchercraft:platform_contract/grinder_player_visible_status_sync",
-                        "butchercraft:platform_contract/grinder_active_break_preservation"
+                        "butchercraft:platform_contract/grinder_active_break_preservation",
+                        "butchercraft:platform_contract/production_grinder_assignment_binding",
+                        "butchercraft:platform_contract/production_grinder_completion_evidence",
+                        "butchercraft:platform_contract/production_grinder_authority_boundary",
+                        "butchercraft:platform_contract/production_grinder_duplicate_safety",
+                        "butchercraft:platform_contract/production_grinder_persistence_references"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

@@ -667,6 +667,31 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-014 Grinder Gameplay Promotion and Hardening",
                 "Breaking an active Grinder cancels pending workstation processing, drops preserved input, and does not publish output");
+        platformContract(builder, "butchercraft:platform_contract/production_grinder_assignment_binding",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-016 Grinder Integration with the Production Framework",
+                "Production can assign one promoted Grinder process to a Run by binding Run, workstation, process, and Execution operation identities");
+        platformContract(builder, "butchercraft:platform_contract/production_grinder_completion_evidence",
+                ValidationCategory.PRODUCTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-016 Grinder Integration with the Production Framework",
+                "Production completes a Grinder-assigned Run only after observing Grinder owner result evidence and Execution result evidence");
+        platformContract(builder, "butchercraft:platform_contract/production_grinder_authority_boundary",
+                ValidationCategory.OWNERSHIP, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-016 Grinder Integration with the Production Framework",
+                "Production records Grinder assignment and completion evidence without mutating workstation slots or consuming Execution authorization");
+        platformContract(builder, "butchercraft:platform_contract/production_grinder_duplicate_safety",
+                ValidationCategory.EXECUTION, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-016 Grinder Integration with the Production Framework",
+                "Duplicate Production observations of the same Grinder Execution return existing authoritative Run state and reject conflicting identities");
+        platformContract(builder, "butchercraft:platform_contract/production_grinder_persistence_references",
+                ValidationCategory.PERSISTENCE, PRODUCTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-016 Grinder Integration with the Production Framework",
+                "Production persists Grinder-assigned Run references and Production-owned completion evidence without duplicating Grinder or Execution state");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -717,6 +742,8 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/production_processes", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_plans", PRODUCTION);
         own(builder, "butchercraft:responsibility/production_run_runtime", PRODUCTION);
+        own(builder, "butchercraft:responsibility/production_workstation_assignment", PRODUCTION);
+        own(builder, "butchercraft:responsibility/production_workstation_completion_evidence", PRODUCTION);
         own(builder, "butchercraft:responsibility/planning_cadence_configuration", PLANNING);
         own(builder, "butchercraft:responsibility/planning_trigger_identity", PLANNING);
         own(builder, "butchercraft:responsibility/planning_input_capture", PLANNING);
@@ -1064,6 +1091,20 @@ public final class ButcherCraftArchitectureManifest {
                 PRODUCTION,
                 ValidationCategory.EXECUTION,
                 "DEC-0073 assigns Production Run runtime to Production"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/production_workstation_assignment",
+                PRODUCTION,
+                ValidationCategory.PRODUCTION,
+                "IM-016 assigns Grinder workstation assignment references to Production"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/production_workstation_completion_evidence",
+                PRODUCTION,
+                ValidationCategory.PRODUCTION,
+                "IM-016 assigns Production-owned Grinder completion evidence to Production"
         );
         contract(
                 builder,

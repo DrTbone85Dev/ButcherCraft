@@ -136,6 +136,42 @@ public final class WorkstationProcessingController {
         return Optional.ofNullable(selectedOperationId);
     }
 
+    public WorkstationProductionSnapshot productionSnapshot() {
+        return new WorkstationProductionSnapshot(
+                state,
+                Optional.ofNullable(selectedOperationId),
+                Optional.ofNullable(activeExecutionOperationId),
+                Optional.ofNullable(ownerResultEvidence),
+                Optional.ofNullable(lastFailure)
+        );
+    }
+
+    public WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
+        Objects.requireNonNull(tickContext, "tickContext");
+        if (state == WorkstationState.IDLE) {
+            if (inventory.input().isEmpty()) {
+                WorkstationFailure failure = WorkstationFailure.of(
+                        WorkstationFailureCode.NO_INPUT,
+                        "Production requested workstation processing without workstation input"
+                );
+                return WorkstationProductionRequestResult.rejected(productionSnapshot(), failure);
+            }
+            setState(WorkstationState.READY);
+        }
+        if (state == WorkstationState.READY) {
+            startProcessing(tickContext.registryAccess(), tickContext);
+        }
+        WorkstationProductionSnapshot snapshot = productionSnapshot();
+        if (state == WorkstationState.BLOCKED || state == WorkstationState.ERROR) {
+            WorkstationFailure failure = lastFailure().orElseGet(() -> WorkstationFailure.of(
+                    WorkstationFailureCode.INVALID_WORKSTATION_STATE,
+                    "Production-requested workstation processing stopped without a typed workstation failure"
+            ));
+            return WorkstationProductionRequestResult.rejected(snapshot, failure);
+        }
+        return WorkstationProductionRequestResult.accepted(snapshot);
+    }
+
     public int elapsedTicks() {
         return elapsedTicks;
     }

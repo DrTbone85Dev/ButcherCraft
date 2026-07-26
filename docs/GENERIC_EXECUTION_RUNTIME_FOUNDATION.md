@@ -2,7 +2,7 @@
 
 Status: IM-011 implemented foundation.
 
-This note records the first generic Execution runtime implementation slice. It does not change RFC-0023, ADR status, Allocation integration, or public extension contracts. IM-012 later connects the first grinder workstation operation to this runtime, and IM-015 extends that same Grinder handler to the promoted Pork Trim process. General workstation invocation remains gated.
+This note records the first generic Execution runtime implementation slice. It does not change RFC-0023, ADR status, Allocation integration, or public extension contracts. IM-012 later connects the first grinder workstation operation to this runtime, IM-015 extends that same Grinder handler to the promoted Pork Trim process, and IM-016 lets Production observe terminal Grinder Execution evidence without acquiring Execution authority. General workstation invocation remains gated.
 
 ## Implemented Scope
 
@@ -27,6 +27,7 @@ The file contains immutable authorization evidence, operation lifecycle state, a
 
 - Allocation-to-Execution handoff.
 - Planning-to-Execution handoff.
+- Production-owned Execution authorization or lifecycle mutation.
 - General workstation or player-facing invocation beyond the IM-012 grinder vertical slice.
 - Startup recovery orchestration beyond local unresolved-outcome classification.
 - Checkpoint-owned live Execution snapshot publication.

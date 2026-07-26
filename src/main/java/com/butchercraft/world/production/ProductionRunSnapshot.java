@@ -21,6 +21,7 @@ public record ProductionRunSnapshot(
         OptionalLong nextEligibleTick,
         Optional<SimulationWorkId> scheduledWorkId,
         Optional<TransactionId> completionTransactionId,
+        Optional<ProductionWorkstationAssignment> workstationAssignment,
         Optional<ProductionFailureCode> failureCode,
         Optional<String> failureSummary,
         long revision,
@@ -40,6 +41,7 @@ public record ProductionRunSnapshot(
         nextEligibleTick = Objects.requireNonNull(nextEligibleTick, "nextEligibleTick");
         scheduledWorkId = Objects.requireNonNull(scheduledWorkId, "scheduledWorkId");
         completionTransactionId = Objects.requireNonNull(completionTransactionId, "completionTransactionId");
+        workstationAssignment = Objects.requireNonNull(workstationAssignment, "workstationAssignment");
         failureCode = Objects.requireNonNull(failureCode, "failureCode");
         failureSummary = Objects.requireNonNull(failureSummary, "failureSummary")
                 .map(value -> ProductionValidation.requireText(value, "Production failure summary", 2_048));
@@ -51,6 +53,8 @@ public record ProductionRunSnapshot(
                 pausedTick,
                 completedTick,
                 completionTransactionId,
+                workstationAssignment,
+                scheduledWorkId,
                 failureCode,
                 failureSummary
         );
@@ -63,19 +67,35 @@ public record ProductionRunSnapshot(
             OptionalLong pausedTick,
             OptionalLong completedTick,
             Optional<TransactionId> completionTransactionId,
+            Optional<ProductionWorkstationAssignment> workstationAssignment,
+            Optional<SimulationWorkId> scheduledWorkId,
             Optional<ProductionFailureCode> failureCode,
             Optional<String> failureSummary
     ) {
         if (failureCode.isPresent() != failureSummary.isPresent()) {
             throw new IllegalArgumentException("Production run failure fields must be present together");
         }
+        boolean hasWorkstationCompletion = workstationAssignment
+                .flatMap(ProductionWorkstationAssignment::completionEvidence)
+                .isPresent();
+        int completionAuthorityCount = (completionTransactionId.isPresent() ? 1 : 0)
+                + (hasWorkstationCompletion ? 1 : 0);
         if (status == ProductionRunStatus.COMPLETED
-                && (completedTick.isEmpty() || completionTransactionId.isEmpty()
+                && (completedTick.isEmpty() || completionAuthorityCount != 1
                 || currentWorkUnits != requiredWorkUnits)) {
             throw new IllegalArgumentException("Completed production run state is incomplete");
         }
+        if (status != ProductionRunStatus.COMPLETED && completionAuthorityCount > 0) {
+            throw new IllegalArgumentException("Only completed production runs may contain completion authority");
+        }
         if (status != ProductionRunStatus.COMPLETED && completedTick.isPresent()) {
             throw new IllegalArgumentException("Only completed production runs may contain a completion tick");
+        }
+        if (scheduledWorkId.isPresent() && workstationAssignment.isPresent()) {
+            throw new IllegalArgumentException("Production Scheduler Work and workstation assignment are mutually exclusive");
+        }
+        if (status == ProductionRunStatus.AWAITING_TRANSACTION && workstationAssignment.isPresent()) {
+            throw new IllegalArgumentException("Workstation-assigned Production runs do not await Transactions");
         }
         if (status == ProductionRunStatus.PAUSED && pausedTick.isEmpty()) {
             throw new IllegalArgumentException("Paused production run requires a pause tick");

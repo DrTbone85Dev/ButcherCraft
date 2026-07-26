@@ -48,6 +48,8 @@ import com.butchercraft.world.production.ProductionSchema;
 import com.butchercraft.world.production.ProductionTransactionFailurePolicy;
 import com.butchercraft.world.production.ProductionTransformationReference;
 import com.butchercraft.world.production.ProductionWorkforceRequirement;
+import com.butchercraft.world.production.ProductionWorkstationAssignment;
+import com.butchercraft.world.production.ProductionWorkstationCompletionEvidence;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
 import com.butchercraft.world.transaction.TransactionId;
 import com.butchercraft.world.workforce.CertificationType;
@@ -593,6 +595,8 @@ public final class ProductionStorage {
         optionalString(object, "scheduled_work_id", value.scheduledWorkId().map(SimulationWorkId::value));
         optionalString(object, "completion_transaction_id",
                 value.completionTransactionId().map(TransactionId::value));
+        optionalObject(object, "workstation_assignment", value.workstationAssignment(),
+                ProductionStorage::serializeWorkstationAssignment);
         optionalString(object, "failure_code", value.failureCode().map(ProductionStorage::lower));
         optionalString(object, "failure_summary", value.failureSummary());
         object.addProperty("revision", value.revision());
@@ -614,11 +618,71 @@ public final class ProductionStorage {
                 optionalLong(object, "next_eligible_tick"),
                 optionalString(object, "scheduled_work_id").map(SimulationWorkId::of),
                 optionalString(object, "completion_transaction_id").map(TransactionId::of),
+                optionalObjectIfPresent(object, "workstation_assignment",
+                        ProductionStorage::deserializeWorkstationAssignment),
                 optionalString(object, "failure_code")
                         .map(value -> enumValue(com.butchercraft.world.production.ProductionFailureCode.class, value)),
                 optionalString(object, "failure_summary"),
                 longValue(object, "revision"),
                 schema(object)
+        );
+    }
+
+    private static JsonObject serializeWorkstationAssignment(ProductionWorkstationAssignment value) {
+        JsonObject object = record(value.schemaVersion());
+        object.addProperty("workstation_identity", value.workstationIdentity());
+        object.addProperty("process_identity", value.processIdentity());
+        optionalString(object, "execution_operation_identity", value.executionOperationIdentity());
+        optionalObject(object, "completion_evidence", value.completionEvidence(),
+                ProductionStorage::serializeWorkstationCompletionEvidence);
+        return object;
+    }
+
+    private static ProductionWorkstationAssignment deserializeWorkstationAssignment(JsonObject object) {
+        return new ProductionWorkstationAssignment(
+                schema(object),
+                string(object, "workstation_identity"),
+                string(object, "process_identity"),
+                optionalString(object, "execution_operation_identity"),
+                optionalObject(object, "completion_evidence",
+                        ProductionStorage::deserializeWorkstationCompletionEvidence)
+        );
+    }
+
+    private static JsonObject serializeWorkstationCompletionEvidence(ProductionWorkstationCompletionEvidence value) {
+        JsonObject object = record(value.schemaVersion());
+        object.addProperty("run_id", value.runId().value());
+        object.addProperty("workstation_identity", value.workstationIdentity());
+        object.addProperty("process_identity", value.processIdentity());
+        object.addProperty("execution_operation_identity", value.executionOperationIdentity());
+        object.addProperty("execution_terminal_status", value.executionTerminalStatus());
+        object.addProperty("owner_result_identity", value.ownerResultIdentity());
+        object.addProperty("owner_result_content_digest", value.ownerResultContentDigest());
+        object.addProperty("execution_result_evidence_identity", value.executionResultEvidenceIdentity());
+        object.addProperty("execution_result_content_digest", value.executionResultContentDigest());
+        object.addProperty("completed_simulation_tick", value.completedSimulationTick());
+        object.addProperty("evidence_identity", value.evidenceIdentity());
+        object.addProperty("evidence_content_digest", value.evidenceContentDigest());
+        return object;
+    }
+
+    private static ProductionWorkstationCompletionEvidence deserializeWorkstationCompletionEvidence(
+            JsonObject object
+    ) {
+        return new ProductionWorkstationCompletionEvidence(
+                schema(object),
+                ProductionRunId.of(string(object, "run_id")),
+                string(object, "workstation_identity"),
+                string(object, "process_identity"),
+                string(object, "execution_operation_identity"),
+                string(object, "execution_terminal_status"),
+                string(object, "owner_result_identity"),
+                string(object, "owner_result_content_digest"),
+                string(object, "execution_result_evidence_identity"),
+                string(object, "execution_result_content_digest"),
+                longValue(object, "completed_simulation_tick"),
+                string(object, "evidence_identity"),
+                string(object, "evidence_content_digest")
         );
     }
 
@@ -743,6 +807,18 @@ public final class ProductionStorage {
         JsonElement element = field(object, name);
         return element.isJsonNull() ? Optional.empty()
                 : Optional.of(deserializer.apply(object(element, name)));
+    }
+
+    private static <T> Optional<T> optionalObjectIfPresent(
+            JsonObject object,
+            String name,
+            Function<JsonObject, T> deserializer
+    ) {
+        JsonElement element = object.get(name);
+        if (element == null || element.isJsonNull()) {
+            return Optional.empty();
+        }
+        return Optional.of(deserializer.apply(object(element, name)));
     }
 
     private static <T> void optionalObject(
