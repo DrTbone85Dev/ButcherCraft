@@ -261,6 +261,8 @@ class SimulationPipelineTest {
 
         assertEquals(PipelineStatus.COMPLETED, pipeline.execute(1).status());
         assertEquals(PipelineStatus.REJECTED, nestedReport.get().status());
+        assertEquals(WorkFailureCode.SCHEDULER_AUTHORITY_ALREADY_EXECUTING,
+                nestedReport.get().failureCode().orElseThrow());
         assertEquals(SimulationWorkStatus.COMPLETED,
                 manager.runtimeFor(SimulationWorkId.of("test:reentrant")).orElseThrow().status());
     }

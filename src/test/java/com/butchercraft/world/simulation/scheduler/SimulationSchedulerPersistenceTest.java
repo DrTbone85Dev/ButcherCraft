@@ -74,7 +74,7 @@ class SimulationSchedulerPersistenceTest {
         SimulationSchedulerStorage storage = storage("invalid.json", handlers(), 0);
         assertThrows(IllegalArgumentException.class, () -> storage.deserialize("{broken"));
         assertThrows(IllegalArgumentException.class, () -> storage.deserialize(
-                "{\"schema_version\":2,\"last_finalized_simulation_tick\":0,"
+                "{\"schema_version\":99,\"last_finalized_simulation_tick\":0,"
                         + "\"next_submission_sequence\":0,\"stages\":[],\"work\":[]}"));
         assertThrows(IllegalArgumentException.class, () -> storage.deserialize(
                 "{\"schema_version\":1,\"last_finalized_simulation_tick\":0,"
@@ -127,6 +127,69 @@ class SimulationSchedulerPersistenceTest {
         assertTrue(manager.hasRunningWork());
         assertThrows(IllegalStateException.class, () -> storage.serialize(manager));
         assertThrows(IllegalStateException.class, () -> storage.save(manager));
+    }
+
+    @Test
+    void schemaOneLoadsWithoutFabricatingIdentityOrEvidence() {
+        SimulationSchedulerStorage storage = storage("legacy.json", handlers(), 0);
+        SimulationSchedulerManager manager = storage.load();
+        SimulationWorkRequest request = SchedulerTestFixtures.request(
+                "test:legacy_scheduled", BuiltInSimulationStages.EXECUTION, 0, 1
+        );
+        manager.submit(request, 0);
+        String legacy = storage.serialize(manager).replace("\"schema_version\": 2", "\"schema_version\": 1");
+
+        SimulationSchedulerManager loaded = storage.deserialize(legacy);
+        SimulationWorkRuntime runtime = loaded.runtimeFor(request.id()).orElseThrow();
+
+        assertEquals(SchedulerSchema.LEGACY_VERSION, runtime.schemaVersion());
+        assertTrue(runtime.lastInvocationIdentity().isEmpty());
+        assertTrue(runtime.lastEffectIdentity().isEmpty());
+    }
+
+    @Test
+    void unknownOutcomeAndSchedulerIdentityMetadataRoundTrip() {
+        SimulationWorkTypeId type = SimulationWorkTypeId.of("test:persisted_non_repeatable");
+        SimulationWorkHandler handler = SchedulerTestFixtures.handler(
+                type,
+                HandlerEffectType.NON_REPEATABLE,
+                SchedulerEffectPolicy.nonRepeatable(type, "test:non_repeatable_owner", "test persistence policy"),
+                work -> WorkValidationResult.acceptedResult(),
+                context -> {
+                    throw new IllegalStateException("uncertain persisted effect");
+                }
+        );
+        SimulationSchedulerStorage storage = storage(
+                "unknown-outcome.json",
+                new SimulationWorkHandlerRegistry(List.of(handler)),
+                0
+        );
+        SimulationSchedulerManager manager = storage.load();
+        SimulationWorkRequest request = SchedulerTestFixtures.request(
+                "test:persisted_unknown",
+                type,
+                BuiltInSimulationStages.EXECUTION,
+                0,
+                1,
+                WorkPriority.NORMAL,
+                RetryPolicy.nextTick(),
+                2
+        );
+        manager.submit(request, 0);
+        new SimulationPipeline(manager, SimulationExecutionBudget.standard()).execute(1);
+
+        String json = storage.serialize(manager);
+        SimulationSchedulerManager loaded = storage.deserialize(json);
+        SimulationWorkRuntime runtime = loaded.runtimeFor(request.id()).orElseThrow();
+
+        assertTrue(json.contains("\"status\": \"unknown_outcome\""));
+        assertTrue(json.contains("\"last_invocation_identity\""));
+        assertTrue(json.contains("\"last_effect_identity\""));
+        assertTrue(json.contains("\"effect_policy_identity\""));
+        assertEquals(SimulationWorkStatus.UNKNOWN_OUTCOME, runtime.status());
+        assertTrue(runtime.lastInvocationIdentity().isPresent());
+        assertTrue(runtime.lastEffectIdentity().isPresent());
+        assertTrue(runtime.nextEligibleTick().isEmpty());
     }
 
     private SimulationSchedulerStorage storage(

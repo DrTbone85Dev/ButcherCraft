@@ -66,10 +66,11 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 
 ## Execution Strategies
 
-`WorkstationProcessingController` delegates processing preparation and commit to a `WorkstationExecutionStrategy`.
+`WorkstationProcessingController` delegates processing preparation and commit to a `WorkstationExecutionStrategy`. IM-012 adds one optional Execution coordinator path for the live Grinder slice; machines without that coordinator continue to use the direct controller completion path.
 
 - The default legacy strategy preserves the existing processing transaction path.
-- The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path.
+- The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path. The IM-012 grinder slice also issues workstation-owned Execution authorization and applies its consequential ItemStack effect only through Scheduler-dispatched generic Execution.
+- IM-016 adds a read-only Production observation surface over the existing controller state. It can request normal workstation validation for the promoted Grinder path and expose selected operation, active Execution Operation Identity, owner result evidence, and local failure state. It does not let Production mutate slots, bypass workstation validation, or consume Execution authority.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
 - `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
 - Development workstation and any future un-migrated processing workstations remain on the legacy strategy until explicitly migrated.
@@ -168,7 +169,7 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:sirloin_steak` -> `butchercraft:sirloin_steak_test`
 - `butchercraft:tri_tip` -> `butchercraft:tri_tip_test`
 
-This mapping is built from registered development fixture items and their default product data. It is not a universal item factory. Future product item creation needs a deliberate data-driven design.
+This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
 
 ## Development Workstation
 
@@ -178,7 +179,7 @@ Temporary block:
 butchercraft:development_processing_workstation
 ```
 
-The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim test products, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground test product.
+The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim product fixtures, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground product fixture.
 
 ## Bandsaw Machine
 

@@ -79,9 +79,7 @@ public final class ProductionTransactionFactory {
                             summary.baseQuantityPerBatch(), plan.batchCount(), summary.yieldRatio()
                     )
             );
-            TransactionId transactionId = TransactionId.of(
-                    run.id().value() + "/completion_attempt_" + Math.max(1, run.executionAttemptCount())
-            );
+            TransactionId transactionId = TransactionId.of(run.id().value() + "/completion");
             EconomicTransaction transaction = EconomicTransaction.builder()
                     .id(transactionId)
                     .type(TransactionType.PRODUCTION)

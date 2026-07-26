@@ -1,0 +1,12 @@
+package com.butchercraft.world.planning;
+
+public enum PlanningTriggerType {
+    ORDER_INTENT,
+    ORDER_FULFILLMENT,
+    CONTRACT_STATE,
+    PRODUCTION_COMMITMENT,
+    INVENTORY_FRESHNESS,
+    BUSINESS_RUNTIME,
+    WORKFORCE_AVAILABILITY,
+    PLANNING_CONFIGURATION
+}

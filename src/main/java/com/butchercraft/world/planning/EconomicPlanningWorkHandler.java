@@ -2,6 +2,7 @@ package com.butchercraft.world.planning;
 
 import com.butchercraft.world.simulation.scheduler.HandlerEffectType;
 import com.butchercraft.world.simulation.scheduler.ScheduledSimulationWork;
+import com.butchercraft.world.simulation.scheduler.SchedulerEffectPolicy;
 import com.butchercraft.world.simulation.scheduler.SimulationExecutionContext;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandler;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkOutcome;
@@ -31,6 +32,13 @@ public final class EconomicPlanningWorkHandler implements SimulationWorkHandler 
 
     @Override public SimulationWorkTypeId supportedTypeId() { return TYPE; }
     @Override public HandlerEffectType effectType() { return HandlerEffectType.NON_REPEATABLE; }
+    @Override public SchedulerEffectPolicy effectPolicy() {
+        return SchedulerEffectPolicy.nonRepeatableContinuation(
+                TYPE,
+                "butchercraft:planning",
+                "IM-010 Planning cadence remains NON_REPEATABLE until cycle-scoped Scheduler Effect Identity exists"
+        );
+    }
 
     @Override
     public WorkValidationResult validate(ScheduledSimulationWork work) {
@@ -59,25 +67,29 @@ public final class EconomicPlanningWorkHandler implements SimulationWorkHandler 
     @Override
     public SimulationWorkResult execute(SimulationExecutionContext context) {
         long tick = context.authoritativeSimulationTick();
-        try {
-            PlanningCycleSnapshot cycle = managerSupplier.get().executeCycle(tick);
-            long artifactCount = (long) cycle.observations().size() + cycle.needs().size()
-                    + cycle.constraints().size() + cycle.opportunities().size()
-                    + cycle.candidates().size() + cycle.approvedPlans().size();
-            int units = Math.toIntExact(Math.min(Integer.MAX_VALUE,
-                    Math.min(context.remainingWorkUnits(), Math.max(1L, artifactCount))));
-            return new SimulationWorkResult(
-                    SimulationWorkOutcome.DEFERRED, Optional.empty(),
-                    List.of("Economic Planning Cycle " + cycle.status().name().toLowerCase(
-                            java.util.Locale.ROOT)),
-                    OptionalLong.of(Math.addExact(tick, 1L)), List.of(),
-                    new WorkPayload(List.of(
-                            WorkPayloadEntry.identifier("butchercraft:planning_cycle_id", cycle.id().value())
-                    )), units, tick
-            );
-        } catch (RuntimeException exception) {
-            return SimulationWorkResult.failed(tick, WorkFailureCode.HANDLER_EXCEPTION,
-                    exception.getMessage() == null ? "Economic Planning Cycle failed" : exception.getMessage(), 1);
-        }
+        PlanningCadenceExecutionResult result = managerSupplier.get()
+                .executeCadenceCycle(tick, context.remainingWorkUnits());
+        List<WorkPayloadEntry> summaryEntries = result.cycle()
+                .map(cycle -> List.of(
+                        WorkPayloadEntry.identifier("butchercraft:planning_cycle_id", cycle.id().value()),
+                        WorkPayloadEntry.identifier(
+                                "butchercraft:planning_frozen_input_identity",
+                                cycle.cadenceEvidence().orElseThrow().frozenInputIdentity()
+                        ),
+                        WorkPayloadEntry.longValue(
+                                "butchercraft:planning_consumed_trigger_count",
+                                cycle.cadenceEvidence().orElseThrow().consumedTriggers().size()
+                        )
+                ))
+                .orElseGet(() -> List.of(WorkPayloadEntry.identifier(
+                        "butchercraft:planning_cadence_state",
+                        "butchercraft:planning_cadence/deferred"
+                )));
+        return new SimulationWorkResult(
+                SimulationWorkOutcome.DEFERRED, Optional.empty(),
+                result.messages(),
+                OptionalLong.of(result.nextEligibleTick()), List.of(),
+                new WorkPayload(summaryEntries), result.workUnits(), tick
+        );
     }
 }

@@ -107,9 +107,9 @@ Reason: the engine already stores exact product quantity in `ProductQuantity`. A
 
 Future stackability may be revisited only after the project defines precise rules for stack count, quantity, quality, freshness, temperature, packaging, and lot identity.
 
-## Creative-Tab Fixtures
+## Creative-Tab Product Registrations
 
-Thirty-one development-only product fixtures are registered:
+Thirty-one product-bearing items are registered through the current fixture-backed item class:
 
 - `butchercraft:beef_trim_test`
 - `butchercraft:ground_beef_test`
@@ -145,15 +145,15 @@ Thirty-one development-only product fixtures are registered:
 
 They appear in the ButcherCraft creative tab and receive default product data from `ProductTestItem.getDefaultInstance()`.
 
-Default values are test fixtures, not final balance:
+Beef Trim, Ground Beef, Pork Trim, and Ground Pork are ordinary promoted Grinder gameplay products while retaining their legacy `*_test` item registry ids for save compatibility. Other product items remain development fixtures. Default values are still development-stage balance, not final production balance:
 
 | Item | Product type | Source | State | Quantity | Quality |
 | --- | --- | --- | --- | --- | --- |
-| Beef Trim Test Product | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
-| Ground Beef Test Product | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
+| Beef Trim | `butchercraft:beef_trim` | `butchercraft:beef` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Beef | `butchercraft:ground_beef` | `butchercraft:beef` | `butchercraft:ground` | `900 gram` | `700` |
 | Retail Ground Beef Test Product | `butchercraft:retail_ground_beef` | `butchercraft:beef` | `butchercraft:retail_packaged` | `900 gram` | `700` |
-| Pork Trim Test Product | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
-| Ground Pork Test Product | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
+| Pork Trim | `butchercraft:pork_trim` | `butchercraft:pork` | `butchercraft:trim` | `1000 gram` | `700` |
+| Ground Pork | `butchercraft:ground_pork` | `butchercraft:pork` | `butchercraft:ground` | `900 gram` | `700` |
 | Bison Trim Test Product | `butchercraft:bison_trim` | `butchercraft:bison` | `butchercraft:trim` | `1000 gram` | `700` |
 | Ground Bison Test Product | `butchercraft:ground_bison` | `butchercraft:bison` | `butchercraft:ground` | `900 gram` | `700` |
 | Beef Forequarter Test Product | `butchercraft:beef_forequarter` | `butchercraft:beef` | `butchercraft:forequarter` | `100000 gram` | `700` |
@@ -183,7 +183,7 @@ Default values are test fixtures, not final balance:
 
 The existing `butchercraft:development_test_item` remains a harmless generic foundation item.
 
-Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. The development-only mapping derives product definition ids from fixture item default product data; it is still not a general product item factory.
+Milestones 2B through 2E use these product fixtures in temporary processing workstations, the Grinder, and the Bandsaw. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining their legacy registry ids for compatibility. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. The development-only mapping derives product definition ids from item default product data; it is still not a general product item factory.
 
 ## Tooltip Behavior
 

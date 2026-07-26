@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -68,26 +69,65 @@ public final class ProductTestItem extends Item implements ProductDataCarrier {
         }
 
         var product = productResult.orThrow();
-        tooltip.add(Component.translatable("tooltip.butchercraft.product_data.product", data.productTypeId()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.butchercraft.product_data.source", data.sourceCategoryId()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.butchercraft.product_data.state", data.processingStateId()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.butchercraft.product_data.quantity", data.quantityValue(), data.quantityUnitId()).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.butchercraft.product_data.product",
+                displayName(data.productTypeId())
+        ).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.butchercraft.product_data.source",
+                displayName(data.sourceCategoryId())
+        ).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.butchercraft.product_data.state",
+                displayName(data.processingStateId())
+        ).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.butchercraft.product_data.quantity",
+                data.quantityValue(),
+                displayName(data.quantityUnitId())
+        ).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.butchercraft.product_data.quality", product.quality().grade().displayName()).withStyle(ChatFormatting.GRAY));
         data.packaging().ifPresent(packaging -> {
             tooltip.add(Component.translatable(
                     "tooltip.butchercraft.product_data.packaging",
-                    packaging.packagingDefinitionId(),
-                    packaging.packagingFormatId()
+                    displayName(packaging.packagingDefinitionId()),
+                    displayName(packaging.packagingFormatId())
             ).withStyle(ChatFormatting.GRAY));
             if (flag.isAdvanced()) {
                 tooltip.add(Component.translatable(
                         "tooltip.butchercraft.product_data.packaging_source",
-                        packaging.sourceProductId()
+                        displayName(packaging.sourceProductId())
                 ).withStyle(ChatFormatting.DARK_GRAY));
             }
         });
         if (flag.isAdvanced()) {
             tooltip.add(Component.translatable("tooltip.butchercraft.product_data.quality_score", data.qualityScore()).withStyle(ChatFormatting.DARK_GRAY));
         }
+    }
+
+    private static Component displayName(String identity) {
+        String displayPath = identity;
+        int separator = identity.indexOf(':');
+        if (separator >= 0 && separator + 1 < identity.length()) {
+            displayPath = identity.substring(separator + 1);
+        }
+        return Component.literal(titleCase(displayPath));
+    }
+
+    private static String titleCase(String path) {
+        StringBuilder display = new StringBuilder();
+        for (String part : path.split("[_/.-]+")) {
+            if (part.isBlank()) {
+                continue;
+            }
+            if (display.length() > 0) {
+                display.append(' ');
+            }
+            display.append(part.substring(0, 1).toUpperCase(Locale.ROOT));
+            if (part.length() > 1) {
+                display.append(part.substring(1).toLowerCase(Locale.ROOT));
+            }
+        }
+        return display.length() == 0 ? path : display.toString();
     }
 }

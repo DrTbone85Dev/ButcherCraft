@@ -6,10 +6,13 @@ import com.butchercraft.world.planning.PlanningExecutionBudget;
 import com.butchercraft.world.planning.PlanningManager;
 import com.butchercraft.world.planning.PlanningSelectionPolicy;
 import com.butchercraft.world.planning.PlanningStorage;
+import com.butchercraft.world.planning.PlanningTriggerPublicationResult;
+import com.butchercraft.world.planning.PlanningTriggerRecord;
 import com.butchercraft.world.simulation.scheduler.BuiltInSimulationStages;
 import com.butchercraft.world.simulation.scheduler.RetryPolicy;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkRequest;
+import com.butchercraft.world.simulation.scheduler.SimulationWorkStatus;
 import com.butchercraft.world.simulation.scheduler.WorkOrigin;
 import com.butchercraft.world.simulation.scheduler.WorkPayload;
 import com.butchercraft.world.simulation.scheduler.WorkPayloadEntry;
@@ -80,7 +83,7 @@ public final class EconomicPlanningService {
         PlanningManager manager = storage.load();
         ActivePlanning created = new ActivePlanning(server, storage, manager);
         active.set(created);
-        ensureContinuationWork(dependencies);
+        ensureContinuationWork(dependencies, manager);
     }
 
     public void save(ServerStoppingEvent event) {
@@ -103,6 +106,18 @@ public final class EconomicPlanningService {
         return Optional.ofNullable(active.get()).map(ActivePlanning::manager);
     }
 
+    public PlanningTriggerPublicationResult publishTrigger(
+            MinecraftServer server,
+            PlanningTriggerRecord trigger
+    ) {
+        PlanningManager manager = managerFor(server);
+        PlanningDependencies dependencies = dependencies(server);
+        long currentTick = dependencies.schedulerManager().lastFinalizedSimulationTick();
+        PlanningTriggerPublicationResult result = manager.publishTrigger(trigger, currentTick);
+        result.nextEligibleTick().ifPresent(tick -> alignContinuationWork(dependencies, tick));
+        return result;
+    }
+
     private PlanningDependencies dependencies(MinecraftServer server) {
         return new PlanningDependencies(
                 goodService.managerFor(server), actorService.managerFor(server),
@@ -113,19 +128,23 @@ public final class EconomicPlanningService {
         );
     }
 
-    private void ensureContinuationWork(PlanningDependencies dependencies) {
-        if (dependencies.schedulerManager().registry().find(CONTINUATION_WORK_ID).isPresent()) return;
+    private void ensureContinuationWork(PlanningDependencies dependencies, PlanningManager manager) {
         long authoritativeTick = dependencies.schedulerManager().lastFinalizedSimulationTick();
+        long nextEligibleTick = manager.nextCadenceEligibilityTick(authoritativeTick);
+        if (dependencies.schedulerManager().registry().find(CONTINUATION_WORK_ID).isPresent()) {
+            alignContinuationWork(dependencies, nextEligibleTick);
+            return;
+        }
         SimulationWorkRequest request = SimulationWorkRequest.builder()
                 .id(CONTINUATION_WORK_ID)
                 .typeId(EconomicPlanningWorkHandler.TYPE)
                 .stageId(BuiltInSimulationStages.PLANNING)
-                .scheduledTick(Math.addExact(authoritativeTick, 1L))
+                .scheduledTick(nextEligibleTick)
                 .priority(WorkPriority.NORMAL)
-                .origin(new WorkOrigin(
-                        "butchercraft:economic_planning", Optional.of("butchercraft:framework"),
-                        Optional.empty(), authoritativeTick, "butchercraft:planning_service",
-                        Optional.empty(), Optional.empty()
+                .origin(WorkOrigin.of(
+                        "butchercraft:economic_planning",
+                        authoritativeTick,
+                        "butchercraft:planning_service"
                 ))
                 .payload(new WorkPayload(List.of(WorkPayloadEntry.identifier(
                         EconomicPlanningWorkHandler.POLICY_PAYLOAD_KEY,
@@ -139,6 +158,32 @@ public final class EconomicPlanningService {
         var result = dependencies.schedulerManager().submit(request, authoritativeTick);
         if (!result.accepted()) {
             throw new IllegalStateException("Scheduler rejected Economic Planning continuation Work: "
+                    + String.join("; ", result.messages()));
+        }
+    }
+
+    private void alignContinuationWork(PlanningDependencies dependencies, long nextEligibleTick) {
+        long authoritativeTick = dependencies.schedulerManager().lastFinalizedSimulationTick();
+        long targetTick = Math.max(nextEligibleTick, Math.addExact(authoritativeTick, 1L));
+        var runtime = dependencies.schedulerManager().runtimeFor(CONTINUATION_WORK_ID).orElseThrow(() ->
+                new IllegalStateException("Economic Planning continuation Work is missing"));
+        if (runtime.status() == SimulationWorkStatus.ELIGIBLE) return;
+        if (runtime.status().isTerminal() || runtime.status() == SimulationWorkStatus.RUNNING) {
+            throw new IllegalStateException("Economic Planning continuation Work is not recoverably pending: "
+                    + runtime.status());
+        }
+        if (runtime.nextEligibleTick().isPresent()
+                && runtime.nextEligibleTick().orElseThrow() == targetTick) {
+            return;
+        }
+        var result = dependencies.schedulerManager().reschedulePendingWork(
+                CONTINUATION_WORK_ID,
+                authoritativeTick,
+                targetTick,
+                "Planning cadence eligibility"
+        );
+        if (!result.successful()) {
+            throw new IllegalStateException("Scheduler rejected Planning cadence eligibility update: "
                     + String.join("; ", result.messages()));
         }
     }

@@ -10,6 +10,8 @@ final class ProductionValidation {
     private static final Pattern IDENTIFIER = Pattern.compile(
             TOKEN + "(?::" + TOKEN + "(?:/" + TOKEN + ")*)?(?:/" + TOKEN + ")*"
     );
+    private static final Pattern EXTERNAL_IDENTIFIER = Pattern.compile("[a-z0-9_.-]+:[a-z0-9_./-]+");
+    private static final Pattern DIGEST = Pattern.compile("sha256:[0-9a-f]{64}");
     private static final Pattern TAG = Pattern.compile("[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*)?");
 
     private ProductionValidation() {
@@ -19,6 +21,22 @@ final class ProductionValidation {
         String normalized = Objects.requireNonNull(value, label).strip().toLowerCase(Locale.ROOT);
         if (!IDENTIFIER.matcher(normalized).matches()) {
             throw new IllegalArgumentException(label + " must be a lowercase namespaced identifier: " + value);
+        }
+        return normalized;
+    }
+
+    static String requireExternalIdentity(String value, String label) {
+        String normalized = Objects.requireNonNull(value, label).strip().toLowerCase(Locale.ROOT);
+        if (!EXTERNAL_IDENTIFIER.matcher(normalized).matches()) {
+            throw new IllegalArgumentException(label + " must be a canonical namespaced identity: " + value);
+        }
+        return normalized;
+    }
+
+    static String requireDigest(String value, String label) {
+        String normalized = Objects.requireNonNull(value, label).strip().toLowerCase(Locale.ROOT);
+        if (!DIGEST.matcher(normalized).matches()) {
+            throw new IllegalArgumentException(label + " must be a canonical SHA-256 digest");
         }
         return normalized;
     }

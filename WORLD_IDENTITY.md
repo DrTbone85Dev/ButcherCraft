@@ -320,6 +320,14 @@ The foundation should distinguish generated identity from active simulation:
 
 Active simulation systems should consume identity data rather than owning duplicate identity state.
 
+## Checkpoint External Root
+
+IM-006 allows Checkpoint Recovery to reference World Identity as an immutable
+external root. World Identity owns the root identity and digest derivation.
+Checkpoint generations may record the root identity, schema version, and digest
+for validation, but they do not serialize, rewrite, migrate, or replace World
+Identity `SavedData`.
+
 ## Roadmap
 
 ### v0.9.0: World Identity Foundation

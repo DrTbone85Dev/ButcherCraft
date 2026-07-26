@@ -134,6 +134,15 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+var copyGameTestStructures = tasks.register('copyGameTestStructures', Copy) {
+    from layout.projectDirectory.dir('gameteststructures')
+    into layout.projectDirectory.dir('run/gameteststructures')
+}
+
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    dependsOn copyGameTestStructures
+}
+
 tasks.named('test', Test).configure {
     useJUnitPlatform()
     systemProperty 'butchercraft.projectDir', project.layout.projectDirectory.asFile.absolutePath

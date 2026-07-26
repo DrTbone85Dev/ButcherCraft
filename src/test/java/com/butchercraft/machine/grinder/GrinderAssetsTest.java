@@ -20,16 +20,22 @@ class GrinderAssetsTest {
         assertResourceExists("assets/butchercraft/blockstates/grinder.json");
         assertResourceExists("assets/butchercraft/models/block/grinder.json");
         assertResourceExists("assets/butchercraft/models/item/grinder.json");
+        assertResourceExists("assets/butchercraft/textures/block/workstation/grinder_frame.png");
+        assertResourceExists("assets/butchercraft/textures/block/workstation/grinder_surface.png");
+        assertResourceExists("assets/butchercraft/textures/block/workstation/grinder_feed.png");
         assertResourceExists("data/butchercraft/loot_table/blocks/grinder.json");
     }
 
     @Test
-    void grinderUsesDistinctPlaceholderBlockShape() throws IOException {
+    void grinderUsesDistinctGameplayTexturesAndBlockShape() throws IOException {
         var model = JsonParser.parseString(Files.readString(
                 resourcePath("assets/butchercraft/models/block/grinder.json")
         )).getAsJsonObject();
 
-        assertEquals("butchercraft:item/development_test_item", model.getAsJsonObject("textures").get("all").getAsString());
+        var textures = model.getAsJsonObject("textures");
+        assertEquals("butchercraft:block/workstation/grinder_frame", textures.get("frame").getAsString());
+        assertEquals("butchercraft:block/workstation/grinder_surface", textures.get("surface").getAsString());
+        assertEquals("butchercraft:block/workstation/grinder_feed", textures.get("feed").getAsString());
         assertTrue(model.getAsJsonArray("elements").size() > 1, "Grinder should not reuse the development cube shape");
     }
 

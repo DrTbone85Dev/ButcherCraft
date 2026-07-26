@@ -130,6 +130,7 @@ class ProductionStressTest {
                                     "test:runtime_plan_" + index + "/work"))
                             : Optional.empty(),
                     completed ? Optional.of(TransactionId.of("test:completed_" + completedIndex)) : Optional.empty(),
+                    Optional.empty(),
                     blocked ? Optional.of(ProductionFailureCode.INSUFFICIENT_INPUT) : Optional.empty(),
                     blocked ? Optional.of("Synthetic blocked stress fixture") : Optional.empty(),
                     0L,

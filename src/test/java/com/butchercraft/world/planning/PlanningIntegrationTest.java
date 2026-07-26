@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PlanningIntegrationTest {
     @Test
-    void schedulerPlanningStageExecutesExactlyOneCycleAndDefersContinuation() {
+    void schedulerPlanningStageExecutesExactlyOneCycleAndDefersToCadence() {
         PlanningTestFixtures.Context base = PlanningTestFixtures.context();
         PlanningTestFixtures.submitAcceptedOrder(base, 3L);
         AtomicReference<PlanningManager> managerReference = new AtomicReference<>();
@@ -73,7 +73,7 @@ class PlanningIntegrationTest {
         assertEquals(20L, manager.cycles().getFirst().simulationTick());
         assertEquals(SimulationWorkStatus.DEFERRED,
                 scheduler.runtimeFor(workId).orElseThrow().status());
-        assertEquals(21L, scheduler.runtimeFor(workId).orElseThrow()
+        assertEquals(1_220L, scheduler.runtimeFor(workId).orElseThrow()
                 .nextEligibleTick().orElseThrow());
     }
 
@@ -97,7 +97,7 @@ class PlanningIntegrationTest {
     }
 
     @Test
-    void serviceDeclaresPlanningStageAndAllSixWorldOwnedFiles() throws Exception {
+    void serviceDeclaresPlanningStageAndAllWorldOwnedFiles() throws Exception {
         String service = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/world/EconomicPlanningService.java"));
         String storage = Files.readString(TestProjectPaths.projectPath(
@@ -109,7 +109,8 @@ class PlanningIntegrationTest {
         for (String file : List.of(
                 "planning_observations.json", "planning_needs.json",
                 "planning_opportunities.json", "planning_candidates.json",
-                "planning_approved_plans.json", "planning_runtime.json"
+                "planning_approved_plans.json", "planning_runtime.json",
+                "planning_cadence.json"
         )) {
             assertTrue(storage.contains(file), file);
         }

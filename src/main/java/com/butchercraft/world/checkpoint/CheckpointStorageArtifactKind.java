@@ -1,0 +1,10 @@
+package com.butchercraft.world.checkpoint;
+
+public enum CheckpointStorageArtifactKind {
+    INCOMPLETE_STAGING_DIRECTORY,
+    CORRUPT_GENERATION_DIRECTORY,
+    INVALID_HEAD_FILE,
+    UNCOMMITTED_GENERATION_DIRECTORY,
+    HEAD_TEMPORARY_FILE,
+    CONFLICTING_GENERATION_DIRECTORY
+}

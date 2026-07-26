@@ -1,5 +1,29 @@
 # Changelog
 
+## ButcherCraft v0.10.0-alpha.1 - First Playable Production Alpha
+
+### Added
+
+- Promoted the first playable Grinder workstation flow for normal gameplay.
+- Added player-facing Beef Trim to Ground Beef processing.
+- Added player-facing Pork Trim to Ground Pork processing.
+- Added craftable Grinder gameplay access while retaining existing compatible registry ids.
+- Integrated promoted Grinder completion with the Production Framework through Production-owned assignment and completion evidence.
+
+### Technical
+
+- Added the Generic Execution Runtime foundation for deterministic operation lifecycle, authorization, Scheduler dispatch, terminal evidence, and replay-compatible outcome handling.
+- Enforced live Scheduler side-effect policy and deterministic handler boundaries.
+- Added live Planning Cadence enforcement for bounded, explicit Planning execution.
+- Added Production observation of promoted workstation operations without moving Grinder, Execution, Scheduler, or Transaction authority.
+- Preserved the RFC-0022 Allocation foundations while keeping Allocation out of live Grinder gameplay.
+
+### Stability
+
+- Verified 1,244 automated tests in the current test-result metadata.
+- Verified 19 GameTests for promoted Grinder execution, duplicate safety, save/load behavior, and active block-break handling.
+- Recorded owner-completed Grinder acceptance for the promoted playable flows.
+
 ## RFC-0022 M22D Resource And Capacity Provider Framework
 
 Core:

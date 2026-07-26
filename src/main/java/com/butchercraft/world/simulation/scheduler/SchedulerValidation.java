@@ -30,7 +30,7 @@ final class SchedulerValidation {
     }
 
     static int requireSchema(int value, String label) {
-        if (value != SchedulerSchema.CURRENT_VERSION) {
+        if (value < SchedulerSchema.LEGACY_VERSION || value > SchedulerSchema.CURRENT_VERSION) {
             throw new IllegalArgumentException("Unsupported " + label + " schema version: " + value);
         }
         return value;

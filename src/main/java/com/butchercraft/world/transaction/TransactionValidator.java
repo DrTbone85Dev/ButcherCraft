@@ -9,6 +9,10 @@ import com.butchercraft.world.inventory.InventoryContainer;
 import com.butchercraft.world.inventory.InventoryEntry;
 import com.butchercraft.world.inventory.InventoryId;
 import com.butchercraft.world.inventory.InventoryManager;
+import com.butchercraft.world.inventory.freshness.InventoryFreshnessIdentity;
+import com.butchercraft.world.transaction.binding.TransactionProposalIdentity;
+import com.butchercraft.world.transaction.binding.TransactionValidationBinding;
+import com.butchercraft.world.transaction.binding.TransactionValidationPlan;
 
 import java.util.List;
 import java.util.Objects;
@@ -88,18 +92,40 @@ public final class TransactionValidator {
                             + transaction.type().serializedName()
             );
         }
+        TransactionProposalIdentity proposalIdentity = TransactionBindingFactory.proposalIdentity(transaction);
+        InventoryFreshnessIdentity freshnessIdentity =
+                TransactionBindingFactory.inventoryFreshnessIdentity(inventoryManager, transaction, changes);
+        TransactionValidationPlan validationPlan =
+                TransactionBindingFactory.validationPlan(proposalIdentity, freshnessIdentity, changes);
+        TransactionValidationBinding binding = TransactionBindingFactory.validationBinding(
+                transaction,
+                proposalIdentity,
+                freshnessIdentity,
+                validationPlan
+        );
         InventoryChangeValidation inventoryValidation = inventoryManager.validateChanges(
                 changes,
                 transaction.simulationTick()
         );
         if (!inventoryValidation.isAllowed()) {
-            return rejected(
-                    transaction,
+            return TransactionValidation.rejectedBound(
+                    transaction.id(),
                     mapFailureCode(inventoryValidation.code()),
-                    inventoryValidation.message()
+                    inventoryValidation.message(),
+                    proposalIdentity,
+                    freshnessIdentity,
+                    validationPlan,
+                    binding
             );
         }
-        return TransactionValidation.accepted(transaction.id(), changes);
+        return TransactionValidation.acceptedBound(
+                transaction.id(),
+                changes,
+                proposalIdentity,
+                freshnessIdentity,
+                validationPlan,
+                binding
+        );
     }
 
     private TransactionValidation validateActors(EconomicTransaction transaction) {

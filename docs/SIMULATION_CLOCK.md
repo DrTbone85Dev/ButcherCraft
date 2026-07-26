@@ -17,8 +17,22 @@ The simulation package owns:
 - `SimulationEventBus` for listener publication.
 - `SimulationStateStorage` for independent JSON persistence.
 - `SimulationClockService` for Minecraft server lifecycle integration.
+- `com.butchercraft.world.simulation.checkpoint` for explicit Clock-owned
+  checkpoint snapshot capture and restoration candidates.
 
 Only `SimulationClockService` imports Minecraft or NeoForge APIs. The clock, calendar, scheduler, event records, bus, state, and storage are Java-only.
+
+## Checkpoint Participation
+
+IM-006 adds an explicit Clock checkpoint provider and restorer. The provider
+wraps Clock-owned `SimulationState` schema-1 JSON plus a Clock Configuration
+Identity as opaque checkpoint payload bytes. The restorer parses and validates
+that payload inside the Clock owner boundary and prepares a restored
+`SimulationClock` candidate.
+
+Checkpoint Recovery coordinates the provider/restorer but does not parse Clock
+payload internals. This path is not registered as a save hook, startup
+recovery hook, cadence, command, or gameplay feature.
 
 ## Lifecycle
 

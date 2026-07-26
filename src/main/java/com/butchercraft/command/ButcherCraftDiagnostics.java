@@ -78,7 +78,8 @@ public final class ButcherCraftDiagnostics {
                 .then(Commands.literal("info")
                         .executes(context -> runInfo(context.getSource())))
                 .then(Commands.literal("diagnostic")
-                        .executes(context -> runDiagnostic(context.getSource()))));
+                        .executes(context -> runDiagnostic(context.getSource()))
+                        .then(DevelopmentCheckpointCommands.branch())));
     }
 
     private static int runInfo(net.minecraft.commands.CommandSourceStack source) {
@@ -205,7 +206,7 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Beef Trim resolves to grind_beef for development station: " + workstationDiagnostic.beefTrimResolvesToGrindBeef()), false);
         source.sendSuccess(() -> Component.literal("grind_beef duration resolves to 60 ticks: " + workstationDiagnostic.grindBeefDurationIs60Ticks()), false);
         source.sendSuccess(() -> Component.literal("Prototype processing context validates: " + workstationDiagnostic.prototypeContextValidates()), false);
-        source.sendSuccess(() -> Component.literal("Output mapping resolves to Ground Beef Test Product: " + workstationDiagnostic.outputMappingResolves()), false);
+        source.sendSuccess(() -> Component.literal("Output mapping resolves to Ground Beef: " + workstationDiagnostic.outputMappingResolves()), false);
         source.sendSuccess(() -> Component.literal("Grinder block registered: " + grinderDiagnostic.blockRegistered()), false);
         source.sendSuccess(() -> Component.literal("Grinder block entity registered: " + grinderDiagnostic.blockEntityRegistered()), false);
         source.sendSuccess(() -> Component.literal("Grinder menu registered: " + grinderDiagnostic.menuRegistered()), false);

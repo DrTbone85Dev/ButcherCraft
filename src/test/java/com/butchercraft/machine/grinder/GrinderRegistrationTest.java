@@ -35,6 +35,11 @@ class GrinderRegistrationTest {
     void grinderAppearsInCreativeTabSource() throws IOException {
         String source = Files.readString(TestProjectPaths.projectPath("src/main/java/com/butchercraft/registration/ModCreativeModeTabs.java"));
 
+        assertTrue(source.contains(".icon(() -> ModItems.GRINDER.get().getDefaultInstance())"));
         assertTrue(source.contains("output.accept(ModItems.GRINDER.get())"));
+        assertTrue(source.contains("output.accept(ModItems.BEEF_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_BEEF.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.PORK_TRIM.get().getDefaultInstance())"));
+        assertTrue(source.contains("output.accept(ModItems.GROUND_PORK.get().getDefaultInstance())"));
     }
 }

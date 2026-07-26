@@ -13,7 +13,8 @@ public record SimulationWorkResult(
         List<SimulationWorkRequest> generatedWork,
         WorkPayload resultMetadata,
         int workUnitsConsumed,
-        long executionTick
+        long executionTick,
+        Optional<SchedulerEffectObservation> effectObservation
 ) {
     public SimulationWorkResult {
         outcome = Objects.requireNonNull(outcome, "outcome");
@@ -23,6 +24,7 @@ public record SimulationWorkResult(
         nextEligibleTick = Objects.requireNonNull(nextEligibleTick, "nextEligibleTick");
         generatedWork = List.copyOf(Objects.requireNonNull(generatedWork, "generatedWork"));
         resultMetadata = Objects.requireNonNull(resultMetadata, "resultMetadata");
+        effectObservation = Objects.requireNonNull(effectObservation, "effectObservation");
         if (workUnitsConsumed < 0) throw new IllegalArgumentException("Work units must not be negative");
         executionTick = SchedulerValidation.requireTick(executionTick, "Work result execution tick");
         if ((outcome == SimulationWorkOutcome.FAILED) != failureCode.isPresent()) {
@@ -34,16 +36,57 @@ public record SimulationWorkResult(
         }
     }
 
+    public SimulationWorkResult(
+            SimulationWorkOutcome outcome,
+            Optional<WorkFailureCode> failureCode,
+            List<String> diagnosticMessages,
+            OptionalLong nextEligibleTick,
+            List<SimulationWorkRequest> generatedWork,
+            WorkPayload resultMetadata,
+            int workUnitsConsumed,
+            long executionTick
+    ) {
+        this(
+                outcome,
+                failureCode,
+                diagnosticMessages,
+                nextEligibleTick,
+                generatedWork,
+                resultMetadata,
+                workUnitsConsumed,
+                executionTick,
+                Optional.empty()
+        );
+    }
+
     public static SimulationWorkResult completed(long tick, int units) {
         return new SimulationWorkResult(
                 SimulationWorkOutcome.COMPLETED, Optional.empty(), List.of(), OptionalLong.empty(),
-                List.of(), WorkPayload.empty(), units, tick
+                List.of(), WorkPayload.empty(), units, tick, Optional.empty()
+        );
+    }
+    public static SimulationWorkResult completed(
+            long tick,
+            int units,
+            WorkPayload metadata,
+            SchedulerEffectObservation observation
+    ) {
+        return new SimulationWorkResult(
+                SimulationWorkOutcome.COMPLETED,
+                Optional.empty(),
+                List.of(),
+                OptionalLong.empty(),
+                List.of(),
+                metadata,
+                units,
+                tick,
+                Optional.of(observation)
         );
     }
     public static SimulationWorkResult failed(long tick, WorkFailureCode code, String message, int units) {
         return new SimulationWorkResult(
                 SimulationWorkOutcome.FAILED, Optional.of(code), List.of(message), OptionalLong.empty(),
-                List.of(), WorkPayload.empty(), units, tick
+                List.of(), WorkPayload.empty(), units, tick, Optional.empty()
         );
     }
 }

@@ -16,7 +16,7 @@ class PlanningPersistenceTest {
     Path temporaryDirectory;
 
     @Test
-    void allSixPlanningFilesRoundTripDeterministically() throws Exception {
+    void allPlanningFilesRoundTripDeterministically() throws Exception {
         PlanningTestFixtures.Context context = PlanningTestFixtures.context();
         PlanningTestFixtures.submitAcceptedOrder(context, 3L);
         PlanningManager manager = PlanningTestFixtures.manager(context);
@@ -34,6 +34,18 @@ class PlanningPersistenceTest {
         for (String name : fileNames()) {
             assertTrue(Files.exists(temporaryDirectory.resolve(name)), name);
         }
+    }
+
+    @Test
+    void legacySixFilePlanningSetLoadsWithoutSyntheticCadenceEvidence() throws Exception {
+        PlanningTestFixtures.Context context = savedContext();
+        Files.delete(temporaryDirectory.resolve(PlanningStorage.CADENCE_FILE));
+
+        PlanningManager loaded = storage(context).load();
+
+        assertEquals(1, loaded.cycles().size());
+        assertTrue(loaded.cycles().getFirst().cadenceEvidence().isEmpty());
+        assertEquals(1_220L, loaded.nextCadenceEligibilityTick(21L));
     }
 
     @Test
@@ -110,7 +122,8 @@ class PlanningPersistenceTest {
                 PlanningStorage.OPPORTUNITIES_FILE,
                 PlanningStorage.CANDIDATES_FILE,
                 PlanningStorage.APPROVED_PLANS_FILE,
-                PlanningStorage.RUNTIME_FILE
+                PlanningStorage.RUNTIME_FILE,
+                PlanningStorage.CADENCE_FILE
         );
     }
 }

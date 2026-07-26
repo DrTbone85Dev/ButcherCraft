@@ -18,11 +18,11 @@ class SimulationWorkRuntimeTest {
                         SimulationWorkStatus.EXPIRED),
                 SimulationWorkStatus.SCHEDULED.allowedNextStatuses());
         assertEquals(java.util.Set.of(SimulationWorkStatus.RUNNING, SimulationWorkStatus.DEFERRED,
-                        SimulationWorkStatus.CANCELLED, SimulationWorkStatus.EXPIRED),
+                        SimulationWorkStatus.CANCELLED, SimulationWorkStatus.EXPIRED, SimulationWorkStatus.FAILED),
                 SimulationWorkStatus.ELIGIBLE.allowedNextStatuses());
         for (SimulationWorkStatus status : List.of(
                 SimulationWorkStatus.COMPLETED, SimulationWorkStatus.FAILED,
-                SimulationWorkStatus.CANCELLED, SimulationWorkStatus.EXPIRED
+                SimulationWorkStatus.CANCELLED, SimulationWorkStatus.EXPIRED, SimulationWorkStatus.UNKNOWN_OUTCOME
         )) {
             assertTrue(status.isTerminal());
             assertTrue(status.allowedNextStatuses().isEmpty());

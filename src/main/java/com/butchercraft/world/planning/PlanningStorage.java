@@ -34,6 +34,7 @@ public final class PlanningStorage {
     public static final String CANDIDATES_FILE = "planning_candidates.json";
     public static final String APPROVED_PLANS_FILE = "planning_approved_plans.json";
     public static final String RUNTIME_FILE = "planning_runtime.json";
+    public static final String CADENCE_FILE = "planning_cadence.json";
 
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -62,11 +63,15 @@ public final class PlanningStorage {
     }
 
     public PlanningManager load() {
-        List<Path> persistenceFiles = files();
-        int count = (int) persistenceFiles.stream().filter(Files::exists).count();
-        if (count == 0) return new PlanningManager(dependencies, policy, budget);
-        if (count != persistenceFiles.size()) {
+        List<Path> legacyFiles = legacyFiles();
+        int count = (int) legacyFiles.stream().filter(Files::exists).count();
+        boolean cadenceExists = Files.exists(path(CADENCE_FILE));
+        if (count == 0 && !cadenceExists) return new PlanningManager(dependencies, policy, budget);
+        if (count != legacyFiles.size()) {
             throw new IllegalArgumentException("Planning persistence is incomplete; all six files are required");
+        }
+        if (count == 0) {
+            throw new IllegalArgumentException("Planning cadence persistence cannot exist without Planning artifacts");
         }
         try {
             PlanningFile<CycleObservations> observationFile = read(
@@ -81,6 +86,10 @@ public final class PlanningStorage {
                     APPROVED_PLANS_FILE, new TypeToken<PlanningFile<CycleApproved>>() {}.getType());
             PlanningFile<CycleRuntime> runtimeFile = read(
                     RUNTIME_FILE, new TypeToken<PlanningFile<CycleRuntime>>() {}.getType());
+            PlanningCadenceSnapshot cadenceSnapshot = cadenceExists ? readCadence() : null;
+            Map<PlanningCycleId, PlanningCycleCadenceEvidence> cadenceEvidence = cadenceSnapshot == null
+                    ? Map.of()
+                    : indexCadenceEvidence(cadenceSnapshot.cycleEvidence());
             List<CycleObservations> observations = observationFile.records();
             List<CycleNeeds> needs = needFile.records();
             List<CycleOpportunities> opportunities = opportunityFile.records();
@@ -104,7 +113,8 @@ public final class PlanningStorage {
                         cycleObservations.observations(), cycleNeeds.needs(), runtime.constraints(),
                         cycleOpportunities.opportunities(), cycleCandidates.candidates(),
                         cycleApproved.approvedPlans(), runtime.needRuntimes(), runtime.submissionRuntimes(),
-                        runtime.report(), runtime.revision(), runtime.schemaVersion()
+                        runtime.report(), Optional.ofNullable(cadenceEvidence.get(runtime.id())),
+                        runtime.revision(), runtime.schemaVersion()
                 ));
             }
             if (cycles.size() != observationsById.size() || cycles.size() != needsById.size()
@@ -112,7 +122,14 @@ public final class PlanningStorage {
                     || cycles.size() != approvedById.size()) {
                 throw new IllegalArgumentException("Planning persistence contains unmatched cycle artifacts");
             }
-            PlanningManager manager = new PlanningManager(dependencies, policy, budget, cycles);
+            if (!cycles.stream().map(PlanningCycleSnapshot::id).collect(java.util.stream.Collectors.toSet())
+                    .containsAll(cadenceEvidence.keySet())) {
+                throw new IllegalArgumentException("Planning cadence evidence references an unknown cycle");
+            }
+            PlanningManager manager = cadenceSnapshot == null
+                    ? new PlanningManager(dependencies, policy, budget, cycles)
+                    : new PlanningManager(
+                            dependencies, policy, budget, cycles, PlanningCadenceState.loaded(cadenceSnapshot));
             manager.validate();
             return manager;
         } catch (IOException | RuntimeException exception) {
@@ -141,6 +158,7 @@ public final class PlanningStorage {
                             value.id(), value.approvedPlans())).toList()));
             write(RUNTIME_FILE, new PlanningFile<>(PlanningValidation.SCHEMA_VERSION,
                     cycles.stream().map(CycleRuntime::from).toList()));
+            write(CADENCE_FILE, manager.cadenceSnapshot());
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to save Planning persistence", exception);
         }
@@ -152,7 +170,12 @@ public final class PlanningStorage {
                 manager.cycles().stream().map(CycleRuntime::from).toList()));
     }
 
-    private List<Path> files() {
+    public String serializeCadence(PlanningManager manager) {
+        manager.validate();
+        return GSON.toJson(manager.cadenceSnapshot());
+    }
+
+    private List<Path> legacyFiles() {
         return List.of(path(OBSERVATIONS_FILE), path(NEEDS_FILE), path(OPPORTUNITIES_FILE),
                 path(CANDIDATES_FILE), path(APPROVED_PLANS_FILE), path(RUNTIME_FILE));
     }
@@ -166,6 +189,16 @@ public final class PlanningStorage {
         if (value == null) throw new JsonParseException("Planning file is empty: " + name);
         PlanningFile<?> root = (PlanningFile<?>) value;
         PlanningValidation.schema(root.schemaVersion());
+        return value;
+    }
+
+    private PlanningCadenceSnapshot readCadence() throws IOException {
+        PlanningCadenceSnapshot value = GSON.fromJson(
+                Files.readString(path(CADENCE_FILE), StandardCharsets.UTF_8),
+                PlanningCadenceSnapshot.class
+        );
+        if (value == null) throw new JsonParseException("Planning cadence file is empty");
+        PlanningValidation.schema(value.schemaVersion());
         return value;
     }
 
@@ -185,6 +218,18 @@ public final class PlanningStorage {
         for (T value : values) {
             if (result.putIfAbsent(value.id(), value) != null) {
                 throw new IllegalArgumentException("Duplicate Planning Cycle artifact record: " + value.id().value());
+            }
+        }
+        return result;
+    }
+
+    private static Map<PlanningCycleId, PlanningCycleCadenceEvidence> indexCadenceEvidence(
+            List<PlanningCycleCadenceEvidence> values
+    ) {
+        Map<PlanningCycleId, PlanningCycleCadenceEvidence> result = new LinkedHashMap<>();
+        for (PlanningCycleCadenceEvidence value : values) {
+            if (result.putIfAbsent(value.cycleId(), value) != null) {
+                throw new IllegalArgumentException("Duplicate Planning cadence evidence: " + value.cycleId().value());
             }
         }
         return result;

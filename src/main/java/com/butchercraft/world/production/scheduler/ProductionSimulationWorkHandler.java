@@ -4,6 +4,7 @@ import com.butchercraft.world.production.ProductionManager;
 import com.butchercraft.world.production.ProductionRunId;
 import com.butchercraft.world.simulation.scheduler.HandlerEffectType;
 import com.butchercraft.world.simulation.scheduler.ScheduledSimulationWork;
+import com.butchercraft.world.simulation.scheduler.SchedulerEffectPolicy;
 import com.butchercraft.world.simulation.scheduler.SimulationExecutionContext;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandler;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkResult;
@@ -30,6 +31,14 @@ public final class ProductionSimulationWorkHandler implements SimulationWorkHand
     @Override
     public HandlerEffectType effectType() {
         return HandlerEffectType.TRANSACTION_BACKED;
+    }
+
+    @Override
+    public SchedulerEffectPolicy effectPolicy() {
+        return SchedulerEffectPolicy.transactionBacked(
+                supportedTypeId(),
+                "IM-009 Production Transaction-backed Scheduler effect policy"
+        );
     }
 
     @Override

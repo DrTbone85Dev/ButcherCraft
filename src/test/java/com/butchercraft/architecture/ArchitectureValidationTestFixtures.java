@@ -17,12 +17,109 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 components,
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 source.ownershipAssignments(),
                 source.ownershipContracts(),
                 source.dependencies(),
                 source.dependencyConstraints(),
                 source.registries(),
                 source.persistenceDescriptors(),
+                source.schedulerEffects(),
+                source.schedulers(),
+                source.simulationInvariants()
+        );
+    }
+
+    static ValidationContext withArchitectureDocuments(
+            ValidationContext source,
+            java.util.List<com.butchercraft.architecture.validation.ArchitectureDocumentDescriptor> documents
+    ) {
+        return new ValidationContext(
+                source.id(),
+                source.components(),
+                documents,
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
+                source.ownershipAssignments(),
+                source.ownershipContracts(),
+                source.dependencies(),
+                source.dependencyConstraints(),
+                source.registries(),
+                source.persistenceDescriptors(),
+                source.schedulerEffects(),
+                source.schedulers(),
+                source.simulationInvariants()
+        );
+    }
+
+    static ValidationContext withPlatformIdentities(
+            ValidationContext source,
+            java.util.List<com.butchercraft.architecture.validation.PlatformIdentityDescriptor> identities
+    ) {
+        return new ValidationContext(
+                source.id(),
+                source.components(),
+                source.architectureDocuments(),
+                identities,
+                source.platformContracts(),
+                source.runtimeAuthorities(),
+                source.ownershipAssignments(),
+                source.ownershipContracts(),
+                source.dependencies(),
+                source.dependencyConstraints(),
+                source.registries(),
+                source.persistenceDescriptors(),
+                source.schedulerEffects(),
+                source.schedulers(),
+                source.simulationInvariants()
+        );
+    }
+
+    static ValidationContext withPlatformContracts(
+            ValidationContext source,
+            java.util.List<com.butchercraft.architecture.validation.PlatformContractDescriptor> contracts
+    ) {
+        return new ValidationContext(
+                source.id(),
+                source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                contracts,
+                source.runtimeAuthorities(),
+                source.ownershipAssignments(),
+                source.ownershipContracts(),
+                source.dependencies(),
+                source.dependencyConstraints(),
+                source.registries(),
+                source.persistenceDescriptors(),
+                source.schedulerEffects(),
+                source.schedulers(),
+                source.simulationInvariants()
+        );
+    }
+
+    static ValidationContext withRuntimeAuthorities(
+            ValidationContext source,
+            java.util.List<com.butchercraft.architecture.validation.RuntimeAuthorityDescriptor> authorities
+    ) {
+        return new ValidationContext(
+                source.id(),
+                source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                authorities,
+                source.ownershipAssignments(),
+                source.ownershipContracts(),
+                source.dependencies(),
+                source.dependencyConstraints(),
+                source.registries(),
+                source.persistenceDescriptors(),
+                source.schedulerEffects(),
                 source.schedulers(),
                 source.simulationInvariants()
         );
@@ -36,12 +133,17 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 assignments,
                 contracts,
                 source.dependencies(),
                 source.dependencyConstraints(),
                 source.registries(),
                 source.persistenceDescriptors(),
+                source.schedulerEffects(),
                 source.schedulers(),
                 source.simulationInvariants()
         );
@@ -55,12 +157,17 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 source.ownershipAssignments(),
                 source.ownershipContracts(),
                 dependencies,
                 constraints,
                 source.registries(),
                 source.persistenceDescriptors(),
+                source.schedulerEffects(),
                 source.schedulers(),
                 source.simulationInvariants()
         );
@@ -73,12 +180,17 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 source.ownershipAssignments(),
                 source.ownershipContracts(),
                 source.dependencies(),
                 source.dependencyConstraints(),
                 registries,
                 source.persistenceDescriptors(),
+                source.schedulerEffects(),
                 source.schedulers(),
                 source.simulationInvariants()
         );
@@ -91,12 +203,40 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 source.ownershipAssignments(),
                 source.ownershipContracts(),
                 source.dependencies(),
                 source.dependencyConstraints(),
                 source.registries(),
                 persistence,
+                source.schedulerEffects(),
+                source.schedulers(),
+                source.simulationInvariants()
+        );
+    }
+
+    static ValidationContext withSchedulerEffects(
+            ValidationContext source,
+            java.util.List<com.butchercraft.architecture.validation.SchedulerEffectDeclaration> effects
+    ) {
+        return new ValidationContext(
+                source.id(),
+                source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
+                source.ownershipAssignments(),
+                source.ownershipContracts(),
+                source.dependencies(),
+                source.dependencyConstraints(),
+                source.registries(),
+                source.persistenceDescriptors(),
+                effects,
                 source.schedulers(),
                 source.simulationInvariants()
         );
@@ -109,12 +249,17 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 source.ownershipAssignments(),
                 source.ownershipContracts(),
                 source.dependencies(),
                 source.dependencyConstraints(),
                 source.registries(),
                 source.persistenceDescriptors(),
+                source.schedulerEffects(),
                 schedulers,
                 source.simulationInvariants()
         );
@@ -127,12 +272,17 @@ final class ArchitectureValidationTestFixtures {
         return new ValidationContext(
                 source.id(),
                 source.components(),
+                source.architectureDocuments(),
+                source.platformIdentities(),
+                source.platformContracts(),
+                source.runtimeAuthorities(),
                 source.ownershipAssignments(),
                 source.ownershipContracts(),
                 source.dependencies(),
                 source.dependencyConstraints(),
                 source.registries(),
                 source.persistenceDescriptors(),
+                source.schedulerEffects(),
                 source.schedulers(),
                 invariants
         );

@@ -13,6 +13,12 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
 final class ButcherCraftBlockStateProvider extends BlockStateProvider {
     private static final ResourceLocation DEVELOPMENT_PLACEHOLDER_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "item/development_test_item");
+    private static final ResourceLocation GRINDER_FRAME_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/grinder_frame");
+    private static final ResourceLocation GRINDER_SURFACE_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/grinder_surface");
+    private static final ResourceLocation GRINDER_FEED_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/grinder_feed");
     private static final ResourceLocation PACKAGING_TABLE_SURFACE_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/packaging_table_surface");
     private static final ResourceLocation PACKAGING_TABLE_FRAME_TEXTURE =
@@ -46,11 +52,16 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
     }
 
     private ModelFile grinderModel() {
-        return models().getBuilder("grinder")
-                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE)
-                .element().from(0, 0, 0).to(16, 9, 16).cube("#all").end()
-                .element().from(3, 9, 3).to(13, 13, 13).cube("#all").end()
-                .element().from(4, 3, 0).to(12, 8, 2).cube("#all").end();
+        BlockModelBuilder model = models().getBuilder("grinder")
+                .texture("particle", GRINDER_FRAME_TEXTURE)
+                .texture("frame", GRINDER_FRAME_TEXTURE)
+                .texture("surface", GRINDER_SURFACE_TEXTURE)
+                .texture("feed", GRINDER_FEED_TEXTURE);
+
+        cuboid(model, 0, 0, 0, 16, 9, 16, "#frame");
+        cuboid(model, 3, 9, 3, 13, 13, 13, "#surface");
+        cuboid(model, 4, 3, 0, 12, 8, 2, "#feed");
+        return model;
     }
 
     private ModelFile bandsawModel() {

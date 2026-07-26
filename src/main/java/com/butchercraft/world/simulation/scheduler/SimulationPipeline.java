@@ -7,12 +7,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class SimulationPipeline {
     private final SimulationSchedulerManager manager;
     private final SimulationExecutionBudget budget;
-    private final AtomicBoolean executing = new AtomicBoolean();
 
     public SimulationPipeline(SimulationSchedulerManager manager, SimulationExecutionBudget budget) {
         this.manager = Objects.requireNonNull(manager, "manager");
@@ -21,16 +19,16 @@ public final class SimulationPipeline {
 
     public SimulationTickReport execute(long authoritativeSimulationTick) {
         SchedulerValidation.requireTick(authoritativeSimulationTick, "Authoritative pipeline tick");
-        if (!executing.compareAndSet(false, true)) {
+        if (!manager.tryBeginRuntimeAuthority()) {
             return SimulationTickReport.rejected(
-                    authoritativeSimulationTick, WorkFailureCode.INVALID_STATUS,
-                    "The simulation pipeline is already executing"
+                    authoritativeSimulationTick, WorkFailureCode.SCHEDULER_AUTHORITY_ALREADY_EXECUTING,
+                    "The world-scoped Scheduler Runtime Authority is already executing"
             );
         }
         try {
             return executeExclusive(authoritativeSimulationTick);
         } finally {
-            executing.set(false);
+            manager.endRuntimeAuthority();
         }
     }
 
@@ -122,11 +120,16 @@ public final class SimulationPipeline {
     ) {
         totals.attempted++;
         stageTotals.attempted++;
-        SimulationWorkRuntime running = manager.start(work.id(), tick);
         SimulationWorkHandler handler = manager.handlerRegistry().find(work.typeId()).orElse(null);
         if (handler == null) {
             return failWork(work, tick, WorkFailureCode.HANDLER_NOT_REGISTERED,
                     "No handler is registered for this work type", 0, List.of(), totals, stageTotals);
+        }
+        SchedulerEffectPolicy policy = manager.handlerRegistry().policyFor(work.typeId()).orElse(null);
+        if (policy == null) {
+            return failWork(work, tick, WorkFailureCode.INVALID_EFFECT_DECLARATION,
+                    "No Scheduler effect policy is registered for this work type", 0,
+                    List.of(), totals, stageTotals);
         }
 
         WorkValidationResult validation;
@@ -142,8 +145,37 @@ public final class SimulationPipeline {
             return failWork(work, tick, code, message, 0, validation.messages(), totals, stageTotals);
         }
 
+        int attemptNumber = manager.runtimeFor(work.id()).orElseThrow().attemptCount() + 1;
+        SchedulerInvocationIdentity invocationIdentity;
+        Optional<SchedulerEffectIdentity> effectIdentity;
+        try {
+            invocationIdentity = SchedulerInvocationIdentity.forAttempt(
+                    work, handler, attemptNumber, tick, policy
+            );
+            effectIdentity = policy.requiresEffectIdentity()
+                    ? Optional.of(SchedulerEffectIdentity.forWork(work, handler, policy))
+                    : Optional.empty();
+        } catch (RuntimeException exception) {
+            return failWork(work, tick, WorkFailureCode.MISSING_INVOCATION_IDENTITY,
+                    exceptionDiagnostic("Scheduler identity creation failed", exception), 0,
+                    List.of(), totals, stageTotals);
+        }
+        if (policy.requiresEffectIdentity() && effectIdentity.isEmpty()) {
+            return failWork(work, tick, WorkFailureCode.MISSING_REQUIRED_EFFECT_IDENTITY,
+                    "Consequential Work is missing required Effect Identity", 0, List.of(), totals, stageTotals);
+        }
+
+        SimulationWorkRuntime running;
+        try {
+            running = manager.start(work.id(), tick, invocationIdentity, effectIdentity, policy);
+        } catch (RuntimeException exception) {
+            return failWork(work, tick, WorkFailureCode.DUPLICATE_ACTIVE_INVOCATION,
+                    exceptionDiagnostic("Scheduler could not start the bounded invocation", exception),
+                    0, List.of(), totals, stageTotals);
+        }
+
         SimulationExecutionContext context = new SimulationExecutionContext(
-                tick, stage, work, running, running.attemptCount(),
+                tick, stage, work, running, invocationIdentity, effectIdentity, policy, running.attemptCount(),
                 budget.maximumWorkItemsPerTick() - totals.attempted,
                 budget.maximumWorkItemsPerStage() - stageTotals.attempted,
                 budget.maximumHandlerWorkUnits() - totals.workUnits,
@@ -153,6 +185,11 @@ public final class SimulationPipeline {
         try {
             result = Objects.requireNonNull(handler.execute(context), "handler execution result");
         } catch (RuntimeException exception) {
+            if (policy.exceptionCreatesUnknownOutcome()) {
+                return unknownOutcomeWork(work, tick, unknownOutcomeCode(policy),
+                        exceptionDiagnostic("Handler execution outcome is unknown", exception),
+                        0, List.of(), totals, stageTotals);
+            }
             return failWork(work, tick, WorkFailureCode.HANDLER_EXCEPTION,
                     exceptionDiagnostic("Handler execution threw", exception), 0, List.of(), totals, stageTotals);
         }
@@ -166,6 +203,16 @@ public final class SimulationPipeline {
             return failWork(work, tick, WorkFailureCode.BUDGET_EXHAUSTED,
                     "Handler result exceeds the remaining deterministic work-unit budget", 0,
                     result.diagnosticMessages(), totals, stageTotals);
+        }
+
+        PolicyDecision policyDecision = enforceEffectPolicy(work, policy, effectIdentity, result);
+        if (!policyDecision.accepted()) {
+            if (policyDecision.unknownOutcome()) {
+                return unknownOutcomeWork(work, tick, policyDecision.failureCode(), policyDecision.message(),
+                        result.workUnitsConsumed(), result.diagnosticMessages(), totals, stageTotals);
+            }
+            return failWork(work, tick, policyDecision.failureCode(), policyDecision.message(),
+                    result.workUnitsConsumed(), result.diagnosticMessages(), totals, stageTotals);
         }
 
         PreparedGeneratedBatch generated = prepareGeneratedBatch(
@@ -311,10 +358,155 @@ public final class SimulationPipeline {
         };
     }
 
+    private PolicyDecision enforceEffectPolicy(
+            ScheduledSimulationWork work,
+            SchedulerEffectPolicy policy,
+            Optional<SchedulerEffectIdentity> effectIdentity,
+            SimulationWorkResult result
+    ) {
+        Optional<SchedulerEffectObservation> observation = result.effectObservation();
+        if (policy.requiresEffectIdentity() && effectIdentity.isEmpty()) {
+            return PolicyDecision.failed(WorkFailureCode.MISSING_REQUIRED_EFFECT_IDENTITY,
+                    "Consequential Scheduler Work is missing Effect Identity");
+        }
+        if (!policy.requiresEffectIdentity() && effectIdentity.isPresent()) {
+            return PolicyDecision.failed(WorkFailureCode.INVALID_EFFECT_DECLARATION,
+                    "Read-only Scheduler Work received an Effect Identity");
+        }
+        if (policy.effectType() == HandlerEffectType.READ_ONLY && observation.isPresent()) {
+            return PolicyDecision.failed(
+                    WorkFailureCode.SCHEDULER_OBSERVATION_INFERENCE_ATTEMPTED,
+                    "READ_ONLY Scheduler Work cannot publish owner effect observation"
+            );
+        }
+        if (observation.isPresent()) {
+            PolicyDecision observed = validateObservation(policy, effectIdentity.orElse(null), observation.orElseThrow());
+            if (!observed.accepted()) return observed;
+        }
+
+        if (!result.generatedWork().isEmpty()) {
+            if (!policy.generatedWorkAllowed()) {
+                return consequentialPolicyFailure(
+                        policy,
+                        observation,
+                        WorkFailureCode.ILLEGAL_GENERATED_WORK,
+                        "This Scheduler effect policy does not permit generated Work"
+                );
+            }
+            if (policy.generatedWorkRequiresOwnerResult() && observation.isEmpty()) {
+                return PolicyDecision.unknown(
+                        WorkFailureCode.MISSING_AUTHORITATIVE_RESULT,
+                        "Generated Work from a consequential effect requires owner-published result evidence"
+                );
+            }
+        }
+
+        return switch (result.outcome()) {
+            case COMPLETED -> {
+                if (policy.completionRequiresOwnerResult() && observation.isEmpty()) {
+                    WorkFailureCode code = policy.effectType() == HandlerEffectType.TRANSACTION_BACKED
+                            ? WorkFailureCode.HANDLER_TRANSACTION_EVIDENCE_MISSING
+                            : WorkFailureCode.MISSING_AUTHORITATIVE_RESULT;
+                    yield policy.missingCompletionEvidenceCreatesUnknownOutcome()
+                            ? PolicyDecision.unknown(code,
+                                    "Consequential completion lacks owner-published Authoritative Result evidence")
+                            : PolicyDecision.failed(code,
+                                    "Consequential completion lacks owner-published Authoritative Result evidence");
+                }
+                yield PolicyDecision.allowed();
+            }
+            case DEFERRED -> {
+                if (!policy.deferralAllowed()) {
+                    yield consequentialPolicyFailure(
+                            policy,
+                            observation,
+                            WorkFailureCode.HANDLER_DEFERRAL_NOT_PERMITTED,
+                            "This Scheduler effect policy does not permit handler deferral"
+                    );
+                }
+                yield PolicyDecision.allowed();
+            }
+            case RETRY -> {
+                if (!policy.retryAllowed()) {
+                    yield consequentialPolicyFailure(
+                            policy,
+                            observation,
+                            WorkFailureCode.HANDLER_RETRY_NOT_PERMITTED,
+                            "This Scheduler effect policy does not permit automatic retry"
+                    );
+                }
+                if (policy.retryRequiresOwnerResult() && observation.isEmpty()) {
+                    yield PolicyDecision.unknown(
+                            WorkFailureCode.AUTOMATIC_RETRY_BLOCKED_BY_UNKNOWN_OUTCOME,
+                            "Automatic retry requires compatible owner-published result evidence"
+                    );
+                }
+                yield PolicyDecision.allowed();
+            }
+            case FAILED -> PolicyDecision.allowed();
+        };
+    }
+
+    private PolicyDecision validateObservation(
+            SchedulerEffectPolicy policy,
+            SchedulerEffectIdentity expected,
+            SchedulerEffectObservation observation
+    ) {
+        if (expected == null) {
+            return PolicyDecision.failed(WorkFailureCode.MISSING_REQUIRED_EFFECT_IDENTITY,
+                    "Effect observation was published without a Scheduler Effect Identity");
+        }
+        if (!observation.effectIdentity().equals(expected)) {
+            return PolicyDecision.failed(
+                    policy.effectType() == HandlerEffectType.TRANSACTION_BACKED
+                            ? WorkFailureCode.TRANSACTION_RESULT_EVIDENCE_MISMATCH
+                            : WorkFailureCode.HANDLER_EFFECT_IDENTITY_CONFLICT,
+                    "Effect observation identity differs from the active Scheduler Effect Identity"
+            );
+        }
+        if (observation.effectType() != policy.effectType()) {
+            return PolicyDecision.failed(WorkFailureCode.INVALID_EFFECT_DECLARATION,
+                    "Effect observation kind differs from the registered Scheduler effect policy");
+        }
+        if (!observation.ownerSubsystemId().equals(policy.ownerSubsystemId())) {
+            return PolicyDecision.failed(
+                    policy.effectType() == HandlerEffectType.TRANSACTION_BACKED
+                            ? WorkFailureCode.TRANSACTION_RESULT_EVIDENCE_MISMATCH
+                            : WorkFailureCode.HANDLER_EFFECT_IDENTITY_CONFLICT,
+                    "Effect observation owner differs from the registered Scheduler effect policy"
+            );
+        }
+        Optional<SchedulerEffectObservation> existing = manager.effectObservationFor(observation.effectIdentity());
+        if (existing.isPresent() && !existing.orElseThrow().sameContentAs(observation)) {
+            return PolicyDecision.failed(WorkFailureCode.HANDLER_EFFECT_IDENTITY_CONFLICT,
+                    "The same Effect Identity was observed with conflicting canonical content");
+        }
+        return PolicyDecision.allowed();
+    }
+
+    private PolicyDecision consequentialPolicyFailure(
+            SchedulerEffectPolicy policy,
+            Optional<SchedulerEffectObservation> observation,
+            WorkFailureCode code,
+            String message
+    ) {
+        if (policy.requiresEffectIdentity() && observation.isEmpty()) {
+            return PolicyDecision.unknown(code, message);
+        }
+        return PolicyDecision.failed(code, message);
+    }
+
+    private static WorkFailureCode unknownOutcomeCode(SchedulerEffectPolicy policy) {
+        return policy.effectType() == HandlerEffectType.NON_REPEATABLE
+                ? WorkFailureCode.NON_REPEATABLE_OUTCOME_UNKNOWN
+                : WorkFailureCode.HANDLER_EFFECT_OUTCOME_UNKNOWN;
+    }
+
     private void applyAction(
             ScheduledSimulationWork work, long tick, SimulationWorkResult result, WorkAction action
     ) {
         String diagnostic = firstMessage(result.diagnosticMessages(), "Work handler returned " + result.outcome());
+        result.effectObservation().ifPresent(observation -> manager.observeEffect(work.id(), observation));
         switch (result.outcome()) {
             case COMPLETED -> manager.complete(work.id(), tick, result.resultMetadata());
             case DEFERRED -> manager.defer(work.id(), tick, action.nextEligibleTick().orElseThrow(), diagnostic);
@@ -346,6 +538,28 @@ public final class SimulationPipeline {
         stageTotals.results.add(new SimulationWorkExecutionSummary(
                 work.id(), work.typeId(), SimulationWorkStatus.FAILED,
                 Optional.of(SimulationWorkOutcome.FAILED), Optional.of(code), messages, workUnits, 0
+        ));
+        return new ExecutionDisposition(true);
+    }
+
+    private ExecutionDisposition unknownOutcomeWork(
+            ScheduledSimulationWork work,
+            long tick,
+            WorkFailureCode code,
+            String message,
+            int workUnits,
+            List<String> diagnostics,
+            TickAccumulator totals,
+            StageAccumulator stageTotals
+    ) {
+        manager.unknownOutcome(work.id(), tick, code, message);
+        totals.workUnits += workUnits;
+        stageTotals.workUnits += workUnits;
+        stageTotals.record(SimulationWorkStatus.UNKNOWN_OUTCOME);
+        List<String> messages = diagnostics.isEmpty() ? List.of(message) : diagnostics;
+        stageTotals.results.add(new SimulationWorkExecutionSummary(
+                work.id(), work.typeId(), SimulationWorkStatus.UNKNOWN_OUTCOME,
+                Optional.empty(), Optional.of(code), messages, workUnits, 0
         ));
         return new ExecutionDisposition(true);
     }
@@ -405,6 +619,25 @@ public final class SimulationPipeline {
         }
     }
 
+    private record PolicyDecision(
+            boolean accepted,
+            boolean unknownOutcome,
+            WorkFailureCode failureCode,
+            String message
+    ) {
+        private static PolicyDecision allowed() {
+            return new PolicyDecision(true, false, WorkFailureCode.UNKNOWN, "");
+        }
+
+        private static PolicyDecision failed(WorkFailureCode code, String message) {
+            return new PolicyDecision(false, false, code, message);
+        }
+
+        private static PolicyDecision unknown(WorkFailureCode code, String message) {
+            return new PolicyDecision(false, true, code, message);
+        }
+    }
+
     private static final class StageAccumulator {
         private final SimulationStageId stageId;
         private final List<SimulationWorkExecutionSummary> results = new ArrayList<>();
@@ -424,7 +657,7 @@ public final class SimulationPipeline {
                 case COMPLETED -> completed++;
                 case DEFERRED -> deferred++;
                 case RETRY_WAIT -> retrying++;
-                case FAILED -> failed++;
+                case FAILED, UNKNOWN_OUTCOME -> failed++;
                 default -> { }
             }
         }

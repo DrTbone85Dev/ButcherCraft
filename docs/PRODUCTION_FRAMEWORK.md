@@ -1,12 +1,12 @@
 # Industry-Neutral Production Framework
 
-Status: implemented in v0.9.0-alpha.1 Phase 20 (RFC-0020)
+Status: implemented in v0.9.0-alpha.1 Phase 20 (RFC-0020), with IM-016 Grinder integration.
 
 ## Purpose
 
 The Production Framework is ButcherCraft Core's pure Java operational layer for turning economic Goods into other Goods over authoritative simulation time. It is industry-neutral: Core provides Processes, Plans, Runs, validation, scheduling, transactions, persistence, and queries, while future industry modules provide actual Process definitions.
 
-Phase 20 adds no live Process, machine, workstation, block, item, recipe, GUI, automation, or player interaction. It does not convert existing Grinder or Bandsaw gameplay into regional Production.
+Phase 20 adds no live Process, machine, workstation, block, item, recipe, GUI, automation, or player interaction. It does not convert existing Grinder or Bandsaw gameplay into regional Production. IM-016 adds one narrow integration for the promoted Grinder: Production may assign and observe an existing Grinder operation, but Grinder still owns workstation inventory and local results, Execution still owns operation lifecycle, and Scheduler still owns dispatch.
 
 The framework follows `CONSTITUTION.md`, `CORE_PRINCIPLES.md`, and `PROJECT_RULES.md`. In particular, definitions are immutable, runtime state is separate, time has one authority, economic mutation has one authority, and no subsystem silently repairs invalid persistence.
 
@@ -34,6 +34,9 @@ ScheduledSimulationWork
 EconomicTransaction
     atomically removes consumed inputs and adds every output
 
+GrinderOwnerResult + ExecutionResultEvidence
+    optionally complete a Grinder-assigned Run without economic Inventory mutation
+
 Inventory
     remains authoritative for current Good quantities
 ```
@@ -52,8 +55,9 @@ The pure domain is `com.butchercraft.world.production`, with scheduler and persi
 - `ProductionPlanId`: one authoritative Production intention.
 - `ProductionRunId`: one runtime execution. Schema 1 derives `<plan-id>/run`.
 - `ProductionLineId`: stable input or output line identity independent of list position.
+- Workstation assignment identity fields: external Grinder workstation identity, selected process identity, Execution Operation Identity, Grinder owner result identity, Execution result evidence identity, and Production completion evidence identity.
 
-All use canonical lowercase identifier rules, stable equality, deterministic ordering, and persistence-safe strings. Phase 20 does not need a separate allocation identity because line bindings and transaction changes remain unambiguous.
+Production-owned ids use canonical lowercase identifier rules, stable equality, deterministic ordering, and persistence-safe strings. External identity fields preserve the published identity of their owning subsystem. Phase 20 does not need a separate allocation identity because line bindings and transaction changes remain unambiguous.
 
 ## Process Schema
 
@@ -123,12 +127,13 @@ PLANNED -> READY -> SCHEDULED -> RUNNING
    +---------+----------+----------+-> BLOCKED
                                   +-> PAUSED
                                   +-> AWAITING_TRANSACTION -> COMPLETED
+                                  +-> Grinder owner result + Execution result evidence -> COMPLETED
 
 Any nonterminal state -> FAILED | CANCELLED | EXPIRED
 BLOCKED | PAUSED -> READY/SCHEDULED/RUNNING after reevaluation
 ```
 
-Terminal states are irreversible. Ticks never move backward, progress never decreases, one Scheduler Work id cannot bind multiple Runs, and one APPLIED completion transaction cannot complete multiple Runs.
+Terminal states are irreversible. Ticks never move backward, progress never decreases, one Scheduler Work id cannot bind multiple Runs, one APPLIED completion transaction cannot complete multiple Runs, and one Execution Operation Identity cannot bind multiple Production Runs.
 
 Blocked and paused records carry a typed reason, last evaluated tick, and future reevaluation tick. Scheduler retry counters and Production execution attempts remain distinct.
 
@@ -176,9 +181,9 @@ The handler:
 5. starts, resumes, or advances exact progress;
 6. defers the same Work to a future tick while incomplete;
 7. builds and submits one completion transaction when progress is complete;
-8. records `COMPLETED` only after transaction history reports `APPLIED`.
+8. records `COMPLETED` only after transaction history reports `APPLIED` and publishes authoritative Transaction result evidence.
 
-No Production Work recursively schedules itself in the same tick. The handler returns typed completed, deferred, or failed outcomes and never accesses mutable Scheduler internals.
+No Production Work recursively schedules itself in the same tick. The handler returns typed completed, deferred, or failed outcomes and never accesses mutable Scheduler internals. For IM-009, the handler publishes a Scheduler effect observation only after the Transaction owner publishes result evidence.
 
 ### Planning Submission Boundary
 
@@ -211,9 +216,29 @@ Consequences:
 - failed preflight creates no transaction history entry and no Inventory mutation;
 - rejected submitted transactions never complete the Run;
 - replay preserves the complete ordered change plan;
-- completion transaction metadata identifies Run, Plan, Process, Actor, Scheduler Work, completion tick, and optional Order/Contract context.
+- completion transaction identity is stable for the logical Run completion: `<production_run_id>/completion`;
+- completion transaction metadata identifies Run, Plan, Process, Actor, Scheduler Work, completion tick, and optional Order/Contract context;
+- Scheduler observes the Transaction result evidence digest but does not receive Validation Consumption Authority or infer completion from Transaction id alone.
 
 Outputs do not automatically fulfill Orders. A future explicit orchestration owner may allocate the APPLIED transaction through `OrderManager`.
+
+## Grinder Workstation Completion
+
+IM-016 adds a second completion path only for the promoted Grinder. Production may assign a Run to one Grinder workstation identity and one promoted Grinder process identity. The assignment is immutable after an Execution Operation Identity is observed.
+
+Production does not insert or remove ItemStacks, bypass Grinder validation, start Execution directly, consume Execution authorization, or decide workstation success. It asks the existing Grinder controller for normal workstation processing and records the result that Grinder and Execution publish.
+
+A Grinder-assigned Run completes only when Production has observed:
+
+- its own Run identity;
+- the assigned Grinder workstation identity;
+- the assigned promoted process identity;
+- the Execution Operation Identity;
+- successful Execution terminal status;
+- Grinder owner result identity and content digest;
+- Execution result evidence identity and content digest.
+
+Production publishes its own completion evidence over those identities and marks the Run `COMPLETED` without creating a Production Transaction. The evidence references Grinder and Execution state; it does not duplicate their state. Rejection, failure, cancellation after start, or `UNKNOWN_OUTCOME` are recorded explicitly and never cause automatic rerun.
 
 ## Persistence
 
@@ -227,7 +252,7 @@ World-owned schema-1 state is stored at:
 
 Each document has deterministic ordering, canonical exact numbers, stable field names, and its own schema version. Saves write all temporary files before replacing targets in Process, Plan, Run order. Filesystem APIs cannot replace three files as one transaction; therefore load parses all documents, constructs candidates, validates every cross-reference, and publishes no manager unless the complete set is valid.
 
-Missing members of an existing three-file set, malformed JSON, unsupported schema, duplicate ids, unknown authorities, illegal lifecycle state, non-APPLIED completion references, or mismatched Scheduler Work fail visibly. Unknown Runs are never deleted or silently reset. Persistence is refused while a Run is transiently `AWAITING_TRANSACTION`.
+Missing members of an existing three-file set, malformed JSON, unsupported schema, duplicate ids, unknown authorities, illegal lifecycle state, non-APPLIED completion references, malformed workstation completion evidence, or mismatched Scheduler Work fail visibly. Unknown Runs are never deleted or silently reset. Persistence is refused while a Run is transiently `AWAITING_TRANSACTION`.
 
 ## Service Initialization
 
@@ -246,7 +271,7 @@ The Scheduler domain does not depend on Production. The world integration layer 
 
 ## Query Model
 
-Immutable Process registry indexes industry, capability, input Good, output Good, and transformation reference. Immutable Plan registry indexes Process, Actor, Business, Order, Contract, priority, source/destination Inventory, and creation tick. `ProductionManager` indexes Run status, Plan, Scheduler Work, completion transaction, and terminal ticks while using Plan indexes for Process, Actor, Business, Order, and Contract queries.
+Immutable Process registry indexes industry, capability, input Good, output Good, and transformation reference. Immutable Plan registry indexes Process, Actor, Business, Order, Contract, priority, source/destination Inventory, and creation tick. `ProductionManager` indexes Run status, Plan, Scheduler Work, completion transaction, Grinder Execution Operation Identity, workstation completion evidence, and terminal ticks while using Plan indexes for Process, Actor, Business, Order, and Contract queries.
 
 Public results are immutable and deterministically ordered. No generic query language or mutable registry view exists.
 
@@ -263,6 +288,7 @@ Public results are immutable and deterministically ordered. No generic query lan
 9. Save/reload: Process, Plan, progress, attempt count, Work id, and failure state reload exactly.
 10. Cancellation: nonterminal Work is cancelled through Scheduler authority before the Run becomes terminal.
 11. Expiration: the authoritative completion deadline terminates the Run without Inventory rollback.
+12. Grinder completion: a Grinder-assigned Run completes only from Grinder owner result evidence and Execution result evidence.
 12. Future meat processing: an industry expansion may define fabrication Processes without placing meat rules in Core.
 13. Future agriculture: an expansion may define milling or crop processing against the same contracts.
 14. Future manufacturing: an expansion may define assembly with components, products, and waste outputs.
@@ -272,7 +298,7 @@ These are illustrative only. Phase 20 registers none of them.
 
 ## Invariants
 
-`PF-0001` through `PF-0025` are the subsystem invariants: immutable Process and Plan definitions; runtime-only lifecycle; no direct Inventory mutation; APPLIED transaction completion; exact deterministic quantities; Scheduler-owned eligibility; Clock-owned time; irreversible terminal state; no implicit reservation; external Goods, Actors, Business, Workforce, Scheduler, Transaction, and Order authority; immutable views; fail-visible persistence; and industry neutrality.
+`PF-0001` through `PF-0025` are the subsystem invariants: immutable Process and Plan definitions; runtime-only lifecycle; no direct Inventory mutation; APPLIED transaction completion for economic Scheduler-backed runs; exact deterministic quantities; Scheduler-owned eligibility; Clock-owned time; irreversible terminal state; no implicit reservation; external Goods, Actors, Business, Workforce, Scheduler, Transaction, and Order authority; immutable views; fail-visible persistence; and industry neutrality. IM-016 adds the invariant that Grinder-assigned Runs complete only through Production-owned evidence that references Grinder owner results and Execution result evidence.
 
 ## Measured Phase 20 Scale
 
