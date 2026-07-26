@@ -136,6 +136,7 @@
   "message.butchercraft.production_order.stale_reference": "This Production Order points to a run that is not loaded",
   "message.butchercraft.production_order.unsupported_template": "This Production Order cannot be used here",
   "message.butchercraft.production_order.unsupported_workstation": "Use this order on a Grinder or Patty Former",
+  "screen.butchercraft.production_order": "Production Order",
   "screen.butchercraft.production_order.cancel": "Cancel",
   "screen.butchercraft.production_order.chain": "Beef Trim -> Ground Beef -> Beef Patties",
   "screen.butchercraft.production_order.next.assign_grinder": "Use this order on a Grinder",

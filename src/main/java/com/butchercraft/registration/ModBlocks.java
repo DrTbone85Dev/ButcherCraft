@@ -32,6 +32,7 @@ public final class ModBlocks {
                     BlockBehaviour.Properties.of()
                             .strength(2.5F)
                             .sound(SoundType.METAL)
+                            .noOcclusion()
             );
 
     public static final DeferredBlock<PattyFormerBlock> PATTY_FORMER =
@@ -41,6 +42,7 @@ public final class ModBlocks {
                     BlockBehaviour.Properties.of()
                             .strength(2.5F)
                             .sound(SoundType.METAL)
+                            .noOcclusion()
             );
 
     public static final DeferredBlock<BandsawBlock> BANDSAW =
@@ -50,6 +52,7 @@ public final class ModBlocks {
                     BlockBehaviour.Properties.of()
                             .strength(3.0F)
                             .sound(SoundType.METAL)
+                            .noOcclusion()
             );
 
     public static final DeferredBlock<BandsawUpperBlock> BANDSAW_UPPER =

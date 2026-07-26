@@ -23,6 +23,12 @@ class BandsawAssetsTest {
     }
 
     @Test
+    void generatedBandsawModelsDoNotCullPartialMachineFaces() throws IOException {
+        assertModelHasNoCullfaces("src/generated/resources/assets/butchercraft/models/block/bandsaw.json");
+        assertModelHasNoCullfaces("src/generated/resources/assets/butchercraft/models/block/bandsaw_upper.json");
+    }
+
+    @Test
     void bandsawLanguageEntriesExist() throws IOException {
         Path languagePath = TestProjectPaths.projectPath("src/main/resources/assets/butchercraft/lang/en_us.json");
         var language = JsonParser.parseString(Files.readString(languagePath)).getAsJsonObject();
@@ -34,5 +40,12 @@ class BandsawAssetsTest {
     private static void assertResource(String relativePath) {
         Path path = TestProjectPaths.projectPath(relativePath);
         assertTrue(Files.isRegularFile(path), "Missing Bandsaw resource: " + relativePath);
+    }
+
+    private static void assertModelHasNoCullfaces(String relativePath) throws IOException {
+        Path path = TestProjectPaths.projectPath(relativePath);
+        String model = Files.readString(path);
+
+        assertTrue(!model.contains("\"cullface\""), "Bandsaw model must not cull partial machine faces: " + relativePath);
     }
 }

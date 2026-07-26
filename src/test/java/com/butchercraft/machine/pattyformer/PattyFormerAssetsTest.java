@@ -41,6 +41,13 @@ class PattyFormerAssetsTest {
     }
 
     @Test
+    void pattyFormerBlockModelDoesNotCullPartialMachineFaces() throws IOException {
+        String model = Files.readString(resourcePath("assets/butchercraft/models/block/patty_former.json"));
+
+        assertTrue(!model.contains("\"cullface\""), "Patty Former model must not cull partial machine faces");
+    }
+
+    @Test
     void pattyFormerBlockstateHasHorizontalFacingVariants() throws IOException {
         var blockstate = JsonParser.parseString(Files.readString(
                 resourcePath("assets/butchercraft/blockstates/patty_former.json")

@@ -164,6 +164,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("message.butchercraft.production_order.cancel_no_run", "There is no Production run to cancel");
         add("message.butchercraft.production_order.cancelled", "Production Order cancelled");
         add("message.butchercraft.production_order.cancel_rejected", "This Production Order cannot be cancelled now");
+        add("screen.butchercraft.production_order", "Production Order");
         add("screen.butchercraft.production_order.chain", "Beef Trim -> Ground Beef -> Beef Patties");
         add("screen.butchercraft.production_order.cancel", "Cancel");
         add("screen.butchercraft.production_order.step.grinder", "Grinder");
