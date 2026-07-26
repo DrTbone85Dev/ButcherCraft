@@ -1,5 +1,41 @@
 # Changelog
 
+## ButcherCraft v0.10.1-alpha.1 - First Multi-Workstation Production Update
+
+### Added
+
+- Added the Patty Former workstation.
+- Added the Beef Patties product.
+- Added the Production Order item.
+- Added the first multi-workstation production chain.
+- Added player-facing production guidance for the manual Grinder to Patty Former flow.
+
+### Expanded
+
+- Expanded the Grinder to support Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim-to-ground flows.
+
+### Improved
+
+- Improved machine rendering and block-face culling.
+- Improved Production Order localization.
+- Improved workstation rendering assets.
+- Improved product definitions.
+- Improved release documentation for the current production chain.
+
+### Technical
+
+- Integrated the production chain with Production-owned ordered workstation runs.
+- Added ordered workstation Production Runs for the manual chain.
+- Added product-flow validation for the Grinder to Patty Former handoff.
+- Added additional automated GameTests.
+- Added additional automated unit tests.
+
+### Stability
+
+- Verified 1,296 automated tests in the current test-result metadata.
+- Verified 88 GameTests for promoted production workflows and regression coverage.
+- Recorded human acceptance of the multi-workstation production update after the localization and machine culling correction passes.
+
 ## ButcherCraft v0.10.0-alpha.1 - First Playable Production Alpha
 
 ### Added
@@ -7,6 +43,9 @@
 - Promoted the first playable Grinder workstation flow for normal gameplay.
 - Added player-facing Beef Trim to Ground Beef processing.
 - Added player-facing Pork Trim to Ground Pork processing.
+- Added the craftable Patty Former workstation.
+- Added player-facing Ground Beef to Beef Patties processing.
+- Added the first manual Grinder to Patty Former production chain.
 - Added craftable Grinder gameplay access while retaining existing compatible registry ids.
 - Integrated promoted Grinder completion with the Production Framework through Production-owned assignment and completion evidence.
 
@@ -16,6 +55,7 @@
 - Enforced live Scheduler side-effect policy and deterministic handler boundaries.
 - Added live Planning Cadence enforcement for bounded, explicit Planning execution.
 - Added Production observation of promoted workstation operations without moving Grinder, Execution, Scheduler, or Transaction authority.
+- Added Production-owned ordered chain state, product-flow identity validation, manual-transfer waiting state, and chain completion evidence for the Grinder to Patty Former path.
 - Preserved the RFC-0022 Allocation foundations while keeping Allocation out of live Grinder gameplay.
 
 ### Stability

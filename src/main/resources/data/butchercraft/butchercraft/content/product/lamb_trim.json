@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:lamb_trim",
+  "display_name": "Lamb Trim",
+  "category": "butchercraft:lamb",
+  "default_quantity_unit": "gram",
+  "tags": [
+    "butchercraft:trait/trim"
+  ],
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

@@ -1,10 +1,10 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, with v0.8.0 Packaging Table gameplay
+Status: Milestones 2B through 2E workstation framework, v0.8.0 Packaging Table gameplay, IM-017 Grinder recipe expansion, and IM-018 Patty Former gameplay
 
 ## Purpose
 
-Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table foundation, Sprint 2 adds retail product data, Sprint C adds packaging supply items, and Sprint D connects the table to the shared processing controller for the first supply-consuming packaging flow.
+Milestone 2B adds the first reusable Minecraft-facing processing workstation framework. Milestone 2E extends the same framework so one input product can resolve one compatible operation, track server-side progress, and create an ordered collection of output products through the existing engine transaction model. Version 0.6.1 adds a capability-based execution strategy hook and migrates only the Grinder to the transformation execution bridge. Version 0.6.2 makes that bridge query the immutable transformation registry. Version 0.6.6 adds pure Java transformation transactions. Version 0.6.7 migrates only the Bandsaw to the atomic transformation bridge while preserving its existing controller, inventory, paired-block, menu, and persistence behavior. Version 0.6.8 makes the transformation registry datapack-backed. Version 0.6.9 makes product and transformation registries reload-safe as one content snapshot. Version 0.7.0 adds more Bandsaw content without changing workstation behavior. Version 0.8.0 adds the Packaging Table foundation, Sprint 2 adds retail product data, Sprint C adds packaging supply items, and Sprint D connects the table to the shared processing controller for the first supply-consuming packaging flow. IM-018 adds the Patty Former as the second promoted workstation on the generic Execution path.
 
 This is not final artwork, not a player recipe-selection system, not a label system, and not a complete product item factory.
 
@@ -49,6 +49,7 @@ Minimum failure codes from the milestone are represented, with one additional ex
 | --- | --- | --- | --- |
 | Development Processing Workstation | 1 | 1 | 2 |
 | Grinder | 1 | 1 | 2 |
+| Patty Former | 1 | 1 | 2 |
 | Bandsaw | 1 | 8 | 9 |
 | Packaging Table | 3 | 1 | 4 |
 
@@ -70,6 +71,7 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 
 - The default legacy strategy preserves the existing processing transaction path.
 - The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path. The IM-012 grinder slice also issues workstation-owned Execution authorization and applies its consequential ItemStack effect only through Scheduler-dispatched generic Execution.
+- The Patty Former uses the same transformation and generic Execution path for `butchercraft:form_beef_patties`, applying its consequential ItemStack effect only through Scheduler-dispatched generic Execution and Patty Former owner-result publication.
 - IM-016 adds a read-only Production observation surface over the existing controller state. It can request normal workstation validation for the promoted Grinder path and expose selected operation, active Execution Operation Identity, owner result evidence, and local failure state. It does not let Production mutate slots, bypass workstation validation, or consume Execution authority.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
 - `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
@@ -142,8 +144,15 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:ground_beef` -> `butchercraft:ground_beef_test`
 - `butchercraft:pork_trim` -> `butchercraft:pork_trim_test`
 - `butchercraft:ground_pork` -> `butchercraft:ground_pork_test`
-- `butchercraft:bison_trim` -> `butchercraft:bison_trim_test`
-- `butchercraft:ground_bison` -> `butchercraft:ground_bison_test`
+- `butchercraft:chicken_trim` -> `butchercraft:chicken_trim`
+- `butchercraft:ground_chicken` -> `butchercraft:ground_chicken`
+- `butchercraft:bison_trim` -> `butchercraft:bison_trim_test` (player-facing Buffalo Trim)
+- `butchercraft:ground_bison` -> `butchercraft:ground_bison_test` (player-facing Ground Buffalo)
+- `butchercraft:lamb_trim` -> `butchercraft:lamb_trim`
+- `butchercraft:ground_lamb` -> `butchercraft:ground_lamb`
+- `butchercraft:venison_trim` -> `butchercraft:venison_trim`
+- `butchercraft:ground_venison` -> `butchercraft:ground_venison`
+- `butchercraft:beef_patties` -> `butchercraft:beef_patties`
 - `butchercraft:beef_forequarter` -> `butchercraft:beef_forequarter_test`
 - `butchercraft:beef_chuck` -> `butchercraft:beef_chuck_test`
 - `butchercraft:beef_rib` -> `butchercraft:beef_rib_test`
@@ -169,7 +178,7 @@ Early workstation and Grinder milestones use an explicit development-only mappin
 - `butchercraft:sirloin_steak` -> `butchercraft:sirloin_steak_test`
 - `butchercraft:tri_tip` -> `butchercraft:tri_tip_test`
 
-This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
+This mapping is built from registered item defaults and their product data. IM-014 promotes the Beef Trim and Ground Beef presentation for Grinder gameplay while retaining the legacy item registry ids shown above. IM-015 promotes the Pork Trim and Ground Pork presentation through the same retained-id compatibility bridge. IM-017 adds Chicken, Buffalo, Lamb, and Venison trim-to-ground products through the same explicit mapping; Buffalo retains the existing `butchercraft:bison_*` identities. IM-018 adds Beef Patties for the Patty Former. The mapping is still not a universal item factory. Future product item creation needs a deliberate data-driven design.
 
 ## Development Workstation
 
@@ -179,7 +188,7 @@ Temporary block:
 butchercraft:development_processing_workstation
 ```
 
-The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current red-meat trim product fixtures, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground product fixture.
+The block appears in the ButcherCraft creative tab, opens a plain temporary inventory menu and client screen, accepts the current mapped trim product fixtures, resolves the single compatible grinding operation for each inserted product, processes for 60 ticks, and outputs the matching ground product fixture.
 
 ## Bandsaw Machine
 
@@ -203,6 +212,18 @@ butchercraft:packaging_table
 The block appears in the ButcherCraft creative tab, opens a processing menu and client screen, persists Meat, Tray, Wrap, and Result slots, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:packaging`. Sprint 2 adds a `package_retail` processing-operation definition for the graph, Sprint C adds supply items that packaging definitions may reference, and Sprint D executes the first Ground Beef to Retail Ground Beef flow. Required supplies are consumed only after successful completion.
 
 The Packaging Table is documented in `docs/PACKAGING_TABLE.md`.
+
+## Patty Former
+
+Permanent block:
+
+```text
+butchercraft:patty_former
+```
+
+The block appears in the ButcherCraft creative tab, opens a processing menu and client screen, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, over 60 server ticks.
+
+The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
 ## Future Extension Points
 

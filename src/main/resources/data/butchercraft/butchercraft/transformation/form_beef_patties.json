@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:form_beef_patties",
+  "display_name": "Form Beef Patties",
+  "required_capability": "butchercraft:patty_forming",
+  "inputs": [
+    {
+      "product_id": "butchercraft:ground_beef",
+      "quantity": 100,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:beef_patties",
+      "quantity": 100,
+      "unit": "gram",
+      "classification": "primary"
+    }
+  ],
+  "duration": {
+    "milliseconds": 3000
+  },
+  "yield": {
+    "numerator": 1,
+    "denominator": 1
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

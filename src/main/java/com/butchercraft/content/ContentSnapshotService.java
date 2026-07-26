@@ -199,13 +199,17 @@ public final class ContentSnapshotService {
         return Set.of(
                 BuiltInProductRegistry.CATEGORY_BEEF,
                 BuiltInProductRegistry.CATEGORY_PORK,
-                BuiltInProductRegistry.CATEGORY_BISON
+                BuiltInProductRegistry.CATEGORY_CHICKEN,
+                BuiltInProductRegistry.CATEGORY_BISON,
+                BuiltInProductRegistry.CATEGORY_LAMB,
+                BuiltInProductRegistry.CATEGORY_VENISON
         );
     }
 
     public static Set<EngineId> knownCapabilities() {
         return Set.of(
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING,
+                BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING,
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW
         );
     }

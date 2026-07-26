@@ -2,13 +2,17 @@ package com.butchercraft.test.gametest;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
+import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.machine.grinder.execution.GrinderWorkstationReference;
+import com.butchercraft.processing.definition.BuiltInDefinitionIds;
+import com.butchercraft.processing.definition.DefinitionRegistryView;
 import com.butchercraft.product.component.ProductStackData;
 import com.butchercraft.product.integration.ProductStackAdapter;
 import com.butchercraft.registration.ModBlocks;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
+import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
@@ -24,13 +28,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.registries.DeferredItem;
 
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +51,20 @@ public final class GrinderExecutionGameTests {
     private static final BlockPos GRINDER_POS = new BlockPos(2, 1, 2);
     private static final int COMPLETION_ASSERTION_TICK = 100;
     private static final int EXTENDED_ASSERTION_TICK = 130;
+    private static final List<RecipeCase> PROMOTED_RECIPES = List.of(
+            new RecipeCase("Beef", ModItems.BEEF_TRIM, ModItems.GROUND_BEEF,
+                    BuiltInDefinitionIds.GRIND_BEEF, "butchercraft:beef_trim", "butchercraft:ground_beef", "butchercraft:beef"),
+            new RecipeCase("Pork", ModItems.PORK_TRIM, ModItems.GROUND_PORK,
+                    BuiltInDefinitionIds.GRIND_PORK, "butchercraft:pork_trim", "butchercraft:ground_pork", "butchercraft:pork"),
+            new RecipeCase("Chicken", ModItems.CHICKEN_TRIM, ModItems.GROUND_CHICKEN,
+                    BuiltInDefinitionIds.GRIND_CHICKEN, "butchercraft:chicken_trim", "butchercraft:ground_chicken", "butchercraft:chicken"),
+            new RecipeCase("Buffalo", ModItems.BUFFALO_TRIM, ModItems.GROUND_BUFFALO,
+                    BuiltInDefinitionIds.GRIND_BISON, "butchercraft:bison_trim", "butchercraft:ground_bison", "butchercraft:bison"),
+            new RecipeCase("Lamb", ModItems.LAMB_TRIM, ModItems.GROUND_LAMB,
+                    BuiltInDefinitionIds.GRIND_LAMB, "butchercraft:lamb_trim", "butchercraft:ground_lamb", "butchercraft:lamb"),
+            new RecipeCase("Venison", ModItems.VENISON_TRIM, ModItems.GROUND_VENISON,
+                    BuiltInDefinitionIds.GRIND_VENISON, "butchercraft:venison_trim", "butchercraft:ground_venison", "butchercraft:venison")
+    );
 
     private GrinderExecutionGameTests() {
     }
@@ -57,6 +78,14 @@ public final class GrinderExecutionGameTests {
         helper.assertTrue(ModItems.GROUND_BEEF.get() != null, "Ground Beef gameplay item is registered");
         helper.assertTrue(ModItems.PORK_TRIM.get() != null, "Pork Trim gameplay item is registered");
         helper.assertTrue(ModItems.GROUND_PORK.get() != null, "Ground Pork gameplay item is registered");
+        helper.assertTrue(ModItems.CHICKEN_TRIM.get() != null, "Chicken Trim gameplay item is registered");
+        helper.assertTrue(ModItems.GROUND_CHICKEN.get() != null, "Ground Chicken gameplay item is registered");
+        helper.assertTrue(ModItems.BUFFALO_TRIM.get() != null, "Buffalo Trim gameplay item is registered");
+        helper.assertTrue(ModItems.GROUND_BUFFALO.get() != null, "Ground Buffalo gameplay item is registered");
+        helper.assertTrue(ModItems.LAMB_TRIM.get() != null, "Lamb Trim gameplay item is registered");
+        helper.assertTrue(ModItems.GROUND_LAMB.get() != null, "Ground Lamb gameplay item is registered");
+        helper.assertTrue(ModItems.VENISON_TRIM.get() != null, "Venison Trim gameplay item is registered");
+        helper.assertTrue(ModItems.GROUND_VENISON.get() != null, "Ground Venison gameplay item is registered");
         helper.assertTrue(ModItems.BEEF_TRIM.get() == ModItems.BEEF_TRIM_TEST.get(),
                 "Legacy Beef Trim registry identity remains compatible");
         helper.assertTrue(ModItems.GROUND_BEEF.get() == ModItems.GROUND_BEEF_TEST.get(),
@@ -65,6 +94,10 @@ public final class GrinderExecutionGameTests {
                 "Legacy Pork Trim registry identity remains compatible");
         helper.assertTrue(ModItems.GROUND_PORK.get() == ModItems.GROUND_PORK_TEST.get(),
                 "Legacy Ground Pork registry identity remains compatible");
+        helper.assertTrue(ModItems.BUFFALO_TRIM.get() == ModItems.BISON_TRIM_TEST.get(),
+                "Legacy Bison Trim registry identity remains compatible for Buffalo presentation");
+        helper.assertTrue(ModItems.GROUND_BUFFALO.get() == ModItems.GROUND_BISON_TEST.get(),
+                "Legacy Ground Bison registry identity remains compatible for Ground Buffalo presentation");
         helper.succeed();
     }
 
@@ -143,6 +176,140 @@ public final class GrinderExecutionGameTests {
             assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
             helper.succeed();
         });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void allPromotedProductsCoexistAndResolveDeterministically(GameTestHelper helper) {
+        var loadResult = DefinitionRegistryView.fromRegistryAccess(helper.getLevel().registryAccess());
+        helper.assertTrue(loadResult.allRegistriesAvailable(), "Definition registries are available");
+        WorkstationOperationResolver resolver = new WorkstationOperationResolver();
+
+        for (RecipeCase recipe : PROMOTED_RECIPES) {
+            var resolution = resolver.resolve(
+                    loadResult.view(),
+                    GrinderWorkstation.capability(),
+                    recipe.inputStack()
+            );
+            helper.assertTrue(resolution.succeeded(), recipe.label() + " recipe resolves");
+            helper.assertTrue(resolution.operation().orElseThrow().operationId().equals(recipe.operationId()),
+                    recipe.label() + " resolves to the expected operation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void unsupportedInputIsRejectedVisibly(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        ItemStack remainder = grinder.inventory().insertItem(
+                WorkstationInventory.INPUT_SLOT,
+                new ItemStack(ModItems.DEVELOPMENT_TEST_ITEM.get()),
+                false
+        );
+
+        helper.assertFalse(remainder.isEmpty(), "Unsupported non-product item is rejected by the input slot");
+        helper.assertTrue(grinder.workstationState() == WorkstationState.IDLE,
+                "Rejected unsupported item does not start processing");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void validChickenProcessCompletesThroughLiveExecution(GameTestHelper helper) {
+        assertRecipeCompletesThroughLiveExecution(helper, recipe("Chicken"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void validBuffaloProcessCompletesThroughLiveExecution(GameTestHelper helper) {
+        assertRecipeCompletesThroughLiveExecution(helper, recipe("Buffalo"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void validLambProcessCompletesThroughLiveExecution(GameTestHelper helper) {
+        assertRecipeCompletesThroughLiveExecution(helper, recipe("Lamb"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void validVenisonProcessCompletesThroughLiveExecution(GameTestHelper helper) {
+        assertRecipeCompletesThroughLiveExecution(helper, recipe("Venison"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void chickenDuplicateInteractionRemainsSafe(GameTestHelper helper) {
+        assertRecipeDuplicateInteractionSafe(helper, recipe("Chicken"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void buffaloDuplicateInteractionRemainsSafe(GameTestHelper helper) {
+        assertRecipeDuplicateInteractionSafe(helper, recipe("Buffalo"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void lambDuplicateInteractionRemainsSafe(GameTestHelper helper) {
+        assertRecipeDuplicateInteractionSafe(helper, recipe("Lamb"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void venisonDuplicateInteractionRemainsSafe(GameTestHelper helper) {
+        assertRecipeDuplicateInteractionSafe(helper, recipe("Venison"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void chickenSerializationResumesSafely(GameTestHelper helper) {
+        assertRecipeSerializationResumesSafely(helper, recipe("Chicken"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void buffaloSerializationResumesSafely(GameTestHelper helper) {
+        assertRecipeSerializationResumesSafely(helper, recipe("Buffalo"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void lambSerializationResumesSafely(GameTestHelper helper) {
+        assertRecipeSerializationResumesSafely(helper, recipe("Lamb"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void venisonSerializationResumesSafely(GameTestHelper helper) {
+        assertRecipeSerializationResumesSafely(helper, recipe("Venison"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void chickenBlockedOutputFailsBeforeCommit(GameTestHelper helper) {
+        assertRecipeBlockedOutputFailsBeforeCommit(helper, recipe("Chicken"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void buffaloBlockedOutputFailsBeforeCommit(GameTestHelper helper) {
+        assertRecipeBlockedOutputFailsBeforeCommit(helper, recipe("Buffalo"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void lambBlockedOutputFailsBeforeCommit(GameTestHelper helper) {
+        assertRecipeBlockedOutputFailsBeforeCommit(helper, recipe("Lamb"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void venisonBlockedOutputFailsBeforeCommit(GameTestHelper helper) {
+        assertRecipeBlockedOutputFailsBeforeCommit(helper, recipe("Venison"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void chickenProcessPreventsWrongOutput(GameTestHelper helper) {
+        assertRecipePreventsWrongOutput(helper, recipe("Chicken"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void buffaloProcessPreventsWrongOutput(GameTestHelper helper) {
+        assertRecipePreventsWrongOutput(helper, recipe("Buffalo"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void lambProcessPreventsWrongOutput(GameTestHelper helper) {
+        assertRecipePreventsWrongOutput(helper, recipe("Lamb"));
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220)
+    public static void venisonProcessPreventsWrongOutput(GameTestHelper helper) {
+        assertRecipePreventsWrongOutput(helper, recipe("Venison"));
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 120)
@@ -462,6 +629,126 @@ public final class GrinderExecutionGameTests {
         });
     }
 
+    private static void assertRecipeCompletesThroughLiveExecution(GameTestHelper helper, RecipeCase recipe) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertRecipeInput(helper, grinder, recipe);
+
+        helper.runAtTickTime(4, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            helper.assertTrue(active.workstationState() == WorkstationState.PROCESSING,
+                    recipe.label() + " begins processing through server block-entity tick");
+            helper.assertTrue(active.productionSnapshot().selectedOperationId().orElseThrow().equals(recipe.operationId()),
+                    recipe.label() + " freezes the selected operation identity");
+            ExecutionOperationSnapshot operation = onlyNewOperation(helper, before);
+            helper.assertTrue(operation.status() == ExecutionStatus.AUTHORIZED
+                            || operation.status() == ExecutionStatus.READY,
+                    recipe.label() + " Execution operation is authorized before scheduler dispatch");
+        });
+
+        helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedRecipe(helper, completed, recipe);
+            assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
+            helper.succeed();
+        });
+    }
+
+    private static void assertRecipeDuplicateInteractionSafe(GameTestHelper helper, RecipeCase recipe) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertRecipeInput(helper, grinder, recipe);
+
+        helper.runAtTickTime(8, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            ItemStack duplicateRemainder = active.inventory().insertItem(
+                    WorkstationInventory.INPUT_SLOT,
+                    recipe.inputStack(),
+                    false
+            );
+            helper.assertFalse(duplicateRemainder.isEmpty(),
+                    "Second " + recipe.label() + " Trim insertion is rejected while slot is occupied");
+            helper.useBlock(GRINDER_POS);
+            helper.assertTrue(newOperations(helper, before).size() == 1,
+                    "Repeated use while " + recipe.label() + " is processing does not create another Execution operation");
+        });
+
+        helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedRecipe(helper, completed, recipe);
+            helper.assertTrue(newOperations(helper, before).size() == 1,
+                    "Only one Execution operation exists for the repeated " + recipe.label() + " initiation attempt");
+            helper.succeed();
+        });
+    }
+
+    private static void assertRecipeSerializationResumesSafely(GameTestHelper helper, RecipeCase recipe) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertRecipeInput(helper, grinder, recipe);
+
+        helper.runAtTickTime(16, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            helper.assertTrue(active.workstationState() == WorkstationState.PROCESSING,
+                    recipe.label() + " process is active before serialization");
+            CompoundTag saved = active.saveWithFullMetadata(helper.getLevel().registryAccess());
+            GrinderBlockEntity restored = replaceBlockEntity(helper, saved);
+            helper.assertTrue(restored.workstationState() == WorkstationState.PROCESSING,
+                    "Restored " + recipe.label() + " grinder preserves active processing state");
+            helper.assertTrue(restored.productionSnapshot().selectedOperationId().orElseThrow().equals(recipe.operationId()),
+                    "Restored " + recipe.label() + " grinder preserves selected operation identity");
+            helper.assertTrue(elapsedTicks(restored) > 0 && elapsedTicks(restored) < totalTicks(restored),
+                    "Restored " + recipe.label() + " grinder preserves bounded progress before effect publication");
+        });
+
+        helper.runAtTickTime(EXTENDED_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedRecipe(helper, completed, recipe);
+            assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
+            helper.succeed();
+        });
+    }
+
+    private static void assertRecipeBlockedOutputFailsBeforeCommit(GameTestHelper helper, RecipeCase recipe) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertRecipeInput(helper, grinder, recipe);
+
+        helper.runAtTickTime(8, () -> grinder(helper).inventory().setOutputInternal(recipe.outputStack()));
+
+        helper.runAtTickTime(EXTENDED_ASSERTION_TICK, () -> {
+            GrinderBlockEntity blocked = grinder(helper);
+            assertBlockedWith(helper, blocked, WorkstationFailureCode.OUTPUT_OCCUPIED);
+            helper.assertFalse(blocked.inventory().input().isEmpty(), "Blocked completion preserves input");
+            helper.assertFalse(blocked.inventory().output().isEmpty(), "Blocked completion preserves occupied output");
+            assertProductId(helper, blocked.inventory().input(), recipe.inputProductId(), "Blocked input remains " + recipe.label() + " Trim");
+            assertProductId(helper, blocked.inventory().output(), recipe.outputProductId(), "Blocked output remains " + recipe.label() + " output");
+            ExecutionOperationSnapshot operation = onlyNewOperation(helper, before);
+            helper.assertTrue(operation.status() == ExecutionStatus.FAILED,
+                    "Execution operation fails visibly when owner commit is blocked");
+            helper.succeed();
+        });
+    }
+
+    private static void assertRecipePreventsWrongOutput(GameTestHelper helper, RecipeCase recipe) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insertRecipeInput(helper, grinder, recipe);
+
+        helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            assertCompletedRecipe(helper, completed, recipe);
+            for (RecipeCase other : PROMOTED_RECIPES) {
+                if (!other.outputProductId().equals(recipe.outputProductId())) {
+                    helper.assertFalse(completed.inventory().output().getItem() == other.output().get(),
+                            recipe.label() + " process never creates " + other.label() + " output");
+                }
+            }
+            assertCompletedExecutionAndScheduler(helper, onlyNewOperation(helper, before));
+            helper.succeed();
+        });
+    }
+
     private static GrinderBlockEntity placeGrinder(GameTestHelper helper) {
         helper.setBlock(GRINDER_POS, ModBlocks.GRINDER.get().defaultBlockState());
         return grinder(helper);
@@ -492,6 +779,15 @@ public final class GrinderExecutionGameTests {
         helper.assertTrue(remainder.isEmpty(), "Pork Trim inserts into grinder input");
     }
 
+    private static void insertRecipeInput(GameTestHelper helper, GrinderBlockEntity grinder, RecipeCase recipe) {
+        ItemStack remainder = grinder.inventory().insertItem(
+                WorkstationInventory.INPUT_SLOT,
+                recipe.inputStack(),
+                false
+        );
+        helper.assertTrue(remainder.isEmpty(), recipe.label() + " Trim inserts into grinder input");
+    }
+
     private static ItemStack beefTrim() {
         return ModItems.BEEF_TRIM.get().getDefaultInstance();
     }
@@ -502,6 +798,13 @@ public final class GrinderExecutionGameTests {
 
     private static ItemStack groundBeef() {
         return ModItems.GROUND_BEEF.get().getDefaultInstance();
+    }
+
+    private static RecipeCase recipe(String label) {
+        return PROMOTED_RECIPES.stream()
+                .filter(recipe -> recipe.label().equals(label))
+                .findFirst()
+                .orElseThrow();
     }
 
     private static void assertCompletedGroundBeef(GameTestHelper helper, GrinderBlockEntity grinder) {
@@ -536,6 +839,29 @@ public final class GrinderExecutionGameTests {
                 "Output source category remains pork");
         helper.assertTrue(data.quantityValue() == 900, "Output quantity is 900 grams");
         helper.assertTrue(data.qualityScore() == 695, "Output quality adjustment is deterministic");
+    }
+
+    private static void assertCompletedRecipe(GameTestHelper helper, GrinderBlockEntity grinder, RecipeCase recipe) {
+        helper.assertTrue(grinder.workstationState() == WorkstationState.COMPLETE,
+                "Grinder reaches COMPLETE state");
+        helper.assertTrue(grinder.inventory().input().isEmpty(), "Input is consumed exactly once");
+        ItemStack output = grinder.inventory().output();
+        helper.assertFalse(output.isEmpty(), "Output is present after completion");
+        helper.assertTrue(output.getCount() == 1, "Output stack count remains one");
+        helper.assertTrue(output.getItem() == recipe.output().get(),
+                "Output item is " + recipe.label() + " ground product");
+        ProductStackData data = ProductStackAdapter.readProductData(output).orThrow();
+        helper.assertTrue(Objects.equals(recipe.outputProductId(), data.productTypeId()),
+                "Output product type is " + recipe.outputProductId());
+        helper.assertTrue(Objects.equals(recipe.sourceId(), data.sourceCategoryId()),
+                "Output source category remains " + recipe.sourceId());
+        helper.assertTrue(data.quantityValue() == 900, "Output quantity is 900 grams");
+        helper.assertTrue(data.qualityScore() == 695, "Output quality adjustment is deterministic");
+    }
+
+    private static void assertProductId(GameTestHelper helper, ItemStack stack, String productId, String message) {
+        ProductStackData data = ProductStackAdapter.readProductData(stack).orThrow();
+        helper.assertTrue(Objects.equals(productId, data.productTypeId()), message);
     }
 
     private static void assertBlockedWith(
@@ -650,5 +976,23 @@ public final class GrinderExecutionGameTests {
 
     private static SimulationWorkId workIdFor(ExecutionOperationId operationId) {
         return SimulationWorkId.of(operationId.value() + "/work");
+    }
+
+    private record RecipeCase(
+            String label,
+            DeferredItem<? extends Item> input,
+            DeferredItem<? extends Item> output,
+            ResourceLocation operationId,
+            String inputProductId,
+            String outputProductId,
+            String sourceId
+    ) {
+        private ItemStack inputStack() {
+            return input.get().getDefaultInstance();
+        }
+
+        private ItemStack outputStack() {
+            return output.get().getDefaultInstance();
+        }
     }
 }

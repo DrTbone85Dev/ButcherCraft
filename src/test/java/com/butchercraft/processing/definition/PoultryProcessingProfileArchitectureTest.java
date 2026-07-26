@@ -56,7 +56,7 @@ class PoultryProcessingProfileArchitectureTest {
     }
 
     @Test
-    void mainSourceDoesNotContainLiteralSpeciesSpecificWorkflowCheck() throws IOException {
+    void mainSourceDoesNotContainLiteralSpeciesSpecificPoultryWorkflowBranch() throws IOException {
         Path sourceRoot = TestProjectPaths.projectPath("src/main/java");
         try (var paths = Files.walk(sourceRoot)) {
             List<Path> offenders = paths
@@ -70,7 +70,13 @@ class PoultryProcessingProfileArchitectureTest {
 
     private static boolean containsLiteralChickenReference(Path path) {
         try {
-            return Files.readString(path).toLowerCase(java.util.Locale.ROOT).contains("chicken");
+            String source = Files.readString(path).toLowerCase(java.util.Locale.ROOT);
+            return source.contains("case \"butchercraft:chicken\"")
+                    || source.contains("case \"butchercraft:poultry\"")
+                    || source.contains("switch (species")
+                    || source.contains("switch(species")
+                    || source.contains(".equals(\"butchercraft:chicken\")")
+                    || source.contains(".equals(\"butchercraft:poultry\")");
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to scan " + path, exception);
         }

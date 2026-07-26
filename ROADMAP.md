@@ -12,7 +12,7 @@ Delivered foundations include:
 
 - Pure processing, product, transformation, validation, and transaction domains.
 - Data-driven products, transformations, packaging definitions, and atomic content snapshots.
-- Generic workstation execution with Grinder, Bandsaw, and Packaging Table proofs.
+- Generic workstation execution with Grinder, Patty Former, Bandsaw, and Packaging Table proofs.
 - Deterministic World Identity with regions, counties, settlements, manufacturers, commercial properties, businesses, ownership, families, and historical supply relationships.
 - Persistent runtime player identity.
 - Simulation Clock, calendar, scheduler, and event framework.

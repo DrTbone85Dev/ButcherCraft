@@ -294,11 +294,11 @@ class ArchitectureRulesTest {
 
         List<String> implementedPromotionContracts = List.of(
                 "butchercraft:platform_contract/grinder_promoted_gameplay_content",
-                "butchercraft:platform_contract/grinder_two_promoted_processes",
+                "butchercraft:platform_contract/grinder_six_promoted_processes",
                 "butchercraft:platform_contract/grinder_deterministic_multi_process_resolution",
                 "butchercraft:platform_contract/grinder_process_specific_execution_identity",
                 "butchercraft:platform_contract/grinder_process_specific_owner_results",
-                "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
+                "butchercraft:platform_contract/grinder_recipe_catalog_gametest_coverage",
                 "butchercraft:platform_contract/grinder_survival_obtainability",
                 "butchercraft:platform_contract/grinder_player_visible_status_sync",
                 "butchercraft:platform_contract/grinder_active_break_preservation"
@@ -328,6 +328,38 @@ class ArchitectureRulesTest {
                     .anyMatch(contract -> contract.id().value().equals(contractId)
                             && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         }
+    }
+
+    @Test
+    void currentManifestRegistersPattyFormerAndProductionChainAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedPattyFormerContracts = List.of(
+                "butchercraft:platform_contract/patty_former_gameplay_workstation",
+                "butchercraft:platform_contract/patty_former_ground_beef_process",
+                "butchercraft:platform_contract/patty_former_execution_handler",
+                "butchercraft:platform_contract/patty_former_owner_result_publication",
+                "butchercraft:platform_contract/patty_former_duplicate_safety",
+                "butchercraft:platform_contract/production_two_step_workstation_chain",
+                "butchercraft:platform_contract/production_manual_transfer_boundary",
+                "butchercraft:platform_contract/production_chain_product_flow_validation",
+                "butchercraft:platform_contract/production_chain_persistence_references",
+                "butchercraft:platform_contract/patty_former_chain_gametest_coverage"
+        );
+
+        for (String contractId : implementedPattyFormerContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/production_workstation_chain")
+                        && assignment.ownerId().value().equals("butchercraft:production")));
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/production_product_flow_identity_validation")
+                        && assignment.ownerId().value().equals("butchercraft:production")));
     }
 
     @Test
@@ -831,11 +863,11 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/grinder_gametest_save_load_safety",
                         "butchercraft:platform_contract/grinder_gametest_uncertain_state_safety",
                         "butchercraft:platform_contract/grinder_promoted_gameplay_content",
-                        "butchercraft:platform_contract/grinder_two_promoted_processes",
+                        "butchercraft:platform_contract/grinder_six_promoted_processes",
                         "butchercraft:platform_contract/grinder_deterministic_multi_process_resolution",
                         "butchercraft:platform_contract/grinder_process_specific_execution_identity",
                         "butchercraft:platform_contract/grinder_process_specific_owner_results",
-                        "butchercraft:platform_contract/grinder_second_process_gametest_coverage",
+                        "butchercraft:platform_contract/grinder_recipe_catalog_gametest_coverage",
                         "butchercraft:platform_contract/grinder_survival_obtainability",
                         "butchercraft:platform_contract/grinder_player_visible_status_sync",
                         "butchercraft:platform_contract/grinder_active_break_preservation",
@@ -843,7 +875,24 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/production_grinder_completion_evidence",
                         "butchercraft:platform_contract/production_grinder_authority_boundary",
                         "butchercraft:platform_contract/production_grinder_duplicate_safety",
-                        "butchercraft:platform_contract/production_grinder_persistence_references"
+                        "butchercraft:platform_contract/production_grinder_persistence_references",
+                        "butchercraft:platform_contract/patty_former_gameplay_workstation",
+                        "butchercraft:platform_contract/patty_former_ground_beef_process",
+                        "butchercraft:platform_contract/patty_former_execution_handler",
+                        "butchercraft:platform_contract/patty_former_owner_result_publication",
+                        "butchercraft:platform_contract/patty_former_duplicate_safety",
+                        "butchercraft:platform_contract/production_two_step_workstation_chain",
+                        "butchercraft:platform_contract/production_manual_transfer_boundary",
+                        "butchercraft:platform_contract/production_chain_product_flow_validation",
+                        "butchercraft:platform_contract/production_chain_persistence_references",
+                        "butchercraft:platform_contract/patty_former_chain_gametest_coverage",
+                        "butchercraft:platform_contract/production_order_beef_patties_run_creation",
+                        "butchercraft:platform_contract/production_order_fixed_two_step_template",
+                        "butchercraft:platform_contract/production_order_workstation_assignment",
+                        "butchercraft:platform_contract/production_order_read_only_progress_presentation",
+                        "butchercraft:platform_contract/production_order_manual_transfer_guidance",
+                        "butchercraft:platform_contract/production_order_failure_guidance",
+                        "butchercraft:platform_contract/production_order_gametest_coverage"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

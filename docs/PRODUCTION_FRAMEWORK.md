@@ -1,12 +1,12 @@
 # Industry-Neutral Production Framework
 
-Status: implemented in v0.9.0-alpha.1 Phase 20 (RFC-0020), with IM-016 Grinder integration.
+Status: implemented in v0.9.0-alpha.1 Phase 20 (RFC-0020), with IM-016 Grinder integration and IM-018 two-step workstation chain observation.
 
 ## Purpose
 
 The Production Framework is ButcherCraft Core's pure Java operational layer for turning economic Goods into other Goods over authoritative simulation time. It is industry-neutral: Core provides Processes, Plans, Runs, validation, scheduling, transactions, persistence, and queries, while future industry modules provide actual Process definitions.
 
-Phase 20 adds no live Process, machine, workstation, block, item, recipe, GUI, automation, or player interaction. It does not convert existing Grinder or Bandsaw gameplay into regional Production. IM-016 adds one narrow integration for the promoted Grinder: Production may assign and observe an existing Grinder operation, but Grinder still owns workstation inventory and local results, Execution still owns operation lifecycle, and Scheduler still owns dispatch.
+Phase 20 adds no live Process, machine, workstation, block, item, recipe, GUI, automation, or player interaction. It does not convert existing Grinder or Bandsaw gameplay into regional Production. IM-016 adds one narrow integration for the promoted Grinder: Production may assign and observe an existing Grinder operation, but Grinder still owns workstation inventory and local results, Execution still owns operation lifecycle, and Scheduler still owns dispatch. IM-018 adds one narrow ordered workstation-chain observation path for Grinder then Patty Former; Production records chain state and evidence but still does not move ItemStacks or own either workstation.
 
 The framework follows `CONSTITUTION.md`, `CORE_PRINCIPLES.md`, and `PROJECT_RULES.md`. In particular, definitions are immutable, runtime state is separate, time has one authority, economic mutation has one authority, and no subsystem silently repairs invalid persistence.
 
@@ -37,6 +37,9 @@ EconomicTransaction
 GrinderOwnerResult + ExecutionResultEvidence
     optionally complete a Grinder-assigned Run without economic Inventory mutation
 
+Ordered Grinder -> Patty Former observations
+    optionally complete one manual two-step workstation chain without moving items
+
 Inventory
     remains authoritative for current Good quantities
 ```
@@ -55,7 +58,8 @@ The pure domain is `com.butchercraft.world.production`, with scheduler and persi
 - `ProductionPlanId`: one authoritative Production intention.
 - `ProductionRunId`: one runtime execution. Schema 1 derives `<plan-id>/run`.
 - `ProductionLineId`: stable input or output line identity independent of list position.
-- Workstation assignment identity fields: external Grinder workstation identity, selected process identity, Execution Operation Identity, Grinder owner result identity, Execution result evidence identity, and Production completion evidence identity.
+- Workstation assignment identity fields: external workstation identity, selected process identity, Execution Operation Identity, workstation owner result identity, Execution result evidence identity, and Production completion evidence identity.
+- Workstation chain identity fields: Production chain identity, ordered chain-step identities, expected workstation types, input and output product identities, observed Execution Operation Identities, owner-result identities, Execution result evidence identities, and Production chain completion evidence identity.
 
 Production-owned ids use canonical lowercase identifier rules, stable equality, deterministic ordering, and persistence-safe strings. External identity fields preserve the published identity of their owning subsystem. Phase 20 does not need a separate allocation identity because line bindings and transaction changes remain unambiguous.
 
@@ -128,6 +132,7 @@ PLANNED -> READY -> SCHEDULED -> RUNNING
                                   +-> PAUSED
                                   +-> AWAITING_TRANSACTION -> COMPLETED
                                   +-> Grinder owner result + Execution result evidence -> COMPLETED
+                                  +-> Grinder -> manual transfer -> Patty Former evidence chain -> COMPLETED
 
 Any nonterminal state -> FAILED | CANCELLED | EXPIRED
 BLOCKED | PAUSED -> READY/SCHEDULED/RUNNING after reevaluation
@@ -222,9 +227,9 @@ Consequences:
 
 Outputs do not automatically fulfill Orders. A future explicit orchestration owner may allocate the APPLIED transaction through `OrderManager`.
 
-## Grinder Workstation Completion
+## Promoted Workstation Completion
 
-IM-016 adds a second completion path only for the promoted Grinder. Production may assign a Run to one Grinder workstation identity and one promoted Grinder process identity. The assignment is immutable after an Execution Operation Identity is observed.
+IM-016 adds a second completion path for the promoted Grinder. Production may assign a Run to one Grinder workstation identity and one promoted Grinder process identity. IM-018 extends this path only to an ordered Grinder then Patty Former chain, where Production assigns immutable chain-step identities and records manual-transfer evidence. The assignment is immutable after an Execution Operation Identity is observed.
 
 Production does not insert or remove ItemStacks, bypass Grinder validation, start Execution directly, consume Execution authorization, or decide workstation success. It asks the existing Grinder controller for normal workstation processing and records the result that Grinder and Execution publish.
 
@@ -240,6 +245,25 @@ A Grinder-assigned Run completes only when Production has observed:
 
 Production publishes its own completion evidence over those identities and marks the Run `COMPLETED` without creating a Production Transaction. The evidence references Grinder and Execution state; it does not duplicate their state. Rejection, failure, cancellation after start, or `UNKNOWN_OUTCOME` are recorded explicitly and never cause automatic rerun.
 
+## Ordered Workstation Chain
+
+IM-018 adds one ordered two-step workstation-chain representation:
+
+```text
+step 0: Grinder        Beef Trim   -> Ground Beef
+step 1: Patty Former   Ground Beef -> Beef Patties
+```
+
+This is not a general arbitrary workflow engine. Schema 1 stores a versioned chain with exactly two ordered steps for the IM-018 proof.
+
+Production owns the Run, chain identity, step identities, step statuses, assignment references, product-flow identity check, and Production-owned chain completion evidence. The Grinder and Patty Former still own their slots, progress, validation, mutation, failure state, and owner results. Execution still owns operation lifecycle and result evidence. Scheduler still owns dispatch.
+
+After the Grinder step completes, Production records the chain as awaiting manual transfer. This state means the player must move Ground Beef from the Grinder to the Patty Former. Production does not move the ItemStack, infer transfer from elapsed time, or complete the Run from slot contents alone.
+
+The Patty Former step can advance only after Production observes the Patty Former assignment, its Execution Operation Identity, successful Patty Former owner-result evidence, and successful Execution result evidence. Production validates product flow by identity: the Grinder step output product must match the Patty Former step input product.
+
+Duplicate observations return the existing authoritative Run state. Conflicting workstation, process, Execution Operation Identity, owner result, or product-flow data is rejected explicitly. Chain failure, rejection, and Unknown Outcome stop the Run without automatic rerun.
+
 ## Persistence
 
 World-owned schema-1 state is stored at:
@@ -252,7 +276,9 @@ World-owned schema-1 state is stored at:
 
 Each document has deterministic ordering, canonical exact numbers, stable field names, and its own schema version. Saves write all temporary files before replacing targets in Process, Plan, Run order. Filesystem APIs cannot replace three files as one transaction; therefore load parses all documents, constructs candidates, validates every cross-reference, and publishes no manager unless the complete set is valid.
 
-Missing members of an existing three-file set, malformed JSON, unsupported schema, duplicate ids, unknown authorities, illegal lifecycle state, non-APPLIED completion references, malformed workstation completion evidence, or mismatched Scheduler Work fail visibly. Unknown Runs are never deleted or silently reset. Persistence is refused while a Run is transiently `AWAITING_TRANSACTION`.
+Missing members of an existing three-file set, malformed JSON, unsupported schema, duplicate ids, unknown authorities, illegal lifecycle state, non-APPLIED completion references, malformed workstation completion evidence, malformed chain evidence, or mismatched Scheduler Work fail visibly. Unknown Runs are never deleted or silently reset. Persistence is refused while a Run is transiently `AWAITING_TRANSACTION`.
+
+IM-018 adds optional `workstation_chain` data to persisted Runs. Older single-workstation Runs remain valid when that member is absent. Chain persistence records ordered steps, assignments, observed Execution identities, owner-result references, step statuses, manual-transfer waiting state, Production terminal evidence, and schema version. It does not duplicate workstation inventory, workstation progress, or Execution runtime state.
 
 ## Service Initialization
 
@@ -271,7 +297,7 @@ The Scheduler domain does not depend on Production. The world integration layer 
 
 ## Query Model
 
-Immutable Process registry indexes industry, capability, input Good, output Good, and transformation reference. Immutable Plan registry indexes Process, Actor, Business, Order, Contract, priority, source/destination Inventory, and creation tick. `ProductionManager` indexes Run status, Plan, Scheduler Work, completion transaction, Grinder Execution Operation Identity, workstation completion evidence, and terminal ticks while using Plan indexes for Process, Actor, Business, Order, and Contract queries.
+Immutable Process registry indexes industry, capability, input Good, output Good, and transformation reference. Immutable Plan registry indexes Process, Actor, Business, Order, Contract, priority, source/destination Inventory, and creation tick. `ProductionManager` indexes Run status, Plan, Scheduler Work, completion transaction, workstation Execution Operation Identity, workstation completion evidence, chain completion evidence, and terminal ticks while using Plan indexes for Process, Actor, Business, Order, and Contract queries.
 
 Public results are immutable and deterministically ordered. No generic query language or mutable registry view exists.
 
@@ -289,16 +315,17 @@ Public results are immutable and deterministically ordered. No generic query lan
 10. Cancellation: nonterminal Work is cancelled through Scheduler authority before the Run becomes terminal.
 11. Expiration: the authoritative completion deadline terminates the Run without Inventory rollback.
 12. Grinder completion: a Grinder-assigned Run completes only from Grinder owner result evidence and Execution result evidence.
-12. Future meat processing: an industry expansion may define fabrication Processes without placing meat rules in Core.
-13. Future agriculture: an expansion may define milling or crop processing against the same contracts.
-14. Future manufacturing: an expansion may define assembly with components, products, and waste outputs.
-15. Future utilities: an expansion may define deterministic utility production after a dedicated utility RFC.
+13. Workstation chain completion: the IM-018 Grinder to Patty Former chain completes only after both workstation owner results and both Execution result evidence records are observed.
+14. Future meat processing: an industry expansion may define fabrication Processes without placing meat rules in Core.
+15. Future agriculture: an expansion may define milling or crop processing against the same contracts.
+16. Future manufacturing: an expansion may define assembly with components, products, and waste outputs.
+17. Future utilities: an expansion may define deterministic utility production after a dedicated utility RFC.
 
 These are illustrative only. Phase 20 registers none of them.
 
 ## Invariants
 
-`PF-0001` through `PF-0025` are the subsystem invariants: immutable Process and Plan definitions; runtime-only lifecycle; no direct Inventory mutation; APPLIED transaction completion for economic Scheduler-backed runs; exact deterministic quantities; Scheduler-owned eligibility; Clock-owned time; irreversible terminal state; no implicit reservation; external Goods, Actors, Business, Workforce, Scheduler, Transaction, and Order authority; immutable views; fail-visible persistence; and industry neutrality. IM-016 adds the invariant that Grinder-assigned Runs complete only through Production-owned evidence that references Grinder owner results and Execution result evidence.
+`PF-0001` through `PF-0025` are the subsystem invariants: immutable Process and Plan definitions; runtime-only lifecycle; no direct Inventory mutation; APPLIED transaction completion for economic Scheduler-backed runs; exact deterministic quantities; Scheduler-owned eligibility; Clock-owned time; irreversible terminal state; no implicit reservation; external Goods, Actors, Business, Workforce, Scheduler, Transaction, and Order authority; immutable views; fail-visible persistence; and industry neutrality. IM-016 adds the invariant that Grinder-assigned Runs complete only through Production-owned evidence that references Grinder owner results and Execution result evidence. IM-018 adds the invariant that ordered workstation chains complete only through Production-owned chain evidence referencing both workstation owner results and both Execution result evidence records, with explicit manual-transfer and product-flow identity checks.
 
 ## Measured Phase 20 Scale
 
@@ -322,6 +349,8 @@ These are measured test durations, not production latency guarantees. Gradle sta
 - no Process datapack or public third-party registration lifecycle;
 - no Process supersession or schema migration beyond fail-visible version rejection;
 - no cross-file filesystem transaction, only complete-set validation before publication;
-- no live industry definitions.
+- no live industry definitions beyond the narrow promoted workstation observation paths;
+- no automated item transfer between workstations;
+- no general arbitrary workstation workflow engine.
 
 Future RFCs may add reservations, explicit work-rate policies, deterministic seeded yield policies, industry content, logistics coordination, or public registration. Those additions must preserve the authority and atomicity boundaries above.

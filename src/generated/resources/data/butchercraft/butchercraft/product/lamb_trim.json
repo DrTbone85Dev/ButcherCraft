@@ -1,0 +1,15 @@
+{
+  "bone_state": "boneless",
+  "display_name_key": "definition.butchercraft.product.lamb_trim",
+  "edible": true,
+  "graph_input": true,
+  "graph_output": false,
+  "processing_state": "butchercraft:trim",
+  "product_category": "butchercraft:lamb",
+  "quantity_unit": "gram",
+  "species": "butchercraft:lamb",
+  "spoilage_eligible": true,
+  "traits": [
+    "butchercraft:trait/trim"
+  ]
+}

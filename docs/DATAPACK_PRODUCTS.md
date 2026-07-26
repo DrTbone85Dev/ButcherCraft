@@ -1,12 +1,12 @@
 # ButcherCraft Datapack Products
 
-Status: v0.8.0 Sprint C datapack product loading with retail metadata
+Status: v0.8.0 Sprint C datapack product loading with retail metadata, with IM-018 Patty Former product expansion
 
 ## Purpose
 
 Datapack product loading makes the immutable `ProductRegistry` data-driven without changing ItemStack product data, development product item mappings, Grinder behavior, or Bandsaw behavior.
 
-Version 0.6.9 loads product JSON resources, maps them to canonical serialized product records, deserializes through the canonical product deserializer, and assembles products and transformations as one validated content snapshot. Version 0.7.0 expands the bundled product resources with the first multi-stage beef fabrication catalog while preserving the same loading path. Version 0.8.0 Sprint 2 adds optional retail packaging metadata and validates it against the candidate packaging registry before snapshot activation. Sprint C adds packaging supply-reference validation inside the candidate packaging registry stage.
+Version 0.6.9 loads product JSON resources, maps them to canonical serialized product records, deserializes through the canonical product deserializer, and assembles products and transformations as one validated content snapshot. Version 0.7.0 expands the bundled product resources with the first multi-stage beef fabrication catalog while preserving the same loading path. Version 0.8.0 Sprint 2 adds optional retail packaging metadata and validates it against the candidate packaging registry before snapshot activation. Sprint C adds packaging supply-reference validation inside the candidate packaging registry stage. IM-017 adds the promoted Grinder expansion products through the same content snapshot path. IM-018 adds Beef Patties for the Patty Former through the same path.
 
 ## Resource Path
 
@@ -20,16 +20,23 @@ This path is intentionally separate from the Minecraft datapack registry path
 `data/<namespace>/butchercraft/product/<id>.json`, which is reserved for the
 existing richer processing `butchercraft:product` registry codec.
 
-The bundled ButcherCraft resources cover the current Grinder, Bandsaw, and retail proof products:
+The bundled ButcherCraft resources cover the current Grinder, Patty Former, Bandsaw, and retail proof products:
 
 ```text
 data/butchercraft/butchercraft/content/product/beef_trim.json
 data/butchercraft/butchercraft/content/product/ground_beef.json
+data/butchercraft/butchercraft/content/product/beef_patties.json
 data/butchercraft/butchercraft/content/product/retail_ground_beef.json
 data/butchercraft/butchercraft/content/product/pork_trim.json
 data/butchercraft/butchercraft/content/product/ground_pork.json
+data/butchercraft/butchercraft/content/product/chicken_trim.json
+data/butchercraft/butchercraft/content/product/ground_chicken.json
 data/butchercraft/butchercraft/content/product/bison_trim.json
 data/butchercraft/butchercraft/content/product/ground_bison.json
+data/butchercraft/butchercraft/content/product/lamb_trim.json
+data/butchercraft/butchercraft/content/product/ground_lamb.json
+data/butchercraft/butchercraft/content/product/venison_trim.json
+data/butchercraft/butchercraft/content/product/ground_venison.json
 data/butchercraft/butchercraft/content/product/beef_forequarter.json
 data/butchercraft/butchercraft/content/product/beef_chuck.json
 data/butchercraft/butchercraft/content/product/beef_rib.json
@@ -148,9 +155,9 @@ Failed product loading prevents packaging and transformation loading. Failed pac
 
 ## Compatibility
 
-Product-to-ItemStack mappings remain Java-controlled development fixtures. Datapacks do not dynamically register Minecraft items, change creative tab entries, or create item models. Version 0.7.0 adds Java fixture items and mappings only for the new bundled beef fabrication products. Version 0.8.0 Sprint 2 adds `butchercraft:retail_ground_beef` as data only and does not add a fixture item mapping.
+Product-to-ItemStack mappings remain Java-controlled development fixtures. Datapacks do not dynamically register Minecraft items, change creative tab entries, or create item models. Version 0.7.0 adds Java fixture items and mappings only for the new bundled beef fabrication products. Version 0.8.0 Sprint 2 adds `butchercraft:retail_ground_beef` as data only and does not add a fixture item mapping. IM-017 adds explicit Java product item mappings for Chicken, Buffalo, Lamb, and Venison Grinder products; Buffalo uses the retained `butchercraft:bison_*` data ids and item registry ids. IM-018 adds an explicit Java item and mapping for `butchercraft:beef_patties`.
 
-The Grinder and Bandsaw still resolve processing operations through existing processing definitions and workstation controllers. Version 0.6.9 changes how product definitions reach the pure registry, not how workstations behave.
+The Grinder, Patty Former, and Bandsaw still resolve processing operations through existing processing definitions and workstation controllers. Version 0.6.9 changes how product definitions reach the pure registry, not how workstations behave.
 
 ## Out Of Scope
 
@@ -160,7 +167,7 @@ This milestone does not add:
 - Product-to-ItemStack factories.
 - Datapack-driven category catalogs.
 - Schema migrations.
-- Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain.
+- Full fabrication catalogs beyond the bundled v0.7.0 beef proof chain, IM-017 Grinder trim-to-ground catalog, and IM-018 Beef Patties proof.
 - Spoilage, quality expansion, storage rules, packaging recipes, packaging choices beyond the first table flow, labels, or recipe-selection UI.
 - Smoker, packaging, cooler, or other workstation migrations.
 - Public expansion APIs.

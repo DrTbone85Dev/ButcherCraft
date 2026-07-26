@@ -4,6 +4,69 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-019: Manual Production Chain UI And Player Guidance
+
+Goal: make the existing manual Beef Trim to Grinder to Ground Beef to Patty
+Former to Beef Patties Production chain usable through one narrow
+player-facing Production Order item and screen.
+
+Included work:
+
+- One fixed Production Order template for the Beef Patties chain.
+- Server-side Production Run creation and item-held run reference for that
+  fixed template.
+- Server-validated Grinder and Patty Former assignment through interacting
+  with each workstation while holding the order.
+- Player-facing status, next-action guidance, step progress, missing
+  workstation visibility, cancellation before execution, and recovery-required
+  presentation.
+- Read-only observation of workstation-owned progress and Production-owned
+  chain state without moving ItemStacks automatically.
+- Focused documentation, architecture-manifest declarations, generated
+  localization, generated item model, unit tests, and 27 GameTests.
+
+Excluded work:
+
+- Additional Production templates, broad workflow authoring, recipe selection,
+  automated transfer, workers, Allocation, logistics, customer orders,
+  economics, checkpoint recovery, operator reconciliation, public Production
+  APIs, final UI polish, and final art.
+
+Acceptance criteria:
+
+- An ordinary player can obtain the order, create or inspect the fixed run,
+  assign one Grinder and one Patty Former, see the current step, and complete
+  the chain through manual Ground Beef transfer.
+- Production owns the run, chain, assignment, product-flow validation, and
+  completion evidence.
+- Workstations own inventory, progress, validation, and owner result evidence.
+- Execution and Scheduler authority remain unchanged.
+- The order persists only the player-facing run reference needed to reopen or
+  inspect the run.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before this milestone can be
+  called manually accepted. The IM-019 implementation pass did not perform the
+  human client checklist.
+
+Rollback considerations:
+
+- IM-019 is additive except for narrow workstation interaction delegation and
+  registry/bootstrap hooks. Removing the Production Order package, screen,
+  registrations, generated metadata, documentation, tests, and workstation
+  order-click delegation restores IM-018 behavior without changing existing
+  Production, Workstation, Execution, Scheduler, or persistence schemas.
+
 ## RFC-0022 Milestone M22D: Resource And Capacity Provider Framework
 
 Goal: let externally authoritative subsystems expose immutable Resource and

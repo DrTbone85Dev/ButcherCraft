@@ -17,6 +17,8 @@ import com.butchercraft.world.production.ConsumptionPolicy;
 import com.butchercraft.world.production.ProductionBatchPolicy;
 import com.butchercraft.world.production.ProductionBindingDirection;
 import com.butchercraft.world.production.ProductionBusinessRequirement;
+import com.butchercraft.world.production.ProductionChainCompletionEvidence;
+import com.butchercraft.world.production.ProductionChainStepStatus;
 import com.butchercraft.world.production.ProductionDependencies;
 import com.butchercraft.world.production.ProductionDuration;
 import com.butchercraft.world.production.ProductionExecutionPolicy;
@@ -49,6 +51,9 @@ import com.butchercraft.world.production.ProductionTransactionFailurePolicy;
 import com.butchercraft.world.production.ProductionTransformationReference;
 import com.butchercraft.world.production.ProductionWorkforceRequirement;
 import com.butchercraft.world.production.ProductionWorkstationAssignment;
+import com.butchercraft.world.production.ProductionWorkstationChain;
+import com.butchercraft.world.production.ProductionWorkstationChainStatus;
+import com.butchercraft.world.production.ProductionWorkstationChainStep;
 import com.butchercraft.world.production.ProductionWorkstationCompletionEvidence;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
 import com.butchercraft.world.transaction.TransactionId;
@@ -597,6 +602,8 @@ public final class ProductionStorage {
                 value.completionTransactionId().map(TransactionId::value));
         optionalObject(object, "workstation_assignment", value.workstationAssignment(),
                 ProductionStorage::serializeWorkstationAssignment);
+        optionalObject(object, "workstation_chain", value.workstationChain(),
+                ProductionStorage::serializeWorkstationChain);
         optionalString(object, "failure_code", value.failureCode().map(ProductionStorage::lower));
         optionalString(object, "failure_summary", value.failureSummary());
         object.addProperty("revision", value.revision());
@@ -620,6 +627,8 @@ public final class ProductionStorage {
                 optionalString(object, "completion_transaction_id").map(TransactionId::of),
                 optionalObjectIfPresent(object, "workstation_assignment",
                         ProductionStorage::deserializeWorkstationAssignment),
+                optionalObjectIfPresent(object, "workstation_chain",
+                        ProductionStorage::deserializeWorkstationChain),
                 optionalString(object, "failure_code")
                         .map(value -> enumValue(com.butchercraft.world.production.ProductionFailureCode.class, value)),
                 optionalString(object, "failure_summary"),
@@ -643,6 +652,66 @@ public final class ProductionStorage {
                 schema(object),
                 string(object, "workstation_identity"),
                 string(object, "process_identity"),
+                optionalString(object, "execution_operation_identity"),
+                optionalObject(object, "completion_evidence",
+                        ProductionStorage::deserializeWorkstationCompletionEvidence)
+        );
+    }
+
+    private static JsonObject serializeWorkstationChain(ProductionWorkstationChain value) {
+        JsonObject object = record(value.schemaVersion());
+        object.addProperty("chain_identity", value.chainIdentity());
+        object.addProperty("status", lower(value.status()));
+        JsonArray steps = new JsonArray();
+        value.steps().forEach(step -> steps.add(serializeWorkstationChainStep(step)));
+        object.add("steps", steps);
+        optionalObject(object, "completion_evidence", value.completionEvidence(),
+                ProductionStorage::serializeChainCompletionEvidence);
+        return object;
+    }
+
+    private static ProductionWorkstationChain deserializeWorkstationChain(JsonObject object) {
+        List<ProductionWorkstationChainStep> steps = new ArrayList<>();
+        for (JsonElement step : array(object, "steps")) {
+            steps.add(deserializeWorkstationChainStep(object(step, "production workstation chain step")));
+        }
+        return new ProductionWorkstationChain(
+                schema(object),
+                string(object, "chain_identity"),
+                enumValue(ProductionWorkstationChainStatus.class, string(object, "status")),
+                steps,
+                optionalObject(object, "completion_evidence",
+                        ProductionStorage::deserializeChainCompletionEvidence)
+        );
+    }
+
+    private static JsonObject serializeWorkstationChainStep(ProductionWorkstationChainStep value) {
+        JsonObject object = record(value.schemaVersion());
+        object.addProperty("step_identity", value.stepIdentity());
+        object.addProperty("step_order", value.stepOrder());
+        object.addProperty("expected_workstation_type", value.expectedWorkstationType());
+        object.addProperty("process_identity", value.processIdentity());
+        object.addProperty("input_product_identity", value.inputProductIdentity());
+        object.addProperty("output_product_identity", value.outputProductIdentity());
+        object.addProperty("status", lower(value.status()));
+        optionalString(object, "workstation_identity", value.workstationIdentity());
+        optionalString(object, "execution_operation_identity", value.executionOperationIdentity());
+        optionalObject(object, "completion_evidence", value.completionEvidence(),
+                ProductionStorage::serializeWorkstationCompletionEvidence);
+        return object;
+    }
+
+    private static ProductionWorkstationChainStep deserializeWorkstationChainStep(JsonObject object) {
+        return new ProductionWorkstationChainStep(
+                schema(object),
+                string(object, "step_identity"),
+                intValue(object, "step_order"),
+                string(object, "expected_workstation_type"),
+                string(object, "process_identity"),
+                string(object, "input_product_identity"),
+                string(object, "output_product_identity"),
+                enumValue(ProductionChainStepStatus.class, string(object, "status")),
+                optionalString(object, "workstation_identity"),
                 optionalString(object, "execution_operation_identity"),
                 optionalObject(object, "completion_evidence",
                         ProductionStorage::deserializeWorkstationCompletionEvidence)
@@ -680,6 +749,41 @@ public final class ProductionStorage {
                 string(object, "owner_result_content_digest"),
                 string(object, "execution_result_evidence_identity"),
                 string(object, "execution_result_content_digest"),
+                longValue(object, "completed_simulation_tick"),
+                string(object, "evidence_identity"),
+                string(object, "evidence_content_digest")
+        );
+    }
+
+    private static JsonObject serializeChainCompletionEvidence(ProductionChainCompletionEvidence value) {
+        JsonObject object = record(value.schemaVersion());
+        object.addProperty("run_id", value.runId().value());
+        object.addProperty("chain_identity", value.chainIdentity());
+        object.addProperty("first_step_identity", value.firstStepIdentity());
+        object.addProperty("first_step_completion_evidence_identity",
+                value.firstStepCompletionEvidenceIdentity());
+        object.addProperty("first_step_output_product_identity", value.firstStepOutputProductIdentity());
+        object.addProperty("second_step_identity", value.secondStepIdentity());
+        object.addProperty("second_step_completion_evidence_identity",
+                value.secondStepCompletionEvidenceIdentity());
+        object.addProperty("second_step_input_product_identity", value.secondStepInputProductIdentity());
+        object.addProperty("completed_simulation_tick", value.completedSimulationTick());
+        object.addProperty("evidence_identity", value.evidenceIdentity());
+        object.addProperty("evidence_content_digest", value.evidenceContentDigest());
+        return object;
+    }
+
+    private static ProductionChainCompletionEvidence deserializeChainCompletionEvidence(JsonObject object) {
+        return new ProductionChainCompletionEvidence(
+                schema(object),
+                ProductionRunId.of(string(object, "run_id")),
+                string(object, "chain_identity"),
+                string(object, "first_step_identity"),
+                string(object, "first_step_completion_evidence_identity"),
+                string(object, "first_step_output_product_identity"),
+                string(object, "second_step_identity"),
+                string(object, "second_step_completion_evidence_identity"),
+                string(object, "second_step_input_product_identity"),
                 longValue(object, "completed_simulation_tick"),
                 string(object, "evidence_identity"),
                 string(object, "evidence_content_digest")

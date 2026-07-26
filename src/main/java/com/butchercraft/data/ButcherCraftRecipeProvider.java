@@ -31,5 +31,18 @@ final class ButcherCraftRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_iron_ingot", has(Items.IRON_INGOT))
                 .unlockedBy("has_copper_ingot", has(Items.COPPER_INGOT))
                 .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "grinder"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PATTY_FORMER.get())
+                .pattern("IPI")
+                .pattern("SRS")
+                .pattern("ICI")
+                .define('I', Items.IRON_INGOT)
+                .define('P', Items.PISTON)
+                .define('S', Items.SMOOTH_STONE)
+                .define('R', Items.REDSTONE)
+                .define('C', Items.COPPER_INGOT)
+                .unlockedBy("has_piston", has(Items.PISTON))
+                .unlockedBy("has_iron_ingot", has(Items.IRON_INGOT))
+                .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "patty_former"));
     }
 }

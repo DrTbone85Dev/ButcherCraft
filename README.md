@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic regional world simulation platform. Industry modules participate in one shared simulation; Meat Processing is the flagship implementation and retains the existing product, workstation, packaging, and facility-management direction.
 
-Registered content includes the existing development fixtures, Grinder, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, and the first playable promoted Grinder flows for Beef Trim to Ground Beef and Pork Trim to Ground Pork. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler now runs internal Production and Planning handlers; Production can observe promoted Grinder operations through Execution and Scheduler evidence; Allocation has no live provider or Scheduler handler. Worker automation, pricing, logistics, markets, accounting, and additional production gameplay remain future work.
+Registered content includes the existing development fixtures, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, six promoted Grinder recipes for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the Beef Patties production chain from Beef Trim to Ground Beef to Beef Patties. The player-facing Production Order item guides and observes the manual multi-workstation chain. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler now runs internal Production and Planning handlers; Production observes promoted workstation operations through deterministic Execution and Scheduler evidence; Allocation has no live provider or Scheduler handler. Worker automation, pricing, logistics, markets, accounting, and additional production gameplay remain future work.
 
 ## Project Identity
 
@@ -13,7 +13,7 @@ Registered content includes the existing development fixtures, Grinder, Bandsaw,
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.10.0-alpha.1`
+- Version: `0.10.1-alpha.1`
 
 ## Commands
 
@@ -67,7 +67,7 @@ In a development world or server console with commands available, run:
 
 The diagnostic reports project name, mod id, mod version, Minecraft version, NeoForge version when available, whether common initialization completed, whether the development fixtures are registered, and whether product data can round-trip through the ItemStack component boundary. It does not grant items, modify the world, expose local paths, expose environment variables, or report sensitive system information.
 
-The diagnostic also reports whether the species, processing-profile, product, and processing-operation datapack registries are available, whether the built-in beef, pork, and bison definitions resolve, whether the initial graph validates, and whether the Beef, Pork, and Bison Trim to matching ground-product edges exist.
+The diagnostic also reports whether the species, processing-profile, product, and processing-operation datapack registries are available, whether the built-in Beef, Pork, Chicken, Buffalo, Lamb, and Venison definitions resolve, whether the initial graph validates, and whether each promoted trim-to-ground edge exists.
 
 The diagnostic also reports whether the Development Processing Workstation block, the Grinder, the Bandsaw, their block entities, menus, capabilities, resolver paths, duration conversion, prototype context, graph checks, and temporary output mappings are available.
 
@@ -75,11 +75,15 @@ The diagnostic also reports whether the Development Processing Workstation block
 
 `butchercraft:development_test_item` is a harmless development-only item. It appears in the ButcherCraft creative tab, has generated English display text, and uses a placeholder texture. It has no gameplay powers or world-changing behavior.
 
-The trim, ground, forequarter, and beef fabrication test products are development-only product data fixtures. They appear in the ButcherCraft creative tab with default `butchercraft:product_data`, max stack size `1`, English display text, product tooltips, and reused placeholder models/textures. They are not food, recipes, commerce products, or final content.
+The trim, ground, Beef Patties, forequarter, and beef fabrication products are development-stage product data fixtures. Promoted Grinder and Patty Former products appear in the ButcherCraft creative tab with dedicated placeholder product textures; broader fabrication fixtures still use shared development presentation until separately promoted. They are not food, commerce products, or final balance.
 
-`butchercraft:development_processing_workstation` is a development-only workstation fixture. It opens a plain temporary menu and client screen, accepts the current red-meat trim test products, resolves the single compatible grinding operation, processes for 60 ticks, and outputs the matching ground test product through an explicit temporary mapping.
+`butchercraft:development_processing_workstation` is a development-only workstation fixture. It opens a plain temporary menu and client screen, accepts the current mapped trim products, resolves the single compatible grinding operation, processes for 60 ticks, and outputs the matching ground product through an explicit temporary mapping.
 
-`butchercraft:grinder` is the current Grinder proof block. It uses `butchercraft:grinding` and the same processing graph/resolver/controller path to process Beef Trim, Pork Trim, and Bison Trim test products without species-specific Grinder behavior.
+`butchercraft:grinder` is the current Grinder proof block. It uses `butchercraft:grinding` and the same processing graph/resolver/controller path to process Beef, Pork, Chicken, Buffalo, Lamb, and Venison Trim products without species-specific Grinder behavior. Buffalo presentation retains the existing `butchercraft:bison_*` registry identities for compatibility.
+
+`butchercraft:patty_former` is the current Patty Former proof block. It uses `butchercraft:patty_forming` and the same Workstation, Execution, Scheduler, and owner-result path to process Ground Beef into Beef Patties. Ground Beef transfer from the Grinder to the Patty Former is manual.
+
+`butchercraft:production_order` is the current narrow player-facing control item for the fixed Beef Patties chain. It creates or inspects one Beef Trim to Grinder to Ground Beef to Patty Former to Beef Patties Production Run, assigns the two workstations through server-validated block interaction, and displays manual-transfer guidance without moving items automatically.
 
 `butchercraft:bandsaw` is the current Bandsaw proof block. It uses `butchercraft:bandsaw`, the same processing graph/resolver/controller path, and the atomic transformation execution bridge to process Beef Forequarter, Beef Hindquarter, and selected beef primal test products into ordered beef fabrication outputs, including Packer Brisket, T-Bone Steak, Porterhouse Steak, Top Round, Sirloin Steak, and Tri-Tip, without product-specific Bandsaw behavior.
 
@@ -108,6 +112,8 @@ The deterministic simulation Work definition, lifecycle, ordering, budgets, same
 
 The industry-neutral Production Process, Plan, and Run schemas, scheduler integration, transaction-backed completion, persistence, and extension boundaries are documented in `docs/PRODUCTION_FRAMEWORK.md`.
 
+The player-facing Production Order item, fixed Beef Patties chain, workstation assignment, read-only progress presentation, manual-transfer guidance, failure mapping, and remaining gates are documented in `docs/PRODUCTION_ORDER.md`.
+
 The deterministic Observation-to-Approved-Plan pipeline, ownership rules, exact allocation policy, Production submission adapter, six-file persistence contract, and deferred scope are documented in `docs/ECONOMIC_PLANNING_ENGINE.md`.
 
 The pure Java architecture manifest, deterministic rule registry, validation categories, structured reports, and extension constraints are documented in `docs/ARCHITECTURE_VALIDATION_FRAMEWORK.md`.
@@ -132,6 +138,6 @@ future Deterministic Execution Engine in
 accepted architecture and authorizes no implementation until architectural
 review and explicit owner approval.
 
-The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
+The flagship Meat Processing implementation is documented in `PROJECT_VISION.md`, `GAMEPLAY_DESIGN.md`, and the focused documents under `docs/`, including the engine, product, transformation, packaging, workstation, Grinder, Patty Former, and Bandsaw references. `MODULE_PLAN.md` preserves the earlier meat-focused expansion plan as historical context.
 
 Development environment verified on VS Code.

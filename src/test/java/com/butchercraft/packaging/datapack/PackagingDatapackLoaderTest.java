@@ -156,7 +156,7 @@ public class PackagingDatapackLoaderTest {
         PackagingDatapackLoadResult unknownCategory = loader().load(resources(Map.entry(
                 "category",
                 packaging("butchercraft:retail_package", "Retail Package", "retail", "gram")
-                        .replace("\"butchercraft:beef\"", "\"butchercraft:venison\"")
+                        .replace("\"butchercraft:beef\"", "\"butchercraft:ostrich\"")
         )));
         PackagingDatapackLoadResult unknownUnit = loader().load(resources(Map.entry(
                 "unit",

@@ -3,8 +3,10 @@ package com.butchercraft.registration;
 public final class ModClientRegistrationStatus {
     private static volatile boolean developmentWorkstationScreenRegistered;
     private static volatile boolean grinderScreenRegistered;
+    private static volatile boolean pattyFormerScreenRegistered;
     private static volatile boolean bandsawScreenRegistered;
     private static volatile boolean packagingTableScreenRegistered;
+    private static volatile boolean productionOrderScreenRegistered;
 
     private ModClientRegistrationStatus() {
     }
@@ -25,6 +27,14 @@ public final class ModClientRegistrationStatus {
         return grinderScreenRegistered;
     }
 
+    public static void markPattyFormerScreenRegistered() {
+        pattyFormerScreenRegistered = true;
+    }
+
+    public static boolean pattyFormerScreenRegistered() {
+        return pattyFormerScreenRegistered;
+    }
+
     public static void markBandsawScreenRegistered() {
         bandsawScreenRegistered = true;
     }
@@ -39,5 +49,13 @@ public final class ModClientRegistrationStatus {
 
     public static boolean packagingTableScreenRegistered() {
         return packagingTableScreenRegistered;
+    }
+
+    public static void markProductionOrderScreenRegistered() {
+        productionOrderScreenRegistered = true;
+    }
+
+    public static boolean productionOrderScreenRegistered() {
+        return productionOrderScreenRegistered;
     }
 }

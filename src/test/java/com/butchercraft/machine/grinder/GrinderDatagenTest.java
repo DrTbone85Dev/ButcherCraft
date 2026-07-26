@@ -17,7 +17,10 @@ class GrinderDatagenTest {
     void generatedGrindBeefDefinitionUsesGrinderCapability() throws IOException {
         assertGeneratedGrindingCapability("grind_beef");
         assertGeneratedGrindingCapability("grind_pork");
+        assertGeneratedGrindingCapability("grind_chicken");
         assertGeneratedGrindingCapability("grind_bison");
+        assertGeneratedGrindingCapability("grind_lamb");
+        assertGeneratedGrindingCapability("grind_venison");
         assertEquals(
                 "butchercraft:grinding",
                 BuiltInProcessingDefinitions.grindBeefOperation().workstationCapability().orElseThrow().toString()
@@ -28,7 +31,19 @@ class GrinderDatagenTest {
         );
         assertEquals(
                 "butchercraft:grinding",
+                BuiltInProcessingDefinitions.grindChickenOperation().workstationCapability().orElseThrow().toString()
+        );
+        assertEquals(
+                "butchercraft:grinding",
                 BuiltInProcessingDefinitions.grindBisonOperation().workstationCapability().orElseThrow().toString()
+        );
+        assertEquals(
+                "butchercraft:grinding",
+                BuiltInProcessingDefinitions.grindLambOperation().workstationCapability().orElseThrow().toString()
+        );
+        assertEquals(
+                "butchercraft:grinding",
+                BuiltInProcessingDefinitions.grindVenisonOperation().workstationCapability().orElseThrow().toString()
         );
     }
 

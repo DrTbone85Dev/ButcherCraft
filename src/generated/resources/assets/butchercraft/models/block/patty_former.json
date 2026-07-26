@@ -1,0 +1,138 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "texture": "#frame"
+        },
+        "east": {
+          "texture": "#frame"
+        },
+        "north": {
+          "texture": "#frame"
+        },
+        "south": {
+          "texture": "#frame"
+        },
+        "up": {
+          "texture": "#frame"
+        },
+        "west": {
+          "texture": "#frame"
+        }
+      },
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        8,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#surface"
+        },
+        "east": {
+          "texture": "#surface"
+        },
+        "north": {
+          "texture": "#surface"
+        },
+        "south": {
+          "texture": "#surface"
+        },
+        "up": {
+          "texture": "#surface"
+        },
+        "west": {
+          "texture": "#surface"
+        }
+      },
+      "from": [
+        2,
+        8,
+        2
+      ],
+      "to": [
+        14,
+        10,
+        14
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#press"
+        },
+        "east": {
+          "texture": "#press"
+        },
+        "north": {
+          "texture": "#press"
+        },
+        "south": {
+          "texture": "#press"
+        },
+        "up": {
+          "texture": "#press"
+        },
+        "west": {
+          "texture": "#press"
+        }
+      },
+      "from": [
+        3,
+        10,
+        3
+      ],
+      "to": [
+        13,
+        13,
+        13
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#press"
+        },
+        "east": {
+          "texture": "#press"
+        },
+        "north": {
+          "texture": "#press"
+        },
+        "south": {
+          "texture": "#press"
+        },
+        "up": {
+          "texture": "#press"
+        },
+        "west": {
+          "texture": "#press"
+        }
+      },
+      "from": [
+        5,
+        13,
+        5
+      ],
+      "to": [
+        11,
+        16,
+        11
+      ]
+    }
+  ],
+  "textures": {
+    "frame": "butchercraft:block/workstation/patty_former_frame",
+    "particle": "butchercraft:block/workstation/patty_former_frame",
+    "press": "butchercraft:block/workstation/patty_former_press",
+    "surface": "butchercraft:block/workstation/patty_former_surface"
+  }
+}

@@ -19,6 +19,12 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/grinder_surface");
     private static final ResourceLocation GRINDER_FEED_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/grinder_feed");
+    private static final ResourceLocation PATTY_FORMER_FRAME_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/patty_former_frame");
+    private static final ResourceLocation PATTY_FORMER_SURFACE_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/patty_former_surface");
+    private static final ResourceLocation PATTY_FORMER_PRESS_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/patty_former_press");
     private static final ResourceLocation PACKAGING_TABLE_SURFACE_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "block/workstation/packaging_table_surface");
     private static final ResourceLocation PACKAGING_TABLE_FRAME_TEXTURE =
@@ -35,6 +41,10 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
         ModelFile grinderModel = grinderModel();
         horizontalBlock(ModBlocks.GRINDER.get(), grinderModel);
         simpleBlockItem(ModBlocks.GRINDER.get(), grinderModel);
+
+        ModelFile pattyFormerModel = pattyFormerModel();
+        horizontalBlock(ModBlocks.PATTY_FORMER.get(), pattyFormerModel);
+        simpleBlockItem(ModBlocks.PATTY_FORMER.get(), pattyFormerModel);
 
         ModelFile bandsawModel = bandsawModel();
         horizontalBlock(ModBlocks.BANDSAW.get(), bandsawModel);
@@ -64,20 +74,38 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
         return model;
     }
 
+    private ModelFile pattyFormerModel() {
+        BlockModelBuilder model = models().getBuilder("patty_former")
+                .texture("particle", PATTY_FORMER_FRAME_TEXTURE)
+                .texture("frame", PATTY_FORMER_FRAME_TEXTURE)
+                .texture("surface", PATTY_FORMER_SURFACE_TEXTURE)
+                .texture("press", PATTY_FORMER_PRESS_TEXTURE);
+
+        cuboid(model, 0, 0, 0, 16, 8, 16, "#frame");
+        cuboid(model, 2, 8, 2, 14, 10, 14, "#surface");
+        cuboid(model, 3, 10, 3, 13, 13, 13, "#press");
+        cuboid(model, 5, 13, 5, 11, 16, 11, "#press");
+        return model;
+    }
+
     private ModelFile bandsawModel() {
-        return models().getBuilder("bandsaw")
-                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE)
-                .element().from(0, 0, 0).to(16, 10, 16).cube("#all").end()
-                .element().from(2, 10, 2).to(14, 16, 14).cube("#all").end()
-                .element().from(6, 3, 0).to(10, 14, 2).cube("#all").end();
+        BlockModelBuilder model = models().getBuilder("bandsaw")
+                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE);
+
+        cuboid(model, 0, 0, 0, 16, 10, 16, "#all");
+        cuboid(model, 2, 10, 2, 14, 16, 14, "#all");
+        cuboid(model, 6, 3, 0, 10, 14, 2, "#all");
+        return model;
     }
 
     private ModelFile bandsawUpperModel() {
-        return models().getBuilder("bandsaw_upper")
-                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE)
-                .element().from(2, 0, 2).to(14, 13, 14).cube("#all").end()
-                .element().from(5, 1, 0).to(11, 12, 2).cube("#all").end()
-                .element().from(3, 13, 3).to(13, 16, 13).cube("#all").end();
+        BlockModelBuilder model = models().getBuilder("bandsaw_upper")
+                .texture("all", DEVELOPMENT_PLACEHOLDER_TEXTURE);
+
+        cuboid(model, 2, 0, 2, 14, 13, 14, "#all");
+        cuboid(model, 5, 1, 0, 11, 12, 2, "#all");
+        cuboid(model, 3, 13, 3, 13, 16, 13, "#all");
+        return model;
     }
 
     private ModelFile packagingTableModel() {

@@ -1,6 +1,6 @@
 # ButcherCraft Product and Processing Definitions
 
-Status: Milestones 2A through 2E definitions foundation
+Status: Milestones 2A through 2E definitions foundation with IM-018 promoted Patty Former definitions
 
 ## Purpose
 
@@ -32,7 +32,9 @@ src/generated/resources/data/butchercraft/butchercraft/species/beef.json
 src/generated/resources/data/butchercraft/butchercraft/processing_profile/red_meat.json
 src/generated/resources/data/butchercraft/butchercraft/product/beef_trim.json
 src/generated/resources/data/butchercraft/butchercraft/product/ground_beef.json
+src/generated/resources/data/butchercraft/butchercraft/product/beef_patties.json
 src/generated/resources/data/butchercraft/butchercraft/processing_operation/grind_beef.json
+src/generated/resources/data/butchercraft/butchercraft/processing_operation/form_beef_patties.json
 src/generated/resources/data/butchercraft/butchercraft/processing_operation/break_beef_forequarter.json
 src/generated/resources/data/butchercraft/butchercraft/processing_operation/break_beef_hindquarter.json
 ```
@@ -91,12 +93,15 @@ Optional product packaging metadata links a retail product definition to a packa
 
 ## Built-In Red-Meat Examples
 
-The prototype dataset contains three red-meat grinding flows:
+The promoted Grinder dataset contains six trim-to-ground flows:
 
 ```text
 butchercraft:beef_trim --butchercraft:grind_beef--> butchercraft:ground_beef
 butchercraft:pork_trim --butchercraft:grind_pork--> butchercraft:ground_pork
+butchercraft:chicken_trim --butchercraft:grind_chicken--> butchercraft:ground_chicken
 butchercraft:bison_trim --butchercraft:grind_bison--> butchercraft:ground_bison
+butchercraft:lamb_trim --butchercraft:grind_lamb--> butchercraft:ground_lamb
+butchercraft:venison_trim --butchercraft:grind_venison--> butchercraft:ground_venison
 ```
 
 Prototype balance values:
@@ -111,6 +116,22 @@ Prototype balance values:
 - Zero output: forbidden.
 
 These values prove the data and graph model. They are not final balance.
+
+IM-018 adds one promoted Patty Former flow:
+
+```text
+butchercraft:ground_beef --butchercraft:form_beef_patties--> butchercraft:beef_patties
+```
+
+Prototype values:
+
+- Duration: `3000` milliseconds.
+- Yield: `1/1`.
+- Minimum input quantity: `100 gram`.
+- Workstation capability: `butchercraft:patty_forming`.
+- Zero output: forbidden.
+
+This value set proves the first manual Grinder to Patty Former chain. It is not final balance.
 
 The prototype dataset also contains red-meat fabrication flows for the Bandsaw:
 
@@ -195,11 +216,11 @@ Prototype values:
 - Workstation capability: `butchercraft:packaging`.
 - Zero output: forbidden.
 
-`butchercraft:retail_ground_beef` declares packaging metadata referencing `butchercraft:retail_package` and `butchercraft:ground_beef`. The Packaging Table does not execute this operation in Sprint 2.
+`butchercraft:retail_ground_beef` declares packaging metadata referencing `butchercraft:retail_package` and `butchercraft:ground_beef`.
 
-Sprint C adds physical packaging supply items and lets packaging definitions describe required supplies. This changes packaging content validation, not processing execution. `package_retail` remains graph-only, and no workstation consumes Foam Trays, Plastic Wrap Rolls, Vacuum Bags, paper rolls, or label rolls.
+Sprint C adds physical packaging supply items and lets packaging definitions describe required supplies. Sprint D connects `package_retail` to the Packaging Table for the first supply-consuming packaging flow.
 
-Milestones 2B through 2E and version 0.7.0 consume processing definitions through `WorkstationOperationResolver`. Sprint 2 adds `package_retail` to the graph, but no workstation consumes it yet. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder and Bandsaw add no species-specific or cut-specific branches; they supply only their workstation capabilities.
+Milestones 2B through 2E, version 0.7.0, Sprint D, and IM-018 consume processing definitions through `WorkstationOperationResolver`. The resolver requires exactly one compatible operation for the inserted product and workstation capability before processing can begin. The Grinder, Patty Former, Packaging Table, and Bandsaw add no species-specific or cut-specific branches; they supply only their workstation capabilities.
 
 ## Canonical Butcher-Cut Terminology
 
@@ -221,4 +242,4 @@ The diagnostic command reads the current server registry access and remains read
 
 ## Explicit Exclusions
 
-This milestone excludes live animal entities, slaughter interactions, carcass blocks or entities, poultry content or regulations, MCDA inspections, workstations, grinder blocks, menus, screens, player-triggered processing, employees, refrigeration, freshness, packaging, business accounts, customers, final textures, sounds, animations, and public stable expansion API guarantees. Milestone 2B adds the first temporary workstation after these definitions are in place.
+This definitions foundation excludes live animal entities, slaughter interactions, carcass blocks or entities, full poultry content or regulations, MCDA inspections, employees, refrigeration, freshness, business accounts, customers, final textures, sounds, animations, and public stable expansion API guarantees. Later milestones add specific workstations and flows without changing the definition ownership model.

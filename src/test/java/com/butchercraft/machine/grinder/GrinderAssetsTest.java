@@ -40,6 +40,13 @@ class GrinderAssetsTest {
     }
 
     @Test
+    void grinderBlockModelDoesNotCullPartialMachineFaces() throws IOException {
+        String model = Files.readString(resourcePath("assets/butchercraft/models/block/grinder.json"));
+
+        assertTrue(!model.contains("\"cullface\""), "Grinder model must not cull partial machine faces");
+    }
+
+    @Test
     void grinderBlockstateHasHorizontalFacingVariants() throws IOException {
         var blockstate = JsonParser.parseString(Files.readString(
                 resourcePath("assets/butchercraft/blockstates/grinder.json")

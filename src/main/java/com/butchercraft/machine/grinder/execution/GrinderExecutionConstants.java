@@ -13,7 +13,11 @@ public final class GrinderExecutionConstants {
     public static final String CONFIGURATION_IDENTITY = "butchercraft:execution_configuration/grinder_player_operation_v1";
     public static final Set<ResourceLocation> PROMOTED_GRINDER_OPERATIONS = Set.of(
             BuiltInDefinitionIds.GRIND_BEEF,
-            BuiltInDefinitionIds.GRIND_PORK
+            BuiltInDefinitionIds.GRIND_PORK,
+            BuiltInDefinitionIds.GRIND_CHICKEN,
+            BuiltInDefinitionIds.GRIND_BISON,
+            BuiltInDefinitionIds.GRIND_LAMB,
+            BuiltInDefinitionIds.GRIND_VENISON
     );
 
     private GrinderExecutionConstants() {

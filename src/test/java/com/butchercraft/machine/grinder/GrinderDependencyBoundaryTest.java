@@ -18,6 +18,9 @@ class GrinderDependencyBoundaryTest {
                         || sourceContains(path, "switch(species")
                         || sourceContains(path, "case \"butchercraft:beef\"")
                         || sourceContains(path, "case \"butchercraft:chicken\"")
+                        || sourceContains(path, "case \"butchercraft:bison\"")
+                        || sourceContains(path, "case \"butchercraft:lamb\"")
+                        || sourceContains(path, "case \"butchercraft:venison\"")
                         || sourceContains(path, "beef_trim")
                         || sourceContains(path, "ground_beef")
                         || sourceContains(path, "grind_beef")
@@ -26,7 +29,16 @@ class GrinderDependencyBoundaryTest {
                         || sourceContains(path, "grind_pork")
                         || sourceContains(path, "bison_trim")
                         || sourceContains(path, "ground_bison")
-                        || sourceContains(path, "grind_bison"))
+                        || sourceContains(path, "grind_bison")
+                        || sourceContains(path, "chicken_trim")
+                        || sourceContains(path, "ground_chicken")
+                        || sourceContains(path, "grind_chicken")
+                        || sourceContains(path, "lamb_trim")
+                        || sourceContains(path, "ground_lamb")
+                        || sourceContains(path, "grind_lamb")
+                        || sourceContains(path, "venison_trim")
+                        || sourceContains(path, "ground_venison")
+                        || sourceContains(path, "grind_venison"))
                 .toList();
 
         assertTrue(offenders.isEmpty(), "Grinder code must use capability-based definition resolution: " + offenders);

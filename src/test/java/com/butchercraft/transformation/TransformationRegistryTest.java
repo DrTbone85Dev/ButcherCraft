@@ -19,7 +19,11 @@ class TransformationRegistryTest {
     private static final List<String> EXPECTED_BUILT_IN_TRANSFORMATION_IDS = List.of(
             "butchercraft:grind_beef",
             "butchercraft:grind_pork",
+            "butchercraft:grind_chicken",
             "butchercraft:grind_bison",
+            "butchercraft:grind_lamb",
+            "butchercraft:grind_venison",
+            "butchercraft:form_beef_patties",
             "butchercraft:break_beef_forequarter",
             "butchercraft:break_beef_hindquarter",
             "butchercraft:cut_beef_short_loin",
@@ -83,16 +87,25 @@ class TransformationRegistryTest {
     void builtInRegistryContainsExistingGrinderTransformations() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(8, registry.size());
+        assertEquals(12, registry.size());
         assertEquals(EXPECTED_BUILT_IN_TRANSFORMATION_IDS, registry.stream()
                 .map(definition -> definition.id().value())
                 .toList());
         assertEquals(List.of(
                         "butchercraft:grind_beef",
                         "butchercraft:grind_pork",
-                        "butchercraft:grind_bison"
+                        "butchercraft:grind_chicken",
+                        "butchercraft:grind_bison",
+                        "butchercraft:grind_lamb",
+                        "butchercraft:grind_venison"
                 ),
                 registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING)
+                        .map(definition -> definition.id().value())
+                        .toList());
+        assertEquals(List.of(
+                        "butchercraft:form_beef_patties"
+                ),
+                registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING)
                         .map(definition -> definition.id().value())
                         .toList());
         assertEquals(List.of(

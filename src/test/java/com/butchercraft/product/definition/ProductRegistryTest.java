@@ -15,16 +15,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProductRegistryTest {
     private static final EngineId BEEF = EngineId.of("butchercraft:beef");
     private static final EngineId PORK = EngineId.of("butchercraft:pork");
+    private static final EngineId CHICKEN = EngineId.of("butchercraft:chicken");
+    private static final EngineId LAMB = EngineId.of("butchercraft:lamb");
+    private static final EngineId VENISON = EngineId.of("butchercraft:venison");
     private static final EngineId TAG_TRIM = EngineId.of("butchercraft:trait/trim");
     private static final EngineId TAG_GROUND = EngineId.of("butchercraft:trait/ground");
     private static final List<String> EXPECTED_BUILT_IN_PRODUCT_IDS = List.of(
             "butchercraft:beef_trim",
             "butchercraft:ground_beef",
+            "butchercraft:beef_patties",
             "butchercraft:retail_ground_beef",
             "butchercraft:pork_trim",
             "butchercraft:ground_pork",
+            "butchercraft:chicken_trim",
+            "butchercraft:ground_chicken",
             "butchercraft:bison_trim",
             "butchercraft:ground_bison",
+            "butchercraft:lamb_trim",
+            "butchercraft:ground_lamb",
+            "butchercraft:venison_trim",
+            "butchercraft:ground_venison",
             "butchercraft:beef_forequarter",
             "butchercraft:beef_chuck",
             "butchercraft:beef_rib",
@@ -110,16 +120,34 @@ class ProductRegistryTest {
     void builtInRegistryContainsCurrentGrinderAndBandsawProducts() {
         ProductRegistry registry = BuiltInProductRegistry.builtInRegistry();
 
-        assertEquals(31, registry.size());
+        assertEquals(38, registry.size());
         assertEquals(EXPECTED_BUILT_IN_PRODUCT_IDS, registry.stream()
                 .map(definition -> definition.id().value())
                 .toList());
-        assertEquals(List.of("butchercraft:beef_trim", "butchercraft:pork_trim", "butchercraft:bison_trim"),
+        assertEquals(List.of(
+                        "butchercraft:beef_trim",
+                        "butchercraft:pork_trim",
+                        "butchercraft:chicken_trim",
+                        "butchercraft:bison_trim",
+                        "butchercraft:lamb_trim",
+                        "butchercraft:venison_trim"
+                ),
                 registry.findByTag(BuiltInProductRegistry.TAG_TRIM)
                         .map(definition -> definition.id().value())
                         .toList());
-        assertEquals(List.of("butchercraft:ground_beef", "butchercraft:ground_pork", "butchercraft:ground_bison"),
+        assertEquals(List.of(
+                        "butchercraft:ground_beef",
+                        "butchercraft:ground_pork",
+                        "butchercraft:ground_chicken",
+                        "butchercraft:ground_bison",
+                        "butchercraft:ground_lamb",
+                        "butchercraft:ground_venison"
+                ),
                 registry.findByTag(BuiltInProductRegistry.TAG_GROUND)
+                        .map(definition -> definition.id().value())
+                        .toList());
+        assertEquals(List.of("butchercraft:beef_patties"),
+                registry.findByTag(BuiltInProductRegistry.TAG_PATTIES)
                         .map(definition -> definition.id().value())
                         .toList());
         assertEquals(List.of("butchercraft:retail_ground_beef"),

@@ -19,8 +19,12 @@ class ProcessingDefinitionResolverTest {
 
         assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.BEEF).succeeded());
         assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.PORK).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.CHICKEN).succeeded());
         assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.BISON).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.LAMB).succeeded());
+        assertTrue(resolver.resolveSpecies(BuiltInDefinitionIds.VENISON).succeeded());
         assertTrue(resolver.resolveProcessingProfile(BuiltInDefinitionIds.RED_MEAT).succeeded());
+        assertTrue(resolver.resolveProcessingProfile(BuiltInDefinitionIds.POULTRY).succeeded());
     }
 
     @Test
@@ -79,7 +83,15 @@ class ProcessingDefinitionResolverTest {
         DefinitionResolution<ResolvedProcessingOperationDefinition> resolved = resolver.resolveOperation(BuiltInDefinitionIds.GRIND_BEEF);
         DefinitionResolution<ProcessingOperation> engineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BEEF);
         DefinitionResolution<ProcessingOperation> porkEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_PORK);
+        DefinitionResolution<ProcessingOperation> chickenEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_CHICKEN);
         DefinitionResolution<ProcessingOperation> bisonEngineOperation = resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_BISON);
+        DefinitionResolution<ProcessingOperation> lambEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_LAMB);
+        DefinitionResolution<ProcessingOperation> venisonEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.GRIND_VENISON);
+        DefinitionResolution<ProcessingOperation> beefPattiesEngineOperation =
+                resolver.toEngineOperation(BuiltInDefinitionIds.FORM_BEEF_PATTIES);
         DefinitionResolution<ProcessingOperation> packageRetailEngineOperation =
                 resolver.toEngineOperation(BuiltInDefinitionIds.PACKAGE_RETAIL);
         DefinitionResolution<ProcessingOperation> bandsawEngineOperation =
@@ -98,8 +110,18 @@ class ProcessingDefinitionResolverTest {
         assertEquals("butchercraft:grind_beef", engineOperation.orThrow().id().value());
         assertTrue(porkEngineOperation.succeeded());
         assertEquals("butchercraft:grind_pork", porkEngineOperation.orThrow().id().value());
+        assertTrue(chickenEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_chicken", chickenEngineOperation.orThrow().id().value());
         assertTrue(bisonEngineOperation.succeeded());
         assertEquals("butchercraft:grind_bison", bisonEngineOperation.orThrow().id().value());
+        assertTrue(lambEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_lamb", lambEngineOperation.orThrow().id().value());
+        assertTrue(venisonEngineOperation.succeeded());
+        assertEquals("butchercraft:grind_venison", venisonEngineOperation.orThrow().id().value());
+        assertTrue(beefPattiesEngineOperation.succeeded(), beefPattiesEngineOperation.report().issues().toString());
+        assertEquals("butchercraft:form_beef_patties", beefPattiesEngineOperation.orThrow().id().value());
+        assertEquals("butchercraft:beef_patties",
+                beefPattiesEngineOperation.orThrow().outputs().getFirst().productType().value());
         assertTrue(packageRetailEngineOperation.succeeded(), packageRetailEngineOperation.report().issues().toString());
         assertEquals("butchercraft:package_retail", packageRetailEngineOperation.orThrow().id().value());
         assertEquals("butchercraft:retail_ground_beef",
@@ -122,7 +144,8 @@ class ProcessingDefinitionResolverTest {
 
         assertFalse(graph.validationReport().hasErrors(), graph.validationReport().issues().toString());
         assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.GROUND_BEEF, BuiltInDefinitionIds.RETAIL_GROUND_BEEF));
-        assertEquals(List.of(BuiltInDefinitionIds.PACKAGE_RETAIL),
+        assertTrue(graph.hasDirectTransformation(BuiltInDefinitionIds.GROUND_BEEF, BuiltInDefinitionIds.BEEF_PATTIES));
+        assertEquals(List.of(BuiltInDefinitionIds.FORM_BEEF_PATTIES, BuiltInDefinitionIds.PACKAGE_RETAIL),
                 graph.operationsAvailableFor(BuiltInDefinitionIds.GROUND_BEEF)
                         .stream()
                         .map(ProcessingGraphEdge::operationId)

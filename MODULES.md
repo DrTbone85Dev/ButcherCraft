@@ -52,7 +52,7 @@ Responsibilities:
 - Meat-industry business specializations and workforce requirements.
 - Industry-specific data that uses shared product, business, and economic contracts.
 
-Existing Grinder, Bandsaw, Packaging Table, product, packaging, processing, transformation, and workstation systems form the current implementation base.
+Existing Grinder, Patty Former, Bandsaw, Packaging Table, product, packaging, processing, transformation, and workstation systems form the current implementation base.
 
 ### Agriculture
 

@@ -10,7 +10,7 @@ authors="To Be Determined"
 description='''
 ButcherCraft is a Minecraft industrial and regional simulation project with playable production workflows.
 
-This alpha includes the first playable Grinder workstation, craftable Grinder block, Beef Trim to Ground Beef processing, Pork Trim to Ground Pork processing, and deterministic platform foundations for Execution, Scheduler, Planning, Production, and Allocation. Broader economy, worker automation, logistics, and expansion APIs remain in development.
+This alpha is the first multi-workstation production update. It includes the Grinder, Patty Former, six Grinder recipes, the manual Beef Patties production chain, Production Order guidance, and deterministic platform foundations for Execution, Scheduler, Planning, Production, and Allocation. Broader economy, worker automation, logistics, and expansion APIs remain in development.
 '''
 
 [[dependencies.${mod_id}]]

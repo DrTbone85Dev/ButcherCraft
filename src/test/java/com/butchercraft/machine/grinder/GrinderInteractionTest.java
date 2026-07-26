@@ -92,11 +92,17 @@ class GrinderInteractionTest {
         assertTrue(source.contains("GrinderWorkstation.CAPABILITY_ID"));
         assertTrue(source.contains("BuiltInDefinitionIds.GRIND_BEEF"));
         assertTrue(source.contains("BuiltInDefinitionIds.GRIND_PORK"));
+        assertTrue(source.contains("BuiltInDefinitionIds.GRIND_CHICKEN"));
         assertTrue(source.contains("BuiltInDefinitionIds.GRIND_BISON"));
+        assertTrue(source.contains("BuiltInDefinitionIds.GRIND_LAMB"));
+        assertTrue(source.contains("BuiltInDefinitionIds.GRIND_VENISON"));
         assertTrue(source.contains("WorkstationDuration.millisecondsToTicks(3_000)"));
         assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BEEF)"));
         assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_PORK)"));
+        assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_CHICKEN)"));
         assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_BISON)"));
+        assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_LAMB)"));
+        assertTrue(source.contains("DevelopmentProductItemMappings.fixtureMapping().canCreate(BuiltInDefinitionIds.GROUND_VENISON)"));
         assertTrue(source.contains("Grinder block registered: "));
         assertTrue(source.contains("Grinder block entity registered: "));
         assertTrue(source.contains("Grinder menu registered: "));
@@ -104,14 +110,23 @@ class GrinderInteractionTest {
         assertTrue(source.contains("Grinder capability available: "));
         assertTrue(source.contains("Built-in grind_beef supports Grinder capability: "));
         assertTrue(source.contains("Built-in grind_pork supports Grinder capability: "));
-        assertTrue(source.contains("Built-in grind_bison supports Grinder capability: "));
+        assertTrue(source.contains("Built-in grind_chicken supports Grinder capability: "));
+        assertTrue(source.contains("Built-in grind_bison supports Grinder capability for Buffalo: "));
+        assertTrue(source.contains("Built-in grind_lamb supports Grinder capability: "));
+        assertTrue(source.contains("Built-in grind_venison supports Grinder capability: "));
         assertTrue(source.contains("Beef Trim resolves to grind_beef for Grinder: "));
         assertTrue(source.contains("Pork Trim resolves to grind_pork for Grinder: "));
-        assertTrue(source.contains("Bison Trim resolves to grind_bison for Grinder: "));
+        assertTrue(source.contains("Chicken Trim resolves to grind_chicken for Grinder: "));
+        assertTrue(source.contains("Buffalo Trim resolves to grind_bison for Grinder: "));
+        assertTrue(source.contains("Lamb Trim resolves to grind_lamb for Grinder: "));
+        assertTrue(source.contains("Venison Trim resolves to grind_venison for Grinder: "));
         assertTrue(source.contains("Grinder grind_beef duration resolves to 60 ticks: "));
         assertTrue(source.contains("Ground Beef output mapping resolves for Grinder: "));
         assertTrue(source.contains("Ground Pork output mapping resolves for Grinder: "));
-        assertTrue(source.contains("Ground Bison output mapping resolves for Grinder: "));
+        assertTrue(source.contains("Ground Chicken output mapping resolves for Grinder: "));
+        assertTrue(source.contains("Ground Buffalo output mapping resolves for Grinder: "));
+        assertTrue(source.contains("Ground Lamb output mapping resolves for Grinder: "));
+        assertTrue(source.contains("Ground Venison output mapping resolves for Grinder: "));
     }
 
     private static String source(String relativePath) throws IOException {

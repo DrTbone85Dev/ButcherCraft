@@ -24,7 +24,7 @@ Numerical balance values are intentionally not defined yet. Thresholds, formulas
 
 The first playable loop must be short: one input, one basic product, one manual station, one grinder, one packaging station, one simple refrigerated storage system, one customer order, one basic employee job, basic cleanliness, and a basic MCDA inspection.
 
-Current foundation status: version 0.8.0 adds the Packaging Table as a placeable inventory workstation with a placeholder GUI. It does not yet package products or complete the first playable loop.
+Current foundation status: version 0.10.0-alpha.1 adds promoted Grinder gameplay, the Patty Former, the first manual Grinder to Patty Former chain, and Packaging Table gameplay proof content. It does not yet complete the full first playable loop because refrigeration, orders, employees, cleanliness, inspections, final balance, and final art remain future work.
 
 ## System Interaction Overview
 
