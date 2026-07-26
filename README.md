@@ -2,7 +2,7 @@
 
 ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic regional world simulation platform. Industry modules participate in one shared simulation; Meat Processing is the flagship implementation and retains the existing product, workstation, packaging, and facility-management direction.
 
-Registered content includes the existing development fixtures, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, the promoted Grinder flows for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the promoted Patty Former flow from Ground Beef to Beef Patties. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler now runs internal Production and Planning handlers; Production can observe promoted Grinder operations and one manual Grinder to Patty Former chain through Execution and Scheduler evidence; Allocation has no live provider or Scheduler handler. Worker automation, pricing, logistics, markets, accounting, and additional production gameplay remain future work.
+Registered content includes the existing development fixtures, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, six promoted Grinder recipes for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the Beef Patties production chain from Beef Trim to Ground Beef to Beef Patties. The player-facing Production Order item guides and observes the manual multi-workstation chain. The platform foundation now also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler now runs internal Production and Planning handlers; Production observes promoted workstation operations through deterministic Execution and Scheduler evidence; Allocation has no live provider or Scheduler handler. Worker automation, pricing, logistics, markets, accounting, and additional production gameplay remain future work.
 
 ## Project Identity
 
@@ -13,7 +13,7 @@ Registered content includes the existing development fixtures, Grinder, Patty Fo
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.10.0-alpha.1`
+- Version: `0.10.1-alpha.1`
 
 ## Commands
 

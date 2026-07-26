@@ -1,5 +1,41 @@
 # Changelog
 
+## ButcherCraft v0.10.1-alpha.1 - First Multi-Workstation Production Update
+
+### Added
+
+- Added the Patty Former workstation.
+- Added the Beef Patties product.
+- Added the Production Order item.
+- Added the first multi-workstation production chain.
+- Added player-facing production guidance for the manual Grinder to Patty Former flow.
+
+### Expanded
+
+- Expanded the Grinder to support Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim-to-ground flows.
+
+### Improved
+
+- Improved machine rendering and block-face culling.
+- Improved Production Order localization.
+- Improved workstation rendering assets.
+- Improved product definitions.
+- Improved release documentation for the current production chain.
+
+### Technical
+
+- Integrated the production chain with Production-owned ordered workstation runs.
+- Added ordered workstation Production Runs for the manual chain.
+- Added product-flow validation for the Grinder to Patty Former handoff.
+- Added additional automated GameTests.
+- Added additional automated unit tests.
+
+### Stability
+
+- Verified 1,296 automated tests in the current test-result metadata.
+- Verified 88 GameTests for promoted production workflows and regression coverage.
+- Recorded human acceptance of the multi-workstation production update after the localization and machine culling correction passes.
+
 ## ButcherCraft v0.10.0-alpha.1 - First Playable Production Alpha
 
 ### Added
