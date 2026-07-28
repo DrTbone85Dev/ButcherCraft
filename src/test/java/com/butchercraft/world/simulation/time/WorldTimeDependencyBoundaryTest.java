@@ -44,9 +44,19 @@ class WorldTimeDependencyBoundaryTest {
                     assertFalse(source.contains("getDayTime("), file + " must not derive runtime authority from dayTime");
                     assertFalse(source.contains("setDayTime("), file + " must not mutate dayTime");
                     assertFalse(source.contains("WorldTimeService"), file + " must not consume world time authority");
-                    assertFalse(source.contains("BusinessCalendarSnapshot"), file + " must not own calendar decisions");
+                    if (!explicitProductionDeadlineCalendarConsumer(file)) {
+                        assertFalse(source.contains("BusinessCalendarSnapshot"),
+                                file + " must not own calendar decisions");
+                    }
                 }
             }
         }
+    }
+
+    private static boolean explicitProductionDeadlineCalendarConsumer(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.endsWith("/world/production/ProductionDeadline.java")
+                || normalized.endsWith("/world/production/ProductionManager.java")
+                || normalized.endsWith("/world/production/ProductionRunRuntime.java");
     }
 }

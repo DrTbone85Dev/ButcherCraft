@@ -23,6 +23,7 @@ public record ProductionRunSnapshot(
         Optional<TransactionId> completionTransactionId,
         Optional<ProductionWorkstationAssignment> workstationAssignment,
         Optional<ProductionWorkstationChain> workstationChain,
+        Optional<ProductionDeadline> deadline,
         Optional<ProductionFailureCode> failureCode,
         Optional<String> failureSummary,
         long revision,
@@ -44,9 +45,16 @@ public record ProductionRunSnapshot(
         completionTransactionId = Objects.requireNonNull(completionTransactionId, "completionTransactionId");
         workstationAssignment = Objects.requireNonNull(workstationAssignment, "workstationAssignment");
         workstationChain = Objects.requireNonNull(workstationChain, "workstationChain");
+        deadline = Objects.requireNonNull(deadline, "deadline");
         failureCode = Objects.requireNonNull(failureCode, "failureCode");
         failureSummary = Objects.requireNonNull(failureSummary, "failureSummary")
                 .map(value -> ProductionValidation.requireText(value, "Production failure summary", 2_048));
+        ProductionRunId normalizedId = id;
+        deadline.ifPresent(value -> {
+            if (!value.runId().equals(normalizedId)) {
+                throw new IllegalArgumentException("Production deadline references the wrong Run");
+            }
+        });
         schemaVersion = ProductionValidation.requireSchema(schemaVersion, "production run");
         validateConsistency(
                 status,
@@ -98,6 +106,52 @@ public record ProductionRunSnapshot(
                 scheduledWorkId,
                 completionTransactionId,
                 workstationAssignment,
+                Optional.empty(),
+                Optional.empty(),
+                failureCode,
+                failureSummary,
+                revision,
+                schemaVersion
+        );
+    }
+
+    public ProductionRunSnapshot(
+            ProductionRunId id,
+            ProductionPlanId planId,
+            ProductionRunStatus status,
+            long lastUpdatedSimulationTick,
+            OptionalLong startedTick,
+            OptionalLong pausedTick,
+            OptionalLong completedTick,
+            long requiredWorkUnits,
+            long currentWorkUnits,
+            int executionAttemptCount,
+            OptionalLong nextEligibleTick,
+            Optional<SimulationWorkId> scheduledWorkId,
+            Optional<TransactionId> completionTransactionId,
+            Optional<ProductionWorkstationAssignment> workstationAssignment,
+            Optional<ProductionWorkstationChain> workstationChain,
+            Optional<ProductionFailureCode> failureCode,
+            Optional<String> failureSummary,
+            long revision,
+            int schemaVersion
+    ) {
+        this(
+                id,
+                planId,
+                status,
+                lastUpdatedSimulationTick,
+                startedTick,
+                pausedTick,
+                completedTick,
+                requiredWorkUnits,
+                currentWorkUnits,
+                executionAttemptCount,
+                nextEligibleTick,
+                scheduledWorkId,
+                completionTransactionId,
+                workstationAssignment,
+                workstationChain,
                 Optional.empty(),
                 failureCode,
                 failureSummary,

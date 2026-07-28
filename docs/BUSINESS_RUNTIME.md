@@ -4,6 +4,12 @@ Status: v0.9.0 Phase 11 foundation
 
 The Business Runtime Framework makes immutable business identity records participate in simulated time without turning them into gameplay systems. Business identity remains part of World Identity. Runtime business state is stored separately and may change over time.
 
+IM-022 adds a separate Business Calendar Runtime foundation for plant
+operating hours, open/closed observation, shift definitions, and read-only
+diagnostics derived from World Time's Business Calendar. See
+`docs/BUSINESS_HOURS_SHIFTS_AND_DEADLINES.md` for the canonical operating-hour,
+shift, and Production deadline rules.
+
 ## Architecture
 
 The runtime package owns:
@@ -18,6 +24,11 @@ The runtime package owns:
 - `BusinessRuntimeStorage` for schema-versioned JSON persistence.
 
 Only `com.butchercraft.world.BusinessRuntimeService` imports Minecraft or NeoForge APIs. The business runtime package is Java-only and can be tested without launching Minecraft.
+
+IM-022 also adds `com.butchercraft.world.BusinessRuntimeCalendarService` as the
+server adapter for Business Calendar Runtime snapshots. It observes World
+Time, builds schedule and shift configuration from common config, and persists
+diagnostic state without owning a duplicate clock.
 
 ## Identity Boundary
 
@@ -74,6 +85,16 @@ The file stores:
 - shift schedule
 
 It does not store immutable business identity data.
+
+Business Calendar Runtime diagnostic state is stored separately at:
+
+```text
+<world>/butchercraft/business_calendar_runtime.json
+```
+
+That file stores schedule, shift-set, and configuration identities plus the
+last observed plant state. It does not replace `business_runtime.json` and does
+not persist an independent clock.
 
 ## Validation
 

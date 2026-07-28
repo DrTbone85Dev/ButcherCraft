@@ -32,6 +32,9 @@ import com.butchercraft.workstation.PrototypeProcessingContextValues;
 import com.butchercraft.workstation.WorkstationDuration;
 import com.butchercraft.workstation.WorkstationOperationResolution;
 import com.butchercraft.workstation.WorkstationOperationResolver;
+import com.butchercraft.world.BusinessRuntimeCalendarService;
+import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
+import com.butchercraft.world.business.runtime.BusinessScheduleBoundary;
 import com.butchercraft.world.simulation.time.WorldTimeService;
 import com.butchercraft.world.simulation.time.WorldTimeStatusSnapshot;
 import com.mojang.brigadier.Command;
@@ -94,6 +97,9 @@ public final class ButcherCraftDiagnostics {
                 .then(Commands.literal("time")
                         .then(Commands.literal("status")
                                 .executes(context -> runTimeStatus(context.getSource()))))
+                .then(Commands.literal("business")
+                        .then(Commands.literal("status")
+                                .executes(context -> runBusinessStatus(context.getSource()))))
                 .then(Commands.literal("diagnostic")
                         .executes(context -> runDiagnostic(context.getSource()))
                         .then(DevelopmentCheckpointCommands.branch())));
@@ -103,6 +109,41 @@ public final class ButcherCraftDiagnostics {
         for (InfoMessageLine line : infoLines(modVersion(ButcherCraft.MOD_ID))) {
             source.sendSuccess(line::toComponent, false);
         }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runBusinessStatus(net.minecraft.commands.CommandSourceStack source) {
+        BusinessRuntimeObservationSnapshot snapshot = BusinessRuntimeCalendarService.INSTANCE
+                .currentSnapshot(source.getServer())
+                .orElse(null);
+        if (snapshot == null) {
+            source.sendSuccess(() -> Component.literal("ButcherCraft business runtime source is unavailable."), false);
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("ButcherCraft Business Runtime"), false);
+        source.sendSuccess(() -> Component.literal("Enabled: " + snapshot.enabled()), false);
+        source.sendSuccess(() -> Component.literal("Business calendar: day "
+                + snapshot.calendar().businessDayIndex() + " " + snapshot.businessTimeDisplay()), false);
+        source.sendSuccess(() -> Component.literal("Plant: " + (snapshot.plantOpen() ? "Open" : "Closed")), false);
+        source.sendSuccess(() -> Component.literal("Current window: "
+                + snapshot.currentOperatingWindow().map(BusinessScheduleBoundary::displayText).orElse("none")), false);
+        source.sendSuccess(() -> Component.literal("Next opening: "
+                + snapshot.nextOpening().map(BusinessScheduleBoundary::displayText).orElse("none")), false);
+        source.sendSuccess(() -> Component.literal("Next closing: "
+                + snapshot.nextClosing().map(BusinessScheduleBoundary::displayText).orElse("none")), false);
+        source.sendSuccess(() -> Component.literal("Active shift: "
+                + snapshot.activeShift().map(BusinessScheduleBoundary::displayName).orElse("none")), false);
+        source.sendSuccess(() -> Component.literal("Next shift: "
+                + snapshot.nextShift().map(BusinessScheduleBoundary::displayName).orElse("none")), false);
+        source.sendSuccess(() -> Component.literal("Operating schedule identity: "
+                + snapshot.operatingScheduleIdentity().value()), false);
+        source.sendSuccess(() -> Component.literal("Shift set identity: "
+                + snapshot.shiftSetIdentity().value()), false);
+        source.sendSuccess(() -> Component.literal("Configuration identity: "
+                + snapshot.configurationIdentity().value()), false);
+        source.sendSuccess(() -> Component.literal("Last movement: "
+                + snapshot.movementClassification().serializedName()), false);
         return Command.SINGLE_SUCCESS;
     }
 

@@ -2,6 +2,10 @@ package com.butchercraft.productioncontrol;
 
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationFailureCode;
+import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarConfiguration;
+import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
+import com.butchercraft.world.production.ProductionDeadline;
+import com.butchercraft.world.production.ProductionDeadlineStatus;
 import com.butchercraft.world.production.ProductionChainCompletionEvidence;
 import com.butchercraft.world.production.ProductionChainStepStatus;
 import com.butchercraft.world.production.ProductionFailureCode;
@@ -13,6 +17,12 @@ import com.butchercraft.world.production.ProductionSchema;
 import com.butchercraft.world.production.ProductionWorkstationChain;
 import com.butchercraft.world.production.ProductionWorkstationChainStep;
 import com.butchercraft.world.production.ProductionWorkstationCompletionEvidence;
+import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
+import com.butchercraft.world.simulation.time.BusinessDayOfWeek;
+import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
+import com.butchercraft.world.simulation.time.WorldTimeConfiguration;
+import com.butchercraft.world.simulation.time.WorldTimeMovementClassification;
+import com.butchercraft.world.simulation.time.WorldTimeSchema;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -220,6 +230,44 @@ class ProductionOrderStatusSnapshotTest {
         assertEquals(ProductionOrderNextAction.CLEAR_PATTY_FORMER_OUTPUT, pattyBlocked.nextAction());
     }
 
+    @Test
+    void businessAndDeadlineFieldsExposeDisplayValuesOnly() {
+        BusinessRuntimeCalendarConfiguration configuration =
+                BusinessRuntimeCalendarConfiguration.defaults(WorldTimeConfiguration.enabled(60).identity());
+        BusinessRuntimeObservationSnapshot business = BusinessRuntimeObservationSnapshot.observe(
+                calendar(0L, 10, 30),
+                configuration,
+                WorldTimeMovementClassification.NORMAL_SCALED_ADVANCEMENT
+        );
+        ProductionDeadline deadline = ProductionDeadline.target(
+                RUN_ID,
+                calendar(0L, 10, 0),
+                configuration.identity(),
+                120,
+                "butchercraft:test_deadline"
+        );
+        ProductionOrderStatusSnapshot snapshot = ProductionOrderStatusSnapshot.fromRun(
+                runWithDeadline(ProductionRunStatus.READY, ProductionWorkstationChain.beefPattyChain(RUN_ID), deadline),
+                ProductionOrderStatusSnapshot.WorkstationObservation.unassigned(),
+                ProductionOrderStatusSnapshot.WorkstationObservation.unassigned(),
+                Optional.of(business)
+        );
+
+        assertTrue(snapshot.businessObserved());
+        assertTrue(snapshot.plantOpen());
+        assertEquals(BusinessDayOfWeek.MONDAY.ordinal(), snapshot.businessDayOfWeekOrdinal());
+        assertEquals(10, snapshot.businessHour());
+        assertEquals(30, snapshot.businessMinute());
+        assertEquals(1, snapshot.activeShiftDisplayCode());
+        assertEquals(2, snapshot.nextShiftDisplayCode());
+        assertTrue(snapshot.hasDeadline());
+        assertEquals(ProductionDeadlineStatus.UPCOMING, snapshot.deadlineStatus());
+        assertEquals(BusinessDayOfWeek.MONDAY.ordinal(), snapshot.deadlineDayOfWeekOrdinal());
+        assertEquals(12, snapshot.deadlineHour());
+        assertEquals(0, snapshot.deadlineMinute());
+        assertEquals(90, snapshot.deadlineDeltaMinutes());
+    }
+
     private static ProductionWorkstationChain grinderCompleteChain() {
         ProductionWorkstationChain chain = ProductionWorkstationChain.beefPattyChain(RUN_ID);
         String stepId = grinderStep(chain).stepIdentity();
@@ -290,6 +338,57 @@ class ProductionOrderStatusSnapshotTest {
                 Optional.empty(),
                 1L,
                 ProductionSchema.CURRENT_VERSION
+        );
+    }
+
+    private static ProductionRunSnapshot runWithDeadline(
+            ProductionRunStatus status,
+            ProductionWorkstationChain chain,
+            ProductionDeadline deadline
+    ) {
+        return new ProductionRunSnapshot(
+                RUN_ID,
+                PLAN_ID,
+                status,
+                1L,
+                OptionalLong.empty(),
+                OptionalLong.empty(),
+                status == ProductionRunStatus.COMPLETED ? OptionalLong.of(20L) : OptionalLong.empty(),
+                100L,
+                0L,
+                0,
+                OptionalLong.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(chain),
+                Optional.of(deadline),
+                Optional.empty(),
+                Optional.empty(),
+                1L,
+                ProductionSchema.CURRENT_VERSION
+        );
+    }
+
+    private static BusinessCalendarSnapshot calendar(long dayIndex, int hour, int minute) {
+        long minuteOfDay = hour * 60L + minute;
+        long dayTimeOfDay = minuteOfDay * BusinessCalendarSnapshot.MINECRAFT_DAY_UNITS
+                / BusinessCalendarSnapshot.BUSINESS_MINUTES_PER_DAY;
+        long observedDayTime = dayIndex * BusinessCalendarSnapshot.MINECRAFT_DAY_UNITS
+                + dayTimeOfDay - BusinessCalendarSnapshot.MINECRAFT_VISIBLE_MIDNIGHT_OFFSET;
+        return new BusinessCalendarSnapshot(
+                WorldTimeSchema.CURRENT_VERSION,
+                dayIndex,
+                BusinessDayOfWeek.fromDayIndex(dayIndex),
+                new BusinessTimeOfDay(hour, minute),
+                dayTimeOfDay,
+                dayTimeOfDay,
+                BusinessCalendarSnapshot.MINECRAFT_DAY_UNITS,
+                "butchercraft:world_day/v1/minecraft:overworld/" + dayIndex,
+                WorldTimeConfiguration.enabled(60).identity(),
+                "minecraft:overworld",
+                Math.max(0L, dayIndex),
+                observedDayTime
         );
     }
 

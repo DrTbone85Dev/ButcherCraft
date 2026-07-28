@@ -16,9 +16,11 @@ import com.butchercraft.world.production.ProductionManager;
 import com.butchercraft.world.production.ProductionOperationResult;
 import com.butchercraft.world.production.ProductionRunId;
 import com.butchercraft.world.production.ProductionRunSnapshot;
+import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public final class GrinderProductionAdapter {
     private static final String EXECUTION_STATUS_PREFIX = "butchercraft:execution_status/";
@@ -153,6 +155,50 @@ public final class GrinderProductionAdapter {
             ResourceLocation expectedProcessId,
             long authoritativeTick
     ) {
+        return observe(
+                productionManager,
+                executionManager,
+                runId,
+                grinder,
+                context,
+                expectedProcessId,
+                authoritativeTick,
+                Optional.empty()
+        );
+    }
+
+    public static ProductionOperationResult<ProductionRunSnapshot> observe(
+            ProductionManager productionManager,
+            ExecutionManager executionManager,
+            ProductionRunId runId,
+            GrinderBlockEntity grinder,
+            WorkstationTickContext context,
+            ResourceLocation expectedProcessId,
+            long authoritativeTick,
+            BusinessCalendarSnapshot completionCalendar
+    ) {
+        return observe(
+                productionManager,
+                executionManager,
+                runId,
+                grinder,
+                context,
+                expectedProcessId,
+                authoritativeTick,
+                Optional.of(Objects.requireNonNull(completionCalendar, "completionCalendar"))
+        );
+    }
+
+    private static ProductionOperationResult<ProductionRunSnapshot> observe(
+            ProductionManager productionManager,
+            ExecutionManager executionManager,
+            ProductionRunId runId,
+            GrinderBlockEntity grinder,
+            WorkstationTickContext context,
+            ResourceLocation expectedProcessId,
+            long authoritativeTick,
+            Optional<BusinessCalendarSnapshot> completionCalendar
+    ) {
         Objects.requireNonNull(productionManager, "productionManager");
         Objects.requireNonNull(executionManager, "executionManager");
         Objects.requireNonNull(runId, "runId");
@@ -247,18 +293,32 @@ public final class GrinderProductionAdapter {
             );
         }
         ExecutionResultEvidence resultEvidence = execution.resultEvidence().orElseThrow();
-        return productionManager.completeFromWorkstation(
-                runId,
-                workstationIdentity,
-                processIdentity,
-                operationId.value(),
-                EXECUTION_STATUS_PREFIX + execution.status().serializedName(),
-                ownerResult.ownerResultIdentity(),
-                ownerResult.contentDigest(),
-                resultEvidence.evidenceIdentity(),
-                resultEvidence.resultContentDigest(),
-                authoritativeTick
-        );
+        return completionCalendar
+                .map(calendar -> productionManager.completeFromWorkstation(
+                        runId,
+                        workstationIdentity,
+                        processIdentity,
+                        operationId.value(),
+                        EXECUTION_STATUS_PREFIX + execution.status().serializedName(),
+                        ownerResult.ownerResultIdentity(),
+                        ownerResult.contentDigest(),
+                        resultEvidence.evidenceIdentity(),
+                        resultEvidence.resultContentDigest(),
+                        authoritativeTick,
+                        calendar
+                ))
+                .orElseGet(() -> productionManager.completeFromWorkstation(
+                        runId,
+                        workstationIdentity,
+                        processIdentity,
+                        operationId.value(),
+                        EXECUTION_STATUS_PREFIX + execution.status().serializedName(),
+                        ownerResult.ownerResultIdentity(),
+                        ownerResult.contentDigest(),
+                        resultEvidence.evidenceIdentity(),
+                        resultEvidence.resultContentDigest(),
+                        authoritativeTick
+                ));
     }
 
     public static ProductionOperationResult<ProductionRunSnapshot> observeChainStep(
@@ -270,6 +330,54 @@ public final class GrinderProductionAdapter {
             WorkstationTickContext context,
             ResourceLocation expectedProcessId,
             long authoritativeTick
+    ) {
+        return observeChainStep(
+                productionManager,
+                executionManager,
+                runId,
+                stepIdentity,
+                grinder,
+                context,
+                expectedProcessId,
+                authoritativeTick,
+                Optional.empty()
+        );
+    }
+
+    public static ProductionOperationResult<ProductionRunSnapshot> observeChainStep(
+            ProductionManager productionManager,
+            ExecutionManager executionManager,
+            ProductionRunId runId,
+            String stepIdentity,
+            GrinderBlockEntity grinder,
+            WorkstationTickContext context,
+            ResourceLocation expectedProcessId,
+            long authoritativeTick,
+            BusinessCalendarSnapshot completionCalendar
+    ) {
+        return observeChainStep(
+                productionManager,
+                executionManager,
+                runId,
+                stepIdentity,
+                grinder,
+                context,
+                expectedProcessId,
+                authoritativeTick,
+                Optional.of(Objects.requireNonNull(completionCalendar, "completionCalendar"))
+        );
+    }
+
+    private static ProductionOperationResult<ProductionRunSnapshot> observeChainStep(
+            ProductionManager productionManager,
+            ExecutionManager executionManager,
+            ProductionRunId runId,
+            String stepIdentity,
+            GrinderBlockEntity grinder,
+            WorkstationTickContext context,
+            ResourceLocation expectedProcessId,
+            long authoritativeTick,
+            Optional<BusinessCalendarSnapshot> completionCalendar
     ) {
         Objects.requireNonNull(productionManager, "productionManager");
         Objects.requireNonNull(executionManager, "executionManager");
@@ -375,19 +483,34 @@ public final class GrinderProductionAdapter {
             );
         }
         ExecutionResultEvidence resultEvidence = execution.resultEvidence().orElseThrow();
-        return productionManager.completeWorkstationChainStepFromWorkstation(
-                runId,
-                stepIdentity,
-                workstationIdentity,
-                processIdentity,
-                operationId.value(),
-                EXECUTION_STATUS_PREFIX + execution.status().serializedName(),
-                ownerResult.ownerResultIdentity(),
-                ownerResult.contentDigest(),
-                resultEvidence.evidenceIdentity(),
-                resultEvidence.resultContentDigest(),
-                authoritativeTick
-        );
+        return completionCalendar
+                .map(calendar -> productionManager.completeWorkstationChainStepFromWorkstation(
+                        runId,
+                        stepIdentity,
+                        workstationIdentity,
+                        processIdentity,
+                        operationId.value(),
+                        EXECUTION_STATUS_PREFIX + execution.status().serializedName(),
+                        ownerResult.ownerResultIdentity(),
+                        ownerResult.contentDigest(),
+                        resultEvidence.evidenceIdentity(),
+                        resultEvidence.resultContentDigest(),
+                        authoritativeTick,
+                        calendar
+                ))
+                .orElseGet(() -> productionManager.completeWorkstationChainStepFromWorkstation(
+                        runId,
+                        stepIdentity,
+                        workstationIdentity,
+                        processIdentity,
+                        operationId.value(),
+                        EXECUTION_STATUS_PREFIX + execution.status().serializedName(),
+                        ownerResult.ownerResultIdentity(),
+                        ownerResult.contentDigest(),
+                        resultEvidence.evidenceIdentity(),
+                        resultEvidence.resultContentDigest(),
+                        authoritativeTick
+                ));
     }
 
     private static String workstationIdentity(WorkstationTickContext context) {

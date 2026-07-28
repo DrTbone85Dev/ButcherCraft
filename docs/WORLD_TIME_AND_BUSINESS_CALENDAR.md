@@ -15,6 +15,11 @@ ButcherCraft separates three time domains:
   scaled Overworld `dayTime`. It does not own an independent clock and cannot
   drift away from the visible world.
 
+IM-022 builds Business Runtime operating hours, shift observation, and
+Production deadline display on top of these snapshots. See
+`docs/BUSINESS_HOURS_SHIFTS_AND_DEADLINES.md` for plant schedule and deadline
+semantics.
+
 ## Configuration
 
 The canonical server-authoritative configuration lives in the existing
@@ -155,8 +160,10 @@ Expected consequences:
   their normal tick-driven pace.
 
 IM-021 does not add mob-spawn balancing, shortened nights, seasons, holidays,
-deadlines, shifts, operating hours, payroll, deliveries, offline progression,
-or an independent real-time mode.
+payroll, deliveries, offline progression, or an independent real-time mode.
+IM-022 adds operating hours, shift observation, and target Production deadline
+status only; it still does not add seasons, holidays, payroll, deliveries,
+offline progression, or automatic consequences.
 
 ## Persistence
 

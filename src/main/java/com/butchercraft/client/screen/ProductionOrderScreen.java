@@ -24,7 +24,7 @@ public final class ProductionOrderScreen extends AbstractContainerScreen<Product
     public ProductionOrderScreen(ProductionOrderMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         imageWidth = 224;
-        imageHeight = 176;
+        imageHeight = 224;
         titleLabelX = 10;
         titleLabelY = 8;
         inventoryLabelY = 1000;
@@ -66,24 +66,29 @@ public final class ProductionOrderScreen extends AbstractContainerScreen<Product
         int left = leftPos;
         int top = topPos;
         guiGraphics.fill(left, top, left + imageWidth, top + imageHeight, BACKGROUND_COLOR);
-        guiGraphics.fill(left + 8, top + 22, left + imageWidth - 8, top + 150, PANEL_COLOR);
-        guiGraphics.hLine(left + 20, left + imageWidth - 20, top + 72, LINE_COLOR);
-        renderProgress(guiGraphics, left + 48, top + 52, menu.grinderProgressPercent(), GRINDER_PROGRESS_COLOR);
-        renderProgress(guiGraphics, left + 48, top + 118, menu.pattyFormerProgressPercent(), PATTY_PROGRESS_COLOR);
+        guiGraphics.fill(left + 8, top + 22, left + imageWidth - 8, top + 190, PANEL_COLOR);
+        guiGraphics.hLine(left + 20, left + imageWidth - 20, top + 118, LINE_COLOR);
+        renderProgress(guiGraphics, left + 48, top + 128, menu.grinderProgressPercent(), GRINDER_PROGRESS_COLOR);
+        renderProgress(guiGraphics, left + 48, top + 172, menu.pattyFormerProgressPercent(), PATTY_PROGRESS_COLOR);
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(font, title, titleLabelX, titleLabelY, TEXT_COLOR, false);
-        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.chain"), 10, 24, 200, MUTED_TEXT_COLOR);
-        drawClipped(guiGraphics, menu.nextActionComponent(), 10, 38, 200, WARNING_TEXT_COLOR);
+        drawClipped(guiGraphics, menu.businessTimeComponent(), 10, 24, 200, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, menu.plantStatusComponent(), 10, 38, 200, TEXT_COLOR);
+        drawClipped(guiGraphics, menu.shiftComponent(), 10, 52, 200, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, menu.deadlineComponent(), 10, 68, 200, TEXT_COLOR);
+        drawClipped(guiGraphics, menu.deadlineStatusComponent(), 10, 82, 200, WARNING_TEXT_COLOR);
+        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.chain"), 10, 98, 200, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, menu.nextActionComponent(), 10, 110, 200, WARNING_TEXT_COLOR);
 
-        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.step.grinder"), 10, 82, 88, TEXT_COLOR);
-        drawClipped(guiGraphics, menu.grinderStatusComponent(), 98, 82, 112, MUTED_TEXT_COLOR);
-        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.step.transfer"), 10, 96, 200, MUTED_TEXT_COLOR);
-        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.step.patty_former"), 10, 112, 88, TEXT_COLOR);
-        drawClipped(guiGraphics, menu.pattyFormerStatusComponent(), 98, 112, 112, MUTED_TEXT_COLOR);
-        drawClipped(guiGraphics, menu.chainStatusComponent(), 10, 134, 144, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.step.grinder"), 10, 132, 88, TEXT_COLOR);
+        drawClipped(guiGraphics, menu.grinderStatusComponent(), 98, 132, 112, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.step.transfer"), 10, 146, 200, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, Component.translatable("screen.butchercraft.production_order.step.patty_former"), 10, 162, 88, TEXT_COLOR);
+        drawClipped(guiGraphics, menu.pattyFormerStatusComponent(), 98, 162, 112, MUTED_TEXT_COLOR);
+        drawClipped(guiGraphics, menu.chainStatusComponent(), 10, 184, 144, MUTED_TEXT_COLOR);
     }
 
     private void renderProgress(GuiGraphics guiGraphics, int x, int y, int percent, int fillColor) {

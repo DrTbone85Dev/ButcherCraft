@@ -9,9 +9,13 @@ import com.butchercraft.machine.pattyformer.production.PattyFormerProductionAdap
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.world.ExecutionService;
+import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.ProductionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.execution.ExecutionManager;
+import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarConfiguration;
+import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
+import com.butchercraft.world.production.ProductionDeadline;
 import com.butchercraft.world.production.ProductionOperationResult;
 import com.butchercraft.world.production.ProductionPlanDefinition;
 import com.butchercraft.world.production.ProductionPlanId;
@@ -167,23 +171,32 @@ public final class ProductionOrderControl {
     ) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(data, "data");
+        Optional<BusinessRuntimeObservationSnapshot> business = businessSnapshot(serverFor(player));
         if (data.runId().isEmpty()) {
-            return ProductionOrderStatusSnapshot.empty();
+            return ProductionOrderStatusSnapshot.empty(business);
         }
         ProductionRunId runId = ProductionRunId.of(data.runId().orElseThrow());
         MinecraftServer server = serverFor(player);
         Optional<ProductionRunSnapshot> found = production(server).findRun(runId);
         if (found.isEmpty()) {
-            return ProductionOrderStatusSnapshot.stale();
+            return ProductionOrderStatusSnapshot.stale(business);
         }
         ProductionRunSnapshot run = found.orElseThrow();
         if (observe) {
-            run = observeAssignedSteps(server, run);
+            run = observeAssignedSteps(server, run, business);
+        }
+        if (business.isPresent() && run.deadline().isPresent()) {
+            ProductionOperationResult<ProductionRunSnapshot> evaluated =
+                    production(server).evaluateDeadline(run.id(), business.orElseThrow().calendar());
+            if (evaluated.accepted()) {
+                run = evaluated.value().orElseThrow();
+            }
         }
         return ProductionOrderStatusSnapshot.fromRun(
                 run,
                 observeGrinder(server, run),
-                observePattyFormer(server, run)
+                observePattyFormer(server, run),
+                business
         );
     }
 
@@ -244,11 +257,40 @@ public final class ProductionOrderControl {
             return registered;
         }
         ProductionRunSnapshot run = registered.value().orElseThrow();
-        return production(server).assignWorkstationChain(
+        ProductionOperationResult<ProductionRunSnapshot> assigned = production(server).assignWorkstationChain(
                 run.id(),
                 ProductionWorkstationChain.beefPattyChain(run.id()),
                 tick
         );
+        if (!assigned.accepted()) {
+            return assigned;
+        }
+        return attachDefaultDeadline(server, assigned.value().orElseThrow(), tick);
+    }
+
+    private static ProductionOperationResult<ProductionRunSnapshot> attachDefaultDeadline(
+            MinecraftServer server,
+            ProductionRunSnapshot run,
+            long tick
+    ) {
+        Optional<BusinessRuntimeObservationSnapshot> business = businessSnapshot(server);
+        if (business.isEmpty()) {
+            return ProductionOperationResult.accepted(run);
+        }
+        BusinessRuntimeObservationSnapshot snapshot = business.orElseThrow();
+        BusinessRuntimeCalendarConfiguration configuration =
+                BusinessRuntimeCalendarService.configurationFromConfig(snapshot.calendar().configurationIdentity());
+        if (!configuration.productionOrderDeadlinesEnabled()) {
+            return ProductionOperationResult.accepted(run);
+        }
+        ProductionDeadline deadline = ProductionDeadline.target(
+                run.id(),
+                snapshot.calendar(),
+                configuration.identity(),
+                configuration.productionOrderDefaultDeadlineMinutes(),
+                "butchercraft:production_order/beef_patties"
+        );
+        return production(server).setDeadline(run.id(), deadline, tick);
     }
 
     private static ProductionPlanId nextPlanId(
@@ -267,7 +309,11 @@ public final class ProductionOrderControl {
         return candidate;
     }
 
-    private static ProductionRunSnapshot observeAssignedSteps(MinecraftServer server, ProductionRunSnapshot run) {
+    private static ProductionRunSnapshot observeAssignedSteps(
+            MinecraftServer server,
+            ProductionRunSnapshot run,
+            Optional<BusinessRuntimeObservationSnapshot> business
+    ) {
         ProductionRunSnapshot current = run;
         if (current.workstationChain().isEmpty() || current.status().isTerminal()) {
             return current;
@@ -277,16 +323,29 @@ public final class ProductionOrderControl {
         if (grinder.workstationIdentity().isPresent() && !grinder.status().terminal()) {
             Optional<ObservedGrinder> observed = grinderBlock(server, grinder.workstationIdentity().orElseThrow());
             if (observed.isPresent()) {
-                ProductionOperationResult<ProductionRunSnapshot> result = GrinderProductionAdapter.observeChainStep(
-                        production(server),
-                        execution(server),
-                        current.id(),
-                        grinder.stepIdentity(),
-                        observed.orElseThrow().blockEntity(),
-                        observed.orElseThrow().context(),
-                        BuiltInDefinitionIds.GRIND_BEEF,
-                        simulationTick(server)
-                );
+                ProductionRunSnapshot observedRun = current;
+                ProductionOperationResult<ProductionRunSnapshot> result = business
+                        .map(snapshot -> GrinderProductionAdapter.observeChainStep(
+                                production(server),
+                                execution(server),
+                                observedRun.id(),
+                                grinder.stepIdentity(),
+                                observed.orElseThrow().blockEntity(),
+                                observed.orElseThrow().context(),
+                                BuiltInDefinitionIds.GRIND_BEEF,
+                                simulationTick(server),
+                                snapshot.calendar()
+                        ))
+                        .orElseGet(() -> GrinderProductionAdapter.observeChainStep(
+                                production(server),
+                                execution(server),
+                                observedRun.id(),
+                                grinder.stepIdentity(),
+                                observed.orElseThrow().blockEntity(),
+                                observed.orElseThrow().context(),
+                                BuiltInDefinitionIds.GRIND_BEEF,
+                                simulationTick(server)
+                        ));
                 if (result.accepted()) {
                     current = result.value().orElseThrow();
                 }
@@ -299,16 +358,29 @@ public final class ProductionOrderControl {
         if (patty.workstationIdentity().isPresent() && !patty.status().terminal()) {
             Optional<ObservedPattyFormer> observed = pattyFormerBlock(server, patty.workstationIdentity().orElseThrow());
             if (observed.isPresent()) {
-                ProductionOperationResult<ProductionRunSnapshot> result = PattyFormerProductionAdapter.observeChainStep(
-                        production(server),
-                        execution(server),
-                        current.id(),
-                        patty.stepIdentity(),
-                        observed.orElseThrow().blockEntity(),
-                        observed.orElseThrow().context(),
-                        BuiltInDefinitionIds.FORM_BEEF_PATTIES,
-                        simulationTick(server)
-                );
+                ProductionRunSnapshot observedRun = current;
+                ProductionOperationResult<ProductionRunSnapshot> result = business
+                        .map(snapshot -> PattyFormerProductionAdapter.observeChainStep(
+                                production(server),
+                                execution(server),
+                                observedRun.id(),
+                                patty.stepIdentity(),
+                                observed.orElseThrow().blockEntity(),
+                                observed.orElseThrow().context(),
+                                BuiltInDefinitionIds.FORM_BEEF_PATTIES,
+                                simulationTick(server),
+                                snapshot.calendar()
+                        ))
+                        .orElseGet(() -> PattyFormerProductionAdapter.observeChainStep(
+                                production(server),
+                                execution(server),
+                                observedRun.id(),
+                                patty.stepIdentity(),
+                                observed.orElseThrow().blockEntity(),
+                                observed.orElseThrow().context(),
+                                BuiltInDefinitionIds.FORM_BEEF_PATTIES,
+                                simulationTick(server)
+                        ));
                 if (result.accepted()) {
                     current = result.value().orElseThrow();
                 }
@@ -407,6 +479,10 @@ public final class ProductionOrderControl {
 
     private static com.butchercraft.world.production.ProductionManager production(MinecraftServer server) {
         return ProductionService.INSTANCE.managerFor(server);
+    }
+
+    private static Optional<BusinessRuntimeObservationSnapshot> businessSnapshot(MinecraftServer server) {
+        return BusinessRuntimeCalendarService.INSTANCE.currentSnapshot(server);
     }
 
     private static ExecutionManager execution(MinecraftServer server) {

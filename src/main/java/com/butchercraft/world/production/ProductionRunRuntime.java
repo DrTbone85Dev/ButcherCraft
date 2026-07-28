@@ -1,6 +1,7 @@
 package com.butchercraft.world.production;
 
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
+import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
 import com.butchercraft.world.transaction.TransactionId;
 
 import java.util.Objects;
@@ -32,6 +33,46 @@ public final class ProductionRunRuntime {
         return state;
     }
 
+    public synchronized void setDeadline(ProductionDeadline deadline, long tick) {
+        Objects.requireNonNull(deadline, "deadline");
+        requireNonterminal();
+        if (!deadline.runId().equals(state.id())) {
+            throw new IllegalArgumentException("Production deadline references a different Run");
+        }
+        if (state.deadline().isPresent()) {
+            ProductionDeadline existing = state.deadline().orElseThrow();
+            if (existing.sameAssignment(deadline)) {
+                return;
+            }
+            if (existing.locked() || deadlineLockedByExecution()) {
+                throw new IllegalStateException("Production deadline is immutable after execution begins");
+            }
+        } else if (deadlineLockedByExecution()) {
+            throw new IllegalStateException("Production deadline cannot be set after execution begins");
+        }
+        replace(state.status(), tick, state.currentWorkUnits(), state.executionAttemptCount(),
+                state.nextEligibleTick(), state.scheduledWorkId(), state.completionTransactionId(),
+                state.failureCode(), state.failureSummary(), state.startedTick(), state.pausedTick(),
+                state.completedTick(), state.workstationAssignment(), state.workstationChain(),
+                Optional.of(deadline));
+    }
+
+    public synchronized void evaluateDeadline(BusinessCalendarSnapshot calendar) {
+        Objects.requireNonNull(calendar, "calendar");
+        if (state.deadline().isEmpty()) {
+            return;
+        }
+        ProductionDeadline evaluated = state.deadline().orElseThrow().evaluate(state.status(), calendar);
+        if (evaluated.equals(state.deadline().orElseThrow())) {
+            return;
+        }
+        replace(state.status(), state.lastUpdatedSimulationTick(), state.currentWorkUnits(),
+                state.executionAttemptCount(), state.nextEligibleTick(), state.scheduledWorkId(),
+                state.completionTransactionId(), state.failureCode(), state.failureSummary(), state.startedTick(),
+                state.pausedTick(), state.completedTick(), state.workstationAssignment(), state.workstationChain(),
+                Optional.of(evaluated));
+    }
+
     public synchronized void markReady(long tick) {
         requireTransition(ProductionRunStatus.READY, ProductionRunStatus.PLANNED, ProductionRunStatus.BLOCKED);
         replace(ProductionRunStatus.READY, tick, state.currentWorkUnits(), state.executionAttemptCount(),
@@ -47,7 +88,8 @@ public final class ProductionRunRuntime {
         }
         replace(ProductionRunStatus.SCHEDULED, tick, state.currentWorkUnits(), state.executionAttemptCount(),
                 OptionalLong.of(tick), Optional.of(workId), state.completionTransactionId(),
-                Optional.empty(), Optional.empty(), state.startedTick(), OptionalLong.empty(), state.completedTick());
+                Optional.empty(), Optional.empty(), state.startedTick(), OptionalLong.empty(), state.completedTick(),
+                state.workstationAssignment(), state.workstationChain(), state.deadline().map(ProductionDeadline::withLocked));
     }
 
     public synchronized void beginOrResume(long tick) {
@@ -62,7 +104,8 @@ public final class ProductionRunRuntime {
         replace(ProductionRunStatus.RUNNING, tick, state.currentWorkUnits(),
                 Math.addExact(state.executionAttemptCount(), 1), OptionalLong.empty(),
                 state.scheduledWorkId(), state.completionTransactionId(), Optional.empty(), Optional.empty(),
-                started, OptionalLong.empty(), state.completedTick());
+                started, OptionalLong.empty(), state.completedTick(), state.workstationAssignment(),
+                state.workstationChain(), state.deadline().map(ProductionDeadline::withLocked));
     }
 
     public synchronized void advance(long workUnits, long tick) {
@@ -231,7 +274,8 @@ public final class ProductionRunRuntime {
         replace(ProductionRunStatus.RUNNING, tick, state.currentWorkUnits(),
                 alreadyBound ? state.executionAttemptCount() : Math.addExact(state.executionAttemptCount(), 1),
                 OptionalLong.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                started, OptionalLong.empty(), state.completedTick(), Optional.empty(), Optional.of(updated));
+                started, OptionalLong.empty(), state.completedTick(), Optional.empty(), Optional.of(updated),
+                state.deadline().map(ProductionDeadline::withLocked));
     }
 
     public synchronized void completeWorkstationChainStep(
@@ -303,7 +347,8 @@ public final class ProductionRunRuntime {
         replace(ProductionRunStatus.RUNNING, tick, state.currentWorkUnits(),
                 alreadyBound ? state.executionAttemptCount() : Math.addExact(state.executionAttemptCount(), 1),
                 OptionalLong.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                started, OptionalLong.empty(), state.completedTick(), Optional.of(updated));
+                started, OptionalLong.empty(), state.completedTick(), Optional.of(updated),
+                Optional.empty(), state.deadline().map(ProductionDeadline::withLocked));
     }
 
     public synchronized void completeFromWorkstation(
@@ -436,13 +481,45 @@ public final class ProductionRunRuntime {
             Optional<ProductionWorkstationAssignment> workstationAssignment,
             Optional<ProductionWorkstationChain> workstationChain
     ) {
+        replace(status, tick, progress, attempts, nextEligibleTick, workId, transactionId, failureCode,
+                failureSummary, startedTick, pausedTick, completedTick, workstationAssignment,
+                workstationChain, state.deadline());
+    }
+
+    private void replace(
+            ProductionRunStatus status,
+            long tick,
+            long progress,
+            int attempts,
+            OptionalLong nextEligibleTick,
+            Optional<SimulationWorkId> workId,
+            Optional<TransactionId> transactionId,
+            Optional<ProductionFailureCode> failureCode,
+            Optional<String> failureSummary,
+            OptionalLong startedTick,
+            OptionalLong pausedTick,
+            OptionalLong completedTick,
+            Optional<ProductionWorkstationAssignment> workstationAssignment,
+            Optional<ProductionWorkstationChain> workstationChain,
+            Optional<ProductionDeadline> deadline
+    ) {
         requireCurrentOrFutureTick(tick);
         state = new ProductionRunSnapshot(
                 state.id(), state.planId(), status, tick, startedTick, pausedTick, completedTick,
                 state.requiredWorkUnits(), progress, attempts, nextEligibleTick, workId, transactionId,
-                workstationAssignment, workstationChain, failureCode, failureSummary, Math.addExact(state.revision(), 1L),
-                state.schemaVersion()
+                workstationAssignment, workstationChain, deadline, failureCode, failureSummary,
+                Math.addExact(state.revision(), 1L), state.schemaVersion()
         );
+    }
+
+    private boolean deadlineLockedByExecution() {
+        return state.startedTick().isPresent()
+                || state.scheduledWorkId().isPresent()
+                || state.status() == ProductionRunStatus.RUNNING
+                || state.status() == ProductionRunStatus.SCHEDULED
+                || state.status() == ProductionRunStatus.AWAITING_TRANSACTION
+                || state.workstationAssignment().filter(ProductionWorkstationAssignment::executionStarted).isPresent()
+                || state.workstationChain().filter(ProductionWorkstationChain::hasStartedExecution).isPresent();
     }
 
     private ProductionWorkstationAssignment requireWorkstationAssignment(

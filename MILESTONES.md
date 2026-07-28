@@ -4,6 +4,72 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-022: Business Hours, Shift Definitions, And Production Deadline Foundation
+
+Goal: add deterministic plant operating hours, configured shifts, Business
+Runtime open/closed observation, and Production-owned deadline status on top of
+the IM-021 Business Calendar.
+
+Included work:
+
+- Configurable server-authoritative plant operating windows with closed days,
+  overnight support, deterministic validation, and schedule identity.
+- Configurable shift definitions with stable identity, deterministic ordering,
+  duplicate and overlap rejection, and validation against operating hours.
+- Business Runtime calendar snapshots derived from World Time without owning an
+  independent clock.
+- Production Deadline identity, assignment, lock state, status classification,
+  terminal completion timing, and legacy no-deadline compatibility.
+- Production Order display for plant state, business time, shifts, deadline,
+  and deadline status.
+- Read-only business diagnostics plus focused documentation, manifest entries,
+  persistence, unit tests, and GameTest targets.
+
+Excluded work:
+
+- Worker entities, employee schedules, attendance, payroll, overtime, breaks,
+  morale, fatigue, customer orders, reputation, penalties, money changes,
+  holidays, seasons, delivery windows, maintenance schedules, autonomous
+  Production scheduling, Allocation, another workstation, public APIs, startup
+  recovery, automatic checkpoints, and operator reconciliation.
+
+Acceptance criteria:
+
+- Plant open/closed state follows configured Business Calendar time with
+  inclusive opening and exclusive closing boundaries.
+- Active and next shift observations are deterministic and Business
+  Runtime-owned.
+- Production deadline status follows explicit Business Calendar observations,
+  and terminal completion timing persists once classified.
+- Sleep and forward/backward time jumps update observations directly without
+  catch-up loops or repeated Scheduler, Planning, or Production effects.
+- Production Order presents player-friendly status without internal hashes,
+  evidence identities, raw ticks, or authority tokens.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-022 can be called
+  manually accepted. The checklist covers opening and closing boundaries, shift
+  display, deadline display, early/on-time/late completion, sleep, time
+  commands, save/reload, unchanged workstation duration, and log review.
+
+Rollback considerations:
+
+- IM-022 is additive except for narrow Production Order display and Production
+  Run deadline persistence additions. Removing the Business Calendar Runtime
+  service, deadline types, deadline fields, config entries, diagnostics, docs,
+  manifest entries, generated language, and focused tests restores IM-021/IM-019
+  behavior. Legacy no-deadline Production Runs remain compatible.
+
 ## IM-019: Manual Production Chain UI And Player Guidance
 
 Goal: make the existing manual Beef Trim to Grinder to Ground Beef to Patty

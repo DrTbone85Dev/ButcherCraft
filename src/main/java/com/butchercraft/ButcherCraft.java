@@ -14,6 +14,7 @@ import com.butchercraft.registration.ModDataComponents;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
 import com.butchercraft.world.BusinessRuntimeService;
+import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.EconomicActorService;
 import com.butchercraft.world.EconomicPlanningService;
 import com.butchercraft.world.ExecutionService;
@@ -69,7 +70,9 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(WorldTimeService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(WorldTimeService.INSTANCE::synchronizePlayer);
         NeoForge.EVENT_BUS.addListener(BusinessRuntimeService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(BusinessRuntimeCalendarService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(BusinessRuntimeService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(BusinessRuntimeCalendarService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(WorkforceService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(WorkforceService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(GoodService.INSTANCE::initialize);
