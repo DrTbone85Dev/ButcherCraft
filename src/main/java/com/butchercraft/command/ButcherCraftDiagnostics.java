@@ -33,21 +33,40 @@ import com.butchercraft.workstation.WorkstationDuration;
 import com.butchercraft.workstation.WorkstationOperationResolution;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.world.BusinessRuntimeCalendarService;
+import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
 import com.butchercraft.world.business.runtime.BusinessScheduleBoundary;
+import com.butchercraft.world.workforce.employee.EmployeeFailure;
+import com.butchercraft.world.workforce.employee.EmployeeId;
+import com.butchercraft.world.workforce.employee.EmployeeOperationResult;
+import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
+import com.butchercraft.world.workforce.employee.EmployeePresenceState;
+import com.butchercraft.world.workforce.employee.EmployeeRecord;
 import com.butchercraft.world.simulation.time.WorldTimeService;
 import com.butchercraft.world.simulation.time.WorldTimeStatusSnapshot;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
 
 public final class ButcherCraftDiagnostics {
     private static final ResourceLocation DEVELOPMENT_TEST_ITEM_ID =
@@ -86,6 +105,9 @@ public final class ButcherCraftDiagnostics {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "grinder");
     private static final ResourceLocation BANDSAW_BLOCK_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "bandsaw");
+    private static final String EMPLOYEE_ARGUMENT = "employee";
+    private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_LOOKUP_SUGGESTIONS =
+            (context, builder) -> suggestEmployeeReferences(context.getSource(), builder);
 
     private ButcherCraftDiagnostics() {
     }
@@ -100,6 +122,37 @@ public final class ButcherCraftDiagnostics {
                 .then(Commands.literal("business")
                         .then(Commands.literal("status")
                                 .executes(context -> runBusinessStatus(context.getSource()))))
+                .then(Commands.literal("employee")
+                        .then(Commands.literal("create")
+                                .executes(context -> runEmployeeCreate(context.getSource(), ""))
+                                .then(Commands.argument("name", StringArgumentType.greedyString())
+                                        .executes(context -> runEmployeeCreate(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, "name")))))
+                        .then(Commands.literal("list")
+                                .executes(context -> runEmployeeList(context.getSource())))
+                        .then(Commands.literal("status")
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeStatus(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
+                        .then(Commands.literal("set-shift")
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .then(Commands.argument("shift_id", StringArgumentType.word())
+                                                .executes(context -> runEmployeeSetShift(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, EMPLOYEE_ARGUMENT),
+                                                        StringArgumentType.getString(context, "shift_id"))))))
+                        .then(Commands.literal("set-presence")
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .then(Commands.argument("state", StringArgumentType.word())
+                                                .executes(context -> runEmployeeSetPresence(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, EMPLOYEE_ARGUMENT),
+                                                        StringArgumentType.getString(context, "state")))))))
                 .then(Commands.literal("diagnostic")
                         .executes(context -> runDiagnostic(context.getSource()))
                         .then(DevelopmentCheckpointCommands.branch())));
@@ -145,6 +198,298 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Last movement: "
                 + snapshot.movementClassification().serializedName()), false);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeCreate(CommandSourceStack source, String requestedName) {
+        BlockPos anchor = BlockPos.containing(source.getPosition());
+        EmployeeOperationResult<EmployeeRecord> result = EmployeeService.INSTANCE.createEmployee(
+                source.getLevel(),
+                requestedName == null || requestedName.isBlank()
+                        ? java.util.Optional.empty()
+                        : java.util.Optional.of(requestedName.strip()),
+                java.util.Optional.of(anchor),
+                true
+        );
+        if (!result.succeeded()) {
+            sendEmployeeFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        EmployeeRecord record = result.orThrow();
+        source.sendSuccess(() -> Component.literal("Created employee " + employeeLookupLabel(record)), false);
+        source.sendSuccess(() -> Component.literal("Canonical employee id: " + record.employeeId().value()), false);
+        source.sendSuccess(() -> Component.literal("Assigned shift: "
+                + record.assignedShift().map(shift -> shift.shiftId() + " (" + shift.shiftDisplayName() + ")")
+                .orElse("unassigned")), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeList(CommandSourceStack source) {
+        var records = EmployeeService.INSTANCE.managerFor(source.getServer()).registry().records();
+        source.sendSuccess(() -> Component.literal("ButcherCraft Employees: " + records.size()), false);
+        for (EmployeeRecord record : records) {
+            source.sendSuccess(() -> Component.literal(employeeLookupLabel(record)
+                    + " | " + record.status().serializedName()
+                    + " | " + record.presenceState().serializedName()
+                    + " | " + record.assignedShift().map(shift -> shift.shiftId()).orElse("unassigned")), false);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeStatus(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeOperationResult<EmployeePresenceObservation> observation =
+                EmployeeService.INSTANCE.observe(source.getServer(), employeeId);
+        if (!observation.succeeded()) {
+            sendEmployeeFailure(source, observation.failure().orElseThrow());
+            return 0;
+        }
+        EmployeePresenceObservation value = observation.orThrow();
+        source.sendSuccess(() -> Component.literal("Employee: " + value.displayName()), false);
+        source.sendSuccess(() -> Component.literal("Status: " + value.status().serializedName()), false);
+        source.sendSuccess(() -> Component.literal("Presence: " + value.presenceState().serializedName()), false);
+        source.sendSuccess(() -> Component.literal("Shift: "
+                + value.assignedShift().map(shift -> shift.shiftId() + " (" + shift.shiftDisplayName() + ")")
+                .orElse("unassigned")), false);
+        source.sendSuccess(() -> Component.literal("Plant: " + (value.plantOpen() ? "open" : "closed")), false);
+        source.sendSuccess(() -> Component.literal("Reason: " + value.reason()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeSetShift(CommandSourceStack source, String employeeReference, String shiftId) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeOperationResult<EmployeeRecord> result =
+                EmployeeService.INSTANCE.assignShift(source.getServer(), employeeId, shiftId);
+        if (!result.succeeded()) {
+            sendEmployeeFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        EmployeeRecord record = result.orThrow();
+        source.sendSuccess(() -> Component.literal("Employee shift set: "
+                + record.assignedShift().map(shift -> shift.shiftId() + " (" + shift.shiftDisplayName() + ")")
+                .orElse("unassigned")), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeSetPresence(CommandSourceStack source, String employeeReference, String stateValue) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeePresenceState state;
+        try {
+            state = EmployeePresenceState.fromSerializedName(stateValue);
+        } catch (IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal("Unknown employee presence state: " + stateValue), false);
+            return 0;
+        }
+        EmployeeOperationResult<EmployeeRecord> result =
+                EmployeeService.INSTANCE.setPresence(source.getServer(), employeeId, state);
+        if (!result.succeeded()) {
+            sendEmployeeFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Employee presence set: "
+                + result.orThrow().presenceState().serializedName()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static EmployeeId employeeId(String value, CommandSourceStack source) {
+        List<EmployeeRecord> records = EmployeeService.INSTANCE.managerFor(source.getServer()).registry().records();
+        EmployeeLookupResult lookup = resolveEmployeeReference(value, records);
+        if (lookup.resolved()) {
+            return lookup.record().orElseThrow().employeeId();
+        }
+        sendEmployeeLookupFailure(source, value, lookup);
+        return null;
+    }
+
+    private static CompletableFuture<Suggestions> suggestEmployeeReferences(
+            CommandSourceStack source,
+            SuggestionsBuilder builder
+    ) {
+        List<EmployeeRecord> records = EmployeeService.INSTANCE.managerFor(source.getServer()).registry().records();
+        String remaining = builder.getRemaining();
+        String normalizedRemaining = unquoteEmployeeReference(remaining).toLowerCase(Locale.ROOT);
+        String lowerRemaining = remaining.toLowerCase(Locale.ROOT);
+        for (String suggestion : employeeLookupSuggestions(records)) {
+            String unquotedSuggestion = unquoteEmployeeReference(suggestion).toLowerCase(Locale.ROOT);
+            if (suggestion.toLowerCase(Locale.ROOT).startsWith(lowerRemaining)
+                    || unquotedSuggestion.startsWith(normalizedRemaining)) {
+                builder.suggest(suggestion);
+            }
+        }
+        return builder.buildFuture();
+    }
+
+    static List<String> employeeLookupSuggestions(List<EmployeeRecord> records) {
+        List<String> suggestions = new ArrayList<>();
+        for (EmployeeRecord record : sortedEmployeeRecords(records)) {
+            addUniqueSuggestion(suggestions, employeeNumberReference(record));
+            addUniqueSuggestion(suggestions, quotedEmployeeReference(record.displayName()));
+        }
+        return List.copyOf(suggestions);
+    }
+
+    static EmployeeLookupResult resolveEmployeeReference(String value, List<EmployeeRecord> records) {
+        String reference = unquoteEmployeeReference(Objects.requireNonNull(value, "value")).strip();
+        if (reference.isEmpty()) {
+            return EmployeeLookupResult.failed(EmployeeLookupFailure.EMPTY, List.of());
+        }
+
+        for (EmployeeRecord record : sortedEmployeeRecords(records)) {
+            if (record.employeeId().value().equals(reference)) {
+                return EmployeeLookupResult.resolved(record);
+            }
+        }
+
+        OptionalLong employeeNumber = parseEmployeeNumber(reference);
+        if (employeeNumber.isPresent()) {
+            long sequence = employeeNumber.getAsLong() - 1L;
+            List<EmployeeRecord> matches = sortedEmployeeRecords(records).stream()
+                    .filter(record -> record.sequence() == sequence)
+                    .toList();
+            if (matches.size() == 1) {
+                return EmployeeLookupResult.resolved(matches.getFirst());
+            }
+            if (matches.size() > 1) {
+                return EmployeeLookupResult.failed(EmployeeLookupFailure.AMBIGUOUS, matches);
+            }
+            return EmployeeLookupResult.failed(EmployeeLookupFailure.NOT_FOUND, List.of());
+        }
+
+        List<EmployeeRecord> matches = sortedEmployeeRecords(records).stream()
+                .filter(record -> record.displayName().equalsIgnoreCase(reference))
+                .toList();
+        if (matches.size() == 1) {
+            return EmployeeLookupResult.resolved(matches.getFirst());
+        }
+        if (matches.size() > 1) {
+            return EmployeeLookupResult.failed(EmployeeLookupFailure.AMBIGUOUS, matches);
+        }
+        return EmployeeLookupResult.failed(EmployeeLookupFailure.NOT_FOUND, List.of());
+    }
+
+    private static OptionalLong parseEmployeeNumber(String reference) {
+        String value = reference.startsWith("#") ? reference.substring(1).strip() : reference;
+        if (value.isEmpty()) {
+            return OptionalLong.empty();
+        }
+        for (int index = 0; index < value.length(); index++) {
+            if (!Character.isDigit(value.charAt(index))) {
+                return OptionalLong.empty();
+            }
+        }
+        try {
+            long number = Long.parseLong(value);
+            return number > 0L ? OptionalLong.of(number) : OptionalLong.empty();
+        } catch (NumberFormatException exception) {
+            return OptionalLong.empty();
+        }
+    }
+
+    private static void sendEmployeeLookupFailure(
+            CommandSourceStack source,
+            String reference,
+            EmployeeLookupResult lookup
+    ) {
+        EmployeeLookupFailure failure = lookup.failure().orElse(EmployeeLookupFailure.NOT_FOUND);
+        if (failure == EmployeeLookupFailure.AMBIGUOUS) {
+            String matches = lookup.matches().stream()
+                    .map(ButcherCraftDiagnostics::employeeLookupLabel)
+                    .reduce((left, right) -> left + ", " + right)
+                    .orElse("none");
+            source.sendSuccess(() -> Component.literal("Employee lookup is ambiguous for: " + reference), false);
+            source.sendSuccess(() -> Component.literal("Matches: " + matches), false);
+            source.sendSuccess(() -> Component.literal("Use the employee number, such as #1."), false);
+            return;
+        }
+        if (failure == EmployeeLookupFailure.EMPTY) {
+            source.sendSuccess(() -> Component.literal("Employee reference is required."), false);
+            return;
+        }
+        source.sendSuccess(() -> Component.literal("Employee not found: " + reference
+                + ". Use /butchercraft employee list."), false);
+    }
+
+    private static void addUniqueSuggestion(List<String> suggestions, String suggestion) {
+        if (!suggestions.contains(suggestion)) {
+            suggestions.add(suggestion);
+        }
+    }
+
+    private static List<EmployeeRecord> sortedEmployeeRecords(List<EmployeeRecord> records) {
+        return records.stream()
+                .sorted(Comparator.comparingLong(EmployeeRecord::sequence)
+                        .thenComparing(record -> record.displayName().toLowerCase(Locale.ROOT))
+                        .thenComparing(record -> record.employeeId().value()))
+                .toList();
+    }
+
+    static String employeeLookupLabel(EmployeeRecord record) {
+        return employeeNumberReference(record) + " " + record.displayName();
+    }
+
+    private static String employeeNumberReference(EmployeeRecord record) {
+        return "#" + Math.addExact(record.sequence(), 1L);
+    }
+
+    private static String quotedEmployeeReference(String value) {
+        if (value.indexOf(' ') < 0 && value.indexOf('"') < 0 && value.indexOf('\\') < 0) {
+            return value;
+        }
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    private static String unquoteEmployeeReference(String value) {
+        String stripped = value.strip();
+        if (stripped.length() >= 2 && stripped.startsWith("\"") && stripped.endsWith("\"")) {
+            return stripped.substring(1, stripped.length() - 1)
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\");
+        }
+        return stripped;
+    }
+
+    enum EmployeeLookupFailure {
+        EMPTY,
+        NOT_FOUND,
+        AMBIGUOUS
+    }
+
+    record EmployeeLookupResult(
+            Optional<EmployeeRecord> record,
+            Optional<EmployeeLookupFailure> failure,
+            List<EmployeeRecord> matches
+    ) {
+        EmployeeLookupResult {
+            record = Objects.requireNonNull(record, "record");
+            failure = Objects.requireNonNull(failure, "failure");
+            matches = List.copyOf(Objects.requireNonNull(matches, "matches"));
+        }
+
+        static EmployeeLookupResult resolved(EmployeeRecord record) {
+            return new EmployeeLookupResult(Optional.of(Objects.requireNonNull(record, "record")),
+                    Optional.empty(), List.of(record));
+        }
+
+        static EmployeeLookupResult failed(EmployeeLookupFailure failure, List<EmployeeRecord> matches) {
+            return new EmployeeLookupResult(Optional.empty(), Optional.of(failure), matches);
+        }
+
+        boolean resolved() {
+            return record.isPresent();
+        }
+    }
+
+    private static void sendEmployeeFailure(CommandSourceStack source, EmployeeFailure failure) {
+        source.sendSuccess(() -> Component.literal("Employee command failed: "
+                + failure.code().reasonCode() + " - " + failure.detail()), false);
     }
 
     static List<InfoMessageLine> infoLines(String modVersion) {

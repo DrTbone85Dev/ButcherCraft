@@ -455,6 +455,45 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersEmployeeFoundationAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> employeeContracts = List.of(
+                "butchercraft:platform_contract/employee_identity_foundation",
+                "butchercraft:platform_contract/employment_record_foundation",
+                "butchercraft:platform_contract/employee_shift_presence_observation",
+                "butchercraft:platform_contract/employee_entity_link_foundation",
+                "butchercraft:platform_contract/employee_persistence_foundation",
+                "butchercraft:platform_contract/employee_diagnostics_foundation",
+                "butchercraft:platform_contract/employee_foundation_gametest_coverage"
+        );
+
+        for (String contractId : employeeContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.ownerId().value().equals("butchercraft:workforce")
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/workforce_world")
+                        && authority.ownerId().value().equals("butchercraft:workforce")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:employee_records")
+                        && descriptor.ownerId().value().equals("butchercraft:workforce")
+                        && descriptor.path().equals("butchercraft/employee_records.json")));
+        assertTrue(context.dependencies().stream().anyMatch(dependency ->
+                dependency.consumerId().value().equals("butchercraft:workforce")
+                        && dependency.providerId().value().equals("butchercraft:business_runtime")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_identity")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_presence_observation")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -1003,7 +1042,14 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/production_deadline_completion_timing",
                         "butchercraft:platform_contract/production_order_deadline_display",
                         "butchercraft:platform_contract/business_hours_shift_deadline_persistence",
-                        "butchercraft:platform_contract/business_runtime_diagnostics"
+                        "butchercraft:platform_contract/business_runtime_diagnostics",
+                        "butchercraft:platform_contract/employee_identity_foundation",
+                        "butchercraft:platform_contract/employment_record_foundation",
+                        "butchercraft:platform_contract/employee_shift_presence_observation",
+                        "butchercraft:platform_contract/employee_entity_link_foundation",
+                        "butchercraft:platform_contract/employee_persistence_foundation",
+                        "butchercraft:platform_contract/employee_diagnostics_foundation",
+                        "butchercraft:platform_contract/employee_foundation_gametest_coverage"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

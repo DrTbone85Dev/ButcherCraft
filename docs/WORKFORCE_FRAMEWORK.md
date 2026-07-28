@@ -1,8 +1,11 @@
 # Workforce Framework
 
-Status: v0.9.0 Phase 12 foundation
+Status: implemented workforce and employee foundations
 
-The Workforce Framework defines the staffing structure a business requires to operate. It does not create employees, villagers, AI, hiring, payroll, production, or gameplay behavior.
+The Workforce Framework defines the staffing structure a business requires to
+operate and, as of IM-023, owns individual Employee Identity and Employment
+Records. It still does not add worker AI, job claiming, workstation operation,
+item carrying, hiring markets, payroll, production authority, or automation.
 
 ## Architecture
 
@@ -19,8 +22,16 @@ The workforce package owns:
 - `WorkforceRegistry` for deterministic lookup, validation, and loading.
 - `WorkforceManager` for definition creation, validation, and runtime shift lookup.
 - `WorkforceStorage` for schema-versioned JSON persistence.
+- `EmployeeId` for deterministic employee identity.
+- `EmployeeRecord` for employment status, profile, assigned shift reference,
+  optional position reference, presence state, entity linkage, and revision.
+- `EmployeeManager` for explicit employee creation, lifecycle, shift,
+  presence, and entity-link transitions.
+- `EmployeeStorage` for schema-versioned employee record persistence.
 
-Only `com.butchercraft.world.WorkforceService` imports Minecraft or NeoForge APIs. The workforce package is Java-only and can be tested without launching Minecraft.
+Only service, command, registration, client, and entity integration classes
+import Minecraft or NeoForge APIs. The workforce domain packages remain
+Java-only and can be tested without launching Minecraft.
 
 ## Lifecycle
 
@@ -37,7 +48,10 @@ Runtime lookup:
 1. Business Runtime exposes the current active shift id.
 2. Workforce Manager finds definitions for that business.
 3. Workforce Manager returns required positions for the current shift.
-4. Future employee systems may decide whether those positions are filled.
+4. Employee Manager may observe employee records against the current Business
+   Runtime shift identity.
+5. Future employee systems may decide whether positions are filled or work is
+   assigned.
 
 Server stop:
 
@@ -73,7 +87,28 @@ A shift assignment stores:
 - minimum workers
 - maximum workers
 
-No worker identity, villager, employee, schedule, wage, productivity, or inventory data is stored in this framework.
+Workforce definitions do not store worker identity, villager, schedule, wage,
+productivity, or inventory data. Employee records are stored separately in the
+employee record file.
+
+## Employee Records
+
+Employee records store:
+
+- employee id
+- business id
+- display name
+- employment status
+- presence state
+- assigned Business Runtime shift reference
+- optional Workforce position id
+- hire Business Calendar timestamp
+- optional entity link and anchor
+- schema version and revision
+
+Employee records do not store Production tasks, workstation assignments,
+machine reservations, inventory contents, wages, payroll, fatigue, morale,
+training, productivity, or customer interaction state.
 
 ## Persistence
 
@@ -86,6 +121,17 @@ Workforce definitions are stored at:
 The schema version is `1`.
 
 The file stores workforce definitions and `BusinessId` references only. It does not duplicate immutable business names, property records, ownership records, settlement records, or runtime operational state.
+
+Employee records are stored at:
+
+```text
+<world>/butchercraft/employee_records.json
+```
+
+The schema version is `1`. The file stores employee identity, employment
+record state, shift references, optional position references, and entity
+linkage. It does not duplicate Business Runtime shift definitions or World
+Identity business records.
 
 ## Validation
 
@@ -110,15 +156,20 @@ The workforce framework rejects:
 
 ## Extension Points
 
-Future employee systems should occupy workforce positions rather than inventing separate job structures. Future production, AI, scheduling, economy, inspections, and automation systems should consume workforce definitions through `WorkforceManager` or a narrow service built on top of it.
+Future employee systems should occupy workforce positions rather than
+inventing separate job structures. Future production, AI, scheduling, economy,
+inspections, and automation systems should consume workforce definitions and
+employee records through narrow Workforce-owned services.
 
-Out of scope for Phase 12:
+Out of scope after IM-023:
 
-- employees
 - villagers
 - AI
-- hiring
-- firing
+- job claiming
+- workstation operation
+- item carrying
+- logistics
+- machine reservation
 - payroll
 - production
 - machines
@@ -127,6 +178,5 @@ Out of scope for Phase 12:
 - inspections
 - reputation
 - productivity
-- gameplay
 - GUI
 - networking

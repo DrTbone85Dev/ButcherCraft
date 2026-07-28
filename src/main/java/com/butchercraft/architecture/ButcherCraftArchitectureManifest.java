@@ -36,6 +36,7 @@ import com.butchercraft.world.production.scheduler.ProductionWorkTypes;
 import com.butchercraft.world.simulation.scheduler.BuiltInSimulationStages;
 import com.butchercraft.world.simulation.scheduler.SchedulerSchema;
 import com.butchercraft.world.simulation.scheduler.SimulationStageDefinition;
+import com.butchercraft.world.workforce.employee.EmployeeSchema;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -873,6 +874,41 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-022 Business Hours, Shift Definitions, and Production Deadline Foundation",
                 "Diagnostics expose current plant state, boundaries, shifts, identities, and recent time movement without mutation commands");
+        platformContract(builder, "butchercraft:platform_contract/employee_identity_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "Workforce owns deterministic employee identity records bound to World Identity, Business Identity, creation source, and sequence");
+        platformContract(builder, "butchercraft:platform_contract/employment_record_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "Workforce owns employment status, assigned shift and optional position references, profile, revision, and lifecycle state");
+        platformContract(builder, "butchercraft:platform_contract/employee_shift_presence_observation",
+                ValidationCategory.SIMULATION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "Workforce observes Business Runtime shift identity to classify employee presence without owning shift definitions or time");
+        platformContract(builder, "butchercraft:platform_contract/employee_entity_link_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "A linked Employee entity carries only Employee Identity, read-only display state, and bounded idle movement");
+        platformContract(builder, "butchercraft:platform_contract/employee_persistence_foundation",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "Employee records persist in schema-versioned Workforce-owned JSON with explicit unsupported-schema failure");
+        platformContract(builder, "butchercraft:platform_contract/employee_diagnostics_foundation",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "Diagnostics create, list, inspect, assign shifts, and set presence without adding jobs or production authority");
+        platformContract(builder, "butchercraft:platform_contract/employee_foundation_gametest_coverage",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "Twenty-eight automated server-world GameTests cover employee creation, entity linkage, presence, persistence tags, and Scheduler boundary safety");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -884,6 +920,10 @@ public final class ButcherCraftArchitectureManifest {
                 BUSINESS_RUNTIME, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-022 Business Hours, Shift Definitions, and Production Deadline Foundation",
                 "One Business Runtime authority observes the Business Calendar and owns plant schedule and shift state per loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/workforce_world",
+                WORKFORCE, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-023 Employee and Employment Record Foundation",
+                "One Workforce runtime authority owns employee records, lifecycle transitions, presence state, and entity linkage per loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/scheduler_world",
                 SCHEDULER, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-009 Scheduler Effects Live Enforcement",
@@ -921,6 +961,11 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/business_runtime_configuration_identity", BUSINESS_RUNTIME);
         own(builder, "butchercraft:responsibility/business_runtime_calendar_diagnostics", BUSINESS_RUNTIME);
         own(builder, "butchercraft:responsibility/workforce_definitions", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_identity", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employment_records", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_presence_observation", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_entity_linkage", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_records_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
         own(builder, "butchercraft:responsibility/economic_actor_definitions", ACTORS);
         own(builder, "butchercraft:responsibility/inventory_quantities", INVENTORY);
@@ -1096,6 +1141,41 @@ public final class ButcherCraftArchitectureManifest {
                 BUSINESS_RUNTIME,
                 ValidationCategory.GENERAL,
                 "IM-022 assigns read-only plant status diagnostics to Business Runtime"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_identity",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-023 assigns deterministic Employee Identity to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employment_records",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-023 assigns employment status, profile, shift reference, optional position reference, and lifecycle state to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_presence_observation",
+                WORKFORCE,
+                ValidationCategory.SIMULATION,
+                "IM-023 assigns employee presence classification to Workforce as a Business Runtime shift observation consumer"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_entity_linkage",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-023 assigns Employee Identity to entity linkage and duplicate-link conflict handling to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_records_persistence",
+                WORKFORCE,
+                ValidationCategory.PERSISTENCE,
+                "IM-023 assigns schema-versioned employee record persistence to Workforce"
         );
         contract(
                 builder,
@@ -1653,6 +1733,8 @@ public final class ButcherCraftArchitectureManifest {
     }
 
     private static void addDependencies(ValidationContextBuilder builder) {
+        depends(builder, WORKFORCE, WORLD_IDENTITY);
+        depends(builder, WORKFORCE, BUSINESS_RUNTIME);
         depends(builder, ACTORS, GOODS);
         depends(builder, INVENTORY, ACTORS);
         depends(builder, INVENTORY, GOODS);
@@ -1995,6 +2077,10 @@ public final class ButcherCraftArchitectureManifest {
                 PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:workforce_definitions", "butchercraft/workforce_definitions.json",
                 WORKFORCE, 1, PersistenceDataKind.IMMUTABLE_DEFINITIONS, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:employee_records",
+                EmployeeSchema.DIRECTORY_NAME + "/" + EmployeeSchema.FILE_NAME,
+                WORKFORCE, EmployeeSchema.CURRENT_VERSION, PersistenceDataKind.MUTABLE_RUNTIME,
+                OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:goods", "butchercraft/goods.json",
                 GOODS, 1, PersistenceDataKind.IMMUTABLE_DEFINITIONS, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:economic_actors", "butchercraft/economic_actors.json",

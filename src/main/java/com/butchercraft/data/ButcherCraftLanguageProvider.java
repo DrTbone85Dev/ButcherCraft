@@ -66,6 +66,8 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModBlocks.BANDSAW_UPPER.get(), "Industrial Bandsaw");
         add(ModBlocks.PACKAGING_TABLE.get(), "Packaging Table");
         add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
+        add("entity.butchercraft.employee", "Employee");
+        add("entity.butchercraft.employee.inspect", "Employee: %s | Status: %s | Presence: %s | Shift: %s");
         add("container.butchercraft.grinder", "Grinder");
         add("container.butchercraft.patty_former", "Patty Former");
         add("container.butchercraft.production_order", "Production Order");

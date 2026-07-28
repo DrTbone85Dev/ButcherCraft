@@ -4,6 +4,70 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-023: Employee And Employment Record Foundation
+
+Goal: add persistent employee identity, employment records, shift eligibility,
+presence observation, and a basic linked in-world Employee entity without
+granting employees Production, Scheduler, Execution, Allocation, or workstation
+authority.
+
+Included work:
+
+- Workforce-owned `EmployeeId`, `EmployeeRecord`, lifecycle, presence, shift
+  assignment, optional position reference, entity linkage, and evidence-ready
+  revision state.
+- Schema-versioned `employee_records.json` persistence.
+- Business Runtime shift identity consumption for presence observation without
+  redefining shifts.
+- `butchercraft:employee` entity with persistent record link, read-only
+  inspection, and bounded idle movement.
+- Development/operator diagnostics for create, list, status, set-shift, and
+  set-presence.
+- Focused documentation, architecture-manifest declarations, generated
+  localization, pure unit tests, and 28 GameTests.
+
+Excluded work:
+
+- Workstation operation, job claiming, Production task assignment, item
+  carrying, logistics, machine reservation, payroll, wages, overtime, breaks,
+  morale, fatigue, productivity, training, skill effects, customer
+  interaction, attendance penalties, Allocation, public workforce APIs,
+  startup recovery, automatic checkpoints, operator reconciliation, and another
+  workstation.
+
+Acceptance criteria:
+
+- Employee Identity is deterministic and Workforce-owned.
+- Employee records survive save/load and reject unsupported schemas visibly.
+- Presence observation follows Business Runtime shift identity and does not own
+  shift definitions or time.
+- The Employee entity is a read-only linked representation and does not submit
+  Scheduler work or mutate Production.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-023 can be called
+  manually accepted. The checklist covers employee creation, entity display,
+  read-only inspection, shift reassignment, presence changes, save/reload, and
+  confirmation that employees do not operate machines.
+
+Rollback considerations:
+
+- IM-023 is additive. Removing the employee domain, service, entity
+  registration, diagnostics, docs, manifest entries, generated language, and
+  focused tests restores IM-022 behavior without changing Business Runtime,
+  Production, Scheduler, Execution, Transactions, Planning, Inventory, or
+  Allocation schemas.
+
 ## IM-022: Business Hours, Shift Definitions, And Production Deadline Foundation
 
 Goal: add deterministic plant operating hours, configured shifts, Business

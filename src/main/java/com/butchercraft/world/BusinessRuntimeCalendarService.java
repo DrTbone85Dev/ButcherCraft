@@ -69,6 +69,12 @@ public final class BusinessRuntimeCalendarService {
         return Optional.of(snapshot);
     }
 
+    public Optional<BusinessRuntimeCalendarConfiguration> currentConfiguration(MinecraftServer server) {
+        Objects.requireNonNull(server, "server");
+        return worldTimeService.currentSnapshot(server)
+                .map(snapshot -> configurationFromConfig(snapshot.configurationIdentity()));
+    }
+
     public static BusinessRuntimeCalendarConfiguration configurationFromConfig(
             com.butchercraft.world.simulation.time.WorldTimeConfigurationIdentity worldTimeIdentity
     ) {

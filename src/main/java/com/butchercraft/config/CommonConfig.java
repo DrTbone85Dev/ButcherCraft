@@ -29,6 +29,8 @@ public final class CommonConfig {
     public static final ModConfigSpec.ConfigValue<List<? extends String>> BUSINESS_RUNTIME_SHIFTS;
     public static final ModConfigSpec.BooleanValue BUSINESS_RUNTIME_PRODUCTION_ORDER_DEADLINES_ENABLED;
     public static final ModConfigSpec.IntValue BUSINESS_RUNTIME_PRODUCTION_ORDER_DEFAULT_DEADLINE_MINUTES;
+    public static final ModConfigSpec.IntValue EMPLOYEE_MAX_RECORDS;
+    public static final ModConfigSpec.IntValue EMPLOYEE_IDLE_ANCHOR_RADIUS;
 
     static {
         BUILDER.push("world_time");
@@ -71,6 +73,15 @@ public final class CommonConfig {
                 .comment("Business Calendar minutes after creation for the fixed Production Order target deadline.")
                 .defineInRange("default_deadline_minutes", 240, 0, 100_800);
         BUILDER.pop();
+        BUILDER.pop();
+
+        BUILDER.push("employees");
+        EMPLOYEE_MAX_RECORDS = BUILDER
+                .comment("Maximum employee records in the schema-1 employee foundation.")
+                .defineInRange("max_records", 64, 1, 1024);
+        EMPLOYEE_IDLE_ANCHOR_RADIUS = BUILDER
+                .comment("Idle movement radius, in blocks, around an employee's assigned anchor.")
+                .defineInRange("idle_anchor_radius", 8, 1, 64);
         BUILDER.pop();
     }
 

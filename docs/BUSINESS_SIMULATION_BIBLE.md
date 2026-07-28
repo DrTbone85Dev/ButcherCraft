@@ -755,15 +755,15 @@ This document includes future vision. It does not mean those systems are
 implemented.
 
 Current visible foundations include the promoted Grinder, Patty Former,
-Packaging Table proof content, Bandsaw proof content, and the narrow
-Production Order guidance path for the Beef Patties chain. Current platform
-foundations include World Identity, Simulation Clock, Business Runtime,
-Workforce definitions, Goods, Actors, Inventory, Transactions, Orders and
+Packaging Table proof content, Bandsaw proof content, the narrow Production
+Order guidance path for the Beef Patties chain, and the first linked Employee
+entity representation. Current platform foundations include World Identity,
+Simulation Clock, Business Runtime, Workforce definitions, Employee and
+Employment Records, Goods, Actors, Inventory, Transactions, Orders and
 Contracts, Scheduler, Production, Planning, Allocation foundations, Execution
 foundations, Checkpoint foundations, Evidence foundations, and World Time.
 
-Future work remains gated unless separately authorized, including employees,
-worker AI, payroll, customers, reputation, deadlines, refrigeration,
+Future work remains gated unless separately authorized, including worker AI,
+employee workstation operation, payroll, customers, reputation, deadlines, refrigeration,
 cleanliness, inspections, retail demand, wholesale contracts as gameplay,
 logistics, public APIs, and broad business UI.
-

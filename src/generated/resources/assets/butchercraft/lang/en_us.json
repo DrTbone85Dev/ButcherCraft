@@ -78,6 +78,8 @@
   "definition.butchercraft.species.lamb": "Lamb",
   "definition.butchercraft.species.pork": "Pork",
   "definition.butchercraft.species.venison": "Venison",
+  "entity.butchercraft.employee": "Employee",
+  "entity.butchercraft.employee.inspect": "Employee: %s | Status: %s | Presence: %s | Shift: %s",
   "item.butchercraft.beef_bone_test": "Beef Bone Test Product",
   "item.butchercraft.beef_chuck_test": "Beef Chuck Test Product",
   "item.butchercraft.beef_fat_test": "Beef Fat Test Product",

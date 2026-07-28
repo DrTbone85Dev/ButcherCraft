@@ -11,12 +11,14 @@ import com.butchercraft.registration.ModCapabilities;
 import com.butchercraft.registration.ModCreativeModeTabs;
 import com.butchercraft.registration.ModDataPackRegistries;
 import com.butchercraft.registration.ModDataComponents;
+import com.butchercraft.registration.ModEntityTypes;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.registration.ModMenuTypes;
 import com.butchercraft.world.BusinessRuntimeService;
 import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.EconomicActorService;
 import com.butchercraft.world.EconomicPlanningService;
+import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.GoodService;
 import com.butchercraft.world.InventoryService;
@@ -51,6 +53,7 @@ public final class ButcherCraft {
         ModDataComponents.register(modEventBus);
         ModBlocks.register(modEventBus);
         ModBlockEntityTypes.register(modEventBus);
+        ModEntityTypes.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
@@ -58,6 +61,7 @@ public final class ButcherCraft {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ModNetwork::registerPayloadHandlers);
+        modEventBus.addListener(ModEntityTypes::registerAttributes);
         NeoForge.EVENT_BUS.addListener(ButcherCraftDiagnostics::registerCommands);
         NeoForge.EVENT_BUS.addListener(ContentDatapackReloadListener::register);
         NeoForge.EVENT_BUS.addListener(WorldIdentityService.INSTANCE::initialize);
@@ -75,6 +79,8 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(BusinessRuntimeCalendarService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(WorkforceService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(WorkforceService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(EmployeeService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(EmployeeService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(GoodService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ManualProductionChainBootstrap.INSTANCE::ensureGoods);
         NeoForge.EVENT_BUS.addListener(GoodService.INSTANCE::save);
