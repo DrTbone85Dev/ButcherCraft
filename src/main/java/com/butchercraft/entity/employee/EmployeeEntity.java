@@ -1,7 +1,9 @@
 package com.butchercraft.entity.employee;
 
 import com.butchercraft.world.EmployeeService;
+import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
+import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
@@ -11,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -25,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 import java.util.EnumSet;
+import java.util.Optional;
 
 public final class EmployeeEntity extends PathfinderMob {
     private static final EntityDataAccessor<String> EMPLOYEE_ID =
@@ -50,6 +54,7 @@ public final class EmployeeEntity extends PathfinderMob {
     private BlockPos anchorPos = BlockPos.ZERO;
     private int anchorRadius = 8;
     private int validationTicks;
+    private BlockPos lookTargetPos;
 
     public EmployeeEntity(EntityType<? extends EmployeeEntity> entityType, Level level) {
         super(entityType, level);
@@ -95,10 +100,29 @@ public final class EmployeeEntity extends PathfinderMob {
                 return;
             }
         }
-        if (anchorRadius > 0 && blockPosition().distManhattan(anchorPos) > anchorRadius + 4) {
+        EmployeeNavigationState state = navigationStateOrDefault();
+        if (shouldMoveToAnchor(state)) {
             getNavigation().moveTo(anchorPos.getX() + 0.5D, anchorPos.getY(), anchorPos.getZ() + 0.5D, 1.0D);
         }
+        faceLookTarget(state);
         updateNavigationStateFromPosition();
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (!level().isClientSide && level() instanceof ServerLevel serverLevel) {
+            try {
+                EmployeeId employeeId = new EmployeeId(employeeIdValue());
+                WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                        serverLevel.getServer(),
+                        employeeId,
+                        "employee entity removed"
+                );
+            } catch (IllegalArgumentException ignored) {
+                // Unbound entities have no workstation reservation authority to release.
+            }
+        }
+        super.remove(reason);
     }
 
     @Override
@@ -162,6 +186,11 @@ public final class EmployeeEntity extends PathfinderMob {
 
     public void applyNavigationState(EmployeeNavigationState state) {
         entityData.set(NAVIGATION_STATE, state.serializedName());
+        faceLookTarget(state);
+    }
+
+    public void applyWorkstationLookTarget(Optional<BlockPos> target) {
+        lookTargetPos = target.map(BlockPos::immutable).orElse(null);
     }
 
     public String employeeIdValue() {
@@ -201,19 +230,57 @@ public final class EmployeeEntity extends PathfinderMob {
     }
 
     private void updateNavigationStateFromPosition() {
-        EmployeeNavigationState state;
-        try {
-            state = EmployeeNavigationState.fromSerializedName(navigationStateValue());
-        } catch (IllegalArgumentException exception) {
-            state = EmployeeNavigationState.OFF_SHIFT;
-        }
+        EmployeeNavigationState state = navigationStateOrDefault();
         boolean inside = insideAnchorRadius();
         if (inside && state == EmployeeNavigationState.WALKING_TO_DEPARTMENT) {
             applyNavigationState(EmployeeNavigationState.PRESENT_IN_DEPARTMENT);
         } else if (inside && state == EmployeeNavigationState.PRESENT_IN_DEPARTMENT) {
             applyNavigationState(EmployeeNavigationState.IDLE);
         } else if (!inside && state == EmployeeNavigationState.IDLE) {
-            applyNavigationState(EmployeeNavigationState.RETURNING_TO_ANCHOR);
+            applyNavigationState(EmployeeNavigationState.RETURNING_TO_DEPARTMENT);
+        } else if (inside && state == EmployeeNavigationState.WALKING_TO_WORKSTATION) {
+            applyNavigationState(EmployeeNavigationState.WAITING_AT_WORKSTATION);
+        } else if (!inside && state == EmployeeNavigationState.WAITING_AT_WORKSTATION) {
+            applyNavigationState(EmployeeNavigationState.WALKING_TO_WORKSTATION);
+        }
+    }
+
+    private boolean shouldMoveToAnchor(EmployeeNavigationState state) {
+        if (anchorRadius <= 0) {
+            return false;
+        }
+        boolean inside = insideAnchorRadius();
+        if ((state == EmployeeNavigationState.WALKING_TO_WORKSTATION
+                || state == EmployeeNavigationState.WAITING_AT_WORKSTATION
+                || state == EmployeeNavigationState.RETURNING_TO_DEPARTMENT)
+                && !inside) {
+            return true;
+        }
+        return blockPosition().distManhattan(anchorPos) > anchorRadius + 4;
+    }
+
+    private void faceLookTarget(EmployeeNavigationState state) {
+        if (lookTargetPos == null
+                || (state != EmployeeNavigationState.WAITING_AT_WORKSTATION
+                && state != EmployeeNavigationState.WALKING_TO_WORKSTATION)) {
+            return;
+        }
+        double deltaX = lookTargetPos.getX() + 0.5D - getX();
+        double deltaZ = lookTargetPos.getZ() + 0.5D - getZ();
+        if (Math.abs(deltaX) < 0.0001D && Math.abs(deltaZ) < 0.0001D) {
+            return;
+        }
+        float yRot = (float) (Math.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F;
+        setYRot(yRot);
+        setYHeadRot(yRot);
+        getLookControl().setLookAt(lookTargetPos.getX() + 0.5D, lookTargetPos.getY() + 0.5D, lookTargetPos.getZ() + 0.5D);
+    }
+
+    private EmployeeNavigationState navigationStateOrDefault() {
+        try {
+            return EmployeeNavigationState.fromSerializedName(navigationStateValue());
+        } catch (IllegalArgumentException exception) {
+            return EmployeeNavigationState.OFF_SHIFT;
         }
     }
 
@@ -230,6 +297,11 @@ public final class EmployeeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
+            EmployeeNavigationState state = employee.navigationStateOrDefault();
+            if (state == EmployeeNavigationState.WALKING_TO_WORKSTATION
+                    || state == EmployeeNavigationState.WAITING_AT_WORKSTATION) {
+                return false;
+            }
             if (employee.getRandom().nextInt(100) != 0) {
                 return false;
             }

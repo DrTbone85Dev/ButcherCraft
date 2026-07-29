@@ -148,6 +148,7 @@ public final class EmployeeService {
         active.set(reset);
         runtime.storage().save(reset.manager().directory());
         runtime.departmentStorage().save(reset.departmentManager().directory());
+        WorkstationReservationService.INSTANCE.resetGameTestReservations(server);
     }
 
     private EmployeeOperationResult<EmployeeRecord> createEmployee(
@@ -251,7 +252,15 @@ public final class EmployeeService {
                     "Unknown configured shift: " + shiftId
             );
         }
-        return managerFor(server).assignShift(employeeId, shift);
+        EmployeeOperationResult<EmployeeRecord> result = managerFor(server).assignShift(employeeId, shift);
+        if (result.succeeded()) {
+            WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                    server,
+                    employeeId,
+                    "employee shift assignment changed"
+            );
+        }
+        return result;
     }
 
     public EmployeeOperationResult<EmployeeRecord> transitionStatus(
@@ -259,7 +268,15 @@ public final class EmployeeService {
             EmployeeId employeeId,
             EmployeeStatus status
     ) {
-        return managerFor(server).transitionStatus(employeeId, status);
+        EmployeeOperationResult<EmployeeRecord> result = managerFor(server).transitionStatus(employeeId, status);
+        if (result.succeeded() && !status.permitsPresence()) {
+            WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                    server,
+                    employeeId,
+                    "employee status no longer permits workstation reservation"
+            );
+        }
+        return result;
     }
 
     public EmployeeOperationResult<EmployeeRecord> setPresence(
@@ -267,7 +284,15 @@ public final class EmployeeService {
             EmployeeId employeeId,
             EmployeePresenceState state
     ) {
-        return managerFor(server).setPresence(employeeId, state);
+        EmployeeOperationResult<EmployeeRecord> result = managerFor(server).setPresence(employeeId, state);
+        if (result.succeeded() && state != EmployeePresenceState.PRESENT) {
+            WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                    server,
+                    employeeId,
+                    "employee presence no longer permits workstation reservation"
+            );
+        }
+        return result;
     }
 
     public EmployeeOperationResult<EmployeeRecord> assignDepartment(
@@ -287,11 +312,21 @@ public final class EmployeeService {
             );
         }
         ActiveEmployeeRuntime runtime = load(server);
-        return runtime.manager().assignDepartment(
+        Optional<DepartmentId> previous = runtime.manager().find(employeeId)
+                .flatMap(EmployeeRecord::assignedDepartmentId);
+        EmployeeOperationResult<EmployeeRecord> result = runtime.manager().assignDepartment(
                 employeeId,
                 Optional.of(departmentId),
                 runtime.departmentManager().registry()
         );
+        if (result.succeeded() && !previous.equals(result.orThrow().assignedDepartmentId())) {
+            WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                    server,
+                    employeeId,
+                    "employee department assignment changed"
+            );
+        }
+        return result;
     }
 
     public EmployeeOperationResult<EmployeePresenceObservation> observe(MinecraftServer server, EmployeeId employeeId) {
@@ -335,13 +370,26 @@ public final class EmployeeService {
         EmployeeRecord boundRecord = bound.orThrow();
         Optional<EmployeeAnchor> departmentAnchor = observation
                 .flatMap(valueObservation -> activeDepartmentAnchor(level, boundRecord, valueObservation));
-        EmployeeAnchor activeAnchor = departmentAnchor
+        Optional<WorkstationReservationService.WorkstationNavigationTarget> workstationTarget = observation
+                .flatMap(valueObservation -> WorkstationReservationService.INSTANCE.navigationTargetFor(
+                        level,
+                        boundRecord,
+                        valueObservation,
+                        entity.blockPosition()
+                ));
+        EmployeeAnchor activeAnchor = workstationTarget
+                .map(WorkstationReservationService.WorkstationNavigationTarget::anchor)
+                .or(() -> departmentAnchor)
                 .or(() -> fallbackMovementAnchor(level, boundRecord))
                 .orElse(persistentAnchor);
         entity.applyEmployeeRecord(boundRecord, activeAnchor);
+        entity.applyWorkstationLookTarget(workstationTarget
+                .map(WorkstationReservationService.WorkstationNavigationTarget::workstationPos));
         observation.ifPresent(entity::applyEmployeeObservation);
-        entity.applyNavigationState(observation
-                .map(valueObservation -> navigationState(entity, activeAnchor, valueObservation, departmentAnchor.isPresent()))
+        entity.applyNavigationState(workstationTarget
+                .map(WorkstationReservationService.WorkstationNavigationTarget::navigationState)
+                .or(() -> observation
+                .map(valueObservation -> navigationState(entity, activeAnchor, valueObservation, departmentAnchor.isPresent())))
                 .orElse(EmployeeNavigationState.RETURNING_TO_ANCHOR));
         return true;
     }

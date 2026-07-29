@@ -2,6 +2,7 @@ package com.butchercraft.command;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.config.CommonConfig;
+import com.butchercraft.entity.employee.EmployeeEntity;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.evaluation.ProcessingEvaluator;
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
@@ -34,8 +35,12 @@ import com.butchercraft.workstation.WorkstationOperationResolution;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.EmployeeService;
+import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
 import com.butchercraft.world.business.runtime.BusinessScheduleBoundary;
+import com.butchercraft.workstation.reservation.WorkstationReservationFailure;
+import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
+import com.butchercraft.workstation.reservation.WorkstationReservationResult;
 import com.butchercraft.world.workforce.department.DepartmentId;
 import com.butchercraft.world.workforce.department.DepartmentRecord;
 import com.butchercraft.world.workforce.employee.EmployeeFailure;
@@ -58,6 +63,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
@@ -112,12 +118,17 @@ public final class ButcherCraftDiagnostics {
     private static final String EMPLOYEE_ARGUMENT = "employee";
     private static final String EMPLOYEE_COMMAND_TAIL_ARGUMENT = "employee_command";
     private static final String DEPARTMENT_ARGUMENT = "department";
+    private static final String WORKSTATION_POSITION_ARGUMENT = "position";
     private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestEmployeeReferences(context.getSource(), builder);
     private static final SuggestionProvider<CommandSourceStack> DEPARTMENT_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestDepartmentReferences(context.getSource(), builder);
     private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_DEPARTMENT_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestEmployeeReferenceThenDepartment(context.getSource(), builder);
+    private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_WORKSTATION_LOOKUP_SUGGESTIONS =
+            (context, builder) -> suggestEmployeeReferenceThenPosition(context.getSource(), builder);
+    private static final SuggestionProvider<CommandSourceStack> WORKSTATION_POSITION_SUGGESTIONS =
+            (context, builder) -> suggestWorkstationPosition(context.getSource(), builder);
 
     private ButcherCraftDiagnostics() {
     }
@@ -164,7 +175,19 @@ public final class ButcherCraftDiagnostics {
                                         .suggests(EMPLOYEE_DEPARTMENT_LOOKUP_SUGGESTIONS)
                                         .executes(context -> runEmployeeAssignDepartmentTail(
                                                 context.getSource(),
-                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT))))))
+                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
+                        .then(Commands.literal("assign-workstation")
+                                .then(Commands.argument(EMPLOYEE_COMMAND_TAIL_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_WORKSTATION_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeAssignWorkstationTail(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
+                        .then(Commands.literal("release-workstation")
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeReleaseWorkstation(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT))))))
                 .then(Commands.literal("department")
                         .then(Commands.literal("list")
                                 .executes(context -> runDepartmentList(context.getSource())))
@@ -174,6 +197,15 @@ public final class ButcherCraftDiagnostics {
                                         .executes(context -> runDepartmentStatus(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, DEPARTMENT_ARGUMENT))))))
+                .then(Commands.literal("workstation")
+                        .then(Commands.literal("reservations")
+                                .executes(context -> runWorkstationReservations(context.getSource())))
+                        .then(Commands.literal("status")
+                                .then(Commands.argument(WORKSTATION_POSITION_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(WORKSTATION_POSITION_SUGGESTIONS)
+                                        .executes(context -> runWorkstationStatus(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, WORKSTATION_POSITION_ARGUMENT))))))
                 .then(Commands.literal("diagnostic")
                         .executes(context -> runDiagnostic(context.getSource()))
                         .then(DevelopmentCheckpointCommands.branch())));
@@ -278,6 +310,18 @@ public final class ButcherCraftDiagnostics {
                 .orElse("unassigned")), false);
         source.sendSuccess(() -> Component.literal("Department: "
                 + value.assignedDepartmentId().map(DepartmentId::value).orElse("unassigned")), false);
+        WorkstationReservationService.INSTANCE.managerFor(source.getServer())
+                .findByEmployee(employeeId.value())
+                .ifPresent(reservation -> {
+                    source.sendSuccess(() -> Component.literal("Workstation reservation: "
+                            + reservation.state().serializedName()
+                            + " | " + reservation.workstationType()
+                            + " | " + reservation.workstationIdentity()), false);
+                    source.sendSuccess(() -> Component.literal("Operating position: "
+                            + reservation.operatingX() + " "
+                            + reservation.operatingY() + " "
+                            + reservation.operatingZ()), false);
+                });
         source.sendSuccess(() -> Component.literal("Plant: " + (value.plantOpen() ? "open" : "closed")), false);
         source.sendSuccess(() -> Component.literal("Reason: " + value.reason()), false);
         return Command.SINGLE_SUCCESS;
@@ -369,6 +413,64 @@ public final class ButcherCraftDiagnostics {
         return runEmployeeAssignDepartment(source, parsed.employeeReference(), parsed.value());
     }
 
+    private static int runEmployeeAssignWorkstation(
+            CommandSourceStack source,
+            String employeeReference,
+            BlockPos workstationPos
+    ) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        WorkstationReservationResult<WorkstationReservationRecord> result =
+                WorkstationReservationService.INSTANCE.assign(source.getLevel(), employeeId, workstationPos);
+        if (!result.succeeded()) {
+            sendWorkstationFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        WorkstationReservationRecord reservation = result.orThrow();
+        source.sendSuccess(() -> Component.literal("Workstation reserved: "
+                + reservation.workstationType()
+                + " | " + reservation.workstationIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Employee en route to operating position: "
+                + reservation.operatingX() + " "
+                + reservation.operatingY() + " "
+                + reservation.operatingZ()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeAssignWorkstationTail(CommandSourceStack source, String tail) {
+        EmployeeCommandTail parsed = parseEmployeeCommandTail(source, tail, "workstation position");
+        if (parsed == null) {
+            return 0;
+        }
+        BlockPos position = parseWorkstationPosition(source, parsed.value());
+        if (position == null) {
+            return 0;
+        }
+        return runEmployeeAssignWorkstation(source, parsed.employeeReference(), position);
+    }
+
+    private static int runEmployeeReleaseWorkstation(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        WorkstationReservationResult<WorkstationReservationRecord> result =
+                WorkstationReservationService.INSTANCE.release(
+                        source.getServer(),
+                        employeeId,
+                        "administrative release command"
+                );
+        if (!result.succeeded()) {
+            sendWorkstationFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Workstation reservation released: "
+                + result.orThrow().workstationIdentity()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
     private static int runDepartmentList(CommandSourceStack source) {
         List<DepartmentRecord> records = EmployeeService.INSTANCE.departmentManagerFor(source.getServer())
                 .registry()
@@ -410,6 +512,55 @@ public final class ButcherCraftDiagnostics {
                         + " radius " + anchor.radius())
                 .orElse("definition only")), false);
         source.sendSuccess(() -> Component.literal("Assigned employees: " + assigned), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runWorkstationReservations(CommandSourceStack source) {
+        List<WorkstationReservationRecord> reservations =
+                WorkstationReservationService.INSTANCE.activeReservations(source.getServer());
+        source.sendSuccess(() -> Component.literal("ButcherCraft Workstation Reservations: "
+                + reservations.size()), false);
+        for (WorkstationReservationRecord reservation : reservations) {
+            source.sendSuccess(() -> Component.literal(reservation.workstationType()
+                    + " | " + reservation.state().serializedName()
+                    + " | employee " + employeeDisplayForReservation(source, reservation)
+                    + " | " + reservation.workstationIdentity()
+                    + " | operating " + reservation.operatingX()
+                    + " " + reservation.operatingY()
+                    + " " + reservation.operatingZ()
+                    + " | navigation " + employeeNavigationForReservation(source, reservation)), false);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runWorkstationStatus(CommandSourceStack source, String positionValue) {
+        BlockPos position = parseWorkstationPosition(source, positionValue);
+        if (position == null) {
+            return 0;
+        }
+        WorkstationReservationResult<WorkstationReservationService.ResolvedWorkstationStatus> result =
+                WorkstationReservationService.INSTANCE.status(source.getLevel(), position);
+        if (!result.succeeded()) {
+            sendWorkstationFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        WorkstationReservationService.ResolvedWorkstationStatus status = result.orThrow();
+        source.sendSuccess(() -> Component.literal("Workstation: "
+                + status.target().workstationType()
+                + " | " + status.target().workstationIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Operating position: "
+                + status.target().operatingPos().getX()
+                + " " + status.target().operatingPos().getY()
+                + " " + status.target().operatingPos().getZ()), false);
+        if (status.reservation().isPresent()) {
+            WorkstationReservationRecord reservation = status.reservation().orElseThrow();
+            source.sendSuccess(() -> Component.literal("Reservation: "
+                    + reservation.state().serializedName()
+                    + " | employee " + employeeDisplayForReservation(source, reservation)
+                    + " | navigation " + employeeNavigationForReservation(source, reservation)), false);
+        } else {
+            source.sendSuccess(() -> Component.literal("Reservation: unreserved"), false);
+        }
         return Command.SINGLE_SUCCESS;
     }
 
@@ -466,6 +617,29 @@ public final class ButcherCraftDiagnostics {
             return suggestEmployeeReferences(source, builder);
         }
         return suggestDepartmentReferences(source, builder.createOffset(builder.getStart() + departmentStart));
+    }
+
+    private static CompletableFuture<Suggestions> suggestEmployeeReferenceThenPosition(
+            CommandSourceStack source,
+            SuggestionsBuilder builder
+    ) {
+        int positionStart = departmentSuggestionStart(builder.getRemaining());
+        if (positionStart < 0) {
+            return suggestEmployeeReferences(source, builder);
+        }
+        return suggestWorkstationPosition(source, builder.createOffset(builder.getStart() + positionStart));
+    }
+
+    private static CompletableFuture<Suggestions> suggestWorkstationPosition(
+            CommandSourceStack source,
+            SuggestionsBuilder builder
+    ) {
+        BlockPos sourcePos = BlockPos.containing(source.getPosition());
+        String suggestion = sourcePos.getX() + " " + sourcePos.getY() + " " + sourcePos.getZ();
+        if (suggestion.startsWith(builder.getRemaining())) {
+            builder.suggest(suggestion);
+        }
+        return builder.buildFuture();
     }
 
     static List<String> employeeLookupSuggestions(List<EmployeeRecord> records) {
@@ -558,6 +732,41 @@ public final class ButcherCraftDiagnostics {
             return new EmployeeCommandTail(employeeReference, "");
         }
         return new EmployeeCommandTail(employeeReference, reader.getRemaining().strip());
+    }
+
+    static Optional<BlockPos> parseWorkstationPosition(String value) {
+        try {
+            return Optional.of(parseWorkstationPositionValue(value));
+        } catch (CommandSyntaxException | IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+    }
+
+    private static BlockPos parseWorkstationPosition(CommandSourceStack source, String value) {
+        try {
+            return parseWorkstationPositionValue(value);
+        } catch (CommandSyntaxException | IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal("Invalid workstation position: "
+                    + value + ". Use absolute coordinates like 12 64 -3."), false);
+            return null;
+        }
+    }
+
+    private static BlockPos parseWorkstationPositionValue(String value) throws CommandSyntaxException {
+        StringReader reader = new StringReader(Objects.requireNonNull(value, "value").strip());
+        if (!reader.canRead()) {
+            throw new IllegalArgumentException("Workstation position is required");
+        }
+        int x = reader.readInt();
+        skipWhitespace(reader);
+        int y = reader.readInt();
+        skipWhitespace(reader);
+        int z = reader.readInt();
+        skipWhitespace(reader);
+        if (reader.canRead()) {
+            throw new IllegalArgumentException("Workstation position has trailing data");
+        }
+        return new BlockPos(x, y, z);
     }
 
     private static String readEmployeeReference(StringReader reader) throws CommandSyntaxException {
@@ -656,6 +865,47 @@ public final class ButcherCraftDiagnostics {
                 + ". Use /butchercraft employee list."), false);
     }
 
+    private static String employeeDisplayForReservation(
+            CommandSourceStack source,
+            WorkstationReservationRecord reservation
+    ) {
+        try {
+            EmployeeId employeeId = new EmployeeId(reservation.employeeIdentity());
+            return EmployeeService.INSTANCE.managerFor(source.getServer())
+                    .find(employeeId)
+                    .map(record -> employeeLookupLabel(record) + " (" + record.employeeId().value() + ")")
+                    .orElse(reservation.employeeIdentity());
+        } catch (IllegalArgumentException exception) {
+            return reservation.employeeIdentity();
+        }
+    }
+
+    private static String employeeNavigationForReservation(
+            CommandSourceStack source,
+            WorkstationReservationRecord reservation
+    ) {
+        try {
+            EmployeeId employeeId = new EmployeeId(reservation.employeeIdentity());
+            EmployeeRecord record = EmployeeService.INSTANCE.managerFor(source.getServer())
+                    .find(employeeId)
+                    .orElse(null);
+            if (record == null || record.entityLink().isEmpty()) {
+                return "unloaded";
+            }
+            if (!record.entityLink().orElseThrow().dimensionIdentity().equals(
+                    EmployeeService.dimensionIdentity(source.getLevel()))) {
+                return "unloaded";
+            }
+            Entity entity = source.getLevel().getEntity(record.entityLink().orElseThrow().entityUuid());
+            if (entity instanceof EmployeeEntity employee) {
+                return employee.navigationStateValue();
+            }
+        } catch (IllegalArgumentException exception) {
+            return "unknown";
+        }
+        return "unloaded";
+    }
+
     private static void addUniqueSuggestion(List<String> suggestions, String suggestion) {
         if (!suggestions.contains(suggestion)) {
             suggestions.add(suggestion);
@@ -742,6 +992,11 @@ public final class ButcherCraftDiagnostics {
 
     private static void sendEmployeeFailure(CommandSourceStack source, EmployeeFailure failure) {
         source.sendSuccess(() -> Component.literal("Employee command failed: "
+                + failure.code().reasonCode() + " - " + failure.detail()), false);
+    }
+
+    private static void sendWorkstationFailure(CommandSourceStack source, WorkstationReservationFailure failure) {
+        source.sendSuccess(() -> Component.literal("Workstation reservation failed: "
                 + failure.code().reasonCode() + " - " + failure.detail()), false);
     }
 

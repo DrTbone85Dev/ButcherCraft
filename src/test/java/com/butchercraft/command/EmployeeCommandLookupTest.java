@@ -7,6 +7,7 @@ import com.butchercraft.world.workforce.employee.EmployeePresenceState;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.butchercraft.world.workforce.employee.EmployeeStatus;
+import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -115,6 +116,18 @@ class EmployeeCommandLookupTest {
         List<String> suggestions = ButcherCraftDiagnostics.employeeLookupSuggestions(List.of(first, second));
 
         assertEquals(List.of("#1", first.employeeId().value(), "#2", second.employeeId().value()), suggestions);
+    }
+
+    @Test
+    void parsesAbsoluteWorkstationPositionForGreedyEmployeeTailCommands() {
+        assertEquals(Optional.of(new BlockPos(12, 64, -3)),
+                ButcherCraftDiagnostics.parseWorkstationPosition("12 64 -3"));
+    }
+
+    @Test
+    void rejectsWorkstationPositionWithTrailingData() {
+        assertEquals(Optional.empty(),
+                ButcherCraftDiagnostics.parseWorkstationPosition("12 64 -3 extra"));
     }
 
     private static EmployeeRecord record(long sequence, String displayName) {
