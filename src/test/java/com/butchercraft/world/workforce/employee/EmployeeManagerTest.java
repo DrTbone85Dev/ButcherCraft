@@ -1,6 +1,10 @@
 package com.butchercraft.world.workforce.employee;
 
 import com.butchercraft.world.workforce.WorkforceRegistry;
+import com.butchercraft.world.workforce.department.BuiltInDepartmentDefinitions;
+import com.butchercraft.world.workforce.department.DepartmentId;
+import com.butchercraft.world.workforce.department.DepartmentRegistry;
+import com.butchercraft.world.workforce.department.DepartmentSchema;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -84,6 +88,44 @@ class EmployeeManagerTest {
 
         assertFalse(result.succeeded());
         assertEquals(EmployeeFailureCode.INVALID_POSITION, result.failure().orElseThrow().code());
+    }
+
+    @Test
+    void departmentAssignmentStoresWorkforceOwnedReference() {
+        EmployeeManager manager = EmployeeTestFixtures.manager();
+        EmployeeRecord record = EmployeeTestFixtures.employee(manager);
+        DepartmentRegistry departments = BuiltInDepartmentDefinitions.defaults(
+                com.butchercraft.world.identity.WorldIdentityRootIdentities.from(EmployeeTestFixtures.WORLD_IDENTITY)
+        ).registry();
+
+        EmployeeRecord updated = manager.assignDepartment(
+                record.employeeId(),
+                Optional.of(DepartmentSchema.PROCESSING),
+                departments
+        ).orThrow();
+        EmployeePresenceObservation observation = manager.observe(
+                record.employeeId(),
+                EmployeeTestFixtures.observe(0L, 7, 0),
+                EmployeeTestFixtures.BUSINESS_RUNTIME
+        ).orThrow();
+
+        assertEquals(Optional.of(DepartmentSchema.PROCESSING), updated.assignedDepartmentId());
+        assertEquals(Optional.of(DepartmentSchema.PROCESSING), observation.assignedDepartmentId());
+    }
+
+    @Test
+    void invalidDepartmentAssignmentFailsExplicitly() {
+        EmployeeManager manager = EmployeeTestFixtures.manager();
+        EmployeeRecord record = EmployeeTestFixtures.employee(manager);
+
+        EmployeeOperationResult<EmployeeRecord> result = manager.assignDepartment(
+                record.employeeId(),
+                Optional.of(new DepartmentId("unknown_department")),
+                DepartmentRegistry.empty()
+        );
+
+        assertFalse(result.succeeded());
+        assertEquals(EmployeeFailureCode.INVALID_DEPARTMENT, result.failure().orElseThrow().code());
     }
 
     @Test

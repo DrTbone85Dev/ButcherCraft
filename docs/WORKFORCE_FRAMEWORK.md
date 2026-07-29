@@ -1,11 +1,12 @@
 # Workforce Framework
 
-Status: implemented workforce and employee foundations
+Status: implemented workforce, employee, and department navigation foundations
 
 The Workforce Framework defines the staffing structure a business requires to
-operate and, as of IM-023, owns individual Employee Identity and Employment
-Records. It still does not add worker AI, job claiming, workstation operation,
-item carrying, hiring markets, payroll, production authority, or automation.
+operate and owns individual Employee Identity, Employment Records, Department
+definitions, department assignments, and department navigation anchors. It
+still does not add job claiming, workstation operation, item carrying, hiring
+markets, payroll, production authority, or automation.
 
 ## Architecture
 
@@ -24,10 +25,15 @@ The workforce package owns:
 - `WorkforceStorage` for schema-versioned JSON persistence.
 - `EmployeeId` for deterministic employee identity.
 - `EmployeeRecord` for employment status, profile, assigned shift reference,
-  optional position reference, presence state, entity linkage, and revision.
+  optional position reference, optional department reference, presence state,
+  entity linkage, and revision.
 - `EmployeeManager` for explicit employee creation, lifecycle, shift,
-  presence, and entity-link transitions.
+  department, presence, and entity-link transitions.
 - `EmployeeStorage` for schema-versioned employee record persistence.
+- `DepartmentId`, `DepartmentRecord`, `DepartmentRegistry`, and
+  `DepartmentManager` for Workforce-owned department definitions, anchors,
+  and employee assignment validation.
+- `DepartmentStorage` for schema-versioned department persistence.
 
 Only service, command, registration, client, and entity integration classes
 import Minecraft or NeoForge APIs. The workforce domain packages remain
@@ -50,7 +56,9 @@ Runtime lookup:
 3. Workforce Manager returns required positions for the current shift.
 4. Employee Manager may observe employee records against the current Business
    Runtime shift identity.
-5. Future employee systems may decide whether positions are filled or work is
+5. Present employees may target Workforce-published department anchors when a
+   functional anchor exists for the assigned department.
+6. Future employee systems may decide whether positions are filled or work is
    assigned.
 
 Server stop:
@@ -102,6 +110,7 @@ Employee records store:
 - presence state
 - assigned Business Runtime shift reference
 - optional Workforce position id
+- optional Workforce department id
 - hire Business Calendar timestamp
 - optional entity link and anchor
 - schema version and revision
@@ -109,6 +118,24 @@ Employee records store:
 Employee records do not store Production tasks, workstation assignments,
 machine reservations, inventory contents, wages, payroll, fatigue, morale,
 training, productivity, or customer interaction state.
+
+## Departments
+
+Department schema version 1 defines five Workforce-owned departments:
+
+- `processing`
+- `packaging`
+- `shipping`
+- `office`
+- `maintenance`
+
+Processing is the only functional default department in IM-024. It has a
+default Overworld anchor and bounded radius. The remaining departments are
+registered definitions only until later milestones assign anchors and behavior.
+
+Employees are assigned to departments, not workstations. Department assignment
+does not claim jobs, reserve machines, submit Scheduler work, operate
+Production, mutate Inventory, consume Execution authority, or move items.
 
 ## Persistence
 
@@ -133,6 +160,17 @@ record state, shift references, optional position references, and entity
 linkage. It does not duplicate Business Runtime shift definitions or World
 Identity business records.
 
+Department records are stored at:
+
+```text
+<world>/butchercraft/departments.json
+```
+
+The schema version is `1`. The file stores department identities, display
+labels, optional anchors, optional presentation metadata, and revision. It does
+not store jobs, workstation assignments, machine reservations, Production
+runs, Inventory quantities, or Scheduler work.
+
 ## Validation
 
 The workforce framework rejects:
@@ -142,6 +180,7 @@ The workforce framework rejects:
 - unknown business ids
 - invalid shift references
 - unknown position references
+- unknown department references
 - invalid position types
 - invalid skill levels
 - invalid certifications
@@ -156,15 +195,16 @@ The workforce framework rejects:
 
 ## Extension Points
 
-Future employee systems should occupy workforce positions rather than
-inventing separate job structures. Future production, AI, scheduling, economy,
-inspections, and automation systems should consume workforce definitions and
-employee records through narrow Workforce-owned services.
+Future employee systems should occupy workforce positions and departments
+rather than inventing separate job structures. Future production, AI,
+scheduling, economy, inspections, and automation systems should consume
+workforce definitions, department definitions, and employee records through
+narrow Workforce-owned services.
 
-Out of scope after IM-023:
+Out of scope after IM-024:
 
 - villagers
-- AI
+- workstation AI
 - job claiming
 - workstation operation
 - item carrying

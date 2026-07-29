@@ -52,6 +52,28 @@ class EmployeeCommandLookupTest {
     }
 
     @Test
+    void resolvesEmployeeByQuotedDisplayName() {
+        EmployeeRecord record = record(0L, "Ada Cutter");
+
+        ButcherCraftDiagnostics.EmployeeLookupResult result =
+                ButcherCraftDiagnostics.resolveEmployeeReference("\"Ada Cutter\"", List.of(record));
+
+        assertTrue(result.resolved());
+        assertEquals(record.employeeId(), result.record().orElseThrow().employeeId());
+    }
+
+    @Test
+    void resolvesEmployeeByCanonicalId() {
+        EmployeeRecord record = record(0L, "Ada Cutter");
+
+        ButcherCraftDiagnostics.EmployeeLookupResult result =
+                ButcherCraftDiagnostics.resolveEmployeeReference(record.employeeId().value(), List.of(record));
+
+        assertTrue(result.resolved());
+        assertEquals(record.employeeId(), result.record().orElseThrow().employeeId());
+    }
+
+    @Test
     void duplicateDisplayNamesRequireNumberDisambiguation() {
         EmployeeRecord first = record(0L, "Ada Cutter");
         EmployeeRecord second = record(1L, "Ada Cutter");
@@ -65,15 +87,34 @@ class EmployeeCommandLookupTest {
     }
 
     @Test
-    void suggestionsExposeFriendlyReferencesOnly() {
+    void suggestionsExposeExecutableEmployeeReferences() {
         EmployeeRecord first = record(0L, "Ada Cutter");
         EmployeeRecord second = record(1L, "Ben");
 
         List<String> suggestions = ButcherCraftDiagnostics.employeeLookupSuggestions(List.of(first, second));
 
-        assertEquals(List.of("#1", "\"Ada Cutter\"", "#2", "Ben"), suggestions);
-        assertFalse(suggestions.contains(first.employeeId().value()));
-        assertFalse(suggestions.contains(second.employeeId().value()));
+        assertEquals(List.of(
+                "#1",
+                "\"Ada Cutter\"",
+                first.employeeId().value(),
+                "#2",
+                "Ben",
+                second.employeeId().value()
+        ), suggestions);
+        for (String suggestion : suggestions) {
+            assertTrue(ButcherCraftDiagnostics.resolveEmployeeReference(suggestion, List.of(first, second))
+                    .resolved(), "Suggestion is executable: " + suggestion);
+        }
+    }
+
+    @Test
+    void duplicateDisplayNamesAreNotSuggestedAsExecutableNames() {
+        EmployeeRecord first = record(0L, "Ada Cutter");
+        EmployeeRecord second = record(1L, "Ada Cutter");
+
+        List<String> suggestions = ButcherCraftDiagnostics.employeeLookupSuggestions(List.of(first, second));
+
+        assertEquals(List.of("#1", first.employeeId().value(), "#2", second.employeeId().value()), suggestions);
     }
 
     private static EmployeeRecord record(long sequence, String displayName) {
@@ -88,6 +129,7 @@ class EmployeeCommandLookupTest {
                 Optional.empty(),
                 EmployeeStatus.ACTIVE,
                 EmployeePresenceState.OFF_SHIFT,
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 0L,

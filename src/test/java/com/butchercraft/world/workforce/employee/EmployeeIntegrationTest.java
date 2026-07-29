@@ -49,9 +49,37 @@ class EmployeeIntegrationTest {
         assertTrue(source.contains("Commands.literal(\"status\")"));
         assertTrue(source.contains("Commands.literal(\"set-shift\")"));
         assertTrue(source.contains("Commands.literal(\"set-presence\")"));
-        assertTrue(source.contains("Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())"));
+        assertTrue(source.contains("Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())"));
+        assertTrue(source.contains("Commands.argument(EMPLOYEE_COMMAND_TAIL_ARGUMENT, StringArgumentType.greedyString())"));
+        assertTrue(!source.contains("EmployeeReferenceArgumentType"));
         assertTrue(source.contains("EMPLOYEE_LOOKUP_SUGGESTIONS"));
         assertTrue(source.contains("resolveEmployeeReference"));
+        assertTrue(source.contains("Commands.literal(\"assign-department\")"));
+        assertTrue(source.contains("Commands.literal(\"department\")"));
+        assertTrue(source.contains("Commands.literal(\"list\")"));
+        assertTrue(source.contains("Commands.literal(\"status\")"));
+        assertTrue(source.contains("DEPARTMENT_LOOKUP_SUGGESTIONS"));
+    }
+
+    @Test
+    void departmentFoundationUsesDedicatedWorkforcePersistenceAndNoProductionAutomation() throws IOException {
+        String service = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/world/EmployeeService.java"
+        ));
+        String employeeManager = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/world/workforce/employee/EmployeeManager.java"
+        ));
+        String departmentManager = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/world/workforce/department/DepartmentManager.java"
+        ));
+
+        assertTrue(service.contains("DepartmentSchema.FILE_NAME"));
+        assertTrue(service.contains("DepartmentStorage"));
+        assertTrue(employeeManager.contains("assignDepartment"));
+        assertTrue(departmentManager.contains("assignAnchor"));
+        assertTrue(!departmentManager.contains("Production"));
+        assertTrue(!departmentManager.contains("SimulationScheduler"));
+        assertTrue(!departmentManager.contains("Execution"));
     }
 
     @Test

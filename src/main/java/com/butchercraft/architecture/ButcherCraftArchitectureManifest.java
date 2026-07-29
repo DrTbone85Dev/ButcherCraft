@@ -36,6 +36,7 @@ import com.butchercraft.world.production.scheduler.ProductionWorkTypes;
 import com.butchercraft.world.simulation.scheduler.BuiltInSimulationStages;
 import com.butchercraft.world.simulation.scheduler.SchedulerSchema;
 import com.butchercraft.world.simulation.scheduler.SimulationStageDefinition;
+import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
 
 import java.util.ArrayList;
@@ -909,6 +910,41 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-023 Employee and Employment Record Foundation",
                 "Twenty-eight automated server-world GameTests cover employee creation, entity linkage, presence, persistence tags, and Scheduler boundary safety");
+        platformContract(builder, "butchercraft:platform_contract/department_identity_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Workforce owns the schema-1 Processing, Packaging, Shipping, Office, and Maintenance Department identities");
+        platformContract(builder, "butchercraft:platform_contract/department_anchor_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Workforce owns department anchors and bounded movement radii while only Processing has a functional default anchor");
+        platformContract(builder, "butchercraft:platform_contract/employee_department_assignment_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Employee records store optional Department references without storing workstation assignments or job claims");
+        platformContract(builder, "butchercraft:platform_contract/employee_department_navigation_foundation",
+                ValidationCategory.SIMULATION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Present active-shift employee entities navigate only to Workforce-published department anchors and idle within bounded radii");
+        platformContract(builder, "butchercraft:platform_contract/department_persistence_foundation",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Departments persist separately in schema-versioned Workforce-owned JSON with deterministic ordering");
+        platformContract(builder, "butchercraft:platform_contract/department_diagnostics_foundation",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Diagnostics list departments, report department status, and assign employees to departments without adding Production or Scheduler authority");
+        platformContract(builder, "butchercraft:platform_contract/department_navigation_boundary_safety",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "Department assignment and navigation do not submit Scheduler work, operate machines, reserve workstations, or carry items");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -922,8 +958,8 @@ public final class ButcherCraftArchitectureManifest {
                 "One Business Runtime authority observes the Business Calendar and owns plant schedule and shift state per loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/workforce_world",
                 WORKFORCE, ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-023 Employee and Employment Record Foundation",
-                "One Workforce runtime authority owns employee records, lifecycle transitions, presence state, and entity linkage per loaded world");
+                "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
+                "One Workforce runtime authority owns workforce definitions, departments, employee records, lifecycle transitions, presence state, entity linkage, and department navigation targets per loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/scheduler_world",
                 SCHEDULER, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-009 Scheduler Effects Live Enforcement",
@@ -966,6 +1002,11 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/employee_presence_observation", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_entity_linkage", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_records_persistence", WORKFORCE);
+        own(builder, "butchercraft:responsibility/department_identity", WORKFORCE);
+        own(builder, "butchercraft:responsibility/department_location_anchors", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_department_assignments", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_department_navigation", WORKFORCE);
+        own(builder, "butchercraft:responsibility/department_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
         own(builder, "butchercraft:responsibility/economic_actor_definitions", ACTORS);
         own(builder, "butchercraft:responsibility/inventory_quantities", INVENTORY);
@@ -1176,6 +1217,41 @@ public final class ButcherCraftArchitectureManifest {
                 WORKFORCE,
                 ValidationCategory.PERSISTENCE,
                 "IM-023 assigns schema-versioned employee record persistence to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/department_identity",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-024 assigns department identity definitions to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/department_location_anchors",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-024 assigns department anchors and movement radii to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_department_assignments",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-024 assigns employee department references to Workforce-owned employee records"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_department_navigation",
+                WORKFORCE,
+                ValidationCategory.SIMULATION,
+                "IM-024 assigns department-directed employee navigation targets to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/department_persistence",
+                WORKFORCE,
+                ValidationCategory.PERSISTENCE,
+                "IM-024 assigns schema-versioned department persistence to Workforce"
         );
         contract(
                 builder,
@@ -2080,6 +2156,10 @@ public final class ButcherCraftArchitectureManifest {
         persistence(builder, "butchercraft:employee_records",
                 EmployeeSchema.DIRECTORY_NAME + "/" + EmployeeSchema.FILE_NAME,
                 WORKFORCE, EmployeeSchema.CURRENT_VERSION, PersistenceDataKind.MUTABLE_RUNTIME,
+                OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:departments",
+                DepartmentSchema.DIRECTORY_NAME + "/" + DepartmentSchema.FILE_NAME,
+                WORKFORCE, DepartmentSchema.CURRENT_VERSION, PersistenceDataKind.MUTABLE_RUNTIME,
                 OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:goods", "butchercraft/goods.json",
                 GOODS, 1, PersistenceDataKind.IMMUTABLE_DEFINITIONS, OrderingPolicy.CANONICAL_ID);

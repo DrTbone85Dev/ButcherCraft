@@ -1,6 +1,6 @@
 # Employee And Employment Record Foundation
 
-Status: implemented foundation in IM-023
+Status: implemented employee foundation in IM-023; department assignment and navigation foundation in IM-024
 
 IM-023 adds the first individual employee layer on top of the existing
 Workforce Framework and Business Runtime shift definitions.
@@ -12,19 +12,24 @@ This foundation answers:
 - which configured Business Runtime shift an employee is assigned to;
 - whether an employee is pending, active, inactive, or terminated;
 - whether an employee is off shift, scheduled, present, absent, or unavailable;
+- which Workforce-owned department an employee is assigned to;
 - which in-world Employee entity is linked to an employee record.
 
-It does not add workstation operation, job claiming, item carrying, logistics,
-machine reservation, Production task assignment, wages, payroll, overtime,
-breaks, morale, fatigue, productivity modifiers, training, customer
-interaction, attendance penalties, Allocation, public workforce APIs, startup
-recovery, checkpoint activation, or operator reconciliation.
+IM-024 adds department definitions, employee department assignment, and bounded
+department-directed movement for present employees. It does not add workstation
+operation, job claiming, item carrying, logistics, machine reservation,
+Production task assignment, wages, payroll, overtime, breaks, morale, fatigue,
+productivity modifiers, training, customer interaction, attendance penalties,
+Allocation, public workforce APIs, startup recovery, checkpoint activation, or
+operator reconciliation.
 
 ## Authority Boundary
 
-Workforce owns Employee Identity, Employment Records, employment status,
-assigned shift references, optional position references, employee profile,
-presence state, entity linkage, employee persistence, and employee diagnostics.
+Workforce owns Employee Identity, Employment Records, Department Identity,
+department anchors, employee department assignment, employment status, assigned
+shift references, optional position references, employee profile, presence
+state, entity linkage, employee persistence, department persistence, and
+employee diagnostics.
 
 Business Runtime owns plant operating hours, shift definitions, shift identity,
 active-shift observation, and Business Runtime configuration identity.
@@ -33,11 +38,11 @@ World Identity owns immutable world and business identity records. Employee
 Identity references those records but does not mutate or duplicate them.
 
 The Employee entity owns only physical representation: a persistent Employee
-Identity link, display synchronization, read-only inspection, and bounded idle
-movement around an anchor.
+Identity link, display synchronization, read-only inspection, and bounded
+movement around a Workforce-published anchor.
 
 Production, Scheduler, Execution, Transactions, Planning, Inventory,
-Allocation, and workstations do not receive employee authority in IM-023.
+Allocation, and workstations do not receive employee authority in IM-024.
 
 ## Identity
 
@@ -67,6 +72,7 @@ Employee records persist:
 - stored presence state;
 - assigned Business Runtime shift identity, when assigned;
 - optional Workforce position id;
+- optional Workforce department id;
 - hire Business Calendar day and time;
 - optional entity link and anchor;
 - record revision;
@@ -113,6 +119,19 @@ explicit present or absent state is set.
 `PRESENT` and `ABSENT` are explicit operator states. They do not submit
 Scheduler work, start machines, move items, or affect Production.
 
+## Departments
+
+Department schema version 1 defines `processing`, `packaging`, `shipping`,
+`office`, and `maintenance`.
+
+Processing is the only functional default department in IM-024. It has a
+default Overworld anchor and radius. The remaining departments are registered
+definitions without functional anchors until later milestones.
+
+Employees are assigned to departments, not workstations. Department assignment
+does not imply a job, a reservation, a Production Run, Scheduler Work,
+Execution authority, Inventory access, or item movement.
+
 ## Shift Integration
 
 Employee records store a `BusinessShiftIdentity`, shift id, shift display name,
@@ -136,6 +155,8 @@ It:
 - synchronizes display name, status, presence, and shift summary;
 - can be inspected read-only by a player;
 - idles and looks around;
+- navigates to the assigned department anchor when present, plant-open, and a
+  functional anchor exists;
 - wanders only within a bounded anchor radius.
 
 It does not:
@@ -170,6 +191,17 @@ schema versions and corrupt JSON fail visibly.
 Entity NBT persists only the employee link and movement anchor. The entity NBT
 is not authoritative employment state.
 
+Department records persist at:
+
+```text
+<world>/butchercraft/departments.json
+```
+
+The schema version is `1`. The file stores Workforce-owned department
+definitions, optional anchors, and revision. It does not store jobs,
+workstation assignments, Production state, Scheduler state, Inventory, or
+Execution authority.
+
 ## Diagnostics
 
 The employee diagnostics are:
@@ -180,6 +212,9 @@ The employee diagnostics are:
 /butchercraft employee status <employee>
 /butchercraft employee set-shift <employee> <shift_id>
 /butchercraft employee set-presence <employee> <state>
+/butchercraft employee assign-department <employee> <department>
+/butchercraft department list
+/butchercraft department status <department>
 ```
 
 Employee references accept the listed employee number, such as `#1`, an
@@ -194,14 +229,17 @@ Scheduler, Execution, Allocation, Inventory, or workstation authority.
 
 IM-023 adds pure Java tests for Employee Identity, record validation, lifecycle
 transitions, presence classification, persistence, and dependency boundaries.
+IM-024 adds pure Java tests for Department definitions, storage, assignment,
+diagnostics, and dependency boundaries.
 
-It also adds twenty-eight GameTests covering live employee creation, entity
-linkage, entity persistence tags, shift references, presence states, and the
-Scheduler boundary.
+It also adds GameTests covering live employee creation, entity linkage, entity
+persistence tags, shift references, presence states, department assignment,
+Processing anchor targeting, bounded department idling, unanchored department
+fallback, and the Scheduler boundary.
 
 ## Remaining Gates
 
-The following remain gated:
+The following remain gated after IM-024:
 
 - employee navigation to assigned workstations;
 - job claiming;

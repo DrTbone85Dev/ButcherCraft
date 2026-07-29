@@ -2,6 +2,7 @@ package com.butchercraft.world.workforce.employee;
 
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.workforce.PositionId;
+import com.butchercraft.world.workforce.department.DepartmentId;
 import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
 import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 
@@ -21,6 +22,7 @@ public record EmployeeRecord(
         EmployeePresenceState presenceState,
         Optional<EmployeeShiftAssignment> assignedShift,
         Optional<PositionId> assignedPositionId,
+        Optional<DepartmentId> assignedDepartmentId,
         long hireBusinessDay,
         BusinessTimeOfDay hireBusinessTime,
         String hireWorldDayIdentity,
@@ -48,6 +50,7 @@ public record EmployeeRecord(
         presenceState = Objects.requireNonNull(presenceState, "presenceState");
         assignedShift = Objects.requireNonNull(assignedShift, "assignedShift");
         assignedPositionId = Objects.requireNonNull(assignedPositionId, "assignedPositionId");
+        assignedDepartmentId = Objects.requireNonNull(assignedDepartmentId, "assignedDepartmentId");
         if (hireBusinessDay < 0L) {
             throw new IllegalArgumentException("Employee hire business day must not be negative: " + hireBusinessDay);
         }
@@ -98,6 +101,7 @@ public record EmployeeRecord(
                 EmployeePresenceState.OFF_SHIFT,
                 shift,
                 positionId,
+                Optional.empty(),
                 hireSnapshot.businessDayIndex(),
                 hireSnapshot.timeOfDay(),
                 hireSnapshot.worldDayIdentity(),
@@ -114,28 +118,33 @@ public record EmployeeRecord(
         EmployeePresenceState nextPresence = nextStatus.permitsPresence()
                 ? EmployeePresenceState.OFF_SHIFT
                 : EmployeePresenceState.UNAVAILABLE;
-        return copy(nextStatus, nextPresence, assignedShift, assignedPositionId, entityLink, anchor);
+        return copy(nextStatus, nextPresence, assignedShift, assignedPositionId, assignedDepartmentId, entityLink, anchor);
     }
 
     public EmployeeRecord withAssignedShift(Optional<EmployeeShiftAssignment> nextShift) {
-        return copy(status, presenceState, nextShift, assignedPositionId, entityLink, anchor);
+        return copy(status, presenceState, nextShift, assignedPositionId, assignedDepartmentId, entityLink, anchor);
     }
 
     public EmployeeRecord withAssignedPosition(Optional<PositionId> nextPositionId) {
-        return copy(status, presenceState, assignedShift, nextPositionId, entityLink, anchor);
+        return copy(status, presenceState, assignedShift, nextPositionId, assignedDepartmentId, entityLink, anchor);
+    }
+
+    public EmployeeRecord withAssignedDepartment(Optional<DepartmentId> nextDepartmentId) {
+        return copy(status, presenceState, assignedShift, assignedPositionId, nextDepartmentId, entityLink, anchor);
     }
 
     public EmployeeRecord withPresenceState(EmployeePresenceState nextPresenceState) {
-        return copy(status, nextPresenceState, assignedShift, assignedPositionId, entityLink, anchor);
+        return copy(status, nextPresenceState, assignedShift, assignedPositionId, assignedDepartmentId, entityLink, anchor);
     }
 
     public EmployeeRecord withEntityLink(EmployeeEntityLink nextLink, EmployeeAnchor nextAnchor) {
-        return copy(status, presenceState, assignedShift, assignedPositionId,
+        return copy(status, presenceState, assignedShift, assignedPositionId, assignedDepartmentId,
                 Optional.of(nextLink), Optional.of(nextAnchor));
     }
 
     public EmployeeRecord withoutEntityLink() {
-        return copy(status, presenceState, assignedShift, assignedPositionId, Optional.empty(), Optional.empty());
+        return copy(status, presenceState, assignedShift, assignedPositionId, assignedDepartmentId,
+                Optional.empty(), Optional.empty());
     }
 
     private EmployeeRecord copy(
@@ -143,6 +152,7 @@ public record EmployeeRecord(
             EmployeePresenceState nextPresence,
             Optional<EmployeeShiftAssignment> nextShift,
             Optional<PositionId> nextPosition,
+            Optional<DepartmentId> nextDepartment,
             Optional<EmployeeEntityLink> nextEntityLink,
             Optional<EmployeeAnchor> nextAnchor
     ) {
@@ -159,6 +169,7 @@ public record EmployeeRecord(
                 nextPresence,
                 Objects.requireNonNull(nextShift, "nextShift"),
                 Objects.requireNonNull(nextPosition, "nextPosition"),
+                Objects.requireNonNull(nextDepartment, "nextDepartment"),
                 hireBusinessDay,
                 hireBusinessTime,
                 hireWorldDayIdentity,

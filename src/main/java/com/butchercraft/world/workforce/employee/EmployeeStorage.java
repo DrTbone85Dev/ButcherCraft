@@ -3,6 +3,7 @@ package com.butchercraft.world.workforce.employee;
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 import com.butchercraft.world.workforce.PositionId;
+import com.butchercraft.world.workforce.department.DepartmentId;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -49,6 +50,7 @@ public final class EmployeeStorage {
     private static final String SHIFT_SET_IDENTITY = "shift_set_identity";
     private static final String CONFIGURATION_IDENTITY = "configuration_identity";
     private static final String ASSIGNED_POSITION_ID = "assigned_position_id";
+    private static final String ASSIGNED_DEPARTMENT_ID = "assigned_department_id";
     private static final String HIRE_BUSINESS_DAY = "hire_business_day";
     private static final String HIRE_BUSINESS_TIME = "hire_business_time";
     private static final String HIRE_WORLD_DAY_IDENTITY = "hire_world_day_identity";
@@ -148,6 +150,8 @@ public final class EmployeeStorage {
         object.addProperty(PRESENCE_STATE, record.presenceState().serializedName());
         record.assignedShift().ifPresent(shift -> object.add(ASSIGNED_SHIFT, serializeShift(shift)));
         record.assignedPositionId().ifPresent(positionId -> object.addProperty(ASSIGNED_POSITION_ID, positionId.value()));
+        record.assignedDepartmentId().ifPresent(departmentId ->
+                object.addProperty(ASSIGNED_DEPARTMENT_ID, departmentId.value()));
         object.addProperty(HIRE_BUSINESS_DAY, record.hireBusinessDay());
         object.addProperty(HIRE_BUSINESS_TIME, record.hireBusinessTime().displayText());
         object.addProperty(HIRE_WORLD_DAY_IDENTITY, record.hireWorldDayIdentity());
@@ -175,6 +179,7 @@ public final class EmployeeStorage {
                 EmployeePresenceState.fromSerializedName(requireString(object, PRESENCE_STATE)),
                 optionalObject(object, ASSIGNED_SHIFT).map(this::deserializeShift),
                 optionalString(object, ASSIGNED_POSITION_ID).map(PositionId::new),
+                optionalString(object, ASSIGNED_DEPARTMENT_ID).map(DepartmentId::new),
                 requireLong(object, HIRE_BUSINESS_DAY),
                 parseTime(requireString(object, HIRE_BUSINESS_TIME)),
                 requireString(object, HIRE_WORLD_DAY_IDENTITY),

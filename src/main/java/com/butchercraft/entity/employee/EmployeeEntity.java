@@ -2,6 +2,7 @@ package com.butchercraft.entity.employee;
 
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
+import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
 import net.minecraft.core.BlockPos;
@@ -35,6 +36,8 @@ public final class EmployeeEntity extends PathfinderMob {
     private static final EntityDataAccessor<String> PRESENCE =
             SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> SHIFT =
+            SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> NAVIGATION_STATE =
             SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
 
     private static final String TAG_EMPLOYEE_ID = "EmployeeId";
@@ -76,6 +79,7 @@ public final class EmployeeEntity extends PathfinderMob {
         builder.define(STATUS, "unknown");
         builder.define(PRESENCE, "unknown");
         builder.define(SHIFT, "Unassigned");
+        builder.define(NAVIGATION_STATE, EmployeeNavigationState.OFF_SHIFT.serializedName());
     }
 
     @Override
@@ -94,6 +98,7 @@ public final class EmployeeEntity extends PathfinderMob {
         if (anchorRadius > 0 && blockPosition().distManhattan(anchorPos) > anchorRadius + 4) {
             getNavigation().moveTo(anchorPos.getX() + 0.5D, anchorPos.getY(), anchorPos.getZ() + 0.5D, 1.0D);
         }
+        updateNavigationStateFromPosition();
     }
 
     @Override
@@ -155,6 +160,10 @@ public final class EmployeeEntity extends PathfinderMob {
                 .orElse("Unassigned"));
     }
 
+    public void applyNavigationState(EmployeeNavigationState state) {
+        entityData.set(NAVIGATION_STATE, state.serializedName());
+    }
+
     public String employeeIdValue() {
         return entityData.get(EMPLOYEE_ID);
     }
@@ -175,12 +184,37 @@ public final class EmployeeEntity extends PathfinderMob {
         return entityData.get(SHIFT);
     }
 
+    public String navigationStateValue() {
+        return entityData.get(NAVIGATION_STATE);
+    }
+
     public BlockPos anchorPos() {
         return anchorPos;
     }
 
     public int anchorRadius() {
         return anchorRadius;
+    }
+
+    public boolean insideAnchorRadius() {
+        return blockPosition().distManhattan(anchorPos) <= anchorRadius;
+    }
+
+    private void updateNavigationStateFromPosition() {
+        EmployeeNavigationState state;
+        try {
+            state = EmployeeNavigationState.fromSerializedName(navigationStateValue());
+        } catch (IllegalArgumentException exception) {
+            state = EmployeeNavigationState.OFF_SHIFT;
+        }
+        boolean inside = insideAnchorRadius();
+        if (inside && state == EmployeeNavigationState.WALKING_TO_DEPARTMENT) {
+            applyNavigationState(EmployeeNavigationState.PRESENT_IN_DEPARTMENT);
+        } else if (inside && state == EmployeeNavigationState.PRESENT_IN_DEPARTMENT) {
+            applyNavigationState(EmployeeNavigationState.IDLE);
+        } else if (!inside && state == EmployeeNavigationState.IDLE) {
+            applyNavigationState(EmployeeNavigationState.RETURNING_TO_ANCHOR);
+        }
     }
 
     private static final class EmployeeBoundedIdleGoal extends Goal {

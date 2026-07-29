@@ -9,12 +9,21 @@ import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapsho
 import com.butchercraft.world.business.runtime.BusinessShiftDefinition;
 import com.butchercraft.world.identity.WorldIdentity;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
+import com.butchercraft.world.identity.WorldIdentityRootIdentity;
+import com.butchercraft.world.workforce.department.BuiltInDepartmentDefinitions;
+import com.butchercraft.world.workforce.department.DepartmentAnchor;
+import com.butchercraft.world.workforce.department.DepartmentId;
+import com.butchercraft.world.workforce.department.DepartmentManager;
+import com.butchercraft.world.workforce.department.DepartmentRecord;
+import com.butchercraft.world.workforce.department.DepartmentSchema;
+import com.butchercraft.world.workforce.department.DepartmentStorage;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
 import com.butchercraft.world.workforce.employee.EmployeeDirectory;
 import com.butchercraft.world.workforce.employee.EmployeeEntityLink;
 import com.butchercraft.world.workforce.employee.EmployeeFailureCode;
 import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeManager;
+import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeeOperationResult;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeePresenceState;
@@ -76,12 +85,17 @@ public final class EmployeeService {
         ActiveEmployeeRuntime current = active.get();
         if (current != null && current.server() == event.getServer()) {
             current.storage().save(current.manager().directory());
+            current.departmentStorage().save(current.departmentManager().directory());
             active.compareAndSet(current, null);
         }
     }
 
     public EmployeeManager managerFor(MinecraftServer server) {
         return load(server).manager();
+    }
+
+    public DepartmentManager departmentManagerFor(MinecraftServer server) {
+        return load(server).departmentManager();
     }
 
     public Optional<EmployeeManager> currentManager() {
@@ -120,9 +134,20 @@ public final class EmployeeService {
         EmployeeDirectory directory = new EmployeeDirectory(nextSequence, EmployeeRegistry.of(retained));
         EmployeeManager manager = new EmployeeManager(directory, CommonConfig.EMPLOYEE_MAX_RECORDS.get());
         manager.validateBusinessReferences(worldIdentityService.getOrCreate(server).businesses());
-        ActiveEmployeeRuntime reset = new ActiveEmployeeRuntime(server, runtime.storage(), manager);
+        WorldIdentityRootIdentity rootIdentity = WorldIdentityRootIdentities.from(worldIdentityService.getOrCreate(server));
+        DepartmentManager departmentManager = new DepartmentManager(BuiltInDepartmentDefinitions.defaults(rootIdentity));
+        departmentManager.validateCanonicalDefinitions(rootIdentity);
+        manager.validateDepartmentReferences(departmentManager.registry());
+        ActiveEmployeeRuntime reset = new ActiveEmployeeRuntime(
+                server,
+                runtime.storage(),
+                manager,
+                runtime.departmentStorage(),
+                departmentManager
+        );
         active.set(reset);
         runtime.storage().save(reset.manager().directory());
+        runtime.departmentStorage().save(reset.departmentManager().directory());
     }
 
     private EmployeeOperationResult<EmployeeRecord> createEmployee(
@@ -245,6 +270,30 @@ public final class EmployeeService {
         return managerFor(server).setPresence(employeeId, state);
     }
 
+    public EmployeeOperationResult<EmployeeRecord> assignDepartment(
+            MinecraftServer server,
+            EmployeeId employeeId,
+            String departmentIdValue
+    ) {
+        Objects.requireNonNull(server, "server");
+        Objects.requireNonNull(employeeId, "employeeId");
+        DepartmentId departmentId;
+        try {
+            departmentId = new DepartmentId(departmentIdValue);
+        } catch (IllegalArgumentException exception) {
+            return EmployeeOperationResult.failed(
+                    EmployeeFailureCode.INVALID_DEPARTMENT,
+                    "Invalid department: " + departmentIdValue
+            );
+        }
+        ActiveEmployeeRuntime runtime = load(server);
+        return runtime.manager().assignDepartment(
+                employeeId,
+                Optional.of(departmentId),
+                runtime.departmentManager().registry()
+        );
+    }
+
     public EmployeeOperationResult<EmployeePresenceObservation> observe(MinecraftServer server, EmployeeId employeeId) {
         Optional<BusinessRuntimeObservationSnapshot> snapshot = businessRuntimeCalendarService.currentSnapshot(server);
         Optional<BusinessRuntimeCalendarConfiguration> configuration =
@@ -276,15 +325,24 @@ public final class EmployeeService {
         }
         EmployeeRecord value = record.orElseThrow();
         EmployeeEntityLink link = new EmployeeEntityLink(entity.getUUID(), ENTITY_TYPE_ID, dimensionIdentity(level));
-        EmployeeAnchor anchor = value.anchor().orElseGet(() ->
+        EmployeeAnchor persistentAnchor = value.anchor().orElseGet(() ->
                 anchorFor(level, entity.blockPosition()));
-        EmployeeOperationResult<EmployeeRecord> bound = manager.bindEntity(employeeId, link, anchor);
+        EmployeeOperationResult<EmployeeRecord> bound = manager.bindEntity(employeeId, link, persistentAnchor);
         if (!bound.succeeded()) {
             return false;
         }
         Optional<EmployeePresenceObservation> observation = observe(level.getServer(), employeeId).value();
-        entity.applyEmployeeRecord(bound.orThrow(), anchor);
+        EmployeeRecord boundRecord = bound.orThrow();
+        Optional<EmployeeAnchor> departmentAnchor = observation
+                .flatMap(valueObservation -> activeDepartmentAnchor(level, boundRecord, valueObservation));
+        EmployeeAnchor activeAnchor = departmentAnchor
+                .or(() -> fallbackMovementAnchor(level, boundRecord))
+                .orElse(persistentAnchor);
+        entity.applyEmployeeRecord(boundRecord, activeAnchor);
         observation.ifPresent(entity::applyEmployeeObservation);
+        entity.applyNavigationState(observation
+                .map(valueObservation -> navigationState(entity, activeAnchor, valueObservation, departmentAnchor.isPresent()))
+                .orElse(EmployeeNavigationState.RETURNING_TO_ANCHOR));
         return true;
     }
 
@@ -292,6 +350,14 @@ public final class EmployeeService {
         return Objects.requireNonNull(server, "server").getWorldPath(LevelResource.ROOT)
                 .resolve(EmployeeSchema.DIRECTORY_NAME)
                 .resolve(EmployeeSchema.FILE_NAME)
+                .toAbsolutePath()
+                .normalize();
+    }
+
+    public static Path departmentFile(MinecraftServer server) {
+        return Objects.requireNonNull(server, "server").getWorldPath(LevelResource.ROOT)
+                .resolve(DepartmentSchema.DIRECTORY_NAME)
+                .resolve(DepartmentSchema.FILE_NAME)
                 .toAbsolutePath()
                 .normalize();
     }
@@ -308,19 +374,72 @@ public final class EmployeeService {
         }
         if (existing != null) {
             existing.storage().save(existing.manager().directory());
+            existing.departmentStorage().save(existing.departmentManager().directory());
         }
         WorldIdentity identity = worldIdentityService.getOrCreate(server);
         workforceService.managerFor(server);
         EmployeeStorage storage = new EmployeeStorage(employeeFile(server));
+        DepartmentStorage departmentStorage = new DepartmentStorage(departmentFile(server));
+        WorldIdentityRootIdentity rootIdentity = WorldIdentityRootIdentities.from(identity);
+        DepartmentManager departmentManager = new DepartmentManager(departmentStorage.load(rootIdentity));
+        departmentManager.validateCanonicalDefinitions(rootIdentity);
         EmployeeDirectory directory = storage.load();
         EmployeeManager manager = new EmployeeManager(
                 directory,
                 CommonConfig.EMPLOYEE_MAX_RECORDS.get()
         );
         manager.validateBusinessReferences(identity.businesses());
-        ActiveEmployeeRuntime created = new ActiveEmployeeRuntime(server, storage, manager);
+        manager.validateDepartmentReferences(departmentManager.registry());
+        ActiveEmployeeRuntime created = new ActiveEmployeeRuntime(server, storage, manager, departmentStorage, departmentManager);
         active.set(created);
         return created;
+    }
+
+    private Optional<EmployeeAnchor> activeDepartmentAnchor(
+            ServerLevel level,
+            EmployeeRecord record,
+            EmployeePresenceObservation observation
+    ) {
+        ActiveEmployeeRuntime runtime = load(level.getServer());
+        if (observation.plantOpen() && observation.presenceState() == EmployeePresenceState.PRESENT) {
+            return record.assignedDepartmentId()
+                    .flatMap(departmentId -> runtime.departmentManager().find(departmentId))
+                    .flatMap(DepartmentRecord::anchor)
+                    .filter(anchor -> anchor.sameDimension(dimensionIdentity(level)))
+                    .map(EmployeeService::employeeAnchor);
+        }
+        return Optional.empty();
+    }
+
+    private Optional<EmployeeAnchor> fallbackMovementAnchor(ServerLevel level, EmployeeRecord record) {
+        ActiveEmployeeRuntime runtime = load(level.getServer());
+        return runtime.departmentManager().directory().plantEntranceAnchor()
+                .filter(anchor -> anchor.sameDimension(dimensionIdentity(level)))
+                .map(EmployeeService::employeeAnchor)
+                .or(() -> record.anchor());
+    }
+
+    private static EmployeeNavigationState navigationState(
+            EmployeeEntity entity,
+            EmployeeAnchor activeAnchor,
+            EmployeePresenceObservation observation,
+            boolean hasDepartmentAnchor
+    ) {
+        boolean inside = entity.blockPosition().distManhattan(
+                new BlockPos(activeAnchor.x(), activeAnchor.y(), activeAnchor.z())
+        ) <= activeAnchor.radius();
+        if (observation.plantOpen() && observation.presenceState() == EmployeePresenceState.PRESENT
+                && hasDepartmentAnchor) {
+            return inside ? EmployeeNavigationState.IDLE : EmployeeNavigationState.WALKING_TO_DEPARTMENT;
+        }
+        if (observation.plantOpen() && observation.presenceState() == EmployeePresenceState.PRESENT) {
+            return inside ? EmployeeNavigationState.IDLE : EmployeeNavigationState.RETURNING_TO_ANCHOR;
+        }
+        return inside ? EmployeeNavigationState.OFF_SHIFT : EmployeeNavigationState.RETURNING_TO_ANCHOR;
+    }
+
+    private static EmployeeAnchor employeeAnchor(DepartmentAnchor anchor) {
+        return new EmployeeAnchor(anchor.dimensionIdentity(), anchor.x(), anchor.y(), anchor.z(), anchor.radius());
     }
 
     private Optional<EmployeeShiftAssignment> shiftAssignment(MinecraftServer server, String shiftId) {
@@ -379,7 +498,9 @@ public final class EmployeeService {
     private record ActiveEmployeeRuntime(
             MinecraftServer server,
             EmployeeStorage storage,
-            EmployeeManager manager
+            EmployeeManager manager,
+            DepartmentStorage departmentStorage,
+            DepartmentManager departmentManager
     ) {
     }
 }

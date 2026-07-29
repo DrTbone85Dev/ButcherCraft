@@ -465,7 +465,14 @@ class ArchitectureRulesTest {
                 "butchercraft:platform_contract/employee_entity_link_foundation",
                 "butchercraft:platform_contract/employee_persistence_foundation",
                 "butchercraft:platform_contract/employee_diagnostics_foundation",
-                "butchercraft:platform_contract/employee_foundation_gametest_coverage"
+                "butchercraft:platform_contract/employee_foundation_gametest_coverage",
+                "butchercraft:platform_contract/department_identity_foundation",
+                "butchercraft:platform_contract/department_anchor_foundation",
+                "butchercraft:platform_contract/employee_department_assignment_foundation",
+                "butchercraft:platform_contract/employee_department_navigation_foundation",
+                "butchercraft:platform_contract/department_persistence_foundation",
+                "butchercraft:platform_contract/department_diagnostics_foundation",
+                "butchercraft:platform_contract/department_navigation_boundary_safety"
         );
 
         for (String contractId : employeeContracts) {
@@ -482,6 +489,10 @@ class ArchitectureRulesTest {
                 descriptor.id().equals("butchercraft:employee_records")
                         && descriptor.ownerId().value().equals("butchercraft:workforce")
                         && descriptor.path().equals("butchercraft/employee_records.json")));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:departments")
+                        && descriptor.ownerId().value().equals("butchercraft:workforce")
+                        && descriptor.path().equals("butchercraft/departments.json")));
         assertTrue(context.dependencies().stream().anyMatch(dependency ->
                 dependency.consumerId().value().equals("butchercraft:workforce")
                         && dependency.providerId().value().equals("butchercraft:business_runtime")));
@@ -490,6 +501,12 @@ class ArchitectureRulesTest {
                         && assignment.ownerId().value().equals("butchercraft:workforce")));
         assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
                 assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_presence_observation")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_department_navigation")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/department_persistence")
                         && assignment.ownerId().value().equals("butchercraft:workforce")));
     }
 
@@ -1049,7 +1066,14 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/employee_entity_link_foundation",
                         "butchercraft:platform_contract/employee_persistence_foundation",
                         "butchercraft:platform_contract/employee_diagnostics_foundation",
-                        "butchercraft:platform_contract/employee_foundation_gametest_coverage"
+                        "butchercraft:platform_contract/employee_foundation_gametest_coverage",
+                        "butchercraft:platform_contract/department_identity_foundation",
+                        "butchercraft:platform_contract/department_anchor_foundation",
+                        "butchercraft:platform_contract/employee_department_assignment_foundation",
+                        "butchercraft:platform_contract/employee_department_navigation_foundation",
+                        "butchercraft:platform_contract/department_persistence_foundation",
+                        "butchercraft:platform_contract/department_diagnostics_foundation",
+                        "butchercraft:platform_contract/department_navigation_boundary_safety"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

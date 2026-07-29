@@ -9,6 +9,7 @@ public enum EmployeeFailureCode {
     MISSING_SHIFT("missing_shift"),
     INVALID_SHIFT("invalid_shift"),
     INVALID_POSITION("invalid_position"),
+    INVALID_DEPARTMENT("invalid_department"),
     INVALID_STATUS_TRANSITION("invalid_status_transition"),
     INVALID_PRESENCE_STATE("invalid_presence_state"),
     TERMINATED_EMPLOYEE("terminated_employee"),

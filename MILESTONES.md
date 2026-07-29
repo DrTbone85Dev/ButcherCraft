@@ -4,6 +4,74 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-024: Department Assignment, Employee Presence, And Navigation Foundation
+
+Goal: add Workforce-owned Department definitions, employee department
+assignment, and present-employee navigation to department anchors without
+granting employees Production, Scheduler, Execution, Allocation, Inventory, or
+workstation authority.
+
+Included work:
+
+- Schema-1 `processing`, `packaging`, `shipping`, `office`, and `maintenance`
+  Department identities owned by Workforce.
+- Functional default Processing anchor and bounded department radius.
+- Schema-versioned `departments.json` persistence.
+- Optional `DepartmentId` assignment on employee records.
+- Present active-shift Employee entities target the assigned functional
+  department anchor, idle within radius, and return when displaced.
+- Development/operator diagnostics for department list, department status, and
+  employee department assignment.
+- Focused documentation, architecture-manifest declarations, pure unit tests,
+  and GameTests.
+
+Excluded work:
+
+- Workstation arrival reservations, workstation operation, job claiming,
+  product carrying, logistics, Production task assignment, Scheduler Work,
+  Execution authority, Inventory mutation, staffing capacity enforcement,
+  department GUIs, payroll, wages, productivity, customer interaction,
+  Allocation integration, startup recovery, automatic checkpoints, and operator
+  reconciliation.
+
+Acceptance criteria:
+
+- Department Identity and department anchors are Workforce-owned.
+- Employee records reference departments by `DepartmentId` and do not store
+  workstation assignments.
+- Processing is the only functional default department; other departments are
+  registered definitions only.
+- Present employees navigate to the assigned functional department anchor and
+  remain bounded there.
+- Department assignment and navigation do not submit Scheduler Work, operate
+  machines, reserve workstations, carry items, or mutate Production.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-024 can be called
+  manually accepted. The checklist covers department list/status diagnostics,
+  employee department assignment by friendly employee reference, visible
+  movement toward the Processing department anchor, idle behavior inside the
+  radius, return after displacement, and confirmation that employees do not
+  operate machines or carry products.
+
+Rollback considerations:
+
+- IM-024 is additive. Removing the department domain, department persistence,
+  employee department field, diagnostics, navigation state, docs, manifest
+  entries, and focused tests restores IM-023 behavior without changing
+  Business Runtime, Production, Scheduler, Execution, Transactions, Planning,
+  Inventory, Allocation, or workstation schemas.
+
 ## IM-023: Employee And Employment Record Foundation
 
 Goal: add persistent employee identity, employment records, shift eligibility,

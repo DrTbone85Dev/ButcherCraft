@@ -66,6 +66,7 @@ Do not claim a command passed unless you actually ran it.
 - Keep `com.butchercraft.world.simulation.scheduler` pure Java, deterministic, bounded, and dependent on supplied Simulation Clock ticks only. Scheduler handlers must preserve owning-domain validation and transaction boundaries.
 - Keep `com.butchercraft.world.production` pure Java and industry-neutral. Processes and Plans are immutable, Runs own mutable lifecycle, Scheduler owns eligibility, Clock owns time, and every completed quantity change must use one APPLIED Production Transaction.
 - Keep `com.butchercraft.world.goods` definitions, registries, graph validation, and persistence independent of Minecraft, NeoForge, ItemStack, inventory quantities, and gameplay state.
+- Keep `com.butchercraft.world.workforce.department` pure Java and Workforce-owned. Departments define identities, anchors, and employee assignment targets only; they must not own workstation assignments, job claims, Production runs, Scheduler work, Execution authority, Inventory access, or item movement.
 - Keep processing framework fixtures as test data unless a visible gameplay milestone explicitly schedules Minecraft content.
 - Keep product data integration outside `com.butchercraft.engine`; ItemStack data-component adapters belong under product integration packages.
 - Keep datapack definition registries, `ResourceLocation`, `ResourceKey`, `Holder`, and `RegistryAccess` usage outside `com.butchercraft.engine`.
@@ -123,6 +124,7 @@ Do not claim a command passed unless you actually ran it.
 - Scheduled simulation Work definitions and separate runtime lifecycles persist at `<world>/butchercraft/simulation_scheduler.json`. Never persist `RUNNING` Work, silently drop unknown Work types, reuse submission sequences, or add automatic catch-up without a documented schema policy.
 - Production Process definitions, Plan definitions, and Run runtime state persist at `<world>/butchercraft/production_processes.json`, `production_plans.json`, and `production_runs.json`. Validate the complete candidate set and scheduler/transaction references before publication; never reserve stock implicitly or mutate Inventory outside the Transaction Framework.
 - Entity-specific employee state should use attachments.
+- Department identity, anchors, and employee department assignment belong in Workforce-owned records at `<world>/butchercraft/departments.json` and `<world>/butchercraft/employee_records.json`; Employee entities are not authoritative department state.
 - Never create placeholder systems that silently discard saved data.
 - Add version fields or migration plans before public saves.
 - Preserve unknown ids from missing expansions where practical.

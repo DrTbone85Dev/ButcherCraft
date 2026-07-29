@@ -10,6 +10,8 @@ import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 import com.butchercraft.world.workforce.PositionId;
 import com.butchercraft.world.workforce.WorkforceDefinition;
 import com.butchercraft.world.workforce.WorkforceRegistry;
+import com.butchercraft.world.workforce.department.DepartmentId;
+import com.butchercraft.world.workforce.department.DepartmentRegistry;
 import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
 
 import java.util.Collection;
@@ -156,6 +158,31 @@ public final class EmployeeManager {
         return EmployeeOperationResult.succeeded(updated);
     }
 
+    public synchronized EmployeeOperationResult<EmployeeRecord> assignDepartment(
+            EmployeeId employeeId,
+            Optional<DepartmentId> departmentId,
+            DepartmentRegistry departmentRegistry
+    ) {
+        EmployeeRecord record = registry.find(employeeId).orElse(null);
+        if (record == null) {
+            return EmployeeOperationResult.failed(EmployeeFailureCode.UNKNOWN_EMPLOYEE,
+                    "Unknown employee: " + employeeId.value());
+        }
+        if (record.status() == EmployeeStatus.TERMINATED) {
+            return EmployeeOperationResult.failed(EmployeeFailureCode.TERMINATED_EMPLOYEE,
+                    "Cannot assign department to terminated employee: " + employeeId.value());
+        }
+        Objects.requireNonNull(departmentId, "departmentId");
+        Objects.requireNonNull(departmentRegistry, "departmentRegistry");
+        if (departmentId.isPresent() && !departmentRegistry.contains(departmentId.orElseThrow())) {
+            return EmployeeOperationResult.failed(EmployeeFailureCode.INVALID_DEPARTMENT,
+                    "Unknown department: " + departmentId.orElseThrow().value());
+        }
+        EmployeeRecord updated = record.withAssignedDepartment(departmentId);
+        registry = registry.with(updated);
+        return EmployeeOperationResult.succeeded(updated);
+    }
+
     public synchronized EmployeeOperationResult<EmployeeRecord> setPresence(
             EmployeeId employeeId,
             EmployeePresenceState presenceState
@@ -267,6 +294,17 @@ public final class EmployeeManager {
         }
     }
 
+    public synchronized void validateDepartmentReferences(DepartmentRegistry departmentRegistry) {
+        Objects.requireNonNull(departmentRegistry, "departmentRegistry");
+        for (EmployeeRecord record : registry.records()) {
+            if (record.assignedDepartmentId().isPresent()
+                    && !departmentRegistry.contains(record.assignedDepartmentId().orElseThrow())) {
+                throw new IllegalArgumentException("Employee references unknown department: "
+                        + record.employeeId().value() + "/" + record.assignedDepartmentId().orElseThrow().value());
+            }
+        }
+    }
+
     private static EmployeePresenceObservation observation(
             EmployeeRecord record,
             BusinessRuntimeObservationSnapshot snapshot,
@@ -312,6 +350,7 @@ public final class EmployeeManager {
                 record.status(),
                 observed,
                 record.assignedShift(),
+                record.assignedDepartmentId(),
                 activeShiftIdentity,
                 snapshot.plantOpen(),
                 reason,

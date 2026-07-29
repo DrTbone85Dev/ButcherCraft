@@ -36,6 +36,8 @@ import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
 import com.butchercraft.world.business.runtime.BusinessScheduleBoundary;
+import com.butchercraft.world.workforce.department.DepartmentId;
+import com.butchercraft.world.workforce.department.DepartmentRecord;
 import com.butchercraft.world.workforce.employee.EmployeeFailure;
 import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeOperationResult;
@@ -45,7 +47,9 @@ import com.butchercraft.world.workforce.employee.EmployeeRecord;
 import com.butchercraft.world.simulation.time.WorldTimeService;
 import com.butchercraft.world.simulation.time.WorldTimeStatusSnapshot;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -106,8 +110,14 @@ public final class ButcherCraftDiagnostics {
     private static final ResourceLocation BANDSAW_BLOCK_ID =
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "bandsaw");
     private static final String EMPLOYEE_ARGUMENT = "employee";
+    private static final String EMPLOYEE_COMMAND_TAIL_ARGUMENT = "employee_command";
+    private static final String DEPARTMENT_ARGUMENT = "department";
     private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestEmployeeReferences(context.getSource(), builder);
+    private static final SuggestionProvider<CommandSourceStack> DEPARTMENT_LOOKUP_SUGGESTIONS =
+            (context, builder) -> suggestDepartmentReferences(context.getSource(), builder);
+    private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_DEPARTMENT_LOOKUP_SUGGESTIONS =
+            (context, builder) -> suggestEmployeeReferenceThenDepartment(context.getSource(), builder);
 
     private ButcherCraftDiagnostics() {
     }
@@ -132,27 +142,38 @@ public final class ButcherCraftDiagnostics {
                         .then(Commands.literal("list")
                                 .executes(context -> runEmployeeList(context.getSource())))
                         .then(Commands.literal("status")
-                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
                                         .executes(context -> runEmployeeStatus(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
                         .then(Commands.literal("set-shift")
-                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())
+                                .then(Commands.argument(EMPLOYEE_COMMAND_TAIL_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
-                                        .then(Commands.argument("shift_id", StringArgumentType.word())
-                                                .executes(context -> runEmployeeSetShift(
-                                                        context.getSource(),
-                                                        StringArgumentType.getString(context, EMPLOYEE_ARGUMENT),
-                                                        StringArgumentType.getString(context, "shift_id"))))))
+                                        .executes(context -> runEmployeeSetShiftTail(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
                         .then(Commands.literal("set-presence")
-                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.string())
+                                .then(Commands.argument(EMPLOYEE_COMMAND_TAIL_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
-                                        .then(Commands.argument("state", StringArgumentType.word())
-                                                .executes(context -> runEmployeeSetPresence(
-                                                        context.getSource(),
-                                                        StringArgumentType.getString(context, EMPLOYEE_ARGUMENT),
-                                                        StringArgumentType.getString(context, "state")))))))
+                                        .executes(context -> runEmployeeSetPresenceTail(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
+                        .then(Commands.literal("assign-department")
+                                .then(Commands.argument(EMPLOYEE_COMMAND_TAIL_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_DEPARTMENT_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeAssignDepartmentTail(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT))))))
+                .then(Commands.literal("department")
+                        .then(Commands.literal("list")
+                                .executes(context -> runDepartmentList(context.getSource())))
+                        .then(Commands.literal("status")
+                                .then(Commands.argument(DEPARTMENT_ARGUMENT, StringArgumentType.word())
+                                        .suggests(DEPARTMENT_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runDepartmentStatus(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, DEPARTMENT_ARGUMENT))))))
                 .then(Commands.literal("diagnostic")
                         .executes(context -> runDiagnostic(context.getSource()))
                         .then(DevelopmentCheckpointCommands.branch())));
@@ -230,7 +251,9 @@ public final class ButcherCraftDiagnostics {
             source.sendSuccess(() -> Component.literal(employeeLookupLabel(record)
                     + " | " + record.status().serializedName()
                     + " | " + record.presenceState().serializedName()
-                    + " | " + record.assignedShift().map(shift -> shift.shiftId()).orElse("unassigned")), false);
+                    + " | " + record.assignedShift().map(shift -> shift.shiftId()).orElse("unassigned")
+                    + " | department: " + record.assignedDepartmentId()
+                    .map(DepartmentId::value).orElse("unassigned")), false);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -253,6 +276,8 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Shift: "
                 + value.assignedShift().map(shift -> shift.shiftId() + " (" + shift.shiftDisplayName() + ")")
                 .orElse("unassigned")), false);
+        source.sendSuccess(() -> Component.literal("Department: "
+                + value.assignedDepartmentId().map(DepartmentId::value).orElse("unassigned")), false);
         source.sendSuccess(() -> Component.literal("Plant: " + (value.plantOpen() ? "open" : "closed")), false);
         source.sendSuccess(() -> Component.literal("Reason: " + value.reason()), false);
         return Command.SINGLE_SUCCESS;
@@ -276,6 +301,14 @@ public final class ButcherCraftDiagnostics {
         return Command.SINGLE_SUCCESS;
     }
 
+    private static int runEmployeeSetShiftTail(CommandSourceStack source, String tail) {
+        EmployeeCommandTail parsed = parseEmployeeCommandTail(source, tail, "shift id");
+        if (parsed == null) {
+            return 0;
+        }
+        return runEmployeeSetShift(source, parsed.employeeReference(), parsed.value());
+    }
+
     private static int runEmployeeSetPresence(CommandSourceStack source, String employeeReference, String stateValue) {
         EmployeeId employeeId = employeeId(employeeReference, source);
         if (employeeId == null) {
@@ -296,6 +329,87 @@ public final class ButcherCraftDiagnostics {
         }
         source.sendSuccess(() -> Component.literal("Employee presence set: "
                 + result.orThrow().presenceState().serializedName()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeSetPresenceTail(CommandSourceStack source, String tail) {
+        EmployeeCommandTail parsed = parseEmployeeCommandTail(source, tail, "presence state");
+        if (parsed == null) {
+            return 0;
+        }
+        return runEmployeeSetPresence(source, parsed.employeeReference(), parsed.value());
+    }
+
+    private static int runEmployeeAssignDepartment(
+            CommandSourceStack source,
+            String employeeReference,
+            String departmentId
+    ) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeOperationResult<EmployeeRecord> result =
+                EmployeeService.INSTANCE.assignDepartment(source.getServer(), employeeId, departmentId);
+        if (!result.succeeded()) {
+            sendEmployeeFailure(source, result.failure().orElseThrow());
+            return 0;
+        }
+        EmployeeRecord record = result.orThrow();
+        source.sendSuccess(() -> Component.literal("Employee department set: "
+                + record.assignedDepartmentId().map(DepartmentId::value).orElse("unassigned")), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeAssignDepartmentTail(CommandSourceStack source, String tail) {
+        EmployeeCommandTail parsed = parseEmployeeCommandTail(source, tail, "department");
+        if (parsed == null) {
+            return 0;
+        }
+        return runEmployeeAssignDepartment(source, parsed.employeeReference(), parsed.value());
+    }
+
+    private static int runDepartmentList(CommandSourceStack source) {
+        List<DepartmentRecord> records = EmployeeService.INSTANCE.departmentManagerFor(source.getServer())
+                .registry()
+                .records();
+        source.sendSuccess(() -> Component.literal("ButcherCraft Departments: " + records.size()), false);
+        for (DepartmentRecord record : records) {
+            source.sendSuccess(() -> Component.literal(record.departmentId().value()
+                    + " | " + record.displayName()
+                    + " | " + record.anchor().map(anchor -> "anchor "
+                    + anchor.x() + " " + anchor.y() + " " + anchor.z()
+                    + " r" + anchor.radius()).orElse("definition only")), false);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runDepartmentStatus(CommandSourceStack source, String departmentValue) {
+        DepartmentId departmentId;
+        try {
+            departmentId = new DepartmentId(departmentValue);
+        } catch (IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal("Invalid department: " + departmentValue), false);
+            return 0;
+        }
+        DepartmentRecord record = EmployeeService.INSTANCE.departmentManagerFor(source.getServer())
+                .find(departmentId)
+                .orElse(null);
+        if (record == null) {
+            source.sendSuccess(() -> Component.literal("Unknown department: " + departmentValue), false);
+            return 0;
+        }
+        long assigned = EmployeeService.INSTANCE.managerFor(source.getServer()).registry().records().stream()
+                .filter(employee -> employee.assignedDepartmentId().filter(departmentId::equals).isPresent())
+                .count();
+        source.sendSuccess(() -> Component.literal("Department: " + record.displayName()
+                + " (" + record.departmentId().value() + ")"), false);
+        source.sendSuccess(() -> Component.literal("Anchor: " + record.anchor()
+                .map(anchor -> anchor.dimensionIdentity() + " "
+                        + anchor.x() + " " + anchor.y() + " " + anchor.z()
+                        + " radius " + anchor.radius())
+                .orElse("definition only")), false);
+        source.sendSuccess(() -> Component.literal("Assigned employees: " + assigned), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -327,13 +441,50 @@ public final class ButcherCraftDiagnostics {
         return builder.buildFuture();
     }
 
+    private static CompletableFuture<Suggestions> suggestDepartmentReferences(
+            CommandSourceStack source,
+            SuggestionsBuilder builder
+    ) {
+        List<String> suggestions = departmentLookupSuggestions(EmployeeService.INSTANCE.departmentManagerFor(source.getServer())
+                .registry()
+                .records());
+        String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+        for (String suggestion : suggestions) {
+            if (suggestion.startsWith(remaining)) {
+                builder.suggest(suggestion);
+            }
+        }
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestEmployeeReferenceThenDepartment(
+            CommandSourceStack source,
+            SuggestionsBuilder builder
+    ) {
+        int departmentStart = departmentSuggestionStart(builder.getRemaining());
+        if (departmentStart < 0) {
+            return suggestEmployeeReferences(source, builder);
+        }
+        return suggestDepartmentReferences(source, builder.createOffset(builder.getStart() + departmentStart));
+    }
+
     static List<String> employeeLookupSuggestions(List<EmployeeRecord> records) {
         List<String> suggestions = new ArrayList<>();
-        for (EmployeeRecord record : sortedEmployeeRecords(records)) {
+        List<EmployeeRecord> sortedRecords = sortedEmployeeRecords(records);
+        for (EmployeeRecord record : sortedRecords) {
             addUniqueSuggestion(suggestions, employeeNumberReference(record));
-            addUniqueSuggestion(suggestions, quotedEmployeeReference(record.displayName()));
+            if (hasUniqueDisplayName(record, sortedRecords)) {
+                addUniqueSuggestion(suggestions, quotedEmployeeReference(record.displayName()));
+            }
+            addUniqueSuggestion(suggestions, record.employeeId().value());
         }
         return List.copyOf(suggestions);
+    }
+
+    static List<String> departmentLookupSuggestions(List<DepartmentRecord> records) {
+        return records.stream()
+                .map(record -> record.departmentId().value())
+                .toList();
     }
 
     static EmployeeLookupResult resolveEmployeeReference(String value, List<EmployeeRecord> records) {
@@ -373,6 +524,94 @@ public final class ButcherCraftDiagnostics {
             return EmployeeLookupResult.failed(EmployeeLookupFailure.AMBIGUOUS, matches);
         }
         return EmployeeLookupResult.failed(EmployeeLookupFailure.NOT_FOUND, List.of());
+    }
+
+    private static EmployeeCommandTail parseEmployeeCommandTail(
+            CommandSourceStack source,
+            String value,
+            String trailingArgumentLabel
+    ) {
+        try {
+            EmployeeCommandTail parsed = parseEmployeeCommandTail(value);
+            if (parsed.value().isBlank()) {
+                source.sendSuccess(() -> Component.literal("Employee reference and "
+                        + trailingArgumentLabel + " are required."), false);
+                return null;
+            }
+            return parsed;
+        } catch (CommandSyntaxException exception) {
+            source.sendSuccess(() -> Component.literal("Invalid employee reference: "
+                    + exception.getMessage()), false);
+            return null;
+        }
+    }
+
+    private static EmployeeCommandTail parseEmployeeCommandTail(String value) throws CommandSyntaxException {
+        String stripped = Objects.requireNonNull(value, "value").stripLeading();
+        if (stripped.isEmpty()) {
+            return new EmployeeCommandTail("", "");
+        }
+        StringReader reader = new StringReader(stripped);
+        String employeeReference = readEmployeeReference(reader);
+        skipWhitespace(reader);
+        if (!reader.canRead()) {
+            return new EmployeeCommandTail(employeeReference, "");
+        }
+        return new EmployeeCommandTail(employeeReference, reader.getRemaining().strip());
+    }
+
+    private static String readEmployeeReference(StringReader reader) throws CommandSyntaxException {
+        if (StringReader.isQuotedStringStart(reader.peek())) {
+            return reader.readString();
+        }
+        int start = reader.getCursor();
+        while (reader.canRead() && !Character.isWhitespace(reader.peek())) {
+            reader.skip();
+        }
+        return reader.getString().substring(start, reader.getCursor());
+    }
+
+    private static void skipWhitespace(StringReader reader) {
+        while (reader.canRead() && Character.isWhitespace(reader.peek())) {
+            reader.skip();
+        }
+    }
+
+    private static int departmentSuggestionStart(String value) {
+        if (value.isEmpty()) {
+            return -1;
+        }
+        int index = 0;
+        if (value.charAt(index) == '"') {
+            index++;
+            boolean escaped = false;
+            while (index < value.length()) {
+                char current = value.charAt(index);
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    index++;
+                    break;
+                }
+                index++;
+            }
+            if (index > value.length() || (index == value.length() && value.charAt(index - 1) != '"')) {
+                return -1;
+            }
+        } else {
+            while (index < value.length() && !Character.isWhitespace(value.charAt(index))) {
+                index++;
+            }
+        }
+        if (index >= value.length() || !Character.isWhitespace(value.charAt(index))) {
+            return -1;
+        }
+        while (index < value.length() && Character.isWhitespace(value.charAt(index))) {
+            index++;
+        }
+        return index;
     }
 
     private static OptionalLong parseEmployeeNumber(String reference) {
@@ -439,6 +678,13 @@ public final class ButcherCraftDiagnostics {
         return "#" + Math.addExact(record.sequence(), 1L);
     }
 
+    private static boolean hasUniqueDisplayName(EmployeeRecord record, List<EmployeeRecord> records) {
+        String displayName = record.displayName().toLowerCase(Locale.ROOT);
+        return records.stream()
+                .filter(candidate -> candidate.displayName().toLowerCase(Locale.ROOT).equals(displayName))
+                .count() == 1L;
+    }
+
     private static String quotedEmployeeReference(String value) {
         if (value.indexOf(' ') < 0 && value.indexOf('"') < 0 && value.indexOf('\\') < 0) {
             return value;
@@ -454,6 +700,13 @@ public final class ButcherCraftDiagnostics {
                     .replace("\\\\", "\\");
         }
         return stripped;
+    }
+
+    private record EmployeeCommandTail(String employeeReference, String value) {
+        private EmployeeCommandTail {
+            employeeReference = Objects.requireNonNull(employeeReference, "employeeReference").strip();
+            value = Objects.requireNonNull(value, "value").strip();
+        }
     }
 
     enum EmployeeLookupFailure {

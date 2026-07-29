@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import com.butchercraft.world.workforce.department.DepartmentSchema;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,6 +19,7 @@ class EmployeeRecordTest {
         assertEquals(EmployeePresenceState.OFF_SHIFT, record.presenceState());
         assertEquals("Ada Cutter", record.displayName());
         assertTrue(record.assignedShift().isPresent());
+        assertTrue(record.assignedDepartmentId().isEmpty());
         assertEquals(0L, record.hireBusinessDay());
         assertEquals("07:00", record.hireBusinessTime().displayText());
         assertEquals(1L, record.recordRevision());
@@ -30,6 +33,17 @@ class EmployeeRecordTest {
 
         assertEquals(EmployeeStatus.INACTIVE, inactive.status());
         assertEquals(EmployeePresenceState.UNAVAILABLE, inactive.presenceState());
+    }
+
+    @Test
+    void assigningDepartmentUpdatesOnlyDepartmentReferenceAndRevision() {
+        EmployeeRecord record = EmployeeTestFixtures.employee(EmployeeTestFixtures.manager());
+
+        EmployeeRecord updated = record.withAssignedDepartment(Optional.of(DepartmentSchema.PROCESSING));
+
+        assertEquals(Optional.of(DepartmentSchema.PROCESSING), updated.assignedDepartmentId());
+        assertEquals(record.assignedShift(), updated.assignedShift());
+        assertEquals(record.recordRevision() + 1L, updated.recordRevision());
     }
 
     @Test
@@ -48,6 +62,7 @@ class EmployeeRecordTest {
                 EmployeeStatus.TERMINATED,
                 EmployeePresenceState.PRESENT,
                 record.assignedShift(),
+                Optional.empty(),
                 Optional.empty(),
                 record.hireBusinessDay(),
                 record.hireBusinessTime(),

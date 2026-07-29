@@ -1,5 +1,7 @@
 package com.butchercraft.world.workforce.employee;
 
+import com.butchercraft.world.workforce.department.BuiltInDepartmentDefinitions;
+import com.butchercraft.world.workforce.department.DepartmentSchema;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -7,6 +9,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EmployeeStorageTest {
     @TempDir
@@ -33,6 +36,27 @@ class EmployeeStorageTest {
 
         assertEquals(manager.directory().nextSequence(), loaded.nextSequence());
         assertEquals(manager.directory().registry().records(), loaded.registry().records());
+    }
+
+    @Test
+    void storagePreservesAssignedDepartmentReference() {
+        EmployeeManager manager = EmployeeTestFixtures.manager();
+        EmployeeRecord record = EmployeeTestFixtures.employee(manager);
+        manager.assignDepartment(
+                record.employeeId(),
+                java.util.Optional.of(DepartmentSchema.PROCESSING),
+                BuiltInDepartmentDefinitions.defaults(
+                        com.butchercraft.world.identity.WorldIdentityRootIdentities.from(EmployeeTestFixtures.WORLD_IDENTITY)
+                ).registry()
+        );
+        EmployeeStorage storage = new EmployeeStorage(temporaryDirectory.resolve("employee_records.json"));
+
+        String json = storage.serialize(manager.directory());
+        EmployeeDirectory loaded = storage.deserialize(json);
+
+        assertTrue(json.contains("\"assigned_department_id\": \"processing\""));
+        assertEquals(java.util.Optional.of(DepartmentSchema.PROCESSING),
+                loaded.registry().find(record.employeeId()).orElseThrow().assignedDepartmentId());
     }
 
     @Test

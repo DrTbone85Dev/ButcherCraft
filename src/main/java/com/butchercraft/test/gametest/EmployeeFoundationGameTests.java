@@ -8,9 +8,13 @@ import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarConfiguration;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
+import com.butchercraft.world.workforce.department.DepartmentAnchor;
+import com.butchercraft.world.workforce.department.DepartmentRecord;
+import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeeFailureCode;
 import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeManager;
+import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeeOperationResult;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeePresenceState;
@@ -24,6 +28,13 @@ import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 import com.butchercraft.world.simulation.time.WorldTimeConfiguration;
 import com.butchercraft.world.simulation.time.WorldTimeMovementClassification;
 import com.butchercraft.world.simulation.time.WorldTimeSchema;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
+import com.mojang.brigadier.tree.ArgumentCommandNode;
+import com.mojang.brigadier.tree.CommandNode;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -34,13 +45,17 @@ import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import java.util.List;
 import java.util.Optional;
 
 @GameTestHolder(ButcherCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class EmployeeFoundationGameTests {
     private static final String TEMPLATE = "empty_5x4x5";
+    private static final String DEPARTMENT_BATCH = "zz_employee_department";
+    private static final String COMMAND_ACCEPTANCE_BATCH = "zzz_employee_command_acceptance";
     private static final BlockPos EMPLOYEE_POS = new BlockPos(2, 1, 2);
+    private static final BlockPos DEPARTMENT_POS = new BlockPos(4, 1, 2);
     private static boolean resetCompleted;
 
     private EmployeeFoundationGameTests() {
@@ -69,6 +84,18 @@ public final class EmployeeFoundationGameTests {
         EmployeeManager manager = EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer());
 
         helper.assertTrue(manager.directory().registry().size() >= 0, "Employee manager initializes");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void departmentDirectoryInitializesCanonicalDepartments(GameTestHelper helper) {
+        var registry = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer()).registry();
+
+        helper.assertTrue(registry.find(DepartmentSchema.PROCESSING).isPresent(), "Processing department is registered");
+        helper.assertTrue(registry.find(DepartmentSchema.PACKAGING).isPresent(), "Packaging department is registered");
+        helper.assertTrue(registry.find(DepartmentSchema.SHIPPING).isPresent(), "Shipping department is registered");
+        helper.assertTrue(registry.find(DepartmentSchema.OFFICE).isPresent(), "Office department is registered");
+        helper.assertTrue(registry.find(DepartmentSchema.MAINTENANCE).isPresent(), "Maintenance department is registered");
         helper.succeed();
     }
 
@@ -403,6 +430,201 @@ public final class EmployeeFoundationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void employeeCanBeAssignedToProcessingDepartment(GameTestHelper helper) {
+        EmployeeRecord record = create(helper, "Foundation Department", false);
+
+        EmployeeRecord updated = EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PROCESSING.value()
+        ).orThrow();
+        EmployeePresenceObservation observation = EmployeeService.INSTANCE.observe(
+                helper.getLevel().getServer(),
+                record.employeeId()
+        ).orThrow();
+
+        helper.assertTrue(updated.assignedDepartmentId().filter(DepartmentSchema.PROCESSING::equals).isPresent(),
+                "Employee record stores the assigned department");
+        helper.assertTrue(observation.assignedDepartmentId().filter(DepartmentSchema.PROCESSING::equals).isPresent(),
+                "Employee observation reports the assigned department");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void presentEmployeeUsesProcessingDepartmentAnchor(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeRecord record = create(helper, "Foundation Department Anchor", true);
+        EmployeeEntity entity = entity(helper, record);
+        DepartmentAnchor anchor = assignProcessingAnchor(helper, DEPARTMENT_POS, 1);
+
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PROCESSING.value()
+        ).orThrow();
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.assertTrue(entity.anchorPos().equals(new BlockPos(anchor.x(), anchor.y(), anchor.z())),
+                "Present employee targets the Processing department anchor");
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.WALKING_TO_DEPARTMENT.serializedName()),
+                "Employee outside the department radius is walking to the department");
+        helper.assertTrue(entity.getMainHandItem().isEmpty() && entity.getOffhandItem().isEmpty(),
+                "Department navigation does not create item-carrying behavior");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void employeeIdlesWhenAlreadyInsideDepartmentRadius(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeRecord record = create(helper, "Foundation Department Idle", true);
+        EmployeeEntity entity = entity(helper, record);
+        assignProcessingAnchor(helper, EMPLOYEE_POS, 2);
+
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PROCESSING.value()
+        ).orThrow();
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.assertTrue(entity.insideAnchorRadius(), "Employee inside department radius remains bounded there");
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.IDLE.serializedName()),
+                "Employee inside the department radius idles");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void displacedEmployeeReturnsTowardDepartmentAnchor(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeRecord record = create(helper, "Foundation Department Return", true);
+        EmployeeEntity entity = entity(helper, record);
+        DepartmentAnchor anchor = assignProcessingAnchor(helper, DEPARTMENT_POS, 1);
+
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PROCESSING.value()
+        ).orThrow();
+        entity.moveTo(anchor.x() + 8.5D, anchor.y(), anchor.z() + 0.5D, 0.0F, 0.0F);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.assertTrue(!entity.insideAnchorRadius(), "Displaced employee is outside the department radius");
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.WALKING_TO_DEPARTMENT.serializedName()),
+                "Displaced present employee returns toward the department anchor");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void unanchoredDepartmentsRemainDefinitionOnlyNavigationTargets(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeRecord record = create(helper, "Foundation Definition Department", true);
+        EmployeeEntity entity = entity(helper, record);
+
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PACKAGING.value()
+        ).orThrow();
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.assertTrue(entity.anchorPos().equals(helper.absolutePos(EMPLOYEE_POS)),
+                "Unanchored departments do not replace the employee anchor");
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.IDLE.serializedName()),
+                "Present employee idles when assigned department has no functional anchor");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = DEPARTMENT_BATCH)
+    public static void departmentAssignmentDoesNotSubmitSchedulerWork(GameTestHelper helper) {
+        int before = SimulationSchedulerService.INSTANCE.managerFor(helper.getLevel().getServer()).registry().size();
+        EmployeeRecord record = create(helper, "Foundation Department Scheduler Boundary", true);
+
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PROCESSING.value()
+        ).orThrow();
+
+        int after = SimulationSchedulerService.INSTANCE.managerFor(helper.getLevel().getServer()).registry().size();
+        helper.assertTrue(before == after, "Department assignment does not submit Scheduler work");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = COMMAND_ACCEPTANCE_BATCH)
+    public static void registeredCommandTreeUsesSynchronizedArgumentTypes(GameTestHelper helper) {
+        CommandDispatcher<CommandSourceStack> dispatcher = helper.getLevel().getServer().getCommands().getDispatcher();
+
+        assertSynchronizedArgumentTypes(helper, dispatcher.getRoot());
+
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = COMMAND_ACCEPTANCE_BATCH)
+    public static void employeeAndDepartmentCommandSuggestionsAreExecutable(GameTestHelper helper) {
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        EmployeeRecord tom = createExact(helper, "Tom", false);
+        EmployeeRecord spaced = createExact(helper, "Tom Cutter", false);
+        CommandSourceStack source = commandSource(helper);
+        String statusPrefix = "butchercraft employee status ";
+
+        List<String> employeeSuggestions = suggestions(helper, source, statusPrefix);
+        helper.assertTrue(employeeSuggestions.contains(employeeNumberReference(tom)),
+                "Employee suggestions include the simple-name employee number");
+        helper.assertTrue(employeeSuggestions.contains("Tom"),
+                "Employee suggestions include the executable simple display name");
+        helper.assertTrue(employeeSuggestions.contains(tom.employeeId().value()),
+                "Employee suggestions include the canonical Employee ID");
+        helper.assertTrue(employeeSuggestions.contains(employeeNumberReference(spaced)),
+                "Employee suggestions include the spaced-name employee number");
+        helper.assertTrue(employeeSuggestions.contains("\"Tom Cutter\""),
+                "Employee suggestions quote display names containing spaces");
+        helper.assertTrue(employeeSuggestions.contains(spaced.employeeId().value()),
+                "Employee suggestions include canonical Employee IDs for spaced display names");
+        for (String suggestion : employeeSuggestions) {
+            int result = execute(helper, source, statusPrefix + suggestion);
+            helper.assertTrue(result == 1, "Employee suggestion executes unchanged: " + suggestion);
+        }
+        helper.assertTrue(execute(helper, source, statusPrefix + "#1") == 1,
+                "Ordinal employee references execute manually");
+        helper.assertTrue(execute(helper, source, statusPrefix + "Tom") == 1,
+                "Simple display names execute manually");
+        helper.assertTrue(execute(helper, source, statusPrefix + "\"Tom Cutter\"") == 1,
+                "Quoted display names containing spaces execute manually");
+        helper.assertTrue(execute(helper, source, statusPrefix + tom.employeeId().value()) == 1,
+                "Canonical Employee IDs execute manually");
+
+        String assignPrefix = "butchercraft employee assign-department Tom ";
+        List<String> departmentSuggestions = suggestions(helper, source, assignPrefix);
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.PROCESSING.value()),
+                "Department suggestions include processing");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.PACKAGING.value()),
+                "Department suggestions include packaging");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.SHIPPING.value()),
+                "Department suggestions include shipping");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.OFFICE.value()),
+                "Department suggestions include office");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.MAINTENANCE.value()),
+                "Department suggestions include maintenance");
+
+        List<String> partialDepartmentSuggestions = suggestions(helper, source, assignPrefix + "pro");
+        helper.assertTrue(partialDepartmentSuggestions.contains(DepartmentSchema.PROCESSING.value()),
+                "Partial department input suggests processing");
+
+        int assignmentResult = execute(helper, source, assignPrefix + DepartmentSchema.PROCESSING.value());
+        helper.assertTrue(assignmentResult == 1, "Selected department suggestion executes assignment command");
+        EmployeeRecord assigned = manager(helper).find(tom.employeeId()).orElseThrow();
+        helper.assertTrue(assigned.assignedDepartmentId().filter(DepartmentSchema.PROCESSING::equals).isPresent(),
+                "Executed department suggestion updates the employee assignment");
+
+        int unknownResult = execute(helper, source, assignPrefix + "unknown_department");
+        helper.assertTrue(unknownResult == 0, "Unknown department is rejected");
+        EmployeeRecord stillAssigned = manager(helper).find(tom.employeeId()).orElseThrow();
+        helper.assertTrue(stillAssigned.assignedDepartmentId().filter(DepartmentSchema.PROCESSING::equals).isPresent(),
+                "Rejected department does not replace the existing assignment");
+        helper.succeed();
+    }
+
     private static EmployeeRecord create(GameTestHelper helper, String baseName, boolean spawnEntity) {
         resetEmployeesOnce(helper);
         return EmployeeService.INSTANCE.createGameTestEmployee(
@@ -418,6 +640,76 @@ public final class EmployeeFoundationGameTests {
             EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
             resetCompleted = true;
         }
+    }
+
+    private static EmployeeRecord createExact(GameTestHelper helper, String displayName, boolean spawnEntity) {
+        return EmployeeService.INSTANCE.createGameTestEmployee(
+                helper.getLevel(),
+                Optional.of(displayName),
+                Optional.of(helper.absolutePos(EMPLOYEE_POS)),
+                spawnEntity
+        ).orThrow();
+    }
+
+    private static String employeeNumberReference(EmployeeRecord record) {
+        return "#" + Math.addExact(record.sequence(), 1L);
+    }
+
+    private static CommandSourceStack commandSource(GameTestHelper helper) {
+        return helper.getLevel().getServer().createCommandSourceStack()
+                .withPermission(4)
+                .withSuppressedOutput();
+    }
+
+    private static List<String> suggestions(GameTestHelper helper, CommandSourceStack source, String command) {
+        CommandDispatcher<CommandSourceStack> dispatcher = helper.getLevel().getServer().getCommands().getDispatcher();
+        return dispatcher.getCompletionSuggestions(dispatcher.parse(command, source))
+                .join()
+                .getList()
+                .stream()
+                .map(Suggestion::getText)
+                .toList();
+    }
+
+    private static int execute(GameTestHelper helper, CommandSourceStack source, String command) {
+        CommandDispatcher<CommandSourceStack> dispatcher = helper.getLevel().getServer().getCommands().getDispatcher();
+        try {
+            return dispatcher.execute(command, source);
+        } catch (CommandSyntaxException exception) {
+            helper.assertTrue(false, "Command should execute: " + command + " | " + exception.getMessage());
+            return 0;
+        }
+    }
+
+    private static void assertSynchronizedArgumentTypes(
+            GameTestHelper helper,
+            CommandNode<CommandSourceStack> node
+    ) {
+        if (node instanceof ArgumentCommandNode<CommandSourceStack, ?> argumentNode) {
+            try {
+                ArgumentTypeInfos.byClass(argumentNode.getType());
+            } catch (IllegalArgumentException exception) {
+                helper.assertTrue(false, "Command argument type must synchronize: "
+                        + argumentNode.getType().getClass().getName());
+            }
+        }
+        for (CommandNode<CommandSourceStack> child : node.getChildren()) {
+            assertSynchronizedArgumentTypes(helper, child);
+        }
+    }
+
+    private static DepartmentAnchor assignProcessingAnchor(GameTestHelper helper, BlockPos relativePos, int radius) {
+        BlockPos absolute = helper.absolutePos(relativePos);
+        DepartmentAnchor anchor = new DepartmentAnchor(
+                EmployeeService.dimensionIdentity(helper.getLevel()),
+                absolute.getX(),
+                absolute.getY(),
+                absolute.getZ(),
+                radius
+        );
+        DepartmentRecord record = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
+                .assignAnchor(DepartmentSchema.PROCESSING, anchor);
+        return record.anchor().orElseThrow();
     }
 
     private static EmployeeEntity entity(GameTestHelper helper, EmployeeRecord record) {
