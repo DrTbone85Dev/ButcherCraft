@@ -18,6 +18,7 @@ import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.ExecutionService;
+import com.butchercraft.world.InventoryService;
 import com.butchercraft.world.ProductionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.WorkstationReservationService;
@@ -26,6 +27,7 @@ import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeePresenceState;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
+import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
@@ -38,6 +40,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.pathfinder.Path;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -49,11 +52,20 @@ import java.util.Optional;
 public final class EmployeeWorkstationReservationGameTests {
     private static final String TEMPLATE = "empty_5x4x5";
     private static final String BATCH = "zzzz_employee_workstation_reservation";
+    private static final String GRINDER_NAVIGATION_BATCH = "zzzzz_employee_workstation_grinder_navigation";
+    private static final String PATTY_FORMER_NAVIGATION_BATCH = "zzzzzz_employee_workstation_patty_navigation";
+    private static final String WORKSTATION_RANGE_BATCH = "zzzzzz_employee_workstation_range";
+    private static final String WORKSTATION_RANGE_FAILURE_BATCH = "zzzzzz_employee_workstation_range_failure";
     private static final BlockPos EMPLOYEE_POS = new BlockPos(1, 1, 2);
     private static final BlockPos SECOND_EMPLOYEE_POS = new BlockPos(1, 1, 3);
+    private static final BlockPos FAR_GRINDER_EMPLOYEE_POS = new BlockPos(4, 1, 0);
+    private static final BlockPos FAR_PATTY_FORMER_EMPLOYEE_POS = new BlockPos(0, 1, 0);
     private static final BlockPos GRINDER_POS = new BlockPos(2, 1, 2);
     private static final BlockPos PATTY_FORMER_POS = new BlockPos(3, 1, 2);
     private static final BlockPos UNSUPPORTED_POS = new BlockPos(2, 1, 3);
+    private static final int MAX_NAVIGATION_RANGE = EmployeeSchema.SCHEMA_1_MAX_NAVIGATION_RANGE_BLOCKS;
+    private static final double OPERATING_HORIZONTAL_TOLERANCE = 1.1D;
+    private static final double OPERATING_VERTICAL_TOLERANCE = 1.25D;
 
     private EmployeeWorkstationReservationGameTests() {
     }
@@ -113,6 +125,227 @@ public final class EmployeeWorkstationReservationGameTests {
         helper.assertTrue(entity(helper, employee).anchorPos().equals(operating),
                 "Employee targets Patty Former operating position");
         assertWorkstationUnchanged(helper, pattyFormer, before);
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 180, batch = GRINDER_NAVIGATION_BATCH)
+    public static void unobstructedEmployeeToGrinderTravelStartsAndArrives(GameTestHelper helper) {
+        setup(helper);
+        EmployeeRecord employee = createPresentProcessingEmployee(
+                helper,
+                "Reservation Grinder Open Field",
+                FAR_GRINDER_EMPLOYEE_POS
+        );
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        Counts before = counts(helper);
+        boolean[] sawStartedPath = {false};
+        boolean[] sawNodeProgress = {false};
+
+        assign(helper, employee.employeeId(), absolute(helper, GRINDER_POS)).orThrow();
+        EmployeeEntity entity = entity(helper, employee);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            captureNavigationProgress(entity, sawStartedPath, sawNodeProgress);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            Optional<WorkstationReservationRecord> reservation = WorkstationReservationService.INSTANCE
+                    .managerFor(helper.getLevel().getServer())
+                    .findByEmployee(employee.employeeId().value());
+            helper.assertTrue(sawStartedPath[0],
+                    "Accepted Grinder path was observed before arrival: " + entity.navigationDiagnostics());
+            helper.assertTrue(reservation.isPresent()
+                            && reservation.orElseThrow().state() == WorkstationReservationState.EMPLOYEE_ARRIVED,
+                    "Open-field Grinder travel reaches the reservation target: " + entity.navigationDiagnostics()
+                            + " | reservation=" + reservation);
+            assertWorkstationUnchanged(helper, grinder, before);
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 180, batch = PATTY_FORMER_NAVIGATION_BATCH)
+    public static void unobstructedEmployeeToPattyFormerTravelStartsAndArrives(GameTestHelper helper) {
+        setup(helper);
+        EmployeeRecord employee = createPresentProcessingEmployee(
+                helper,
+                "Reservation Patty Former Open Field",
+                FAR_PATTY_FORMER_EMPLOYEE_POS
+        );
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        Counts before = counts(helper);
+        boolean[] sawStartedPath = {false};
+        boolean[] sawNodeProgress = {false};
+
+        assign(helper, employee.employeeId(), absolute(helper, PATTY_FORMER_POS)).orThrow();
+        EmployeeEntity entity = entity(helper, employee);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            captureNavigationProgress(entity, sawStartedPath, sawNodeProgress);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            Optional<WorkstationReservationRecord> reservation = WorkstationReservationService.INSTANCE
+                    .managerFor(helper.getLevel().getServer())
+                    .findByEmployee(employee.employeeId().value());
+            helper.assertTrue(sawStartedPath[0],
+                    "Accepted Patty Former path was observed before arrival: " + entity.navigationDiagnostics());
+            helper.assertTrue(reservation.isPresent()
+                            && reservation.orElseThrow().state() == WorkstationReservationState.EMPLOYEE_ARRIVED,
+                    "Open-field Patty Former travel reaches the reservation target: " + entity.navigationDiagnostics()
+                            + " | reservation=" + reservation);
+            assertWorkstationUnchanged(helper, pattyFormer, before);
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 820, batch = WORKSTATION_RANGE_BATCH)
+    public static void openFieldGrinderTravelSupportsSchemaOneRange(GameTestHelper helper) {
+        int startX = 2;
+        setupOpenField(helper, startX + MAX_NAVIGATION_RANGE + 3, 16);
+        int[] distances = {5, 16, 32, MAX_NAVIGATION_RANGE};
+        EmployeeRecord[] employees = new EmployeeRecord[distances.length];
+        GrinderBlockEntity[] grinders = new GrinderBlockEntity[distances.length];
+        Counts before = counts(helper);
+
+        for (int index = 0; index < distances.length; index++) {
+            int laneZ = 2 + index * 3;
+            BlockPos employeePos = new BlockPos(startX, 1, laneZ);
+            BlockPos grinderPos = new BlockPos(startX + distances[index] - 1, 1, laneZ);
+            employees[index] = createPresentProcessingEmployee(
+                    helper,
+                    "Range Grinder " + distances[index],
+                    employeePos
+            );
+            grinders[index] = placeGrinder(helper, grinderPos, Direction.EAST);
+            assign(helper, employees[index].employeeId(), absolute(helper, grinderPos)).orThrow();
+            EmployeeEntity entity = entity(helper, employees[index]);
+            entity.setOnGround(true);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            WorkstationReservationService.ResolvedWorkstationStatus status = WorkstationReservationService.INSTANCE
+                    .status(helper.getLevel(), absolute(helper, grinderPos))
+                    .orThrow();
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+
+            helper.assertTrue(WorkstationReservationService.INSTANCE.managerFor(helper.getLevel().getServer())
+                            .findByEmployee(employees[index].employeeId().value())
+                            .filter(record -> record.state() == WorkstationReservationState.EMPLOYEE_EN_ROUTE)
+                            .isPresent(),
+                    "Grinder reservation remains active while long-distance travel begins");
+            helper.assertTrue(diagnostics.destinationWithinRange(),
+                    "Grinder destination at " + distances[index] + " blocks passes range validation: "
+                            + diagnostics);
+            helper.assertTrue(hasUsablePathToAnyCandidate(entity, status.target().approachCandidates()),
+                    "Minecraft path search reaches a Grinder operating candidate at "
+                            + distances[index] + " blocks");
+            helper.assertTrue(diagnostics.pathReplacementCount() == 0,
+                    "Range validation does not recreate paths before navigation starts: " + diagnostics);
+            assertWorkstationUnchanged(helper, grinders[index], before);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 820, batch = WORKSTATION_RANGE_BATCH)
+    public static void openFieldPattyFormerTravelSupportsSchemaOneRange(GameTestHelper helper) {
+        int startX = 2;
+        setupOpenField(helper, startX + MAX_NAVIGATION_RANGE + 3, 16);
+        int[] distances = {5, 16, 32, MAX_NAVIGATION_RANGE};
+        EmployeeRecord[] employees = new EmployeeRecord[distances.length];
+        PattyFormerBlockEntity[] pattyFormers = new PattyFormerBlockEntity[distances.length];
+        Counts before = counts(helper);
+
+        for (int index = 0; index < distances.length; index++) {
+            int laneZ = 2 + index * 3;
+            BlockPos employeePos = new BlockPos(startX, 1, laneZ);
+            BlockPos pattyFormerPos = new BlockPos(startX + distances[index] + 1, 1, laneZ);
+            employees[index] = createPresentProcessingEmployee(
+                    helper,
+                    "Range Patty Former " + distances[index],
+                    employeePos
+            );
+            pattyFormers[index] = placePattyFormer(helper, pattyFormerPos, Direction.WEST);
+            assign(helper, employees[index].employeeId(), absolute(helper, pattyFormerPos)).orThrow();
+            EmployeeEntity entity = entity(helper, employees[index]);
+            entity.setOnGround(true);
+            WorkstationReservationService.ResolvedWorkstationStatus status = WorkstationReservationService.INSTANCE
+                    .status(helper.getLevel(), absolute(helper, pattyFormerPos))
+                    .orThrow();
+            BlockPos operatingCandidate = status.target().approachCandidates().getFirst();
+            Path path = entity.getNavigation().createPath(operatingCandidate, 1);
+
+            helper.assertTrue(WorkstationReservationService.INSTANCE.managerFor(helper.getLevel().getServer())
+                            .findByEmployee(employees[index].employeeId().value())
+                            .filter(record -> record.state() == WorkstationReservationState.EMPLOYEE_EN_ROUTE)
+                            .isPresent(),
+                    "Patty Former reservation remains active while long-distance travel begins");
+            helper.assertTrue(path != null && path.getNodeCount() > 0,
+                    "Minecraft path search reaches the Patty Former operating candidate at "
+                            + distances[index] + " blocks");
+            helper.assertTrue(path.getEndNode() != null
+                            && path.getEndNode().asBlockPos().distManhattan(operatingCandidate) <= 1,
+                    "Patty Former path endpoint remains within operating tolerance at "
+                            + distances[index] + " blocks");
+            assertWorkstationUnchanged(helper, pattyFormers[index], before);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 520, batch = WORKSTATION_RANGE_FAILURE_BATCH)
+    public static void workstationDestinationBeyondSchemaOneRangeInvalidatesReservationExplicitly(GameTestHelper helper) {
+        int startX = 2;
+        BlockPos grinderPos = new BlockPos(startX + MAX_NAVIGATION_RANGE + 1, 1, 1);
+        setupOpenField(helper, startX + MAX_NAVIGATION_RANGE + 5, 3);
+        EmployeeRecord employee = createPresentProcessingEmployee(
+                helper,
+                "Range Workstation Failure",
+                new BlockPos(startX, 1, 1)
+        );
+        GrinderBlockEntity grinder = placeGrinder(
+                helper,
+                grinderPos,
+                Direction.EAST
+        );
+        Counts before = counts(helper);
+
+        assign(helper, employee.employeeId(), absolute(helper, grinderPos)).orThrow();
+        EmployeeEntity entity = entity(helper, employee);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            Optional<WorkstationReservationRecord> reservation = WorkstationReservationService.INSTANCE
+                    .managerFor(helper.getLevel().getServer())
+                    .findByEmployee(employee.employeeId().value());
+            helper.assertTrue(!diagnostics.destinationWithinRange(),
+                    "Workstation destination just beyond the range fails validation: " + diagnostics);
+            helper.assertTrue(diagnostics.lastFailureReason().equals("destination_out_of_range")
+                            && diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Out-of-range workstation travel fails with a typed reason: " + diagnostics);
+            helper.assertTrue(diagnostics.pathReplacementCount() == 0,
+                    "Out-of-range workstation travel is rejected before path publication: " + diagnostics);
+            helper.assertTrue(reservation.isEmpty(),
+                    "Terminal out-of-range workstation failure invalidates the reservation: " + reservation);
+            assertWorkstationUnchanged(helper, grinder, before);
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100, batch = BATCH)
+    public static void grinderApproachCandidatesAreDeterministicAndOutsideWorkstation(GameTestHelper helper) {
+        setup(helper);
+        placeGrinder(helper);
+        BlockPos absoluteGrinder = absolute(helper, GRINDER_POS);
+
+        WorkstationReservationService.ResolvedWorkstationStatus status = WorkstationReservationService.INSTANCE
+                .status(helper.getLevel(), absoluteGrinder)
+                .orThrow();
+        List<BlockPos> candidates = status.target().approachCandidates();
+        WorkstationReservationService.ResolvedWorkstationStatus repeated = WorkstationReservationService.INSTANCE
+                .status(helper.getLevel(), absoluteGrinder)
+                .orThrow();
+
+        helper.assertTrue(candidates.size() == 6, "Grinder exposes six ranked approach candidates");
+        helper.assertTrue(candidates.getFirst().equals(absolute(helper, GRINDER_POS.relative(Direction.EAST))),
+                "Primary Grinder candidate is the facing operating position");
+        helper.assertTrue(candidates.stream().noneMatch(absoluteGrinder::equals),
+                "Approach candidates never stand inside the workstation block");
+        helper.assertTrue(candidates.equals(repeated.target().approachCandidates()),
+                "Approach candidate ordering is deterministic");
         helper.succeed();
     }
 
@@ -291,12 +524,87 @@ public final class EmployeeWorkstationReservationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 180, batch = BATCH)
+    public static void blockedPrimaryApproachAdvancesToAlternateCandidate(GameTestHelper helper) {
+        setup(helper);
+        EmployeeRecord employee = createPresentProcessingEmployee(helper, "Reservation Alternate", EMPLOYEE_POS);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        Counts before = counts(helper);
+        BlockPos absolutePrimary = absolute(helper, GRINDER_POS.relative(Direction.EAST));
+        helper.setBlock(GRINDER_POS.relative(Direction.EAST), Blocks.STONE);
+
+        assign(helper, employee.employeeId(), absolute(helper, GRINDER_POS)).orThrow();
+        EmployeeEntity entity = entity(helper, employee);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            Optional<WorkstationReservationRecord> activeReservation = WorkstationReservationService.INSTANCE
+                    .managerFor(helper.getLevel().getServer())
+                    .findByEmployee(employee.employeeId().value());
+            helper.assertTrue(activeReservation.isPresent(),
+                    "Blocked primary preserves an active reservation while trying alternates: " + diagnostics);
+            helper.assertTrue(diagnostics.candidateCount() > 1,
+                    "Alternate approach candidates are available: " + diagnostics);
+            helper.assertTrue(diagnostics.candidateIndex() > 0,
+                    "Blocked primary approach advances to an alternate: " + diagnostics);
+            helper.assertTrue(!absolutePrimary.equals(diagnostics.currentDestination()),
+                    "Navigation no longer targets the blocked primary approach");
+            assertWorkstationUnchanged(helper, grinder, before);
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 360, batch = BATCH)
+    public static void allBlockedApproachesInvalidateReservationSafely(GameTestHelper helper) {
+        setup(helper);
+        EmployeeRecord employee = createPresentProcessingEmployee(
+                helper,
+                "Reservation Unreachable",
+                new BlockPos(0, 1, 0)
+        );
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        Counts before = counts(helper);
+        WorkstationReservationService.ResolvedWorkstationStatus status = WorkstationReservationService.INSTANCE
+                .status(helper.getLevel(), absolute(helper, GRINDER_POS))
+                .orThrow();
+        for (BlockPos candidate : status.target().approachCandidates()) {
+            helper.setBlock(relative(helper, candidate), Blocks.STONE);
+        }
+
+        assign(helper, employee.employeeId(), absolute(helper, GRINDER_POS)).orThrow();
+        EmployeeEntity entity = entity(helper, employee);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            Optional<WorkstationReservationRecord> activeReservation = WorkstationReservationService.INSTANCE
+                    .managerFor(helper.getLevel().getServer())
+                    .findByEmployee(employee.employeeId().value());
+            helper.assertTrue(activeReservation.isEmpty(),
+                    "All blocked approaches invalidate the unreachable reservation instead of leaving it active: "
+                            + activeReservation);
+            helper.assertTrue(entity.navigationDiagnostics().lastFailureReason().equals("all_candidates_exhausted")
+                            || entity.navigationDiagnostics().lastFailureReason().equals("department_unreachable"),
+                    "Navigation failure remains diagnostically visible: " + entity.navigationDiagnostics());
+            helper.assertTrue(!entity.blockPosition().equals(absolute(helper, GRINDER_POS)),
+                    "Employee is never placed inside the workstation block");
+            assertWorkstationUnchanged(helper, grinder, before);
+        });
+    }
+
     private static void setup(GameTestHelper helper) {
         helper.getLevel().setDayTime(0L);
         EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
-        for (int x = 0; x < 5; x++) {
-            for (int z = 0; z < 5; z++) {
+        setupOpenField(helper, 4, 4);
+    }
+
+    private static void setupOpenField(GameTestHelper helper, int maxXInclusive, int maxZInclusive) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        for (int x = 0; x <= maxXInclusive; x++) {
+            for (int z = 0; z <= maxZInclusive; z++) {
                 helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.AIR);
+                helper.setBlock(new BlockPos(x, 2, z), Blocks.AIR);
             }
         }
     }
@@ -328,17 +636,25 @@ public final class EmployeeWorkstationReservationGameTests {
     }
 
     private static GrinderBlockEntity placeGrinder(GameTestHelper helper) {
-        helper.setBlock(GRINDER_POS, ModBlocks.GRINDER.get().defaultBlockState()
-                .setValue(GrinderBlock.FACING, Direction.EAST));
-        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute(helper, GRINDER_POS));
+        return placeGrinder(helper, GRINDER_POS, Direction.EAST);
+    }
+
+    private static GrinderBlockEntity placeGrinder(GameTestHelper helper, BlockPos relativePos, Direction facing) {
+        helper.setBlock(relativePos, ModBlocks.GRINDER.get().defaultBlockState()
+                .setValue(GrinderBlock.FACING, facing));
+        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute(helper, relativePos));
         helper.assertTrue(blockEntity instanceof GrinderBlockEntity, "Expected Grinder block entity");
         return (GrinderBlockEntity) blockEntity;
     }
 
     private static PattyFormerBlockEntity placePattyFormer(GameTestHelper helper) {
-        helper.setBlock(PATTY_FORMER_POS, ModBlocks.PATTY_FORMER.get().defaultBlockState()
-                .setValue(PattyFormerBlock.FACING, Direction.WEST));
-        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute(helper, PATTY_FORMER_POS));
+        return placePattyFormer(helper, PATTY_FORMER_POS, Direction.WEST);
+    }
+
+    private static PattyFormerBlockEntity placePattyFormer(GameTestHelper helper, BlockPos relativePos, Direction facing) {
+        helper.setBlock(relativePos, ModBlocks.PATTY_FORMER.get().defaultBlockState()
+                .setValue(PattyFormerBlock.FACING, facing));
+        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute(helper, relativePos));
         helper.assertTrue(blockEntity instanceof PattyFormerBlockEntity, "Expected Patty Former block entity");
         return (PattyFormerBlockEntity) blockEntity;
     }
@@ -363,7 +679,8 @@ public final class EmployeeWorkstationReservationGameTests {
         return new Counts(
                 ProductionService.INSTANCE.managerFor(server).runs().size(),
                 SimulationSchedulerService.INSTANCE.managerFor(server).registry().size(),
-                ExecutionService.INSTANCE.managerFor(server).operations().size()
+                ExecutionService.INSTANCE.managerFor(server).operations().size(),
+                InventoryService.INSTANCE.managerFor(server).registry().size()
         );
     }
 
@@ -380,6 +697,45 @@ public final class EmployeeWorkstationReservationGameTests {
         helper.assertTrue(blockEntity.inventory().getStackInSlot(WorkstationInventory.OUTPUT_SLOT).isEmpty(),
                 "Reservation does not create workstation output");
         helper.assertTrue(after.equals(before), "Reservation does not mutate Production, Scheduler, or Execution");
+    }
+
+    private static void captureNavigationProgress(
+            EmployeeEntity entity,
+            boolean[] sawStartedPath,
+            boolean[] sawNodeProgress
+    ) {
+        EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+        if (diagnostics.pathAvailable() || diagnostics.pathReplacementCount() > 0) {
+            sawStartedPath[0] = true;
+            if (diagnostics.activePathNodeIndex() > 0) {
+                sawNodeProgress[0] = true;
+            }
+        }
+        if (diagnostics.pathReplacementCount() > 0
+                && diagnostics.recoveryPhase().equals("arrived")) {
+            sawNodeProgress[0] = true;
+        }
+    }
+
+    private static boolean hasUsablePathToAnyCandidate(EmployeeEntity entity, List<BlockPos> candidates) {
+        for (BlockPos candidate : candidates) {
+            Path path = entity.getNavigation().createPath(candidate, 1);
+            if (path != null && pathEndpointWithinOperatingTolerance(path, candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean pathEndpointWithinOperatingTolerance(Path path, BlockPos candidate) {
+        if (path.getNodeCount() == 0 || path.getEndNode() == null) {
+            return false;
+        }
+        BlockPos endpoint = path.getEndNode().asBlockPos();
+        double dx = endpoint.getX() + 0.5D - (candidate.getX() + 0.5D);
+        double dz = endpoint.getZ() + 0.5D - (candidate.getZ() + 0.5D);
+        return dx * dx + dz * dz <= OPERATING_HORIZONTAL_TOLERANCE * OPERATING_HORIZONTAL_TOLERANCE
+                && Math.abs(endpoint.getY() - candidate.getY()) <= OPERATING_VERTICAL_TOLERANCE;
     }
 
     private static CommandSourceStack commandSource(GameTestHelper helper) {
@@ -402,6 +758,10 @@ public final class EmployeeWorkstationReservationGameTests {
         return helper.absolutePos(relativePos);
     }
 
-    private record Counts(int productionRuns, int schedulerWork, int executionOperations) {
+    private static BlockPos relative(GameTestHelper helper, BlockPos absolutePos) {
+        return absolutePos.subtract(helper.absolutePos(BlockPos.ZERO));
+    }
+
+    private record Counts(int productionRuns, int schedulerWork, int executionOperations, int inventoryEntries) {
     }
 }

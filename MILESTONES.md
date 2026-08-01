@@ -4,6 +4,81 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-026: Employee Navigation Quality And Recovery
+
+Goal: improve Workforce-owned employee department and workstation travel so
+employees use deterministic approach candidates, make measurable progress,
+recover from blocked paths, and fail safely without receiving operation
+authority.
+
+Included work:
+
+- Transient employee travel destination model for department and workstation
+  movement.
+- Deterministic Grinder and Patty Former approach candidates derived from
+  workstation facing.
+- Reachability screening for candidate feet, headroom, support, loaded world
+  bounds, elevation, schema-1 navigation range, and path availability.
+- Progress monitoring with bounded retry, path restart cooldown, alternate
+  candidate selection, and explicit safe failure.
+- Door-capable employee pathing for normal wooden doors.
+- Department idle target validation, pauses between movements, and simple
+  same-block avoidance.
+- Navigation diagnostics for employee status, employee navigation detail, and
+  workstation status.
+- Focused documentation, architecture-manifest declarations, source tests, and
+  GameTests.
+
+Excluded work:
+
+- Machine operation, inventory insertion or extraction, product carrying,
+  Production-driven assignment, automatic job claiming, Scheduler dispatch,
+  Execution authorization, recipe selection, output collection, employee
+  skills, productivity, payroll, morale, fatigue, training, additional
+  workstations, complex crowd simulation, teleport recovery, and block
+  breaking.
+
+Acceptance criteria:
+
+- Employees do not reissue a fresh travel path every tick.
+- A blocked primary workstation approach advances to a deterministic alternate
+  candidate.
+- Exhausted workstation candidates invalidate the reservation with explicit
+  navigation failure evidence and return the employee toward its department
+  when possible.
+- Department idle targets remain valid, bounded, and calm.
+- Navigation recovery state is transient and not persisted.
+- Ordinary employee department and workstation travel reaches 64 horizontal
+  blocks and fails visibly beyond the supported schema-1 range.
+- Navigation and reservation behavior do not mutate Production, Scheduler,
+  Execution, Inventory, recipes, or workstation contents.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-026 can be called
+  manually accepted. The checklist covers department travel, workstation
+  travel, blocked-primary alternate selection, all-candidates safe failure,
+  far-side entrance routing around a solid-walled fixture, save/reload during
+  travel, existing-world entry, new-world entry, and at least one minute of
+  employee idle observation.
+
+Rollback considerations:
+
+- IM-026 is additive to IM-025. Removing the transient navigation controller,
+  approach-candidate expansion, diagnostics, docs, manifest entries, and tests
+  restores IM-025 reservation/arrival behavior without changing Production,
+  Scheduler, Execution, Transactions, Inventory, Allocation, recipes, or
+  workstation persistence schemas.
+
 ## IM-024: Department Assignment, Employee Presence, And Navigation Foundation
 
 Goal: add Workforce-owned Department definitions, employee department

@@ -329,6 +329,40 @@ public final class EmployeeService {
         return result;
     }
 
+    public DepartmentAnchorUpdate assignDepartmentAnchor(
+            ServerLevel level,
+            DepartmentId departmentId,
+            BlockPos anchorPos
+    ) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(departmentId, "departmentId");
+        Objects.requireNonNull(anchorPos, "anchorPos");
+        if (!level.isInWorldBounds(anchorPos) || !level.isLoaded(anchorPos)) {
+            throw new IllegalArgumentException("Department anchor position must be loaded and inside world bounds: "
+                    + anchorPos.getX() + " " + anchorPos.getY() + " " + anchorPos.getZ());
+        }
+        ActiveEmployeeRuntime runtime = load(level.getServer());
+        DepartmentRecord previous = runtime.departmentManager()
+                .find(departmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown department: " + departmentId.value()));
+        int radius = previous.anchor()
+                .map(DepartmentAnchor::radius)
+                .orElseGet(() -> CommonConfig.EMPLOYEE_IDLE_ANCHOR_RADIUS.get());
+        DepartmentAnchor nextAnchor = new DepartmentAnchor(
+                dimensionIdentity(level),
+                anchorPos.getX(),
+                anchorPos.getY(),
+                anchorPos.getZ(),
+                radius
+        );
+        if (previous.anchor().filter(nextAnchor::equals).isPresent()) {
+            return new DepartmentAnchorUpdate(previous, previous, previous.anchor(), nextAnchor, false);
+        }
+        DepartmentRecord updated = runtime.departmentManager().assignAnchor(departmentId, nextAnchor);
+        runtime.departmentStorage().save(runtime.departmentManager().directory());
+        return new DepartmentAnchorUpdate(previous, updated, previous.anchor(), nextAnchor, true);
+    }
+
     public EmployeeOperationResult<EmployeePresenceObservation> observe(MinecraftServer server, EmployeeId employeeId) {
         Optional<BusinessRuntimeObservationSnapshot> snapshot = businessRuntimeCalendarService.currentSnapshot(server);
         Optional<BusinessRuntimeCalendarConfiguration> configuration =
@@ -383,8 +417,7 @@ public final class EmployeeService {
                 .or(() -> fallbackMovementAnchor(level, boundRecord))
                 .orElse(persistentAnchor);
         entity.applyEmployeeRecord(boundRecord, activeAnchor);
-        entity.applyWorkstationLookTarget(workstationTarget
-                .map(WorkstationReservationService.WorkstationNavigationTarget::workstationPos));
+        entity.applyWorkstationTravelTarget(workstationTarget);
         observation.ifPresent(entity::applyEmployeeObservation);
         entity.applyNavigationState(workstationTarget
                 .map(WorkstationReservationService.WorkstationNavigationTarget::navigationState)
@@ -392,6 +425,25 @@ public final class EmployeeService {
                 .map(valueObservation -> navigationState(entity, activeAnchor, valueObservation, departmentAnchor.isPresent())))
                 .orElse(EmployeeNavigationState.RETURNING_TO_ANCHOR));
         return true;
+    }
+
+    public void handleNavigationFailure(EmployeeEntity entity, String failureReason) {
+        Objects.requireNonNull(entity, "entity");
+        Objects.requireNonNull(failureReason, "failureReason");
+        if (!(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+        EmployeeId employeeId;
+        try {
+            employeeId = new EmployeeId(entity.employeeIdValue());
+        } catch (IllegalArgumentException exception) {
+            return;
+        }
+        WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                level.getServer(),
+                employeeId,
+                "navigation_unreachable:" + failureReason
+        );
     }
 
     public static Path employeeFile(MinecraftServer server) {
@@ -550,5 +602,20 @@ public final class EmployeeService {
             DepartmentStorage departmentStorage,
             DepartmentManager departmentManager
     ) {
+    }
+
+    public record DepartmentAnchorUpdate(
+            DepartmentRecord previousRecord,
+            DepartmentRecord updatedRecord,
+            Optional<DepartmentAnchor> previousAnchor,
+            DepartmentAnchor newAnchor,
+            boolean changed
+    ) {
+        public DepartmentAnchorUpdate {
+            previousRecord = Objects.requireNonNull(previousRecord, "previousRecord");
+            updatedRecord = Objects.requireNonNull(updatedRecord, "updatedRecord");
+            previousAnchor = Objects.requireNonNull(previousAnchor, "previousAnchor");
+            newAnchor = Objects.requireNonNull(newAnchor, "newAnchor");
+        }
     }
 }

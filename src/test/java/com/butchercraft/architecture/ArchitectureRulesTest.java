@@ -1071,6 +1071,8 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/department_anchor_foundation",
                         "butchercraft:platform_contract/employee_department_assignment_foundation",
                         "butchercraft:platform_contract/employee_department_navigation_foundation",
+                        "butchercraft:platform_contract/employee_navigation_quality_recovery",
+                        "butchercraft:platform_contract/workstation_approach_candidate_geometry",
                         "butchercraft:platform_contract/department_persistence_foundation",
                         "butchercraft:platform_contract/department_diagnostics_foundation",
                         "butchercraft:platform_contract/department_navigation_boundary_safety"

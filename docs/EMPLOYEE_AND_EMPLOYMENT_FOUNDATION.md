@@ -1,6 +1,6 @@
 # Employee And Employment Record Foundation
 
-Status: implemented employee foundation in IM-023; department assignment and navigation foundation in IM-024
+Status: implemented employee foundation in IM-023; department assignment and navigation foundation in IM-024; navigation quality and recovery in IM-026
 
 IM-023 adds the first individual employee layer on top of the existing
 Workforce Framework and Business Runtime shift definitions.
@@ -16,12 +16,15 @@ This foundation answers:
 - which in-world Employee entity is linked to an employee record.
 
 IM-024 adds department definitions, employee department assignment, and bounded
-department-directed movement for present employees. It does not add workstation
-operation, job claiming, item carrying, logistics, machine reservation,
-Production task assignment, wages, payroll, overtime, breaks, morale, fatigue,
-productivity modifiers, training, customer interaction, attendance penalties,
-Allocation, public workforce APIs, startup recovery, checkpoint activation, or
-operator reconciliation.
+department-directed movement for present employees. IM-025 adds explicit
+workstation reservation and arrival foundations for Grinder and Patty Former.
+IM-026 improves movement reliability with deterministic approach candidates,
+transient progress monitoring, bounded recovery, diagnostics, and safe
+unreachable failure. These milestones still do not add workstation operation,
+job claiming, item carrying, logistics, Production task assignment, wages,
+payroll, overtime, breaks, morale, fatigue, productivity modifiers, training,
+customer interaction, attendance penalties, Allocation, public workforce APIs,
+startup recovery, checkpoint activation, or operator reconciliation.
 
 ## Authority Boundary
 
@@ -39,10 +42,12 @@ Identity references those records but does not mutate or duplicate them.
 
 The Employee entity owns only physical representation: a persistent Employee
 Identity link, display synchronization, read-only inspection, and bounded
-movement around a Workforce-published anchor.
+movement around Workforce-published department anchors or reservation-provided
+workstation approach candidates.
 
 Production, Scheduler, Execution, Transactions, Planning, Inventory,
-Allocation, and workstations do not receive employee authority in IM-024.
+Allocation, and workstations do not receive employee operation authority in
+IM-024 through IM-026.
 
 ## Identity
 
@@ -132,6 +137,35 @@ Employees are assigned to departments, not workstations. Department assignment
 does not imply a job, a reservation, a Production Run, Scheduler Work,
 Execution authority, Inventory access, or item movement.
 
+## Workstation Reservations And Navigation
+
+Workstation reservation state is separate from employee records. IM-025 stores
+active reservations at:
+
+```text
+<world>/butchercraft/workstation_reservations.json
+```
+
+The reservation domain owns reservation exclusivity, workstation identity, the
+persisted operating position, reservation lifecycle, and invalidation evidence.
+The employee entity consumes that reservation as movement intent only.
+
+IM-026 adds deterministic workstation approach candidates for Grinder and Patty
+Former:
+
+- primary operator position in front of the workstation;
+- front-left and front-right alternates;
+- direct left and right side positions;
+- extended operator-side fallback position.
+
+The entity screens candidates for loaded-world validity, empty feet/head
+collision, supporting floor, elevation bounds, and path availability. It does
+not teleport, operate, open inventories, or select recipes.
+
+If all workstation candidates fail, Workforce invalidates the reservation with
+`navigation_unreachable:<reason>` and the employee returns toward its
+department when possible.
+
 ## Shift Integration
 
 Employee records store a `BusinessShiftIdentity`, shift id, shift display name,
@@ -157,7 +191,10 @@ It:
 - idles and looks around;
 - navigates to the assigned department anchor when present, plant-open, and a
   functional anchor exists;
-- wanders only within a bounded anchor radius.
+- wanders only within a bounded anchor radius;
+- navigates to a valid workstation approach candidate when a reservation exists;
+- opens normal wooden doors while following a path;
+- exposes transient navigation diagnostics.
 
 It does not:
 
@@ -191,6 +228,11 @@ schema versions and corrupt JSON fail visibly.
 Entity NBT persists only the employee link and movement anchor. The entity NBT
 is not authoritative employment state.
 
+Transient navigation state is not persisted. Path objects, candidate indexes,
+retry counters, progress timers, and recovery phases are reconstructed or
+discarded after reload. Reloaded employees reevaluate their authoritative
+department assignment and active reservation before moving or waiting.
+
 Department records persist at:
 
 ```text
@@ -210,6 +252,7 @@ The employee diagnostics are:
 /butchercraft employee create [name]
 /butchercraft employee list
 /butchercraft employee status <employee>
+/butchercraft employee navigation <employee>
 /butchercraft employee set-shift <employee> <shift_id>
 /butchercraft employee set-presence <employee> <state>
 /butchercraft employee assign-department <employee> <department>
@@ -225,12 +268,18 @@ identity strings.
 These commands are development/operator tools. They do not grant Production,
 Scheduler, Execution, Allocation, Inventory, or workstation authority.
 
+`employee navigation` reports destination type, selected candidate, candidate
+count, path availability, distance, progress age, retry count, recovery phase,
+last failure reason, and reservation validity.
+
 ## Validation
 
 IM-023 adds pure Java tests for Employee Identity, record validation, lifecycle
 transitions, presence classification, persistence, and dependency boundaries.
 IM-024 adds pure Java tests for Department definitions, storage, assignment,
-diagnostics, and dependency boundaries.
+diagnostics, and dependency boundaries. IM-026 adds tests for deterministic
+approach candidates, transient recovery state, blocked-primary fallback,
+bounded unreachable failure, diagnostics, and the no-operation boundary.
 
 It also adds GameTests covering live employee creation, entity linkage, entity
 persistence tags, shift references, presence states, department assignment,
@@ -255,3 +304,15 @@ The following remain gated after IM-024:
 - Allocation integration;
 - public workforce APIs;
 - startup recovery, automatic checkpoints, and operator reconciliation.
+
+The following remain gated after IM-026:
+
+- employee-initiated workstation operation;
+- product insertion, extraction, carrying, or movement;
+- Production-driven employee assignment;
+- Scheduler dispatch;
+- Execution authorization;
+- recipe selection;
+- output collection;
+- employee skill, productivity, fatigue, morale, payroll, and training;
+- complex crowd simulation.

@@ -43,6 +43,7 @@ import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
 import com.butchercraft.workstation.reservation.WorkstationReservationResult;
 import com.butchercraft.world.workforce.department.DepartmentId;
 import com.butchercraft.world.workforce.department.DepartmentRecord;
+import com.butchercraft.world.workforce.department.DepartmentAnchor;
 import com.butchercraft.world.workforce.employee.EmployeeFailure;
 import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeOperationResult;
@@ -61,6 +62,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
@@ -118,7 +120,9 @@ public final class ButcherCraftDiagnostics {
     private static final String EMPLOYEE_ARGUMENT = "employee";
     private static final String EMPLOYEE_COMMAND_TAIL_ARGUMENT = "employee_command";
     private static final String DEPARTMENT_ARGUMENT = "department";
+    private static final String DEPARTMENT_ANCHOR_POSITION_ARGUMENT = "anchor";
     private static final String WORKSTATION_POSITION_ARGUMENT = "position";
+    private static final int DEPARTMENT_ANCHOR_PERMISSION_LEVEL = 2;
     private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestEmployeeReferences(context.getSource(), builder);
     private static final SuggestionProvider<CommandSourceStack> DEPARTMENT_LOOKUP_SUGGESTIONS =
@@ -156,6 +160,12 @@ public final class ButcherCraftDiagnostics {
                                 .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
                                         .executes(context -> runEmployeeStatus(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
+                        .then(Commands.literal("navigation")
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeNavigation(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
                         .then(Commands.literal("set-shift")
@@ -196,7 +206,24 @@ public final class ButcherCraftDiagnostics {
                                         .suggests(DEPARTMENT_LOOKUP_SUGGESTIONS)
                                         .executes(context -> runDepartmentStatus(
                                                 context.getSource(),
-                                                StringArgumentType.getString(context, DEPARTMENT_ARGUMENT))))))
+                                                StringArgumentType.getString(context, DEPARTMENT_ARGUMENT)))))
+                        .then(Commands.literal("set-anchor")
+                                .requires(ButcherCraftDiagnostics::canMutateDepartmentAnchor)
+                                .then(Commands.argument(DEPARTMENT_ARGUMENT, StringArgumentType.word())
+                                        .suggests(DEPARTMENT_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runDepartmentSetAnchor(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, DEPARTMENT_ARGUMENT),
+                                                BlockPos.containing(context.getSource().getPosition())))
+                                        .then(Commands.argument(
+                                                        DEPARTMENT_ANCHOR_POSITION_ARGUMENT,
+                                                        BlockPosArgument.blockPos())
+                                                .executes(context -> runDepartmentSetAnchor(
+                                                        context.getSource(),
+                                                        StringArgumentType.getString(context, DEPARTMENT_ARGUMENT),
+                                                        BlockPosArgument.getLoadedBlockPos(
+                                                                context,
+                                                                DEPARTMENT_ANCHOR_POSITION_ARGUMENT)))))))
                 .then(Commands.literal("workstation")
                         .then(Commands.literal("reservations")
                                 .executes(context -> runWorkstationReservations(context.getSource())))
@@ -321,9 +348,82 @@ public final class ButcherCraftDiagnostics {
                             + reservation.operatingX() + " "
                             + reservation.operatingY() + " "
                             + reservation.operatingZ()), false);
+                    source.sendSuccess(() -> Component.literal("Navigation: "
+                            + employeeNavigationForReservation(source, reservation)), false);
                 });
         source.sendSuccess(() -> Component.literal("Plant: " + (value.plantOpen() ? "open" : "closed")), false);
         source.sendSuccess(() -> Component.literal("Reason: " + value.reason()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeNavigation(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeRecord record = EmployeeService.INSTANCE.managerFor(source.getServer()).find(employeeId).orElse(null);
+        if (record == null || record.entityLink().isEmpty()) {
+            source.sendSuccess(() -> Component.literal("Employee navigation: entity unavailable"), false);
+            return 0;
+        }
+        if (!record.entityLink().orElseThrow().dimensionIdentity().equals(EmployeeService.dimensionIdentity(source.getLevel()))) {
+            source.sendSuccess(() -> Component.literal("Employee navigation: entity is in another dimension"), false);
+            return 0;
+        }
+        Entity entity = source.getLevel().getEntity(record.entityLink().orElseThrow().entityUuid());
+        if (!(entity instanceof EmployeeEntity employee)) {
+            source.sendSuccess(() -> Component.literal("Employee navigation: entity unavailable"), false);
+            return 0;
+        }
+        EmployeeEntity.NavigationDiagnostics diagnostics = employee.navigationDiagnostics();
+        source.sendSuccess(() -> Component.literal("Employee navigation: " + record.displayName()), false);
+        source.sendSuccess(() -> Component.literal("State: " + employee.navigationStateValue()), false);
+        source.sendSuccess(() -> Component.literal("Destination: "
+                + diagnostics.destinationType()
+                + " | " + diagnostics.destinationIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Current target: "
+                + formatBlockPos(diagnostics.currentDestination())), false);
+        source.sendSuccess(() -> Component.literal("Candidate: "
+                + (diagnostics.candidateCount() == 0
+                ? "none"
+                : (diagnostics.candidateIndex() + 1) + "/" + diagnostics.candidateCount())), false);
+        source.sendSuccess(() -> Component.literal("Path available: " + diagnostics.pathAvailable()), false);
+        source.sendSuccess(() -> Component.literal("Distance to selected target: "
+                + formatDistance(diagnostics.distanceToTarget())), false);
+        source.sendSuccess(() -> Component.literal("Distance to final destination: "
+                + formatDistance(diagnostics.distanceToFinalDestination())), false);
+        source.sendSuccess(() -> Component.literal("Configured max navigation range: "
+                + formatDistance(diagnostics.configuredMaximumNavigationRange())), false);
+        source.sendSuccess(() -> Component.literal("Path search range: "
+                + formatDistance(diagnostics.pathSearchRange())), false);
+        source.sendSuccess(() -> Component.literal("Destination passed range validation: "
+                + diagnostics.destinationWithinRange()), false);
+        source.sendSuccess(() -> Component.literal("Visited-node multiplier: "
+                + String.format(Locale.ROOT, "%.2f", diagnostics.visitedNodeMultiplier())), false);
+        source.sendSuccess(() -> Component.literal("Active path node: "
+                + (diagnostics.activePathNodeCount() == 0
+                ? "none"
+                : diagnostics.activePathNodeIndex() + "/" + diagnostics.activePathNodeCount())), false);
+        source.sendSuccess(() -> Component.literal("Distance to next node: "
+                + formatDistance(diagnostics.distanceToNextNode())), false);
+        source.sendSuccess(() -> Component.literal("Ticks since node progress: "
+                + diagnostics.ticksSinceNodeProgress()), false);
+        source.sendSuccess(() -> Component.literal("Ticks since progress: "
+                + diagnostics.ticksSinceMeaningfulProgress()), false);
+        source.sendSuccess(() -> Component.literal("Path replacements: "
+                + diagnostics.pathReplacementCount()
+                + " | " + diagnostics.lastPathReplacementReason()), false);
+        source.sendSuccess(() -> Component.literal("Retry count: " + diagnostics.retryCount()), false);
+        source.sendSuccess(() -> Component.literal("Recovery phase: " + diagnostics.recoveryPhase()), false);
+        source.sendSuccess(() -> Component.literal("Last failure: " + diagnostics.lastFailureReason()), false);
+        WorkstationReservationService.INSTANCE.managerFor(source.getServer())
+                .findByEmployee(employeeId.value())
+                .ifPresentOrElse(
+                        reservation -> source.sendSuccess(() -> Component.literal("Reservation: "
+                                + reservation.state().serializedName()
+                                + " | " + reservation.workstationIdentity()), false),
+                        () -> source.sendSuccess(() -> Component.literal("Reservation: none"), false)
+                );
         return Command.SINGLE_SUCCESS;
     }
 
@@ -480,6 +580,7 @@ public final class ButcherCraftDiagnostics {
             source.sendSuccess(() -> Component.literal(record.departmentId().value()
                     + " | " + record.displayName()
                     + " | " + record.anchor().map(anchor -> "anchor "
+                    + anchor.dimensionIdentity() + " "
                     + anchor.x() + " " + anchor.y() + " " + anchor.z()
                     + " r" + anchor.radius()).orElse("definition only")), false);
         }
@@ -506,12 +607,60 @@ public final class ButcherCraftDiagnostics {
                 .count();
         source.sendSuccess(() -> Component.literal("Department: " + record.displayName()
                 + " (" + record.departmentId().value() + ")"), false);
-        source.sendSuccess(() -> Component.literal("Anchor: " + record.anchor()
-                .map(anchor -> anchor.dimensionIdentity() + " "
-                        + anchor.x() + " " + anchor.y() + " " + anchor.z()
-                        + " radius " + anchor.radius())
-                .orElse("definition only")), false);
+        record.anchor().ifPresentOrElse(
+                anchor -> {
+                    source.sendSuccess(() -> Component.literal("Anchor dimension: "
+                            + anchor.dimensionIdentity()), false);
+                    source.sendSuccess(() -> Component.literal("Anchor position: "
+                            + anchor.x() + " " + anchor.y() + " " + anchor.z()), false);
+                    source.sendSuccess(() -> Component.literal("Configured idle radius: "
+                            + anchor.radius()), false);
+                },
+                () -> source.sendSuccess(() -> Component.literal("Anchor: definition only"), false)
+        );
         source.sendSuccess(() -> Component.literal("Assigned employees: " + assigned), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runDepartmentSetAnchor(
+            CommandSourceStack source,
+            String departmentValue,
+            BlockPos anchorPos
+    ) {
+        if (!CommonConfig.ENABLE_DEVELOPMENT_DIAGNOSTIC.get()) {
+            source.sendSuccess(() -> Component.literal(
+                    "Department anchor command is disabled by development diagnostic config"), false);
+            return 0;
+        }
+        DepartmentId departmentId;
+        try {
+            departmentId = new DepartmentId(departmentValue);
+        } catch (IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal("Invalid department: " + departmentValue), false);
+            return 0;
+        }
+        EmployeeService.DepartmentAnchorUpdate update;
+        try {
+            update = EmployeeService.INSTANCE.assignDepartmentAnchor(source.getLevel(), departmentId, anchorPos);
+        } catch (IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal(exception.getMessage()), false);
+            return 0;
+        }
+        DepartmentRecord record = update.updatedRecord();
+        source.sendSuccess(() -> Component.literal("Department anchor set: "
+                + record.displayName() + " (" + record.departmentId().value() + ")"), false);
+        source.sendSuccess(() -> Component.literal("Old anchor: "
+                + update.previousAnchor().map(ButcherCraftDiagnostics::formatDepartmentAnchor).orElse("none")), false);
+        source.sendSuccess(() -> Component.literal("New anchor: "
+                + formatDepartmentAnchor(update.newAnchor())), false);
+        source.sendSuccess(() -> Component.literal("Dimension: "
+                + update.newAnchor().dimensionIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Configured idle radius: "
+                + update.newAnchor().radius()), false);
+        source.sendSuccess(() -> Component.literal("Record revision: "
+                + update.previousRecord().recordRevision()
+                + " -> " + update.updatedRecord().recordRevision()
+                + (update.changed() ? "" : " (unchanged)")), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -552,6 +701,10 @@ public final class ButcherCraftDiagnostics {
                 + status.target().operatingPos().getX()
                 + " " + status.target().operatingPos().getY()
                 + " " + status.target().operatingPos().getZ()), false);
+        source.sendSuccess(() -> Component.literal("Approach candidates: "
+                + status.target().approachCandidates().stream()
+                .map(ButcherCraftDiagnostics::formatBlockPos)
+                .toList()), false);
         if (status.reservation().isPresent()) {
             WorkstationReservationRecord reservation = status.reservation().orElseThrow();
             source.sendSuccess(() -> Component.literal("Reservation: "
@@ -640,6 +793,10 @@ public final class ButcherCraftDiagnostics {
             builder.suggest(suggestion);
         }
         return builder.buildFuture();
+    }
+
+    private static boolean canMutateDepartmentAnchor(CommandSourceStack source) {
+        return source.hasPermission(DEPARTMENT_ANCHOR_PERMISSION_LEVEL);
     }
 
     static List<String> employeeLookupSuggestions(List<EmployeeRecord> records) {
@@ -898,12 +1055,48 @@ public final class ButcherCraftDiagnostics {
             }
             Entity entity = source.getLevel().getEntity(record.entityLink().orElseThrow().entityUuid());
             if (entity instanceof EmployeeEntity employee) {
-                return employee.navigationStateValue();
+                EmployeeEntity.NavigationDiagnostics diagnostics = employee.navigationDiagnostics();
+                return employee.navigationStateValue()
+                        + " | target " + formatBlockPos(diagnostics.currentDestination())
+                        + " | candidate " + (diagnostics.candidateCount() == 0
+                        ? "none"
+                        : (diagnostics.candidateIndex() + 1) + "/" + diagnostics.candidateCount())
+                        + " | distance " + formatDistance(diagnostics.distanceToTarget())
+                        + "/" + formatDistance(diagnostics.configuredMaximumNavigationRange())
+                        + " | path " + diagnostics.pathAvailable()
+                        + " | phase " + diagnostics.recoveryPhase()
+                        + " | failure " + diagnostics.lastFailureReason();
             }
         } catch (IllegalArgumentException exception) {
             return "unknown";
         }
         return "unloaded";
+    }
+
+    private static String formatBlockPos(BlockPos pos) {
+        if (pos == null) {
+            return "none";
+        }
+        return pos.getX() + " " + pos.getY() + " " + pos.getZ();
+    }
+
+    private static String formatDepartmentAnchor(DepartmentAnchor anchor) {
+        return anchor.dimensionIdentity()
+                + " "
+                + anchor.x()
+                + " "
+                + anchor.y()
+                + " "
+                + anchor.z()
+                + " radius "
+                + anchor.radius();
+    }
+
+    private static String formatDistance(double distance) {
+        if (distance < 0.0D) {
+            return "none";
+        }
+        return String.format(Locale.ROOT, "%.2f", distance);
     }
 
     private static void addUniqueSuggestion(List<String> suggestions, String suggestion) {

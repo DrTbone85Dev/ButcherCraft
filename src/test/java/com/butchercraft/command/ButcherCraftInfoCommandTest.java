@@ -34,11 +34,13 @@ class ButcherCraftInfoCommandTest {
         ));
 
         int infoIndex = source.indexOf("Commands.literal(\"info\")");
+        int timeIndex = source.indexOf("Commands.literal(\"time\")", infoIndex);
         int diagnosticIndex = source.indexOf("Commands.literal(\"diagnostic\")");
         assertTrue(infoIndex > 0, "Missing /butchercraft info command branch");
+        assertTrue(timeIndex > infoIndex, "Info command should be followed by the time branch");
         assertTrue(diagnosticIndex > infoIndex, "Info command should be registered before diagnostic branch");
 
-        String infoBranch = source.substring(infoIndex, diagnosticIndex);
+        String infoBranch = source.substring(infoIndex, timeIndex);
         assertTrue(infoBranch.contains("runInfo(context.getSource())"));
         assertFalse(infoBranch.contains(".requires("), "Info command should be available to ordinary players");
         assertFalse(infoBranch.contains("ENABLE_DEVELOPMENT_DIAGNOSTIC"), "Info command must not use the diagnostic config gate");

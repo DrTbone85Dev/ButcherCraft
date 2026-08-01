@@ -5,13 +5,22 @@ import com.butchercraft.entity.employee.EmployeeEntity;
 import com.butchercraft.registration.ModEntityTypes;
 import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.EmployeeService;
+import com.butchercraft.world.ExecutionService;
+import com.butchercraft.world.InventoryService;
+import com.butchercraft.world.ProductionService;
 import com.butchercraft.world.SimulationSchedulerService;
+import com.butchercraft.world.WorkstationReservationService;
+import com.butchercraft.world.WorldIdentityService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarConfiguration;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
 import com.butchercraft.world.workforce.department.DepartmentAnchor;
+import com.butchercraft.world.workforce.department.DepartmentId;
 import com.butchercraft.world.workforce.department.DepartmentRecord;
 import com.butchercraft.world.workforce.department.DepartmentSchema;
+import com.butchercraft.world.workforce.department.DepartmentStorage;
+import com.butchercraft.world.workforce.employee.EmployeeAnchor;
 import com.butchercraft.world.workforce.employee.EmployeeFailureCode;
+import com.butchercraft.world.workforce.employee.EmployeeEntityLink;
 import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeManager;
 import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
@@ -22,6 +31,7 @@ import com.butchercraft.world.workforce.employee.EmployeeRecord;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.butchercraft.world.workforce.employee.EmployeeShiftAssignment;
 import com.butchercraft.world.workforce.employee.EmployeeStatus;
+import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
 import com.butchercraft.world.simulation.time.BusinessDayOfWeek;
 import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
@@ -40,8 +50,11 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.pathfinder.Path;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -54,8 +67,21 @@ public final class EmployeeFoundationGameTests {
     private static final String TEMPLATE = "empty_5x4x5";
     private static final String DEPARTMENT_BATCH = "zz_employee_department";
     private static final String COMMAND_ACCEPTANCE_BATCH = "zzz_employee_command_acceptance";
+    private static final String DEPARTMENT_ANCHOR_COMMAND_BATCH = "zzzz_employee_department_anchor_command";
+    private static final String NAVIGATION_DIRECT_DEPARTMENT_BATCH = "zzzz_employee_navigation_direct_department";
+    private static final String NAVIGATION_RANGE_DEPARTMENT_BATCH = "zzzz_employee_navigation_range_department";
+    private static final String NAVIGATION_RANGE_OBSTACLE_BATCH = "zzzz_employee_navigation_range_obstacle";
+    private static final String NAVIGATION_RANGE_FAILURE_BATCH = "zzzz_employee_navigation_range_failure";
+    private static final String NAVIGATION_BLOCKED_ANCHOR_BATCH = "zzzz_employee_navigation_blocked_anchor";
+    private static final String NAVIGATION_REAR_ROUTE_BATCH = "zzzz_employee_navigation_rear_route";
+    private static final String NAVIGATION_SEALED_ROUTE_BATCH = "zzzzz_employee_navigation_sealed_route";
     private static final BlockPos EMPLOYEE_POS = new BlockPos(2, 1, 2);
     private static final BlockPos DEPARTMENT_POS = new BlockPos(4, 1, 2);
+    private static final BlockPos DIRECT_DEPARTMENT_EMPLOYEE_POS = new BlockPos(0, 1, 2);
+    private static final BlockPos BLOCKED_ANCHOR_POS = new BlockPos(3, 1, 2);
+    private static final BlockPos REAR_ROUTE_EMPLOYEE_POS = new BlockPos(2, 1, 0);
+    private static final BlockPos REAR_ROUTE_DEPARTMENT_POS = new BlockPos(2, 1, 2);
+    private static final int MAX_NAVIGATION_RANGE = EmployeeSchema.SCHEMA_1_MAX_NAVIGATION_RANGE_BLOCKS;
     private static boolean resetCompleted;
 
     private EmployeeFoundationGameTests() {
@@ -551,6 +577,388 @@ public final class EmployeeFoundationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 120, batch = DEPARTMENT_ANCHOR_COMMAND_BATCH)
+    public static void departmentAnchorCommandUpdatesOnlyDepartmentAnchor(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        DepartmentRecord beforeRecord = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
+                .find(DepartmentSchema.PROCESSING)
+                .orElseThrow();
+        DepartmentAnchor previousAnchor = beforeRecord.anchor().orElseThrow();
+        EmployeeRecord employee = createPresentProcessingEmployeeAt(
+                helper,
+                "Anchor Command Employee",
+                EMPLOYEE_POS
+        );
+        Counts beforeCounts = counts(helper);
+        BlockPos sourceAnchor = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos explicitAnchor = helper.absolutePos(new BlockPos(3, 1, 3));
+        CommandSourceStack source = commandSource(helper)
+                .withPosition(Vec3.atCenterOf(sourceAnchor));
+
+        List<String> departmentSuggestions = suggestions(helper, source, "butchercraft department set-anchor ");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.PROCESSING.value()),
+                "Department anchor command suggests processing");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.PACKAGING.value()),
+                "Department anchor command suggests packaging");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.SHIPPING.value()),
+                "Department anchor command suggests shipping");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.OFFICE.value()),
+                "Department anchor command suggests office");
+        helper.assertTrue(departmentSuggestions.contains(DepartmentSchema.MAINTENANCE.value()),
+                "Department anchor command suggests maintenance");
+        List<String> partialSuggestions = suggestions(helper, source, "butchercraft department set-anchor pro");
+        helper.assertTrue(partialSuggestions.contains(DepartmentSchema.PROCESSING.value()),
+                "Partial department anchor command input suggests processing");
+
+        int sourcePositionResult = execute(
+                helper,
+                source,
+                "butchercraft department set-anchor " + DepartmentSchema.PROCESSING.value()
+        );
+        DepartmentRecord sourceUpdated = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
+                .find(DepartmentSchema.PROCESSING)
+                .orElseThrow();
+        DepartmentAnchor sourceUpdatedAnchor = sourceUpdated.anchor().orElseThrow();
+
+        helper.assertTrue(sourcePositionResult == 1, "Source-position anchor command succeeds");
+        assertAnchor(helper, sourceUpdatedAnchor, sourceAnchor, previousAnchor.radius());
+        helper.assertTrue(sourceUpdated.departmentId().equals(beforeRecord.departmentId()),
+                "Department identity is preserved by source-position anchor command");
+        helper.assertTrue(sourceUpdated.worldIdentityRoot().equals(beforeRecord.worldIdentityRoot())
+                        && sourceUpdated.worldIdentityRootDigest().equals(beforeRecord.worldIdentityRootDigest()),
+                "World identity fields are preserved by source-position anchor command");
+        helper.assertTrue(sourceUpdated.recordRevision() == beforeRecord.recordRevision() + 1L,
+                "Changed department anchor increments the department record revision");
+
+        int duplicateResult = execute(
+                helper,
+                source,
+                "butchercraft department set-anchor " + DepartmentSchema.PROCESSING.value()
+        );
+        DepartmentRecord duplicateUpdated = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
+                .find(DepartmentSchema.PROCESSING)
+                .orElseThrow();
+        helper.assertTrue(duplicateResult == 1, "Duplicate identical anchor command succeeds");
+        helper.assertTrue(duplicateUpdated.recordRevision() == sourceUpdated.recordRevision(),
+                "Duplicate identical anchor command does not churn the department revision");
+
+        int explicitResult = execute(
+                helper,
+                source,
+                "butchercraft department set-anchor " + DepartmentSchema.PROCESSING.value()
+                        + " " + explicitAnchor.getX()
+                        + " " + explicitAnchor.getY()
+                        + " " + explicitAnchor.getZ()
+        );
+        DepartmentRecord explicitUpdated = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
+                .find(DepartmentSchema.PROCESSING)
+                .orElseThrow();
+        DepartmentAnchor explicitUpdatedAnchor = explicitUpdated.anchor().orElseThrow();
+
+        helper.assertTrue(explicitResult == 1, "Explicit coordinate anchor command succeeds");
+        assertAnchor(helper, explicitUpdatedAnchor, explicitAnchor, previousAnchor.radius());
+        helper.assertTrue(explicitUpdated.departmentId().equals(beforeRecord.departmentId()),
+                "Department identity is preserved by explicit coordinate anchor command");
+        helper.assertTrue(explicitUpdated.recordRevision() == sourceUpdated.recordRevision() + 1L,
+                "Second changed department anchor increments the department record revision once");
+
+        int unknownResult = execute(helper, source, "butchercraft department set-anchor unknown_department");
+        DepartmentRecord afterUnknown = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
+                .find(DepartmentSchema.PROCESSING)
+                .orElseThrow();
+        helper.assertTrue(unknownResult == 0, "Unknown department anchor command is rejected");
+        helper.assertTrue(afterUnknown.equals(explicitUpdated),
+                "Unknown department rejection does not alter the existing department");
+
+        DepartmentStorage storage = new DepartmentStorage(EmployeeService.departmentFile(helper.getLevel().getServer()));
+        DepartmentAnchor persistedAnchor = storage.load(WorldIdentityRootIdentities.from(
+                        WorldIdentityService.INSTANCE.getOrCreate(helper.getLevel().getServer())))
+                .registry()
+                .find(DepartmentSchema.PROCESSING)
+                .orElseThrow()
+                .anchor()
+                .orElseThrow();
+        assertAnchor(helper, persistedAnchor, explicitAnchor, previousAnchor.radius());
+
+        EmployeeRecord afterEmployee = EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer())
+                .find(employee.employeeId())
+                .orElseThrow();
+        helper.assertTrue(afterEmployee.employeeId().equals(employee.employeeId()),
+                "Department anchor command preserves Employee Identity");
+        helper.assertTrue(afterEmployee.assignedDepartmentId().filter(DepartmentSchema.PROCESSING::equals).isPresent(),
+                "Department anchor command preserves existing employee department assignment");
+        helper.assertTrue(counts(helper).equals(beforeCounts),
+                "Department anchor command does not mutate Production, Scheduler, Execution, Inventory, or reservations");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 180, batch = NAVIGATION_DIRECT_DEPARTMENT_BATCH)
+    public static void unobstructedDepartmentTravelStartsAndArrives(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        setupOpenNavigationField(helper);
+        assignProcessingAnchor(helper, DEPARTMENT_POS, 1);
+        EmployeeRecord record = createPresentProcessingEmployeeAt(
+                helper,
+                "Direct Department Employee",
+                DIRECT_DEPARTMENT_EMPLOYEE_POS
+        );
+        EmployeeEntity entity = entity(helper, record);
+        boolean[] sawStartedPath = {false};
+        boolean[] sawNodeProgress = {false};
+
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.WALKING_TO_DEPARTMENT.serializedName()),
+                "Open-field department travel starts in department travel state");
+
+        helper.succeedWhen(() -> {
+            captureNavigationProgress(entity, sawStartedPath, sawNodeProgress);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            helper.assertTrue(!diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Open-field department travel does not enter safe failure: " + diagnostics);
+            helper.assertTrue(sawStartedPath[0],
+                    "Accepted department path was observed before arrival: " + entity.navigationDiagnostics());
+            helper.assertTrue(sawNodeProgress[0],
+                    "Accepted department path produced node progress: " + entity.navigationDiagnostics());
+            helper.assertTrue(entity.insideAnchorRadius(),
+                    "Open-field department travel reaches the department anchor: " + entity.navigationDiagnostics()
+                            + " | entity=" + entity.blockPosition()
+                            + " | target=" + helper.absolutePos(DEPARTMENT_POS));
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 720, batch = NAVIGATION_RANGE_DEPARTMENT_BATCH)
+    public static void openFieldDepartmentTravelSupportsSchemaOneRange(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        int startX = 2;
+        setupOpenNavigationField(helper, startX + MAX_NAVIGATION_RANGE + 2, 12);
+        int[] distances = {5, 16, 32, MAX_NAVIGATION_RANGE};
+
+        for (int index = 0; index < distances.length; index++) {
+            EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+            setupOpenNavigationField(helper, startX + MAX_NAVIGATION_RANGE + 2, 3);
+            int laneZ = 2;
+            BlockPos anchor = new BlockPos(startX + distances[index], 1, laneZ);
+            assignProcessingAnchor(helper, anchor, 1);
+            EmployeeRecord record = createPresentEmployeeAtDepartment(
+                    helper,
+                    "Range Department " + distances[index],
+                    new BlockPos(startX, 1, laneZ),
+                    DepartmentSchema.PROCESSING
+            );
+            EmployeeEntity entity = entity(helper, record);
+            entity.setOnGround(true);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            Path path = entity.getNavigation().createPath(helper.absolutePos(anchor), 1);
+
+            helper.assertTrue(diagnostics.configuredMaximumNavigationRange() == MAX_NAVIGATION_RANGE,
+                    "Navigation diagnostics expose the schema-1 maximum range");
+            helper.assertTrue(diagnostics.pathSearchRange() >= MAX_NAVIGATION_RANGE,
+                    "Minecraft path search range is aligned with the Workforce range policy");
+            helper.assertTrue(path != null && path.getNodeCount() > 0,
+                    "Minecraft path search reaches a department anchor at "
+                            + distances[index] + " blocks");
+            helper.assertTrue(path.getEndNode() != null
+                            && path.getEndNode().asBlockPos().distManhattan(helper.absolutePos(anchor)) <= 1,
+                    "Department path endpoint remains within operating tolerance at "
+                            + distances[index] + " blocks");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 1100, batch = NAVIGATION_RANGE_OBSTACLE_BATCH)
+    public static void departmentRouteAroundObstacleBeyondFifteenBlocksPreservesPath(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        setupOpenNavigationField(helper, 26, 9);
+        for (int y = 1; y <= 2; y++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.setBlock(new BlockPos(12, y, z), Blocks.STONE);
+            }
+        }
+        assignProcessingAnchor(helper, new BlockPos(22, 1, 2), 1);
+        EmployeeRecord record = createPresentProcessingEmployeeAt(
+                helper,
+                "Range Obstacle Employee",
+                new BlockPos(2, 1, 2)
+        );
+        EmployeeEntity entity = entity(helper, record);
+        boolean[] sawStartedPath = {false};
+        boolean[] sawNodeProgress = {false};
+
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            captureNavigationProgress(entity, sawStartedPath, sawNodeProgress);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            helper.assertTrue(diagnostics.destinationWithinRange(),
+                    "Obstacle-route destination remains inside the configured navigation range: " + diagnostics);
+            helper.assertTrue(!diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Reachable obstacle route beyond 15 blocks must not fail safely: " + diagnostics);
+            helper.assertTrue(diagnostics.pathReplacementCount() <= 1,
+                    "Obstacle route preserves the accepted path: " + diagnostics);
+            helper.assertTrue(sawStartedPath[0],
+                    "Obstacle route starts an accepted path beyond 15 blocks: " + diagnostics);
+            helper.assertTrue(sawNodeProgress[0] || diagnostics.activePathNodeIndex() > 0,
+                    "Obstacle route records path-node progress beyond 15 blocks: " + diagnostics);
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 520, batch = NAVIGATION_RANGE_FAILURE_BATCH)
+    public static void departmentDestinationBeyondSchemaOneRangeFailsExplicitly(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        int startX = 2;
+        setupOpenNavigationField(helper, startX + MAX_NAVIGATION_RANGE + 4, 3);
+        assignProcessingAnchor(helper, new BlockPos(startX + MAX_NAVIGATION_RANGE + 2, 1, 1), 1);
+        EmployeeRecord record = createPresentProcessingEmployeeAt(
+                helper,
+                "Range Failure Department",
+                new BlockPos(startX, 1, 1)
+        );
+        EmployeeEntity entity = entity(helper, record);
+
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        helper.succeedWhen(() -> {
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            helper.assertTrue(!diagnostics.destinationWithinRange(),
+                    "Destination beyond the schema-1 range fails range validation: " + diagnostics);
+            helper.assertTrue(!diagnostics.pathAvailable(),
+                    "Out-of-range destination never starts a Minecraft path: " + diagnostics);
+            helper.assertTrue(diagnostics.pathReplacementCount() == 0,
+                    "Out-of-range destination is rejected before path publication: " + diagnostics);
+            helper.assertTrue(diagnostics.lastFailureReason().equals("destination_out_of_range")
+                            && diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Out-of-range department travel fails with a typed reason: " + diagnostics);
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 180, batch = NAVIGATION_BLOCKED_ANCHOR_BATCH)
+    public static void departmentTravelAcceptsNearbyEndpointWhenLogicalAnchorIsBlocked(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        setupOpenNavigationField(helper);
+        helper.setBlock(BLOCKED_ANCHOR_POS, Blocks.STONE);
+        helper.setBlock(BLOCKED_ANCHOR_POS.above(), Blocks.STONE);
+        assignProcessingAnchor(helper, BLOCKED_ANCHOR_POS, 1);
+        EmployeeRecord record = createPresentProcessingEmployeeAt(
+                helper,
+                "Blocked Anchor Employee",
+                DIRECT_DEPARTMENT_EMPLOYEE_POS
+        );
+        EmployeeEntity entity = entity(helper, record);
+        boolean[] sawStartedPath = {false};
+        boolean[] sawNodeProgress = {false};
+
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.WALKING_TO_DEPARTMENT.serializedName()),
+                "Blocked logical anchor still starts department travel to a nearby candidate");
+
+        helper.succeedWhen(() -> {
+            captureNavigationProgress(entity, sawStartedPath, sawNodeProgress);
+            EmployeeService.INSTANCE.synchronizeEntity(entity);
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            helper.assertTrue(!diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Nearby endpoint acceptance avoids false safe failure: " + diagnostics);
+            helper.assertTrue(diagnostics.currentDestination() != null
+                            && !diagnostics.currentDestination().equals(helper.absolutePos(BLOCKED_ANCHOR_POS)),
+                    "Blocked logical anchor is not used as the active standing position: " + diagnostics);
+            helper.assertTrue(sawStartedPath[0],
+                    "Accepted nearby endpoint path was observed before arrival: " + entity.navigationDiagnostics());
+            helper.assertTrue(sawNodeProgress[0],
+                    "Accepted nearby endpoint path produced node progress: " + entity.navigationDiagnostics());
+            helper.assertTrue(entity.insideAnchorRadius()
+                            && !entity.blockPosition().equals(helper.absolutePos(BLOCKED_ANCHOR_POS)),
+                    "Employee reaches the department radius without standing inside the blocked logical anchor: "
+                            + entity.navigationDiagnostics()
+                            + " | entity=" + entity.blockPosition()
+                            + " | anchor=" + helper.absolutePos(BLOCKED_ANCHOR_POS));
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 420, batch = NAVIGATION_REAR_ROUTE_BATCH)
+    public static void employeeFollowsRearEntranceRouteWhenDirectDistanceTemporarilyIncreases(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        setupRearEntranceDepartment(helper, false);
+        EmployeeRecord record = createNavigationFixtureEmployee(helper, "Rear Route Employee");
+        EmployeeEntity entity = entity(helper, record);
+        BlockPos target = helper.absolutePos(REAR_ROUTE_DEPARTMENT_POS);
+        double initialFinalDistance = horizontalDistance(entity, target);
+        int[] highestNodeIndex = {-1};
+        boolean[] sawPathNodeProgress = {false};
+        boolean[] sawDirectDistanceIncrease = {false};
+
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+        helper.assertTrue(entity.anchorPos().equals(target),
+                "Navigation fixture applies the department anchor before travel starts");
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.WALKING_TO_DEPARTMENT.serializedName()),
+                "Navigation fixture starts in department travel state");
+
+        helper.succeedWhen(() -> {
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            if (diagnostics.pathAvailable()) {
+                if (diagnostics.activePathNodeIndex() > highestNodeIndex[0]) {
+                    sawPathNodeProgress[0] = highestNodeIndex[0] >= 0;
+                    highestNodeIndex[0] = diagnostics.activePathNodeIndex();
+                }
+                if (diagnostics.distanceToFinalDestination() > initialFinalDistance + 0.05D) {
+                    sawDirectDistanceIncrease[0] = true;
+                }
+            }
+            helper.assertTrue(diagnostics.pathReplacementCount() <= 1,
+                    "Rear route preserves the active Path instead of repeatedly replacing it: " + diagnostics);
+            helper.assertTrue(!diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Reachable rear-route department must not enter safe failure: " + diagnostics);
+            helper.assertTrue(entity.insideAnchorRadius()
+                            && entity.blockPosition().getZ() >= target.getZ(),
+                    "Employee reaches the department through the rear opening: " + diagnostics
+                            + " | entity=" + entity.blockPosition()
+                            + " | target=" + target);
+            helper.assertTrue(sawPathNodeProgress[0],
+                    "Employee advances through active path nodes while navigating around the building");
+            helper.assertTrue(sawDirectDistanceIncrease[0],
+                    "Direct final-destination distance may increase while path-node progress continues");
+            helper.assertTrue(diagnostics.pathReplacementCount() == 1,
+                    "Route completes with one accepted path replacement: " + diagnostics);
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 620, batch = NAVIGATION_SEALED_ROUTE_BATCH)
+    public static void sealedDepartmentBuildingFailsSafelyWithoutWalkingToNearestWall(GameTestHelper helper) {
+        helper.getLevel().setDayTime(0L);
+        EmployeeService.INSTANCE.resetGameTestEmployees(helper.getLevel().getServer());
+        setupRearEntranceDepartment(helper, true);
+        EmployeeRecord record = createNavigationFixtureEmployee(helper, "Sealed Route Employee");
+        EmployeeEntity entity = entity(helper, record);
+        BlockPos start = helper.absolutePos(REAR_ROUTE_EMPLOYEE_POS);
+
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+        helper.assertTrue(entity.anchorPos().equals(helper.absolutePos(REAR_ROUTE_DEPARTMENT_POS)),
+                "Sealed navigation fixture applies the department anchor before travel starts");
+        helper.assertTrue(entity.navigationStateValue().equals(EmployeeNavigationState.WALKING_TO_DEPARTMENT.serializedName()),
+                "Sealed navigation fixture starts in department travel state");
+
+        helper.succeedWhen(() -> {
+            EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+            helper.assertTrue(diagnostics.pathReplacementCount() == 0,
+                    "Sealed building rejects partial nearest-wall paths instead of accepting them: " + diagnostics);
+            helper.assertTrue(entity.blockPosition().equals(start),
+                    "Employee does not walk to the exterior wall on an incomplete path: " + diagnostics
+                            + " | entity=" + entity.blockPosition()
+                            + " | start=" + start);
+            helper.assertTrue(diagnostics.lastFailureReason().equals("department_unreachable")
+                            && diagnostics.recoveryPhase().equals("safe_failure"),
+                    "Sealed building reaches bounded explicit navigation failure: " + diagnostics);
+        });
+    }
+
     @GameTest(template = TEMPLATE, timeoutTicks = 80, batch = COMMAND_ACCEPTANCE_BATCH)
     public static void registeredCommandTreeUsesSynchronizedArgumentTypes(GameTestHelper helper) {
         CommandDispatcher<CommandSourceStack> dispatcher = helper.getLevel().getServer().getCommands().getDispatcher();
@@ -651,6 +1059,158 @@ public final class EmployeeFoundationGameTests {
         ).orThrow();
     }
 
+    private static EmployeeRecord createNavigationFixtureEmployee(GameTestHelper helper, String displayName) {
+        DepartmentAnchor anchor = assignProcessingAnchor(helper, REAR_ROUTE_DEPARTMENT_POS, 1);
+        EmployeeRecord record = EmployeeService.INSTANCE.createGameTestEmployee(
+                helper.getLevel(),
+                Optional.of(displayName),
+                Optional.of(helper.absolutePos(REAR_ROUTE_EMPLOYEE_POS)),
+                true
+        ).orThrow();
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                DepartmentSchema.PROCESSING.value()
+        ).orThrow();
+        EmployeeService.INSTANCE.setPresence(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                EmployeePresenceState.PRESENT
+        ).orThrow();
+        EmployeeEntityLink link = EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer())
+                .find(record.employeeId())
+                .flatMap(EmployeeRecord::entityLink)
+                .orElseThrow();
+        EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer())
+                .bindEntity(record.employeeId(), link, new EmployeeAnchor(
+                        anchor.dimensionIdentity(),
+                        anchor.x(),
+                        anchor.y(),
+                        anchor.z(),
+                        anchor.radius()
+                )).orThrow();
+        helper.assertTrue(anchor.radius() == 1, "Navigation fixture uses a one-block department radius");
+        return EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer())
+                .find(record.employeeId())
+                .orElseThrow();
+    }
+
+    private static EmployeeRecord createPresentProcessingEmployeeAt(
+            GameTestHelper helper,
+            String displayName,
+            BlockPos relativePos
+    ) {
+        return createPresentEmployeeAtDepartment(helper, displayName, relativePos, DepartmentSchema.PROCESSING);
+    }
+
+    private static EmployeeRecord createPresentEmployeeAtDepartment(
+            GameTestHelper helper,
+            String displayName,
+            BlockPos relativePos,
+            DepartmentId departmentId
+    ) {
+        EmployeeRecord record = EmployeeService.INSTANCE.createGameTestEmployee(
+                helper.getLevel(),
+                Optional.of(displayName),
+                Optional.of(helper.absolutePos(relativePos)),
+                true
+        ).orThrow();
+        EmployeeService.INSTANCE.assignDepartment(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                departmentId.value()
+        ).orThrow();
+        EmployeeService.INSTANCE.setPresence(
+                helper.getLevel().getServer(),
+                record.employeeId(),
+                EmployeePresenceState.PRESENT
+        ).orThrow();
+        return EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer())
+                .find(record.employeeId())
+                .orElseThrow();
+    }
+
+    private static void setupOpenNavigationField(GameTestHelper helper) {
+        setupOpenNavigationField(helper, 5, 5);
+    }
+
+    private static void setupOpenNavigationField(GameTestHelper helper, int maxXInclusive, int maxZInclusive) {
+        for (int x = 0; x <= maxXInclusive; x++) {
+            for (int z = 0; z <= maxZInclusive; z++) {
+                helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.AIR);
+                helper.setBlock(new BlockPos(x, 2, z), Blocks.AIR);
+            }
+        }
+    }
+
+    private static void setupRearEntranceDepartment(GameTestHelper helper, boolean sealed) {
+        for (int x = 0; x < 5; x++) {
+            for (int z = 0; z < 5; z++) {
+                helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.AIR);
+                helper.setBlock(new BlockPos(x, 2, z), Blocks.AIR);
+            }
+        }
+        for (int y = 1; y <= 2; y++) {
+            for (int x = 1; x <= 3; x++) {
+                helper.setBlock(new BlockPos(x, y, 1), Blocks.STONE);
+            }
+            for (int z = 1; z <= 3; z++) {
+                helper.setBlock(new BlockPos(1, y, z), Blocks.STONE);
+                helper.setBlock(new BlockPos(3, y, z), Blocks.STONE);
+            }
+            helper.setBlock(new BlockPos(1, y, 3), Blocks.STONE);
+            helper.setBlock(new BlockPos(3, y, 3), Blocks.STONE);
+            if (sealed) {
+                helper.setBlock(new BlockPos(2, y, 3), Blocks.STONE);
+            } else {
+                helper.setBlock(new BlockPos(2, y, 3), Blocks.AIR);
+            }
+        }
+        helper.setBlock(REAR_ROUTE_DEPARTMENT_POS, Blocks.AIR);
+        helper.setBlock(REAR_ROUTE_DEPARTMENT_POS.above(), Blocks.AIR);
+    }
+
+    private static double horizontalDistance(EmployeeEntity entity, BlockPos target) {
+        double dx = target.getX() + 0.5D - entity.getX();
+        double dz = target.getZ() + 0.5D - entity.getZ();
+        return Math.sqrt(dx * dx + dz * dz);
+    }
+
+    private static void assertAnchor(
+            GameTestHelper helper,
+            DepartmentAnchor anchor,
+            BlockPos expectedPosition,
+            int expectedRadius
+    ) {
+        helper.assertTrue(anchor.dimensionIdentity().equals(EmployeeService.dimensionIdentity(helper.getLevel())),
+                "Department anchor dimension follows the command source dimension");
+        helper.assertTrue(anchor.x() == expectedPosition.getX()
+                        && anchor.y() == expectedPosition.getY()
+                        && anchor.z() == expectedPosition.getZ(),
+                "Department anchor position matches the command position");
+        helper.assertTrue(anchor.radius() == expectedRadius,
+                "Department anchor preserves the configured idle radius");
+    }
+
+    private static void captureNavigationProgress(
+            EmployeeEntity entity,
+            boolean[] sawStartedPath,
+            boolean[] sawNodeProgress
+    ) {
+        EmployeeEntity.NavigationDiagnostics diagnostics = entity.navigationDiagnostics();
+        if (diagnostics.pathAvailable() || diagnostics.pathReplacementCount() > 0) {
+            sawStartedPath[0] = true;
+            if (diagnostics.activePathNodeIndex() > 0) {
+                sawNodeProgress[0] = true;
+            }
+        }
+        if (diagnostics.pathReplacementCount() > 0 && entity.insideAnchorRadius()) {
+            sawNodeProgress[0] = true;
+        }
+    }
+
     private static String employeeNumberReference(EmployeeRecord record) {
         return "#" + Math.addExact(record.sequence(), 1L);
     }
@@ -681,6 +1241,16 @@ public final class EmployeeFoundationGameTests {
         }
     }
 
+    private static Counts counts(GameTestHelper helper) {
+        return new Counts(
+                ProductionService.INSTANCE.managerFor(helper.getLevel().getServer()).runs().size(),
+                SimulationSchedulerService.INSTANCE.managerFor(helper.getLevel().getServer()).registry().size(),
+                ExecutionService.INSTANCE.managerFor(helper.getLevel().getServer()).operations().size(),
+                InventoryService.INSTANCE.managerFor(helper.getLevel().getServer()).registry().size(),
+                WorkstationReservationService.INSTANCE.activeReservations(helper.getLevel().getServer()).size()
+        );
+    }
+
     private static void assertSynchronizedArgumentTypes(
             GameTestHelper helper,
             CommandNode<CommandSourceStack> node
@@ -699,6 +1269,15 @@ public final class EmployeeFoundationGameTests {
     }
 
     private static DepartmentAnchor assignProcessingAnchor(GameTestHelper helper, BlockPos relativePos, int radius) {
+        return assignDepartmentAnchor(helper, DepartmentSchema.PROCESSING, relativePos, radius);
+    }
+
+    private static DepartmentAnchor assignDepartmentAnchor(
+            GameTestHelper helper,
+            DepartmentId departmentId,
+            BlockPos relativePos,
+            int radius
+    ) {
         BlockPos absolute = helper.absolutePos(relativePos);
         DepartmentAnchor anchor = new DepartmentAnchor(
                 EmployeeService.dimensionIdentity(helper.getLevel()),
@@ -708,7 +1287,7 @@ public final class EmployeeFoundationGameTests {
                 radius
         );
         DepartmentRecord record = EmployeeService.INSTANCE.departmentManagerFor(helper.getLevel().getServer())
-                .assignAnchor(DepartmentSchema.PROCESSING, anchor);
+                .assignAnchor(departmentId, anchor);
         return record.anchor().orElseThrow();
     }
 
@@ -757,5 +1336,14 @@ public final class EmployeeFoundationGameTests {
                 0L,
                 0L
         );
+    }
+
+    private record Counts(
+            int productionRuns,
+            int schedulerWork,
+            int executionOperations,
+            int inventoryEntries,
+            int workstationReservations
+    ) {
     }
 }

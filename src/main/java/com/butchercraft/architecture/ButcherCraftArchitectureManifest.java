@@ -930,6 +930,16 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
                 "Present active-shift employee entities navigate only to Workforce-published department anchors and idle within bounded radii");
+        platformContract(builder, "butchercraft:platform_contract/employee_navigation_quality_recovery",
+                ValidationCategory.SIMULATION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-026 Employee Navigation Quality and Recovery",
+                "Workforce-owned employee navigation uses transient destination candidates, progress monitoring, bounded retries, and explicit safe failure without persisting pathfinding state");
+        platformContract(builder, "butchercraft:platform_contract/workstation_approach_candidate_geometry",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-026 Employee Navigation Quality and Recovery",
+                "Supported workstation geometry exposes deterministic operating and approach candidates while reservation, Production, Scheduler, and Execution remain separate authorities");
         platformContract(builder, "butchercraft:platform_contract/department_persistence_foundation",
                 ValidationCategory.PERSISTENCE, WORKFORCE,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1006,6 +1016,8 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/department_location_anchors", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_department_assignments", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_department_navigation", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_navigation_recovery", WORKFORCE);
+        own(builder, "butchercraft:responsibility/workstation_approach_geometry", WORKSTATION);
         own(builder, "butchercraft:responsibility/department_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
         own(builder, "butchercraft:responsibility/economic_actor_definitions", ACTORS);
@@ -1245,6 +1257,20 @@ public final class ButcherCraftArchitectureManifest {
                 WORKFORCE,
                 ValidationCategory.SIMULATION,
                 "IM-024 assigns department-directed employee navigation targets to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_navigation_recovery",
+                WORKFORCE,
+                ValidationCategory.SIMULATION,
+                "IM-026 assigns employee destination selection, progress monitoring, bounded retry, and safe movement failure behavior to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_approach_geometry",
+                WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "IM-026 assigns deterministic workstation approach-candidate geometry to the Workstation boundary without granting operation authority"
         );
         contract(
                 builder,

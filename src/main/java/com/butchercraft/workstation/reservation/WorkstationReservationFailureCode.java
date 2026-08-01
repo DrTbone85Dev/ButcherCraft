@@ -13,7 +13,16 @@ public enum WorkstationReservationFailureCode {
     EMPLOYEE_ALREADY_RESERVED("employee_already_reserved"),
     UNKNOWN_RESERVATION("unknown_reservation"),
     INVALID_POSITION("invalid_position"),
-    STALE_RESERVATION("stale_reservation");
+    STALE_RESERVATION("stale_reservation"),
+    NAVIGATION_UNREACHABLE("navigation_unreachable"),
+    NO_PATH("no_path"),
+    PROGRESS_STALLED("progress_stalled"),
+    CANDIDATE_BLOCKED("candidate_blocked"),
+    DESTINATION_INVALID("destination_invalid"),
+    WORKSTATION_REMOVED("workstation_removed"),
+    RESERVATION_INVALID("reservation_invalid"),
+    ALL_CANDIDATES_EXHAUSTED("all_candidates_exhausted"),
+    DEPARTMENT_UNREACHABLE("department_unreachable");
 
     private final String reasonCode;
 

@@ -7,8 +7,11 @@ public enum EmployeeNavigationState {
     WALKING_TO_DEPARTMENT("walking_to_department"),
     PRESENT_IN_DEPARTMENT("present_in_department"),
     WALKING_TO_WORKSTATION("walking_to_workstation"),
+    RECOVERING_PATH("recovering_path"),
+    TRYING_ALTERNATE_APPROACH("trying_alternate_approach"),
     WAITING_AT_WORKSTATION("waiting_at_workstation"),
     RETURNING_TO_DEPARTMENT("returning_to_department"),
+    NAVIGATION_FAILED("navigation_failed"),
     IDLE("idle"),
     RETURNING_TO_ANCHOR("returning_to_anchor");
 

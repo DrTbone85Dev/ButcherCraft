@@ -6,6 +6,7 @@ public final class EmployeeSchema {
     public static final String FILE_NAME = "employee_records.json";
     public static final int DEFAULT_MAX_EMPLOYEE_RECORDS = 64;
     public static final int DEFAULT_IDLE_ANCHOR_RADIUS = 8;
+    public static final int SCHEMA_1_MAX_NAVIGATION_RANGE_BLOCKS = 64;
 
     private EmployeeSchema() {
     }

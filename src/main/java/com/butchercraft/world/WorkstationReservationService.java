@@ -34,6 +34,7 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -263,7 +264,9 @@ public final class WorkstationReservationService {
             ).orElse(current);
             runtime.storage().save(runtime.manager().directory());
         }
-        boolean inside = entityPos.distManhattan(target.operatingPos()) <= current.anchorRadius();
+        int arrivalRadius = current.anchorRadius();
+        boolean inside = target.approachCandidates().stream()
+                .anyMatch(candidate -> entityPos.distManhattan(candidate) <= arrivalRadius);
         Optional<WorkstationReservationRecord> transitioned = inside
                 ? runtime.manager().markArrived(employee.employeeId().value(), current.workstationIdentity())
                 : runtime.manager().markEnRoute(employee.employeeId().value(), current.workstationIdentity());
@@ -284,6 +287,7 @@ public final class WorkstationReservationService {
         return Optional.of(new WorkstationNavigationTarget(
                 anchor,
                 target.workstationPos(),
+                target.approachCandidates(),
                 navigationState,
                 navigated
         ));
@@ -396,7 +400,8 @@ public final class WorkstationReservationService {
                     GRINDER_TYPE,
                     EmployeeService.dimensionIdentity(level),
                     workstationPos.immutable(),
-                    operatingPosition(workstationPos, facing)
+                    operatingPosition(workstationPos, facing),
+                    approachCandidates(workstationPos, facing)
             ));
         }
         if (blockEntity instanceof PattyFormerBlockEntity) {
@@ -408,7 +413,8 @@ public final class WorkstationReservationService {
                     PATTY_FORMER_TYPE,
                     EmployeeService.dimensionIdentity(level),
                     workstationPos.immutable(),
-                    operatingPosition(workstationPos, facing)
+                    operatingPosition(workstationPos, facing),
+                    approachCandidates(workstationPos, facing)
             ));
         }
         return WorkstationReservationResult.failed(
@@ -422,25 +428,26 @@ public final class WorkstationReservationService {
             WorkstationReservationRecord record
     ) {
         BlockPos workstationPos = new BlockPos(record.workstationX(), record.workstationY(), record.workstationZ());
+        WorkstationReservationResult<ResolvedWorkstationTarget> resolved =
+                resolveSupportedWorkstation(level, workstationPos);
+        if (resolved.succeeded()) {
+            ResolvedWorkstationTarget target = resolved.orThrow();
+            if (!target.workstationIdentity().equals(record.workstationIdentity())) {
+                return Optional.empty();
+            }
+            return Optional.of(target);
+        }
         if (!level.hasChunkAt(workstationPos)) {
             return Optional.of(new ResolvedWorkstationTarget(
                     record.workstationIdentity(),
                     record.workstationType(),
                     record.dimensionIdentity(),
                     workstationPos,
-                    new BlockPos(record.operatingX(), record.operatingY(), record.operatingZ())
+                    new BlockPos(record.operatingX(), record.operatingY(), record.operatingZ()),
+                    List.of(new BlockPos(record.operatingX(), record.operatingY(), record.operatingZ()))
             ));
         }
-        WorkstationReservationResult<ResolvedWorkstationTarget> resolved =
-                resolveSupportedWorkstation(level, workstationPos);
-        if (!resolved.succeeded()) {
-            return Optional.empty();
-        }
-        ResolvedWorkstationTarget target = resolved.orThrow();
-        if (!target.workstationIdentity().equals(record.workstationIdentity())) {
-            return Optional.empty();
-        }
-        return Optional.of(target);
+        return Optional.empty();
     }
 
     private ActiveWorkstationReservations load(MinecraftServer server) {
@@ -532,6 +539,29 @@ public final class WorkstationReservationService {
         return workstationPos.relative(horizontal).immutable();
     }
 
+    private static List<BlockPos> approachCandidates(BlockPos workstationPos, Direction facing) {
+        Direction front = Objects.requireNonNull(facing, "facing").getAxis().isHorizontal()
+                ? facing
+                : Direction.NORTH;
+        Direction left = front.getCounterClockWise();
+        Direction right = front.getClockWise();
+        List<BlockPos> candidates = new ArrayList<>();
+        addCandidate(candidates, workstationPos.relative(front));
+        addCandidate(candidates, workstationPos.relative(front).relative(left));
+        addCandidate(candidates, workstationPos.relative(front).relative(right));
+        addCandidate(candidates, workstationPos.relative(left));
+        addCandidate(candidates, workstationPos.relative(right));
+        addCandidate(candidates, workstationPos.relative(front).relative(front));
+        return List.copyOf(candidates);
+    }
+
+    private static void addCandidate(List<BlockPos> candidates, BlockPos candidate) {
+        BlockPos immutable = candidate.immutable();
+        if (!candidates.contains(immutable)) {
+            candidates.add(immutable);
+        }
+    }
+
     private static void requireGameTestServer(MinecraftServer server) {
         String className = Objects.requireNonNull(server, "server").getClass().getName();
         if (!className.contains("GameTestServer")) {
@@ -551,12 +581,16 @@ public final class WorkstationReservationService {
     public record WorkstationNavigationTarget(
             EmployeeAnchor anchor,
             BlockPos workstationPos,
+            List<BlockPos> approachCandidates,
             EmployeeNavigationState navigationState,
             WorkstationReservationRecord reservation
     ) {
         public WorkstationNavigationTarget {
             anchor = Objects.requireNonNull(anchor, "anchor");
             workstationPos = Objects.requireNonNull(workstationPos, "workstationPos").immutable();
+            approachCandidates = Objects.requireNonNull(approachCandidates, "approachCandidates").stream()
+                    .map(BlockPos::immutable)
+                    .toList();
             navigationState = Objects.requireNonNull(navigationState, "navigationState");
             reservation = Objects.requireNonNull(reservation, "reservation");
         }
@@ -577,7 +611,8 @@ public final class WorkstationReservationService {
             String workstationType,
             String dimensionIdentity,
             BlockPos workstationPos,
-            BlockPos operatingPos
+            BlockPos operatingPos,
+            List<BlockPos> approachCandidates
     ) {
         public ResolvedWorkstationTarget {
             workstationIdentity = Objects.requireNonNull(workstationIdentity, "workstationIdentity");
@@ -585,6 +620,9 @@ public final class WorkstationReservationService {
             dimensionIdentity = Objects.requireNonNull(dimensionIdentity, "dimensionIdentity");
             workstationPos = Objects.requireNonNull(workstationPos, "workstationPos").immutable();
             operatingPos = Objects.requireNonNull(operatingPos, "operatingPos").immutable();
+            approachCandidates = Objects.requireNonNull(approachCandidates, "approachCandidates").stream()
+                    .map(BlockPos::immutable)
+                    .toList();
         }
     }
 
