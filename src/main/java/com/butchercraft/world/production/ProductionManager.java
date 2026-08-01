@@ -21,6 +21,7 @@ import com.butchercraft.world.simulation.scheduler.WorkPayload;
 import com.butchercraft.world.simulation.scheduler.WorkPayloadEntry;
 import com.butchercraft.world.simulation.scheduler.WorkReference;
 import com.butchercraft.world.simulation.scheduler.WorkSubmissionResult;
+import com.butchercraft.world.simulation.time.BusinessCalendarSnapshot;
 import com.butchercraft.world.transaction.EconomicTransaction;
 import com.butchercraft.world.transaction.TransactionResult;
 import com.butchercraft.world.transaction.TransactionStatus;
@@ -292,6 +293,55 @@ public final class ProductionManager {
                 .latestCompletionTick().stream().anyMatch(deadline -> deadline < tick)).toList();
     }
 
+    public synchronized List<ProductionRunSnapshot> overdueRuns(BusinessCalendarSnapshot calendar) {
+        Objects.requireNonNull(calendar, "calendar");
+        return activeRuns().stream()
+                .filter(run -> run.deadline()
+                        .map(deadline -> deadline.evaluate(run.status(), calendar).status()
+                                == ProductionDeadlineStatus.OVERDUE)
+                        .orElse(false))
+                .toList();
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> setDeadline(
+            ProductionRunId runId,
+            ProductionDeadline deadline,
+            long tick
+    ) {
+        ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
+        if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
+        Objects.requireNonNull(deadline, "deadline");
+        ProductionRunSnapshot current = runtime.snapshot();
+        if (current.deadline().isPresent() && current.deadline().orElseThrow().sameAssignment(deadline)) {
+            return ProductionOperationResult.accepted(current);
+        }
+        try {
+            mutate(runtime, () -> runtime.setDeadline(deadline, tick));
+        } catch (RuntimeException exception) {
+            return rejected(ProductionFailureCode.DEADLINE_REJECTED,
+                    message(exception, "Production deadline was rejected"), runId.value());
+        }
+        return ProductionOperationResult.accepted(runtime.snapshot());
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> evaluateDeadline(
+            ProductionRunId runId,
+            BusinessCalendarSnapshot calendar
+    ) {
+        ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
+        if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
+        if (runtime.snapshot().deadline().isEmpty()) {
+            return ProductionOperationResult.accepted(runtime.snapshot());
+        }
+        try {
+            mutate(runtime, () -> runtime.evaluateDeadline(calendar));
+        } catch (RuntimeException exception) {
+            return rejected(ProductionFailureCode.INVALID_DEADLINE,
+                    message(exception, "Production deadline evaluation was rejected"), runId.value());
+        }
+        return ProductionOperationResult.accepted(runtime.snapshot());
+    }
+
     public synchronized ProductionOperationResult<ProductionRunSnapshot> assignWorkstation(
             ProductionRunId runId,
             String workstationIdentity,
@@ -543,6 +593,62 @@ public final class ProductionManager {
             String executionResultContentDigest,
             long tick
     ) {
+        return completeFromWorkstation(
+                runId,
+                workstationIdentity,
+                processIdentity,
+                executionOperationIdentity,
+                executionTerminalStatus,
+                ownerResultIdentity,
+                ownerResultContentDigest,
+                executionResultEvidenceIdentity,
+                executionResultContentDigest,
+                tick,
+                Optional.empty()
+        );
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> completeFromWorkstation(
+            ProductionRunId runId,
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            String executionTerminalStatus,
+            String ownerResultIdentity,
+            String ownerResultContentDigest,
+            String executionResultEvidenceIdentity,
+            String executionResultContentDigest,
+            long tick,
+            BusinessCalendarSnapshot completionCalendar
+    ) {
+        return completeFromWorkstation(
+                runId,
+                workstationIdentity,
+                processIdentity,
+                executionOperationIdentity,
+                executionTerminalStatus,
+                ownerResultIdentity,
+                ownerResultContentDigest,
+                executionResultEvidenceIdentity,
+                executionResultContentDigest,
+                tick,
+                Optional.of(Objects.requireNonNull(completionCalendar, "completionCalendar"))
+        );
+    }
+
+    private ProductionOperationResult<ProductionRunSnapshot> completeFromWorkstation(
+            ProductionRunId runId,
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            String executionTerminalStatus,
+            String ownerResultIdentity,
+            String ownerResultContentDigest,
+            String executionResultEvidenceIdentity,
+            String executionResultContentDigest,
+            long tick,
+            Optional<BusinessCalendarSnapshot> completionCalendar
+    ) {
         ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
         if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
         ProductionRunSnapshot current = runtime.snapshot();
@@ -594,7 +700,10 @@ public final class ProductionManager {
                     "Production run has not observed Grinder Execution yet", runId.value());
         }
         try {
-            mutate(runtime, () -> runtime.completeFromWorkstation(evidence, tick));
+            mutate(runtime, () -> {
+                runtime.completeFromWorkstation(evidence, tick);
+                completionCalendar.ifPresent(runtime::evaluateDeadline);
+            });
         } catch (RuntimeException exception) {
             return rejected(ProductionFailureCode.WORKSTATION_COMPLETION_NOT_READY,
                     message(exception, "Production workstation completion was rejected"), runId.value());
@@ -614,6 +723,66 @@ public final class ProductionManager {
             String executionResultEvidenceIdentity,
             String executionResultContentDigest,
             long tick
+    ) {
+        return completeWorkstationChainStepFromWorkstation(
+                runId,
+                stepIdentity,
+                workstationIdentity,
+                processIdentity,
+                executionOperationIdentity,
+                executionTerminalStatus,
+                ownerResultIdentity,
+                ownerResultContentDigest,
+                executionResultEvidenceIdentity,
+                executionResultContentDigest,
+                tick,
+                Optional.empty()
+        );
+    }
+
+    public synchronized ProductionOperationResult<ProductionRunSnapshot> completeWorkstationChainStepFromWorkstation(
+            ProductionRunId runId,
+            String stepIdentity,
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            String executionTerminalStatus,
+            String ownerResultIdentity,
+            String ownerResultContentDigest,
+            String executionResultEvidenceIdentity,
+            String executionResultContentDigest,
+            long tick,
+            BusinessCalendarSnapshot completionCalendar
+    ) {
+        return completeWorkstationChainStepFromWorkstation(
+                runId,
+                stepIdentity,
+                workstationIdentity,
+                processIdentity,
+                executionOperationIdentity,
+                executionTerminalStatus,
+                ownerResultIdentity,
+                ownerResultContentDigest,
+                executionResultEvidenceIdentity,
+                executionResultContentDigest,
+                tick,
+                Optional.of(Objects.requireNonNull(completionCalendar, "completionCalendar"))
+        );
+    }
+
+    private ProductionOperationResult<ProductionRunSnapshot> completeWorkstationChainStepFromWorkstation(
+            ProductionRunId runId,
+            String stepIdentity,
+            String workstationIdentity,
+            String processIdentity,
+            String executionOperationIdentity,
+            String executionTerminalStatus,
+            String ownerResultIdentity,
+            String ownerResultContentDigest,
+            String executionResultEvidenceIdentity,
+            String executionResultContentDigest,
+            long tick,
+            Optional<BusinessCalendarSnapshot> completionCalendar
     ) {
         ProductionRunRuntime runtime = runs.get(Objects.requireNonNull(runId, "runId"));
         if (runtime == null) return rejected(ProductionFailureCode.UNKNOWN_RUN, "Unknown production run", runId.value());
@@ -680,7 +849,12 @@ public final class ProductionManager {
                     "Production chain step has not observed Execution yet", step.stepIdentity());
         }
         try {
-            mutate(runtime, () -> runtime.completeWorkstationChainStep(stepIdentity, evidence, tick));
+            mutate(runtime, () -> {
+                runtime.completeWorkstationChainStep(stepIdentity, evidence, tick);
+                if (runtime.snapshot().status() == ProductionRunStatus.COMPLETED) {
+                    completionCalendar.ifPresent(runtime::evaluateDeadline);
+                }
+            });
         } catch (RuntimeException exception) {
             ProductionFailureCode code = exception.getMessage() != null
                     && exception.getMessage().contains("product flow")

@@ -2,9 +2,11 @@ package com.butchercraft.machine.pattyformer;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.productioncontrol.ProductionOrderItem;
+import com.butchercraft.world.WorkstationReservationService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -105,6 +107,13 @@ public final class PattyFormerBlock extends BaseEntityBlock {
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) {
             try {
+                if (level instanceof ServerLevel serverLevel) {
+                    WorkstationReservationService.INSTANCE.invalidatePattyFormer(
+                            serverLevel,
+                            pos,
+                            "reserved Patty Former was removed"
+                    );
+                }
                 if (level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity) {
                     blockEntity.dropContents(level, pos);
                 }

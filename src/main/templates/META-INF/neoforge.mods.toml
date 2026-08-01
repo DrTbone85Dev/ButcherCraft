@@ -8,9 +8,9 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="To Be Determined"
 description='''
-ButcherCraft is a Minecraft industrial and regional simulation project with playable production workflows.
+ButcherCraft is a Minecraft industrial and regional simulation project with playable production workflows and workforce foundations.
 
-This alpha is the first multi-workstation production update. It includes the Grinder, Patty Former, six Grinder recipes, the manual Beef Patties production chain, Production Order guidance, and deterministic platform foundations for Execution, Scheduler, Planning, Production, and Allocation. Broader economy, worker automation, logistics, and expansion APIs remain in development.
+This alpha is the Workforce Navigation Update. It includes the employee foundation, persistent employee identities, employment records, departments, business hours, shift observation, employee navigation, workstation reservations, diagnostics, and reliable plant-scale pathing. Employees navigate, reserve workstations, and wait; they do not yet operate machinery or automate production. Grinder, Patty Former, six Grinder recipes, the manual Beef Patties production chain, Production Order guidance, and deterministic platform foundations remain included from earlier alpha releases. Broader economy, worker automation, logistics, and expansion APIs remain in development.
 '''
 
 [[dependencies.${mod_id}]]

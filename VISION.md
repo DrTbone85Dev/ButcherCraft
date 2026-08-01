@@ -67,9 +67,9 @@ These foundations are not a completed economy. Production scheduling, consumers,
 ## Relationship To Existing Documents
 
 - `CORE_PRINCIPLES.md` defines the non-negotiable principles that govern implementation.
+- `docs/BUSINESS_SIMULATION_BIBLE.md` defines the canonical gameplay philosophy for business simulation, player progression, workforce leadership, customers, economy, and plant-management feel.
 - `MODULES.md` assigns responsibilities to Core, industry modules, and compatibility modules.
 - `SIMULATION_MODEL.md` describes the conceptual regional simulation flow.
 - `ECONOMY_MODEL.md` records future economic concepts without implementing them.
 - `ROADMAP.md` organizes future development into eras.
 - `PROJECT_VISION.md` remains the historical and player-facing vision for the flagship Meat Processing module.
-

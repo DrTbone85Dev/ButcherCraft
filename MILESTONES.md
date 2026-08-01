@@ -4,6 +4,279 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-026: Employee Navigation Quality And Recovery
+
+Goal: improve Workforce-owned employee department and workstation travel so
+employees use deterministic approach candidates, make measurable progress,
+recover from blocked paths, and fail safely without receiving operation
+authority.
+
+Included work:
+
+- Transient employee travel destination model for department and workstation
+  movement.
+- Deterministic Grinder and Patty Former approach candidates derived from
+  workstation facing.
+- Reachability screening for candidate feet, headroom, support, loaded world
+  bounds, elevation, schema-1 navigation range, and path availability.
+- Progress monitoring with bounded retry, path restart cooldown, alternate
+  candidate selection, and explicit safe failure.
+- Door-capable employee pathing for normal wooden doors.
+- Department idle target validation, pauses between movements, and simple
+  same-block avoidance.
+- Navigation diagnostics for employee status, employee navigation detail, and
+  workstation status.
+- Focused documentation, architecture-manifest declarations, source tests, and
+  GameTests.
+
+Excluded work:
+
+- Machine operation, inventory insertion or extraction, product carrying,
+  Production-driven assignment, automatic job claiming, Scheduler dispatch,
+  Execution authorization, recipe selection, output collection, employee
+  skills, productivity, payroll, morale, fatigue, training, additional
+  workstations, complex crowd simulation, teleport recovery, and block
+  breaking.
+
+Acceptance criteria:
+
+- Employees do not reissue a fresh travel path every tick.
+- A blocked primary workstation approach advances to a deterministic alternate
+  candidate.
+- Exhausted workstation candidates invalidate the reservation with explicit
+  navigation failure evidence and return the employee toward its department
+  when possible.
+- Department idle targets remain valid, bounded, and calm.
+- Navigation recovery state is transient and not persisted.
+- Ordinary employee department and workstation travel reaches 64 horizontal
+  blocks and fails visibly beyond the supported schema-1 range.
+- Navigation and reservation behavior do not mutate Production, Scheduler,
+  Execution, Inventory, recipes, or workstation contents.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-026 can be called
+  manually accepted. The checklist covers department travel, workstation
+  travel, blocked-primary alternate selection, all-candidates safe failure,
+  far-side entrance routing around a solid-walled fixture, save/reload during
+  travel, existing-world entry, new-world entry, and at least one minute of
+  employee idle observation.
+
+Rollback considerations:
+
+- IM-026 is additive to IM-025. Removing the transient navigation controller,
+  approach-candidate expansion, diagnostics, docs, manifest entries, and tests
+  restores IM-025 reservation/arrival behavior without changing Production,
+  Scheduler, Execution, Transactions, Inventory, Allocation, recipes, or
+  workstation persistence schemas.
+
+## IM-024: Department Assignment, Employee Presence, And Navigation Foundation
+
+Goal: add Workforce-owned Department definitions, employee department
+assignment, and present-employee navigation to department anchors without
+granting employees Production, Scheduler, Execution, Allocation, Inventory, or
+workstation authority.
+
+Included work:
+
+- Schema-1 `processing`, `packaging`, `shipping`, `office`, and `maintenance`
+  Department identities owned by Workforce.
+- Functional default Processing anchor and bounded department radius.
+- Schema-versioned `departments.json` persistence.
+- Optional `DepartmentId` assignment on employee records.
+- Present active-shift Employee entities target the assigned functional
+  department anchor, idle within radius, and return when displaced.
+- Development/operator diagnostics for department list, department status, and
+  employee department assignment.
+- Focused documentation, architecture-manifest declarations, pure unit tests,
+  and GameTests.
+
+Excluded work:
+
+- Workstation arrival reservations, workstation operation, job claiming,
+  product carrying, logistics, Production task assignment, Scheduler Work,
+  Execution authority, Inventory mutation, staffing capacity enforcement,
+  department GUIs, payroll, wages, productivity, customer interaction,
+  Allocation integration, startup recovery, automatic checkpoints, and operator
+  reconciliation.
+
+Acceptance criteria:
+
+- Department Identity and department anchors are Workforce-owned.
+- Employee records reference departments by `DepartmentId` and do not store
+  workstation assignments.
+- Processing is the only functional default department; other departments are
+  registered definitions only.
+- Present employees navigate to the assigned functional department anchor and
+  remain bounded there.
+- Department assignment and navigation do not submit Scheduler Work, operate
+  machines, reserve workstations, carry items, or mutate Production.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-024 can be called
+  manually accepted. The checklist covers department list/status diagnostics,
+  employee department assignment by friendly employee reference, visible
+  movement toward the Processing department anchor, idle behavior inside the
+  radius, return after displacement, and confirmation that employees do not
+  operate machines or carry products.
+
+Rollback considerations:
+
+- IM-024 is additive. Removing the department domain, department persistence,
+  employee department field, diagnostics, navigation state, docs, manifest
+  entries, and focused tests restores IM-023 behavior without changing
+  Business Runtime, Production, Scheduler, Execution, Transactions, Planning,
+  Inventory, Allocation, or workstation schemas.
+
+## IM-023: Employee And Employment Record Foundation
+
+Goal: add persistent employee identity, employment records, shift eligibility,
+presence observation, and a basic linked in-world Employee entity without
+granting employees Production, Scheduler, Execution, Allocation, or workstation
+authority.
+
+Included work:
+
+- Workforce-owned `EmployeeId`, `EmployeeRecord`, lifecycle, presence, shift
+  assignment, optional position reference, entity linkage, and evidence-ready
+  revision state.
+- Schema-versioned `employee_records.json` persistence.
+- Business Runtime shift identity consumption for presence observation without
+  redefining shifts.
+- `butchercraft:employee` entity with persistent record link, read-only
+  inspection, and bounded idle movement.
+- Development/operator diagnostics for create, list, status, set-shift, and
+  set-presence.
+- Focused documentation, architecture-manifest declarations, generated
+  localization, pure unit tests, and 28 GameTests.
+
+Excluded work:
+
+- Workstation operation, job claiming, Production task assignment, item
+  carrying, logistics, machine reservation, payroll, wages, overtime, breaks,
+  morale, fatigue, productivity, training, skill effects, customer
+  interaction, attendance penalties, Allocation, public workforce APIs,
+  startup recovery, automatic checkpoints, operator reconciliation, and another
+  workstation.
+
+Acceptance criteria:
+
+- Employee Identity is deterministic and Workforce-owned.
+- Employee records survive save/load and reject unsupported schemas visibly.
+- Presence observation follows Business Runtime shift identity and does not own
+  shift definitions or time.
+- The Employee entity is a read-only linked representation and does not submit
+  Scheduler work or mutate Production.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-023 can be called
+  manually accepted. The checklist covers employee creation, entity display,
+  read-only inspection, shift reassignment, presence changes, save/reload, and
+  confirmation that employees do not operate machines.
+
+Rollback considerations:
+
+- IM-023 is additive. Removing the employee domain, service, entity
+  registration, diagnostics, docs, manifest entries, generated language, and
+  focused tests restores IM-022 behavior without changing Business Runtime,
+  Production, Scheduler, Execution, Transactions, Planning, Inventory, or
+  Allocation schemas.
+
+## IM-022: Business Hours, Shift Definitions, And Production Deadline Foundation
+
+Goal: add deterministic plant operating hours, configured shifts, Business
+Runtime open/closed observation, and Production-owned deadline status on top of
+the IM-021 Business Calendar.
+
+Included work:
+
+- Configurable server-authoritative plant operating windows with closed days,
+  overnight support, deterministic validation, and schedule identity.
+- Configurable shift definitions with stable identity, deterministic ordering,
+  duplicate and overlap rejection, and validation against operating hours.
+- Business Runtime calendar snapshots derived from World Time without owning an
+  independent clock.
+- Production Deadline identity, assignment, lock state, status classification,
+  terminal completion timing, and legacy no-deadline compatibility.
+- Production Order display for plant state, business time, shifts, deadline,
+  and deadline status.
+- Read-only business diagnostics plus focused documentation, manifest entries,
+  persistence, unit tests, and GameTest targets.
+
+Excluded work:
+
+- Worker entities, employee schedules, attendance, payroll, overtime, breaks,
+  morale, fatigue, customer orders, reputation, penalties, money changes,
+  holidays, seasons, delivery windows, maintenance schedules, autonomous
+  Production scheduling, Allocation, another workstation, public APIs, startup
+  recovery, automatic checkpoints, and operator reconciliation.
+
+Acceptance criteria:
+
+- Plant open/closed state follows configured Business Calendar time with
+  inclusive opening and exclusive closing boundaries.
+- Active and next shift observations are deterministic and Business
+  Runtime-owned.
+- Production deadline status follows explicit Business Calendar observations,
+  and terminal completion timing persists once classified.
+- Sleep and forward/backward time jumps update observations directly without
+  catch-up loops or repeated Scheduler, Planning, or Production effects.
+- Production Order presents player-friendly status without internal hashes,
+  evidence identities, raw ticks, or authority tokens.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance is required before IM-022 can be called
+  manually accepted. The checklist covers opening and closing boundaries, shift
+  display, deadline display, early/on-time/late completion, sleep, time
+  commands, save/reload, unchanged workstation duration, and log review.
+
+Rollback considerations:
+
+- IM-022 is additive except for narrow Production Order display and Production
+  Run deadline persistence additions. Removing the Business Calendar Runtime
+  service, deadline types, deadline fields, config entries, diagnostics, docs,
+  manifest entries, generated language, and focused tests restores IM-021/IM-019
+  behavior. Legacy no-deadline Production Runs remain compatible.
+
 ## IM-019: Manual Production Chain UI And Player Guidance
 
 Goal: make the existing manual Beef Trim to Grinder to Ground Beef to Patty

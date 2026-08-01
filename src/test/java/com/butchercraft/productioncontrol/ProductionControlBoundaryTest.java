@@ -54,7 +54,7 @@ class ProductionControlBoundaryTest {
                 "src/main/java/com/butchercraft/productioncontrol/ProductionOrderMenu.java"
         ));
 
-        assertTrue(source.contains("private static final int DATA_COUNT = 17"));
+        assertTrue(source.contains("private static final int DATA_COUNT = 30"));
         assertTrue(source.contains("addDataSlots(data)"));
         assertTrue(source.contains("ProductionOrderControl.refreshStatus"));
         assertTrue(source.contains("public void set(int index, int value)"));

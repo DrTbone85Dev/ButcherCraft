@@ -147,6 +147,8 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.simulation.scheduler` | Pure immutable simulation Work definitions, separate runtime lifecycle, stable stages, live handler effect-policy enforcement, deterministic Invocation and Effect Identity support, deterministic indexes, bounded pipeline, reports, schema-versioned persistence, and Scheduler-owned checkpoint snapshot provider/restorer foundation. |
 | `com.butchercraft.world.business.runtime` | Pure business runtime state, hours, shifts, operational status, runtime registry, manager transitions, event listener, validation, and JSON persistence. |
 | `com.butchercraft.world.workforce` | Pure workforce definitions, positions, staffing rules, shift assignments, skill levels, certifications, registry, manager lookup, validation, and JSON persistence. |
+| `com.butchercraft.world.workforce.employee` | Pure Employee Identity, Employment Records, lifecycle, shift references, presence observation, entity linkage records, and employee record persistence. Runtime employee entities consume these records for transient movement only. |
+| `com.butchercraft.world.workforce.department` | Pure Department Identity, department anchors, bounded navigation targets, deterministic department registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
 | `com.butchercraft.world.inventory` | Pure actor-owned inventory containers, hierarchical storage nodes, capacity metadata, exact runtime Good quantities, typed entry metadata, deterministic registry, manager validation, and JSON persistence. |
@@ -161,7 +163,6 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
 | `com.butchercraft.inspection` | MCDA schedules, violation model, escalation, reinspection flow. |
-| `com.butchercraft.employee` | Employee data, skill progression, job roles, task selection. |
 | `com.butchercraft.customer` | Customer archetypes, order generation hooks, demand summaries. |
 | `com.butchercraft.business` | Facility identity, ledger, reputation, unlock state, order board. |
 | `com.butchercraft.work` | Work-order queue, reservations, task lifecycle, shared player/employee work. |
@@ -220,7 +221,7 @@ Required boundaries:
 - Refrigeration exposes storage and room summaries rather than equipment internals.
 - Inspections consume inspection-subject snapshots and produce violation/escalation results.
 - Work orders own intent, reservation token, state, completion, and failure reason; station-specific execution remains outside the order record.
-- Employee roles expose task filters, skill modifiers, execution timing, and skill gain contracts.
+- Future employee automation must expose task filters, skill modifiers, execution timing, and skill-gain contracts through a separately approved Workforce-owned or Workforce-referenced boundary.
 - Facility state owns identity and membership summaries only; business, inspections, work orders, refrigeration, and cleanliness keep their own domain state.
 - Client menus and screens consume synchronized summaries only. They do not mutate product quality, business state, employee skill, inspection outcomes, or saved data directly.
 - Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
@@ -233,6 +234,9 @@ Required boundaries:
 - ButcherCraft simulated world time is owned by `SimulationClock`, not Minecraft time-of-day. Future systems must schedule work through `SimulationScheduler` and observe rollover events through `SimulationEventBus` instead of owning independent timers.
 - Business Identity remains immutable inside World Identity. Mutable business runtime state is stored separately at `<world>/butchercraft/business_runtime.json`, references businesses by `BusinessId`, and responds to daily and weekly simulation rollover events without owning an independent clock.
 - Workforce definitions are organizational structure, not employee records. They persist separately at `<world>/butchercraft/workforce_definitions.json`, reference businesses by `BusinessId`, reference Business Runtime shift ids, and resolve required positions for a current shift without assigning workers.
+- Department definitions and anchors are Workforce-owned organizational/location records. They persist separately at `<world>/butchercraft/departments.json`, and employee records reference departments by `DepartmentId`. Departments do not own workstation assignments, jobs, reservations, Production Runs, Scheduler Work, Execution authority, Inventory access, or item movement.
+- Employee navigation quality is Workforce-owned runtime behavior. Employee entities reconstruct transient destinations from department assignment and active workstation reservations, use deterministic approach candidates, monitor progress, retry paths within bounded thresholds, and expose safe failure diagnostics. They do not persist pathfinding state, operate machines, dispatch Scheduler Work, consume Execution authority, mutate Production, or move Inventory.
+- Workstation reservation persistence at `<world>/butchercraft/workstation_reservations.json` owns only reservation identity, exclusivity, lifecycle, persisted operating position, and invalidation evidence. It is not a pathfinding engine and does not authorize workstation operation.
 - Economic Actors define participants, not economic behavior. Immutable definitions persist separately at `<world>/butchercraft/economic_actors.json`, reference goods by `GoodId`, and keep mutable runtime status and optional Business Runtime/Workforce assignments outside definition persistence.
 - Economic Inventory defines ownership, location, capacity, and runtime quantities, not movement or production. Containers reference actors and storage nodes, entries reference Goods by `GoodId`, and the pure domain remains independent from Minecraft inventory representation.
 - Economic Transactions define the universal runtime quantity-mutation pipeline. Future causes submit immutable requests; validation creates accepted change plans; execution alone applies atomic changes; audit history preserves deterministic submission order.
@@ -296,7 +300,7 @@ Use `SavedData` for data that belongs to a world or facility and must survive re
 Additional persistence ownership rules:
 
 - Business runtime state currently persists in schema-versioned JSON at `<world>/butchercraft/business_runtime.json` and stores only mutable operational summaries plus stable business references. Future `SavedData` business ledgers must not duplicate this runtime state without an explicit migration decision.
-- Workforce definitions currently persist in schema-versioned JSON at `<world>/butchercraft/workforce_definitions.json` and store only organizational staffing structure plus stable business and shift references. Worker identities, payroll, scheduling, and productivity must live in future employee systems.
+- Workforce definitions currently persist in schema-versioned JSON at `<world>/butchercraft/workforce_definitions.json` and store only organizational staffing structure plus stable business and shift references. Department records persist separately at `<world>/butchercraft/departments.json` and store department identities, optional anchors, presentation metadata, and revision. Employee records persist separately at `<world>/butchercraft/employee_records.json` and are owned by Workforce. Payroll, job scheduling, workstation operation, logistics, and productivity remain future systems.
 - Economic good definitions and transformation relationships persist in schema-versioned JSON at `<world>/butchercraft/goods.json`. The file stores immutable definitions only; future inventory, warehouse, market, order, shipment, and production quantities require separate runtime owners.
 - Economic actor definitions and relationship metadata persist in schema-versioned JSON at `<world>/butchercraft/economic_actors.json`. Runtime actor status and assignments are in-memory Phase 15 state; future durable runtime ownership requires a separate schema and must not rewrite immutable definitions.
 - Economic inventory containers, storage nodes, runtime statuses, exact quantities, canonical units, and typed entry metadata persist in schema-versioned JSON at `<world>/butchercraft/inventory.json`. Minecraft inventory, ItemStack, slot, menu, GUI, routing, order, and production state must not be duplicated into this file.
@@ -307,7 +311,7 @@ Additional persistence ownership rules:
 - Work-order queues use `SavedData` only when queued or reserved work must survive save/load; transient station progress remains on the relevant block entity.
 - Facility-level cleanliness summaries may use `SavedData`; local station cleanliness remains on block entities unless a chunk or zone attachment is explicitly introduced.
 - Refrigeration room registries and durable room summaries may use `SavedData`; active thermal caches remain on controllers or runtime services and must be rebuildable.
-- Employee skill and employment state belong on entity attachments, with only stable references or summaries mirrored in business or facility saved data.
+- Employee employment state and department assignment belong in Workforce-owned employee records. Employee entities persist only a stable Employee Identity link and movement anchor; they are not the authoritative employment, department, reservation, or navigation-recovery record. Future skill systems require a separate approved owner or explicit Workforce record extension.
 
 Attach world-level data to the Overworld when it is not dimension-specific, because the Overworld is stable for cross-dimension world data. Dimension-specific facility data can reference dimension keys explicitly.
 
@@ -589,7 +593,7 @@ Guidelines:
 
 Use data attachments for additional persistent data on supported holders:
 
-- Entity attachments for employee villager skill, job role, employment state, and work preferences.
+- Entity data or attachments may hold non-authoritative, reconstructable presentation state. Workforce-owned employee records remain authoritative for employment state.
 - Chunk attachments for aggregate cleanliness or facility area markers if chunk-level tracking proves practical.
 - Block entity fields for station and machine state; attachments are optional unless a cross-cutting data model is useful.
 - Non-persistent attachments only for caches that can be rebuilt.
@@ -660,20 +664,30 @@ Core concepts:
 
 For the vertical slice, use a simple refrigerated storage block or small structure. Full walk-in cooler/freezer multiblocks can be introduced after the basic loop works.
 
-## Employee AI Architecture
+## Employee Architecture
 
-Employees should be villager-based where possible, with custom data and job behavior layered on top.
+IM-023 introduces a custom `butchercraft:employee` entity as a narrow physical
+representation of a Workforce-owned employee record. IM-024 adds
+Workforce-owned departments and present-employee navigation to functional
+department anchors. This is not a villager job site system and it does not
+operate workstations.
 
-Proposed model:
+Current model:
 
-- Employee data stored on villager entities through attachments.
-- Business/facility assignment stored in saved data and mirrored on the employee attachment.
-- Job roles map to work-order predicates and station interactions.
-- A task selector picks valid work based on skill, distance, station availability, and priority.
-- Work-order reservations prevent multiple employees from claiming the same task.
-- Skill gain occurs server-side after successful work completion.
+- Employee identity and employment state are stored in
+  `<world>/butchercraft/employee_records.json`.
+- Department definitions and anchors are stored in
+  `<world>/butchercraft/departments.json`.
+- The entity stores only the Employee Identity link and movement anchor.
+- Shift eligibility and presence observation consume Business Runtime shift
+  identity without redefining shifts.
+- Read-only inspection displays name, status, presence, and shift summary.
+- Present employees assigned to an anchored department target that anchor and
+  idle within its bounded radius.
+- Unanchored departments remain definitions only.
 
-Pathfinding and scheduling should start simple. Avoid complex shift systems until the first employee can reliably do one useful job.
+Future pathfinding, job claiming, workstation operation, reservations,
+product movement, skill gain, scheduling, and payroll remain separately gated.
 
 ## Work-Order Architecture
 

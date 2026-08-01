@@ -1,8 +1,12 @@
 # Workforce Framework
 
-Status: v0.9.0 Phase 12 foundation
+Status: implemented workforce, employee, department navigation, and bounded navigation recovery foundations
 
-The Workforce Framework defines the staffing structure a business requires to operate. It does not create employees, villagers, AI, hiring, payroll, production, or gameplay behavior.
+The Workforce Framework defines the staffing structure a business requires to
+operate and owns individual Employee Identity, Employment Records, Department
+definitions, department assignments, and department navigation anchors. It
+still does not add job claiming, workstation operation, item carrying, hiring
+markets, payroll, production authority, or automation.
 
 ## Architecture
 
@@ -19,8 +23,24 @@ The workforce package owns:
 - `WorkforceRegistry` for deterministic lookup, validation, and loading.
 - `WorkforceManager` for definition creation, validation, and runtime shift lookup.
 - `WorkforceStorage` for schema-versioned JSON persistence.
+- `EmployeeId` for deterministic employee identity.
+- `EmployeeRecord` for employment status, profile, assigned shift reference,
+  optional position reference, optional department reference, presence state,
+  entity linkage, and revision.
+- `EmployeeManager` for explicit employee creation, lifecycle, shift,
+  department, presence, and entity-link transitions.
+- `EmployeeStorage` for schema-versioned employee record persistence.
+- Employee entity integration for Workforce-owned movement intent, transient
+  destination selection, progress monitoring, bounded retry, and safe movement
+  failure diagnostics.
+- `DepartmentId`, `DepartmentRecord`, `DepartmentRegistry`, and
+  `DepartmentManager` for Workforce-owned department definitions, anchors,
+  and employee assignment validation.
+- `DepartmentStorage` for schema-versioned department persistence.
 
-Only `com.butchercraft.world.WorkforceService` imports Minecraft or NeoForge APIs. The workforce package is Java-only and can be tested without launching Minecraft.
+Only service, command, registration, client, and entity integration classes
+import Minecraft or NeoForge APIs. The workforce domain packages remain
+Java-only and can be tested without launching Minecraft.
 
 ## Lifecycle
 
@@ -37,7 +57,74 @@ Runtime lookup:
 1. Business Runtime exposes the current active shift id.
 2. Workforce Manager finds definitions for that business.
 3. Workforce Manager returns required positions for the current shift.
-4. Future employee systems may decide whether those positions are filled.
+4. Employee Manager may observe employee records against the current Business
+   Runtime shift identity.
+5. Present employees may target Workforce-published department anchors when a
+   functional anchor exists for the assigned department.
+6. Future employee systems may decide whether positions are filled or work is
+   assigned.
+
+## Employee Navigation Quality
+
+IM-026 keeps navigation authority in Workforce while improving the physical
+employee entity's movement quality. The entity reconstructs a transient travel
+destination from authoritative Workforce department assignment and any active
+workstation reservation. It does not persist path objects, node lists, retry
+timers, candidate indexes, or recovery phase.
+
+A travel destination contains:
+
+- destination type: department, workstation, or none;
+- a stable destination identity;
+- one or more deterministic candidate positions;
+- arrival tolerance;
+- optional facing target for workstation waiting;
+- transient path availability, retry, progress, and failure diagnostics.
+
+Department travel uses the Workforce-owned department anchor plus deterministic
+nearby candidates inside the configured radius. Department idling chooses
+walkable, in-radius targets, pauses between movements, rejects blocked or
+unsupported positions, and avoids choosing another employee's current block
+when alternatives exist.
+
+Workstation travel consumes the reservation's workstation identity and
+workstation-provided approach candidates. The reservation remains authoritative
+for exclusivity and lifecycle; it is not a pathfinding engine.
+
+Accepted travel paths must have nodes and end at a valid standing position
+within the destination's arrival tolerance. A complete-path flag alone is not
+authoritative; nearest-wall partial paths outside the accepted destination
+region are rejected.
+
+Navigation thresholds are intentionally bounded:
+
+- schema-1 ordinary employee department/workstation navigation range: 64
+  horizontal blocks, chosen as an initial plant-scale maximum that covers
+  realistic manual acceptance buildings without making path search unbounded;
+- destinations outside that range fail visibly as `destination_out_of_range`
+  before path publication;
+- path restart cooldown: 20 ticks;
+- progress checkpoint interval: 20 ticks;
+- stall interval: 80 ticks without meaningful improvement;
+- meaningful progress: at least 0.2 blocks toward the active next path node;
+- retries per candidate: 1;
+- department unreachable retry cooldown: 200 ticks.
+
+Recovery proceeds deterministically:
+
+```text
+initial_path
+-> repath_primary
+-> try_next_candidate
+-> try_final_fallback
+-> safe_failure
+```
+
+For unreachable workstation travel, Workforce invalidates the active
+reservation with a `navigation_unreachable` reason and the employee returns
+toward its department when possible. For unreachable department travel, the
+employee stops safely, exposes `department_unreachable`, and retries only after
+the bounded cooldown.
 
 Server stop:
 
@@ -73,7 +160,47 @@ A shift assignment stores:
 - minimum workers
 - maximum workers
 
-No worker identity, villager, employee, schedule, wage, productivity, or inventory data is stored in this framework.
+Workforce definitions do not store worker identity, villager, schedule, wage,
+productivity, or inventory data. Employee records are stored separately in the
+employee record file.
+
+## Employee Records
+
+Employee records store:
+
+- employee id
+- business id
+- display name
+- employment status
+- presence state
+- assigned Business Runtime shift reference
+- optional Workforce position id
+- optional Workforce department id
+- hire Business Calendar timestamp
+- optional entity link and anchor
+- schema version and revision
+
+Employee records do not store Production tasks, workstation assignments,
+machine reservations, inventory contents, wages, payroll, fatigue, morale,
+training, productivity, or customer interaction state.
+
+## Departments
+
+Department schema version 1 defines five Workforce-owned departments:
+
+- `processing`
+- `packaging`
+- `shipping`
+- `office`
+- `maintenance`
+
+Processing is the only functional default department in IM-024. It has a
+default Overworld anchor and bounded radius. The remaining departments are
+registered definitions only until later milestones assign anchors and behavior.
+
+Employees are assigned to departments, not workstations. Department assignment
+does not claim jobs, reserve machines, submit Scheduler work, operate
+Production, mutate Inventory, consume Execution authority, or move items.
 
 ## Persistence
 
@@ -87,6 +214,32 @@ The schema version is `1`.
 
 The file stores workforce definitions and `BusinessId` references only. It does not duplicate immutable business names, property records, ownership records, settlement records, or runtime operational state.
 
+Employee records are stored at:
+
+```text
+<world>/butchercraft/employee_records.json
+```
+
+The schema version is `1`. The file stores employee identity, employment
+record state, shift references, optional position references, and entity
+linkage. It does not duplicate Business Runtime shift definitions or World
+Identity business records.
+
+Department records are stored at:
+
+```text
+<world>/butchercraft/departments.json
+```
+
+The schema version is `1`. The file stores department identities, display
+labels, optional anchors, optional presentation metadata, and revision. It does
+not store jobs, workstation assignments, machine reservations, Production
+runs, Inventory quantities, or Scheduler work.
+
+Employee navigation recovery state is not persisted. After reload, the entity
+reconstructs movement intent from employee records, department records, Business
+Runtime observation, and active workstation reservations.
+
 ## Validation
 
 The workforce framework rejects:
@@ -96,6 +249,7 @@ The workforce framework rejects:
 - unknown business ids
 - invalid shift references
 - unknown position references
+- unknown department references
 - invalid position types
 - invalid skill levels
 - invalid certifications
@@ -110,15 +264,21 @@ The workforce framework rejects:
 
 ## Extension Points
 
-Future employee systems should occupy workforce positions rather than inventing separate job structures. Future production, AI, scheduling, economy, inspections, and automation systems should consume workforce definitions through `WorkforceManager` or a narrow service built on top of it.
+Future employee systems should occupy workforce positions and departments
+rather than inventing separate job structures. Future production, AI,
+scheduling, economy, inspections, and automation systems should consume
+workforce definitions, department definitions, and employee records through
+narrow Workforce-owned services.
 
-Out of scope for Phase 12:
+Out of scope after IM-024:
 
-- employees
 - villagers
-- AI
-- hiring
-- firing
+- workstation AI
+- job claiming
+- workstation operation
+- item carrying
+- logistics
+- machine reservation
 - payroll
 - production
 - machines
@@ -127,6 +287,17 @@ Out of scope for Phase 12:
 - inspections
 - reputation
 - productivity
-- gameplay
 - GUI
 - networking
+
+Still out of scope after IM-026:
+
+- workstation operation
+- item carrying
+- job claiming
+- Production-driven assignment
+- Scheduler dispatch
+- Execution authorization
+- employee skills, productivity, morale, fatigue, payroll, or training
+- complex crowd simulation
+- teleport-based path recovery

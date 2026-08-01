@@ -1,6 +1,6 @@
 # Production Order
 
-Status: IM-019 player-facing guidance foundation
+Status: IM-019 player-facing guidance foundation, extended by IM-022 deadline display
 
 The Production Order is a narrow player-facing item for the current manual Beef Patties chain. It exists to make the already implemented Grinder to Patty Former Production path understandable without developer diagnostics or internal identities.
 
@@ -20,6 +20,12 @@ Beef Trim
 ```
 
 The order creates one fixed Beef Patties Production Run when an unlinked order item is opened on the server. Reopening the same item observes the existing run referenced by the item component. Stale references remain visible instead of creating a replacement run.
+
+IM-022 adds an optional configured target deadline to newly created Beef
+Patties Production Order runs when Business Runtime deadline configuration is
+enabled. The deadline is Production-owned status only; it does not add customer
+orders, penalties, money changes, reputation, automatic failure, or automatic
+retry.
 
 ## Player Flow
 
@@ -73,6 +79,11 @@ Major next actions include:
 
 Progress is read from assigned workstation owner state through bounded menu data. Production and the screen observe progress; they do not own or mutate it.
 
+The screen also displays plant status, current business day and time, current
+or next shift, deadline time, and deadline status when those observations are
+available. The display intentionally omits hashes, raw ticks, evidence
+identities, configuration identities, and other internal authority tokens.
+
 ## Failure Guidance
 
 The order maps typed runtime state to player-readable guidance:
@@ -90,9 +101,10 @@ The UI does not imply repair, retry, compensation, or automatic recovery.
 
 ## Persistence
 
-The Production Order item persists only the fixed template identity and optional Production Run reference. Production persists run, chain, assignment, execution, and completion evidence references. Grinder, Patty Former, Execution, and Scheduler state remain with their owning systems.
+The Production Order item persists only the fixed template identity and optional Production Run reference. Production persists run, chain, assignment, execution, completion evidence references, and optional deadline records. Grinder, Patty Former, Execution, Scheduler, World Time, and Business Runtime state remain with their owning systems.
 
-Legacy Production Runs remain loadable because this milestone does not change existing Production schemas.
+Legacy Production Runs without a deadline field remain loadable as
+`NO_DEADLINE`; no deadline is fabricated for old runs.
 
 ## Multiplayer Limitations
 
@@ -113,6 +125,8 @@ The following remain gated:
 - additional Production templates
 - arbitrary workflow graphs
 - recipe selection UI
+- customer-order-authored deadlines
+- deadline penalties
 - worker AI
 - automated transfer
 - Allocation

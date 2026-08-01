@@ -363,6 +363,154 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    void currentManifestRegistersWorldTimeAndBusinessCalendarFoundationAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> implementedWorldTimeContracts = List.of(
+                "butchercraft:platform_contract/configurable_minecraft_day_length",
+                "butchercraft:platform_contract/deterministic_scaled_day_time_accumulator",
+                "butchercraft:platform_contract/business_calendar_day_time_derivation",
+                "butchercraft:platform_contract/world_time_no_catch_up_rule",
+                "butchercraft:platform_contract/world_time_dimension_policy",
+                "butchercraft:platform_contract/world_time_client_display_synchronization",
+                "butchercraft:platform_contract/world_time_diagnostics"
+        );
+
+        for (String contractId : implementedWorldTimeContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.ownerId().value().equals("butchercraft:simulation")
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/world_time")
+                        && authority.ownerId().value().equals("butchercraft:simulation")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:world_time_state")
+                        && descriptor.ownerId().value().equals("butchercraft:simulation")
+                        && descriptor.path().equals("butchercraft/world_time.json")));
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/scaled_day_time_advancement")
+                        && assignment.ownerId().value().equals("butchercraft:simulation")));
+        assertTrue(context.ownershipAssignments().stream()
+                .anyMatch(assignment -> assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/business_calendar_derivation")
+                        && assignment.ownerId().value().equals("butchercraft:simulation")));
+    }
+
+    @Test
+    void currentManifestRegistersBusinessHoursShiftsAndDeadlinesAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> businessRuntimeContracts = List.of(
+                "butchercraft:platform_contract/business_runtime_configurable_operating_hours",
+                "butchercraft:platform_contract/business_runtime_open_closed_observation",
+                "butchercraft:platform_contract/business_runtime_configurable_shift_definitions",
+                "butchercraft:platform_contract/business_runtime_active_next_shift_observation",
+                "butchercraft:platform_contract/business_runtime_identity_foundation",
+                "butchercraft:platform_contract/business_runtime_time_jump_observation",
+                "butchercraft:platform_contract/business_hours_shift_deadline_persistence",
+                "butchercraft:platform_contract/business_runtime_diagnostics"
+        );
+        List<String> productionContracts = List.of(
+                "butchercraft:platform_contract/production_deadline_identity",
+                "butchercraft:platform_contract/production_deadline_status",
+                "butchercraft:platform_contract/production_deadline_completion_timing",
+                "butchercraft:platform_contract/production_order_deadline_display"
+        );
+
+        for (String contractId : businessRuntimeContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.ownerId().value().equals("butchercraft:business_runtime")
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        for (String contractId : productionContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.ownerId().value().equals("butchercraft:production")
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value()
+                        .equals("butchercraft:runtime_authority/business_runtime_calendar")
+                        && authority.ownerId().value().equals("butchercraft:business_runtime")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:business_calendar_runtime")
+                        && descriptor.ownerId().value().equals("butchercraft:business_runtime")
+                        && descriptor.path().equals("butchercraft/business_calendar_runtime.json")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/business_shift_observation")
+                        && assignment.ownerId().value().equals("butchercraft:business_runtime")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/production_deadline_status")
+                        && assignment.ownerId().value().equals("butchercraft:production")));
+        assertTrue(context.ownershipAssignments().stream().noneMatch(assignment ->
+                assignment.ownerId().value().equals("butchercraft:business_runtime")
+                        && assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/production_deadline_status")));
+    }
+
+    @Test
+    void currentManifestRegistersEmployeeFoundationAsImplemented() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        List<String> employeeContracts = List.of(
+                "butchercraft:platform_contract/employee_identity_foundation",
+                "butchercraft:platform_contract/employment_record_foundation",
+                "butchercraft:platform_contract/employee_shift_presence_observation",
+                "butchercraft:platform_contract/employee_entity_link_foundation",
+                "butchercraft:platform_contract/employee_persistence_foundation",
+                "butchercraft:platform_contract/employee_diagnostics_foundation",
+                "butchercraft:platform_contract/employee_foundation_gametest_coverage",
+                "butchercraft:platform_contract/department_identity_foundation",
+                "butchercraft:platform_contract/department_anchor_foundation",
+                "butchercraft:platform_contract/employee_department_assignment_foundation",
+                "butchercraft:platform_contract/employee_department_navigation_foundation",
+                "butchercraft:platform_contract/department_persistence_foundation",
+                "butchercraft:platform_contract/department_diagnostics_foundation",
+                "butchercraft:platform_contract/department_navigation_boundary_safety"
+        );
+
+        for (String contractId : employeeContracts) {
+            assertTrue(context.platformContracts().stream()
+                    .anyMatch(contract -> contract.id().value().equals(contractId)
+                            && contract.ownerId().value().equals("butchercraft:workforce")
+                            && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        }
+        assertTrue(context.runtimeAuthorities().stream()
+                .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/workforce_world")
+                        && authority.ownerId().value().equals("butchercraft:workforce")
+                        && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:employee_records")
+                        && descriptor.ownerId().value().equals("butchercraft:workforce")
+                        && descriptor.path().equals("butchercraft/employee_records.json")));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
+                descriptor.id().equals("butchercraft:departments")
+                        && descriptor.ownerId().value().equals("butchercraft:workforce")
+                        && descriptor.path().equals("butchercraft/departments.json")));
+        assertTrue(context.dependencies().stream().anyMatch(dependency ->
+                dependency.consumerId().value().equals("butchercraft:workforce")
+                        && dependency.providerId().value().equals("butchercraft:business_runtime")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_identity")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_presence_observation")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/employee_department_navigation")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value().equals("butchercraft:responsibility/department_persistence")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+    }
+
+    @Test
     void platformIdentityRuleRequiresEveryCanonicalIdentityKindExactlyOnce() {
         ValidationContext base = ArchitectureValidationTestFixtures.validContext();
         List<PlatformIdentityDescriptor> identities = new ArrayList<>(base.platformIdentities());
@@ -892,7 +1040,42 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/production_order_read_only_progress_presentation",
                         "butchercraft:platform_contract/production_order_manual_transfer_guidance",
                         "butchercraft:platform_contract/production_order_failure_guidance",
-                        "butchercraft:platform_contract/production_order_gametest_coverage"
+                        "butchercraft:platform_contract/production_order_gametest_coverage",
+                        "butchercraft:platform_contract/configurable_minecraft_day_length",
+                        "butchercraft:platform_contract/deterministic_scaled_day_time_accumulator",
+                        "butchercraft:platform_contract/business_calendar_day_time_derivation",
+                        "butchercraft:platform_contract/world_time_no_catch_up_rule",
+                        "butchercraft:platform_contract/world_time_dimension_policy",
+                        "butchercraft:platform_contract/world_time_client_display_synchronization",
+                        "butchercraft:platform_contract/world_time_diagnostics",
+                        "butchercraft:platform_contract/business_runtime_configurable_operating_hours",
+                        "butchercraft:platform_contract/business_runtime_open_closed_observation",
+                        "butchercraft:platform_contract/business_runtime_configurable_shift_definitions",
+                        "butchercraft:platform_contract/business_runtime_active_next_shift_observation",
+                        "butchercraft:platform_contract/business_runtime_identity_foundation",
+                        "butchercraft:platform_contract/business_runtime_time_jump_observation",
+                        "butchercraft:platform_contract/production_deadline_identity",
+                        "butchercraft:platform_contract/production_deadline_status",
+                        "butchercraft:platform_contract/production_deadline_completion_timing",
+                        "butchercraft:platform_contract/production_order_deadline_display",
+                        "butchercraft:platform_contract/business_hours_shift_deadline_persistence",
+                        "butchercraft:platform_contract/business_runtime_diagnostics",
+                        "butchercraft:platform_contract/employee_identity_foundation",
+                        "butchercraft:platform_contract/employment_record_foundation",
+                        "butchercraft:platform_contract/employee_shift_presence_observation",
+                        "butchercraft:platform_contract/employee_entity_link_foundation",
+                        "butchercraft:platform_contract/employee_persistence_foundation",
+                        "butchercraft:platform_contract/employee_diagnostics_foundation",
+                        "butchercraft:platform_contract/employee_foundation_gametest_coverage",
+                        "butchercraft:platform_contract/department_identity_foundation",
+                        "butchercraft:platform_contract/department_anchor_foundation",
+                        "butchercraft:platform_contract/employee_department_assignment_foundation",
+                        "butchercraft:platform_contract/employee_department_navigation_foundation",
+                        "butchercraft:platform_contract/employee_navigation_quality_recovery",
+                        "butchercraft:platform_contract/workstation_approach_candidate_geometry",
+                        "butchercraft:platform_contract/department_persistence_foundation",
+                        "butchercraft:platform_contract/department_diagnostics_foundation",
+                        "butchercraft:platform_contract/department_navigation_boundary_safety"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

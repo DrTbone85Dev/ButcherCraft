@@ -1,5 +1,47 @@
 # Changelog
 
+## ButcherCraft v0.10.2-alpha.1 - Workforce Navigation Update
+
+### Added
+
+- Added the Workforce department system.
+- Added the employee system foundation.
+- Added persistent employee identities.
+- Added employment records.
+- Added department anchors.
+- Added employee navigation.
+- Added workstation reservations.
+- Added employee diagnostics.
+- Added Business Runtime integration for business hours and shift observation.
+- Added Grinder and Patty Former reservation support.
+
+### Improved
+
+- Improved long-range employee navigation.
+- Improved alternate route handling.
+- Improved navigation recovery.
+- Improved reservation lifecycle cleanup.
+- Improved employee command usability.
+- Improved department assignment.
+
+### Fixed
+
+- Fixed employee command completion so suggested references execute unchanged.
+- Fixed the command synchronization login regression caused by an unsynchronized custom command argument.
+- Fixed employee inspection localization.
+- Fixed reservation cleanup after terminal navigation failure.
+- Fixed the navigation range limitation that prevented travel beyond approximately 15 blocks.
+- Fixed the path acceptance regression that rejected valid nearby path endpoints.
+- Fixed employee routing stability for indirect routes.
+
+### Technical
+
+- Expanded automated regression coverage.
+- Tracked 178 required GameTests for the current milestone gate.
+- Improved navigation diagnostics.
+- Strengthened command synchronization validation.
+- Preserved architecture boundaries around Workforce, navigation, reservations, Production, Scheduler, Execution, and Inventory.
+
 ## ButcherCraft v0.10.1-alpha.1 - First Multi-Workstation Production Update
 
 ### Added

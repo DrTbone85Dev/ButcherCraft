@@ -20,6 +20,11 @@ import com.butchercraft.world.production.ProductionBusinessRequirement;
 import com.butchercraft.world.production.ProductionChainCompletionEvidence;
 import com.butchercraft.world.production.ProductionChainStepStatus;
 import com.butchercraft.world.production.ProductionDependencies;
+import com.butchercraft.world.production.ProductionDeadline;
+import com.butchercraft.world.production.ProductionDeadlineCompletionTiming;
+import com.butchercraft.world.production.ProductionDeadlineIdentity;
+import com.butchercraft.world.production.ProductionDeadlineStatus;
+import com.butchercraft.world.production.ProductionDeadlineType;
 import com.butchercraft.world.production.ProductionDuration;
 import com.butchercraft.world.production.ProductionExecutionPolicy;
 import com.butchercraft.world.production.ProductionInputDefinition;
@@ -55,7 +60,9 @@ import com.butchercraft.world.production.ProductionWorkstationChain;
 import com.butchercraft.world.production.ProductionWorkstationChainStatus;
 import com.butchercraft.world.production.ProductionWorkstationChainStep;
 import com.butchercraft.world.production.ProductionWorkstationCompletionEvidence;
+import com.butchercraft.world.business.runtime.BusinessRuntimeConfigurationIdentity;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
+import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 import com.butchercraft.world.transaction.TransactionId;
 import com.butchercraft.world.workforce.CertificationType;
 import com.butchercraft.world.workforce.PositionId;
@@ -604,6 +611,7 @@ public final class ProductionStorage {
                 ProductionStorage::serializeWorkstationAssignment);
         optionalObject(object, "workstation_chain", value.workstationChain(),
                 ProductionStorage::serializeWorkstationChain);
+        optionalObject(object, "deadline", value.deadline(), ProductionStorage::serializeDeadline);
         optionalString(object, "failure_code", value.failureCode().map(ProductionStorage::lower));
         optionalString(object, "failure_summary", value.failureSummary());
         object.addProperty("revision", value.revision());
@@ -629,11 +637,55 @@ public final class ProductionStorage {
                         ProductionStorage::deserializeWorkstationAssignment),
                 optionalObjectIfPresent(object, "workstation_chain",
                         ProductionStorage::deserializeWorkstationChain),
+                optionalObjectIfPresent(object, "deadline", ProductionStorage::deserializeDeadline),
                 optionalString(object, "failure_code")
                         .map(value -> enumValue(com.butchercraft.world.production.ProductionFailureCode.class, value)),
                 optionalString(object, "failure_summary"),
                 longValue(object, "revision"),
                 schema(object)
+        );
+    }
+
+    private static JsonObject serializeDeadline(ProductionDeadline value) {
+        JsonObject object = record(value.schemaVersion());
+        object.addProperty("identity", value.identity().value());
+        object.addProperty("run_id", value.runId().value());
+        object.addProperty("type", lower(value.type()));
+        object.addProperty("business_day_index", value.businessDayIndex());
+        object.addProperty("business_hour", value.businessTime().hour());
+        object.addProperty("business_minute", value.businessTime().minute());
+        object.addProperty("business_runtime_configuration_identity",
+                value.businessRuntimeConfigurationIdentity().value());
+        object.addProperty("source_world_day_identity", value.sourceWorldDayIdentity());
+        object.addProperty("source_dimension_identity", value.sourceDimensionIdentity());
+        object.addProperty("source_identity", value.sourceIdentity());
+        object.addProperty("status", lower(value.status()));
+        object.addProperty("locked", value.locked());
+        optionalString(object, "completion_timing", value.completionTiming().map(ProductionStorage::lower));
+        optionalString(object, "evaluated_world_day_identity", value.evaluatedWorldDayIdentity());
+        return object;
+    }
+
+    private static ProductionDeadline deserializeDeadline(JsonObject object) {
+        return new ProductionDeadline(
+                schema(object),
+                new ProductionDeadlineIdentity(string(object, "identity")),
+                ProductionRunId.of(string(object, "run_id")),
+                enumValue(ProductionDeadlineType.class, string(object, "type")),
+                longValue(object, "business_day_index"),
+                new BusinessTimeOfDay(
+                        intValue(object, "business_hour"),
+                        intValue(object, "business_minute")
+                ),
+                new BusinessRuntimeConfigurationIdentity(string(object, "business_runtime_configuration_identity")),
+                string(object, "source_world_day_identity"),
+                string(object, "source_dimension_identity"),
+                string(object, "source_identity"),
+                enumValue(ProductionDeadlineStatus.class, string(object, "status")),
+                bool(object, "locked"),
+                optionalString(object, "completion_timing")
+                        .map(value -> enumValue(ProductionDeadlineCompletionTiming.class, value)),
+                optionalString(object, "evaluated_world_day_identity")
         );
     }
 

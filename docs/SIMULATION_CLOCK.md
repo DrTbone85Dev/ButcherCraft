@@ -1,8 +1,12 @@
 # Simulation Clock
 
-Status: v0.9.0 Phase 10 foundation
+Status: v0.9.0 Phase 10 foundation with IM-021 World Time and Business Calendar foundation
 
-The Simulation Clock is ButcherCraft's authoritative source of simulated world time. Minecraft server ticks provide execution cadence, but Minecraft time-of-day is not the business simulation.
+The Simulation Clock is ButcherCraft's authoritative source of tick-driven
+simulation time. Minecraft server ticks provide execution cadence. IM-021 adds
+a Simulation-owned World Time service for scaled Minecraft `dayTime` and a
+derived Business Calendar snapshot, but Scheduler, Planning, Production,
+Execution, and workstation progress remain based on simulation/server ticks.
 
 ## Architecture
 
@@ -17,10 +21,16 @@ The simulation package owns:
 - `SimulationEventBus` for listener publication.
 - `SimulationStateStorage` for independent JSON persistence.
 - `SimulationClockService` for Minecraft server lifecycle integration.
+- `com.butchercraft.world.simulation.time` for configurable scaled Minecraft
+  `dayTime`, deterministic fractional accumulation, Business Calendar
+  derivation, time-jump observation, client display snapshots, and
+  `world_time.json` persistence.
 - `com.butchercraft.world.simulation.checkpoint` for explicit Clock-owned
   checkpoint snapshot capture and restoration candidates.
 
-Only `SimulationClockService` imports Minecraft or NeoForge APIs. The clock, calendar, scheduler, event records, bus, state, and storage are Java-only.
+Only the Simulation lifecycle adapters import Minecraft or NeoForge APIs. The
+clock, calendar, scheduler, event records, bus, world-time rate model,
+Business Calendar mapping, state, and storage are Java-only.
 
 ## Checkpoint Participation
 
@@ -48,8 +58,10 @@ Server tick:
 
 1. NeoForge emits a server post-tick event.
 2. `SimulationClockService` advances the active clock by one simulation tick.
-3. Due events execute in deterministic order.
-4. Executed events publish through `SimulationEventBus`.
+3. `WorldTimeService` observes and, when enabled, scales Overworld `dayTime`
+   through the deterministic rational accumulator.
+4. Due simulation-clock events execute in deterministic order.
+5. Executed events publish through `SimulationEventBus`.
 
 Server stop:
 
@@ -126,6 +138,15 @@ Given the same simulation configuration and advancement sequence, the clock prod
 - pending scheduler state
 
 The framework does not depend on client frame rate, rendering, Minecraft time-of-day, or random event ordering.
+
+The Business Calendar is derived from scaled Minecraft `dayTime` for display
+and future calendar-facing semantics. It is not a replacement for
+authoritative simulation ticks and cannot create Scheduler, Planning,
+Production, Execution, or workstation catch-up.
+
+See [`WORLD_TIME_AND_BUSINESS_CALENDAR.md`](WORLD_TIME_AND_BUSINESS_CALENDAR.md)
+for configuration, dimension policy, sleep and `/time` behavior, vanilla
+system effects, persistence, diagnostics, and future gates.
 
 ## Validation
 

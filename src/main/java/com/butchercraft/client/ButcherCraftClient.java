@@ -7,12 +7,15 @@ import com.butchercraft.client.screen.PackagingTableScreen;
 import com.butchercraft.client.screen.PattyFormerScreen;
 import com.butchercraft.client.screen.ProcessingWorkstationScreen;
 import com.butchercraft.client.screen.ProductionOrderScreen;
+import com.butchercraft.client.renderer.EmployeeRenderer;
 import com.butchercraft.registration.ModClientRegistrationStatus;
+import com.butchercraft.registration.ModEntityTypes;
 import com.butchercraft.registration.ModMenuTypes;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 @EventBusSubscriber(modid = ButcherCraft.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ButcherCraftClient {
@@ -33,5 +36,10 @@ public final class ButcherCraftClient {
         ModClientRegistrationStatus.markBandsawScreenRegistered();
         ModClientRegistrationStatus.markPackagingTableScreenRegistered();
         ModClientRegistrationStatus.markProductionOrderScreenRegistered();
+    }
+
+    @SubscribeEvent
+    public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntityTypes.EMPLOYEE.get(), EmployeeRenderer::new);
     }
 }

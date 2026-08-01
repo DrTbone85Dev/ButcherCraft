@@ -1,6 +1,6 @@
 # Industry-Neutral Production Framework
 
-Status: implemented in v0.9.0-alpha.1 Phase 20 (RFC-0020), with IM-016 Grinder integration and IM-018 two-step workstation chain observation.
+Status: implemented in v0.9.0-alpha.1 Phase 20 (RFC-0020), with IM-016 Grinder integration, IM-018 two-step workstation chain observation, and IM-022 deadline status foundation.
 
 ## Purpose
 
@@ -44,7 +44,11 @@ Inventory
     remains authoritative for current Good quantities
 ```
 
-Orders and Contracts may provide context but do not execute Production. Workforce and Business Runtime are queried as external authorities and are never mutated by Production.
+Orders and Contracts may provide context but do not execute Production.
+Workforce and Business Runtime are queried as external authorities and are
+never mutated by Production. IM-022 lets Production bind and evaluate
+Production Run deadlines from explicit Business Calendar snapshots, but
+Production still does not own plant hours or calendar derivation.
 
 ## Package Ownership
 
@@ -60,6 +64,9 @@ The pure domain is `com.butchercraft.world.production`, with scheduler and persi
 - `ProductionLineId`: stable input or output line identity independent of list position.
 - Workstation assignment identity fields: external workstation identity, selected process identity, Execution Operation Identity, workstation owner result identity, Execution result evidence identity, and Production completion evidence identity.
 - Workstation chain identity fields: Production chain identity, ordered chain-step identities, expected workstation types, input and output product identities, observed Execution Operation Identities, owner-result identities, Execution result evidence identities, and Production chain completion evidence identity.
+- Production deadline identity fields: Run identity, deadline type, business
+  day and time, Business Runtime configuration identity, source world-day
+  identity, source dimension identity, and deadline source identity.
 
 Production-owned ids use canonical lowercase identifier rules, stable equality, deterministic ordering, and persistence-safe strings. External identity fields preserve the published identity of their owning subsystem. Phase 20 does not need a separate allocation identity because line bindings and transaction changes remain unambiguous.
 
@@ -141,6 +148,27 @@ BLOCKED | PAUSED -> READY/SCHEDULED/RUNNING after reevaluation
 Terminal states are irreversible. Ticks never move backward, progress never decreases, one Scheduler Work id cannot bind multiple Runs, one APPLIED completion transaction cannot complete multiple Runs, and one Execution Operation Identity cannot bind multiple Production Runs.
 
 Blocked and paused records carry a typed reason, last evaluated tick, and future reevaluation tick. Scheduler retry counters and Production execution attempts remain distinct.
+
+## Deadlines
+
+IM-022 adds optional Production Run deadlines. An absent deadline means
+`NO_DEADLINE`. A present schema-1 deadline is a `TARGET` deadline bound to a
+specific Run, business day, business time, Business Runtime configuration
+identity, and source identity.
+
+Incomplete Runs classify as `UPCOMING`, `DUE_NOW`, or `OVERDUE` from explicit
+Business Calendar observations. Missing a deadline does not fail, cancel,
+retry, move items, change money, alter reputation, or create customer
+consequences.
+
+When a completion calendar is supplied, Production persists terminal timing as
+`COMPLETED_EARLY`, `COMPLETED_ON_TIME`, or `COMPLETED_LATE`. Terminal timing is
+not recomputed differently after reload. Deadlines may be changed before
+execution begins; duplicate identical assignments are safe, and conflicting
+updates after lock are rejected.
+
+See `docs/BUSINESS_HOURS_SHIFTS_AND_DEADLINES.md` for the full boundary and
+time-jump rules.
 
 ## Duration and Progress
 
