@@ -6,11 +6,16 @@ import com.butchercraft.machine.grinder.execution.GrinderExecutionCoordinator;
 import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationExecutionEffectResult;
 import com.butchercraft.workstation.WorkstationOperationResolver;
+import com.butchercraft.workstation.WorkstationProductionRequestResult;
+import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
+import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
 import com.butchercraft.world.execution.ExecutionOperationId;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -33,6 +38,12 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, GrinderBlockEntity blockEntity) {
+        if (level instanceof ServerLevel serverLevel
+                && (blockEntity.workstationState() == WorkstationState.IDLE
+                || blockEntity.workstationState() == WorkstationState.READY)
+                && WorkstationReservationService.INSTANCE.hasActiveReservationAt(serverLevel, pos)) {
+            return;
+        }
         AbstractProcessingWorkstationBlockEntity.serverTick(level, pos, state, blockEntity);
     }
 
@@ -47,6 +58,10 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
             long authoritativeTick
     ) {
         return super.completeScheduledExecution(operationId, domainEffectIdentity, authoritativeTick);
+    }
+
+    public WorkstationProductionRequestResult requestEmployeeProcessing(WorkstationTickContext tickContext) {
+        return requestProductionProcessing(tickContext);
     }
 
     @Nullable

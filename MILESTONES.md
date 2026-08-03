@@ -4,6 +4,83 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-027: Employee Workstation Operation Foundation
+
+Goal: allow one arrived employee with one active Grinder reservation to request
+and observe the existing Beef Trim to Ground Beef operation through the same
+workstation, Execution, and Scheduler path used by normal Grinder processing.
+
+Included work:
+
+- Transient employee operation states for preparing, operating, waiting for
+  completion, complete, failure, and idle.
+- One reservation-scoped request for `butchercraft:grind_beef` after physical
+  arrival at a Grinder.
+- One permission-gated development/operator trigger:
+  `/butchercraft employee operate <employee>`.
+- Grinder-owned validation of preloaded Beef Trim, output capacity, recipe,
+  and workstation state through the existing processing controller.
+- Existing Grinder-owned private Execution authorization, generic Scheduler
+  dispatch, ItemStack commit, and owner-result publication.
+- Read-only employee observation of matching Grinder owner result evidence and
+  Execution result evidence.
+- Explicit no-retry failures for missing input, invalid recipe, blocked output,
+  occupied or removed workstation, reservation loss, rejected or failed
+  Execution, and Unknown Outcome.
+- Employee diagnostics for workstation, reservation, recipe, Execution
+  identity, state, and failure.
+- Architecture-manifest declarations, focused unit and boundary tests, and
+  server-world GameTests.
+
+Excluded work:
+
+- Employee-created or employee-carried input, output collection, Patty Former
+  operation, additional Grinder recipes, logistics, Production dispatch, job
+  claiming, autonomous workflows, multiple simultaneous recipes, skills,
+  productivity, morale, payroll, training, customer behavior, Allocation,
+  teleportation, and startup recovery.
+
+Acceptance criteria:
+
+- An operator may request exactly one Beef Trim Grinder operation for one
+  arrived employee and active reservation; arrival alone remains passive.
+- The employee never inserts, consumes, extracts, carries, or collects product.
+- The Grinder remains the sole owner of slot validation, processing, atomic
+  inventory mutation, and owner-result evidence.
+- Execution remains the sole owner of operation lifecycle and result evidence;
+  Scheduler remains the sole owner of dispatch timing and effect observation.
+- Completion requires both Grinder owner result evidence and Execution result
+  evidence.
+- Terminal failure does not retry automatically or create a second Execution
+  operation.
+- The completed Ground Beef remains in the Grinder until explicitly extracted.
+- Employee operation state remains transient and changes no persisted schema.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- Human development-client acceptance must preload one Grinder with Beef Trim,
+  allow a prepared employee to arrive, run
+  `/butchercraft employee operate #1`, and verify Grinder progress, exactly one
+  retained Ground Beef, `operation_complete`, duplicate-request safety,
+  explicit player extraction, reservation state, existing-world entry,
+  new-world entry, and save/load behavior within the documented recovery gate.
+
+Rollback considerations:
+
+- IM-027 is additive to IM-026. Removing the transient operation state,
+  integration coordinator, Grinder request delegate, diagnostics, manifest
+  entries, docs, and focused tests restores reservation-only employee waiting
+  without changing any persistence schema or historical Execution evidence.
+
 ## IM-026: Employee Navigation Quality And Recovery
 
 Goal: improve Workforce-owned employee department and workstation travel so

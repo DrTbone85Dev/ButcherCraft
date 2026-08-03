@@ -1,5 +1,6 @@
 package com.butchercraft.command;
 
+import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 import com.butchercraft.world.workforce.employee.EmployeeId;
@@ -128,6 +129,44 @@ class EmployeeCommandLookupTest {
     void rejectsWorkstationPositionWithTrailingData() {
         assertEquals(Optional.empty(),
                 ButcherCraftDiagnostics.parseWorkstationPosition("12 64 -3 extra"));
+    }
+
+    @Test
+    void operationFeedbackNamesEveryCommandOutcome() {
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.ACCEPTED,
+                "Employee operation accepted");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.EMPLOYEE_NOT_PRESENT,
+                "Employee not present");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.EMPLOYEE_NOT_AT_WORKSTATION,
+                "Employee not at workstation");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.RESERVATION_MISSING_OR_INVALID,
+                "Reservation missing or invalid");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.UNSUPPORTED_WORKSTATION,
+                "Unsupported workstation");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.MISSING_INPUT,
+                "Missing input");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.INVALID_RECIPE,
+                "Invalid recipe");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.BLOCKED_OUTPUT,
+                "Blocked output");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.ALREADY_REQUESTED,
+                "Operation already requested");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.EXECUTION_REJECTED,
+                "Execution rejected");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.UNKNOWN_OUTCOME,
+                "Unknown Outcome; recovery required");
+        assertOperationFeedback(EmployeeWorkstationOperationService.RequestStatus.RECOVERY_REQUIRED,
+                "Recovery required");
+    }
+
+    private static void assertOperationFeedback(
+            EmployeeWorkstationOperationService.RequestStatus status,
+            String expectedPrefix
+    ) {
+        String feedback = ButcherCraftDiagnostics.employeeOperationFeedback(
+                new EmployeeWorkstationOperationService.RequestResult(status, "test detail")
+        );
+        assertTrue(feedback.startsWith(expectedPrefix + ":"), feedback);
     }
 
     private static EmployeeRecord record(long sequence, String displayName) {

@@ -5,6 +5,7 @@ import com.butchercraft.config.CommonConfig;
 import com.butchercraft.entity.employee.EmployeeEntity;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.evaluation.ProcessingEvaluator;
+import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
@@ -123,6 +124,7 @@ public final class ButcherCraftDiagnostics {
     private static final String DEPARTMENT_ANCHOR_POSITION_ARGUMENT = "anchor";
     private static final String WORKSTATION_POSITION_ARGUMENT = "position";
     private static final int DEPARTMENT_ANCHOR_PERMISSION_LEVEL = 2;
+    private static final int EMPLOYEE_OPERATION_PERMISSION_LEVEL = 2;
     private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestEmployeeReferences(context.getSource(), builder);
     private static final SuggestionProvider<CommandSourceStack> DEPARTMENT_LOOKUP_SUGGESTIONS =
@@ -190,8 +192,15 @@ public final class ButcherCraftDiagnostics {
                                 .then(Commands.argument(EMPLOYEE_COMMAND_TAIL_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_WORKSTATION_LOOKUP_SUGGESTIONS)
                                         .executes(context -> runEmployeeAssignWorkstationTail(
+                                                 context.getSource(),
+                                                 StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
+                        .then(Commands.literal("operate")
+                                .requires(ButcherCraftDiagnostics::canOperateEmployee)
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeOperate(
                                                 context.getSource(),
-                                                StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
                         .then(Commands.literal("release-workstation")
                                 .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
@@ -351,6 +360,10 @@ public final class ButcherCraftDiagnostics {
                     source.sendSuccess(() -> Component.literal("Navigation: "
                             + employeeNavigationForReservation(source, reservation)), false);
                 });
+        employeeEntity(source, employeeId).ifPresentOrElse(
+                employee -> sendEmployeeOperationDiagnostics(source, employee),
+                () -> source.sendSuccess(() -> Component.literal("Employee Operation: unavailable"), false)
+        );
         source.sendSuccess(() -> Component.literal("Plant: " + (value.plantOpen() ? "open" : "closed")), false);
         source.sendSuccess(() -> Component.literal("Reason: " + value.reason()), false);
         return Command.SINGLE_SUCCESS;
@@ -569,6 +582,23 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Workstation reservation released: "
                 + result.orThrow().workstationIdentity()), false);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeOperate(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        Optional<EmployeeEntity> entity = employeeEntity(source, employeeId);
+        if (entity.isEmpty()) {
+            source.sendSuccess(() -> Component.literal(
+                    "Employee not present: authoritative employee entity is unavailable in this dimension"), false);
+            return 0;
+        }
+        EmployeeWorkstationOperationService.RequestResult result =
+                EmployeeWorkstationOperationService.INSTANCE.request(entity.orElseThrow());
+        source.sendSuccess(() -> Component.literal(employeeOperationFeedback(result)), false);
+        return result.accepted() ? Command.SINGLE_SUCCESS : 0;
     }
 
     private static int runDepartmentList(CommandSourceStack source) {
@@ -797,6 +827,27 @@ public final class ButcherCraftDiagnostics {
 
     private static boolean canMutateDepartmentAnchor(CommandSourceStack source) {
         return source.hasPermission(DEPARTMENT_ANCHOR_PERMISSION_LEVEL);
+    }
+
+    private static boolean canOperateEmployee(CommandSourceStack source) {
+        return source.hasPermission(EMPLOYEE_OPERATION_PERMISSION_LEVEL);
+    }
+
+    static String employeeOperationFeedback(EmployeeWorkstationOperationService.RequestResult result) {
+        return switch (Objects.requireNonNull(result, "result").status()) {
+            case ACCEPTED -> "Employee operation accepted: " + result.detail();
+            case EMPLOYEE_NOT_PRESENT -> "Employee not present: " + result.detail();
+            case EMPLOYEE_NOT_AT_WORKSTATION -> "Employee not at workstation: " + result.detail();
+            case RESERVATION_MISSING_OR_INVALID -> "Reservation missing or invalid: " + result.detail();
+            case UNSUPPORTED_WORKSTATION -> "Unsupported workstation: " + result.detail();
+            case MISSING_INPUT -> "Missing input: " + result.detail();
+            case INVALID_RECIPE -> "Invalid recipe: " + result.detail();
+            case BLOCKED_OUTPUT -> "Blocked output: " + result.detail();
+            case ALREADY_REQUESTED -> "Operation already requested: " + result.detail();
+            case EXECUTION_REJECTED -> "Execution rejected: " + result.detail();
+            case UNKNOWN_OUTCOME -> "Unknown Outcome; recovery required: " + result.detail();
+            case RECOVERY_REQUIRED -> "Recovery required: " + result.detail();
+        };
     }
 
     static List<String> employeeLookupSuggestions(List<EmployeeRecord> records) {
@@ -1071,6 +1122,29 @@ public final class ButcherCraftDiagnostics {
             return "unknown";
         }
         return "unloaded";
+    }
+
+    private static Optional<EmployeeEntity> employeeEntity(CommandSourceStack source, EmployeeId employeeId) {
+        EmployeeRecord record = EmployeeService.INSTANCE.managerFor(source.getServer()).find(employeeId).orElse(null);
+        if (record == null || record.entityLink().isEmpty()) {
+            return Optional.empty();
+        }
+        if (!record.entityLink().orElseThrow().dimensionIdentity().equals(
+                EmployeeService.dimensionIdentity(source.getLevel()))) {
+            return Optional.empty();
+        }
+        Entity entity = source.getLevel().getEntity(record.entityLink().orElseThrow().entityUuid());
+        return entity instanceof EmployeeEntity employee ? Optional.of(employee) : Optional.empty();
+    }
+
+    private static void sendEmployeeOperationDiagnostics(CommandSourceStack source, EmployeeEntity employee) {
+        EmployeeEntity.EmployeeOperationDiagnostics diagnostics = employee.workstationOperationDiagnostics();
+        source.sendSuccess(() -> Component.literal("Employee Operation: " + diagnostics.state()), false);
+        source.sendSuccess(() -> Component.literal("Workstation: " + diagnostics.workstation()
+                + " | Execution: " + diagnostics.executionId()), false);
+        source.sendSuccess(() -> Component.literal("Reservation: " + diagnostics.reservation()
+                + " | Recipe: " + diagnostics.recipe()
+                + " | Failure: " + diagnostics.failure()), false);
     }
 
     private static String formatBlockPos(BlockPos pos) {

@@ -235,4 +235,4 @@ The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, employees, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, animations, complex rendering, recipe-selection UI, labels, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, general employee automation beyond the IM-027 Beef Grinder request, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, animations, complex rendering, recipe-selection UI, labels, or public expansion API guarantees.

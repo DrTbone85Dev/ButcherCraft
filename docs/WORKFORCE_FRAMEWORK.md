@@ -1,12 +1,13 @@
 # Workforce Framework
 
-Status: implemented workforce, employee, department navigation, and bounded navigation recovery foundations
+Status: implemented workforce, employee, navigation, reservation, and one Grinder operation foundation
 
 The Workforce Framework defines the staffing structure a business requires to
 operate and owns individual Employee Identity, Employment Records, Department
 definitions, department assignments, and department navigation anchors. It
-still does not add job claiming, workstation operation, item carrying, hiring
-markets, payroll, production authority, or automation.
+also owns the transient employee request and completion-observation state for
+the one IM-027 Grinder operation. It still does not add job claiming, item
+carrying, hiring markets, payroll, production authority, or general automation.
 
 ## Architecture
 
@@ -33,6 +34,8 @@ The workforce package owns:
 - Employee entity integration for Workforce-owned movement intent, transient
   destination selection, progress monitoring, bounded retry, and safe movement
   failure diagnostics.
+- Transient employee operation state for one reservation-scoped Grinder
+  request and read-only completion observation.
 - `DepartmentId`, `DepartmentRecord`, `DepartmentRegistry`, and
   `DepartmentManager` for Workforce-owned department definitions, anchors,
   and employee assignment validation.
@@ -125,6 +128,47 @@ reservation with a `navigation_unreachable` reason and the employee returns
 toward its department when possible. For unreachable department travel, the
 employee stops safely, exposes `department_unreachable`, and retries only after
 the bounded cooldown.
+
+## Employee Workstation Operation
+
+IM-027 permits one arrived employee to request only
+`butchercraft:grind_beef` from one reserved Grinder. Beef Trim must already be
+present in the Grinder-owned input slot. The employee has no inventory source,
+does not create or insert an ItemStack, and does not collect Ground Beef.
+
+The sole IM-027 trigger is the permission-gated development/operator command:
+
+```text
+/butchercraft employee operate <employee>
+```
+
+The employee reference accepts `#1`, a unique plain display name, a quoted
+display name such as `"Casey 1"`, or a canonical Employee Identity. Arrival
+alone remains passive and does not start machine operation.
+
+The transient employee lifecycle is:
+
+```text
+idle -> preparing -> operating -> waiting_for_completion
+     -> operation_complete -> idle
+```
+
+Any accepted nonterminal state may instead reach explicit `failure`. One
+reservation produces at most one employee request attempt. Failure does not
+retry automatically.
+
+The outer integration coordinator asks the Grinder to process through its
+existing controller. The Grinder validates its input, output capacity, recipe,
+and state; issues private Execution authorization; owns atomic slot mutation;
+and publishes owner result evidence. Execution owns operation lifecycle and
+terminal result evidence. Scheduler owns dispatch timing and effect
+observation. The employee reaches `operation_complete` only after observing
+both matching owner result and Execution result evidence.
+
+Employee operation state is not stored in employee records or reservation
+persistence. Active-operation association is not reconstructed as general
+startup recovery. The Grinder and Execution owners retain their existing
+save-safety behavior independently.
 
 Server stop:
 
@@ -292,12 +336,21 @@ Out of scope after IM-024:
 
 Still out of scope after IM-026:
 
-- workstation operation
+- general workstation operation beyond IM-027 Beef Trim Grinder processing
 - item carrying
 - job claiming
 - Production-driven assignment
-- Scheduler dispatch
-- Execution authorization
+- employee-owned Scheduler dispatch
+- employee-owned Execution authorization
 - employee skills, productivity, morale, fatigue, payroll, or training
 - complex crowd simulation
 - teleport-based path recovery
+
+Still out of scope after IM-027:
+
+- Patty Former operation
+- employee input creation, product carrying, output collection, or logistics
+- additional employee recipes or workstations
+- Production-driven assignment, job claiming, or autonomous workflows
+- employee skills, productivity, morale, fatigue, payroll, or training
+- Allocation integration or startup recovery orchestration

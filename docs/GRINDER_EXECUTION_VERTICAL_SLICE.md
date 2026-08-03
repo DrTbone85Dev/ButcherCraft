@@ -1,6 +1,6 @@
 # Grinder Execution Vertical Slice
 
-Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation. IM-017 expands the promoted Grinder catalog to six trim-to-ground products. IM-018 uses the Grinder as the first step in the manual Grinder to Patty Former Production chain.
+Status: IM-012 implemented. IM-013 automated server-world verification added. IM-014 promotes the Grinder path to normal gameplay presentation. IM-015 promotes the Pork Trim to Ground Pork second grinder process. IM-016 integrates the promoted Grinder path with Production observation. IM-017 expands the promoted Grinder catalog to six trim-to-ground products. IM-018 uses the Grinder as the first step in the manual Grinder to Patty Former Production chain. IM-027 permits one arrived employee to request and observe only the Beef Trim operation.
 
 This note records the first player-facing workstation operation connected to the generic Execution runtime. It does not authorize a public workstation API, broad Production migration beyond the IM-016 promoted Grinder observation path and IM-018 narrow manual two-step chain, Allocation integration, worker automation, compensation, automatic checkpoint recovery, or additional workstation operations.
 
@@ -126,10 +126,33 @@ IM-017 promotes four additional trim-to-ground recipes through the same Grinder 
 
 The promoted Grinder operation set is exactly Beef, Pork, Chicken, Buffalo, Lamb, and Venison. Each operation runs for 60 server ticks, resolves from authoritative product data and definitions, binds the selected operation into Execution identity, and publishes workstation owner result evidence before Execution success. No recipe adds species-specific Grinder code, a recipe-selection UI, Production automation, or new workstation behavior.
 
+## IM-027 Employee Operation
+
+One employee with an arrived Grinder reservation may request
+`butchercraft:grind_beef` when Beef Trim is already present in the
+Grinder-owned input slot. The employee request delegates to the existing
+controller path; the Grinder still resolves and validates the recipe, issues
+private Execution authorization, commits its own slots, and publishes owner
+result evidence. Scheduler timing and Execution lifecycle are unchanged.
+
+The request is made only through the permission-gated development/operator
+command `/butchercraft employee operate <employee>`. For manual acceptance,
+`/butchercraft employee operate #1` targets the first employee. Arrival at the
+reserved Grinder does not initiate operation automatically.
+
+The employee observes the matching Execution identity, Grinder owner result,
+and Execution result evidence before reporting completion. It does not create
+or insert Beef Trim, collect Ground Beef, dispatch Scheduler Work, receive
+Execution authority, or retry a terminal failure. The completed output remains
+in the Grinder.
+
 ## Remaining Gates
 
 - General workstation Execution framework.
 - Bandsaw, Packaging Table, and development workstation Execution migration.
+- Employee Patty Former operation, additional employee Grinder recipes,
+  product carrying, output collection, logistics, job claiming, and autonomous
+  Production dispatch.
 - Additional Production-backed workstation execution beyond the promoted Grinder path and IM-018 narrow manual two-step chain.
 - Economic Inventory and Transaction integration for player workstations.
 - Allocation and Planning automation.

@@ -1,5 +1,6 @@
 package com.butchercraft.entity.employee;
 
+import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
@@ -8,6 +9,7 @@ import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
+import com.butchercraft.world.workforce.employee.EmployeeWorkstationOperationState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -110,6 +112,16 @@ public final class EmployeeEntity extends PathfinderMob {
     private NavigationFailureReason lastFailureReason = NavigationFailureReason.NONE;
     private int idleSequence;
     private long nextIdleMovementTick;
+    private EmployeeWorkstationOperationState workstationOperationState = EmployeeWorkstationOperationState.IDLE;
+    private String workstationOperationReservationKey = "";
+    private String workstationOperationWorkstation = "none";
+    private String workstationOperationExecutionId = "none";
+    private String workstationOperationReservationState = "none";
+    private String workstationOperationRecipe = "none";
+    private String workstationOperationFailure = "none";
+    private BlockPos workstationOperationPosition;
+    private long workstationOperationStateTick;
+    private boolean workstationOperationRequestConsumed;
 
     public EmployeeEntity(EntityType<? extends EmployeeEntity> entityType, Level level) {
         super(entityType, level);
@@ -159,6 +171,7 @@ public final class EmployeeEntity extends PathfinderMob {
         }
         EmployeeNavigationState state = navigationStateOrDefault();
         tickNavigationController(state);
+        EmployeeWorkstationOperationService.INSTANCE.tick(this);
         faceLookTarget(navigationStateOrDefault());
     }
 
@@ -370,6 +383,119 @@ public final class EmployeeEntity extends PathfinderMob {
                 recoveryPhase.serializedName(),
                 lastFailureReason.reasonCode()
         );
+    }
+
+    public EmployeeOperationDiagnostics workstationOperationDiagnostics() {
+        return new EmployeeOperationDiagnostics(
+                workstationOperationWorkstation,
+                workstationOperationExecutionId,
+                workstationOperationReservationState,
+                workstationOperationRecipe,
+                workstationOperationState.serializedName(),
+                workstationOperationFailure
+        );
+    }
+
+    public EmployeeWorkstationOperationState workstationOperationState() {
+        return workstationOperationState;
+    }
+
+    public String workstationOperationReservationKey() {
+        return workstationOperationReservationKey;
+    }
+
+    public boolean workstationOperationRequestConsumed() {
+        return workstationOperationRequestConsumed;
+    }
+
+    public Optional<BlockPos> workstationOperationPosition() {
+        return Optional.ofNullable(workstationOperationPosition);
+    }
+
+    public long workstationOperationStateTick() {
+        return workstationOperationStateTick;
+    }
+
+    public void beginWorkstationOperation(
+            String reservationKey,
+            String workstationIdentity,
+            BlockPos workstationPosition,
+            String reservationState,
+            String recipeIdentity
+    ) {
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.PREPARING);
+        workstationOperationReservationKey = requireOperationText(reservationKey, "reservationKey");
+        workstationOperationWorkstation = requireOperationText(workstationIdentity, "workstationIdentity");
+        workstationOperationPosition = Objects.requireNonNull(workstationPosition, "workstationPosition").immutable();
+        workstationOperationExecutionId = "none";
+        workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
+        workstationOperationRecipe = requireOperationText(recipeIdentity, "recipeIdentity");
+        workstationOperationFailure = "none";
+        workstationOperationRequestConsumed = true;
+    }
+
+    public void markWorkstationOperationOperating(String executionId, String reservationState) {
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.OPERATING);
+        workstationOperationExecutionId = requireOperationText(executionId, "executionId");
+        workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
+    }
+
+    public void markWorkstationOperationWaiting(String reservationState) {
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.WAITING_FOR_COMPLETION);
+        workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
+    }
+
+    public void markWorkstationOperationComplete(String reservationState) {
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.OPERATION_COMPLETE);
+        workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
+        workstationOperationFailure = "none";
+    }
+
+    public void markWorkstationOperationFailure(String reservationState, String failureReason) {
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.FAILURE);
+        workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
+        workstationOperationFailure = requireOperationText(failureReason, "failureReason");
+        workstationOperationRequestConsumed = true;
+    }
+
+    public void refreshWorkstationOperationReservation(String reservationState) {
+        workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
+    }
+
+    public void finishWorkstationOperation() {
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.IDLE);
+    }
+
+    public void resetWorkstationOperation() {
+        if (workstationOperationState.active()) {
+            throw new IllegalStateException("Active employee workstation operation cannot be reset silently");
+        }
+        transitionWorkstationOperation(EmployeeWorkstationOperationState.IDLE);
+        workstationOperationReservationKey = "";
+        workstationOperationWorkstation = "none";
+        workstationOperationExecutionId = "none";
+        workstationOperationReservationState = "none";
+        workstationOperationRecipe = "none";
+        workstationOperationFailure = "none";
+        workstationOperationPosition = null;
+        workstationOperationRequestConsumed = false;
+    }
+
+    private void transitionWorkstationOperation(EmployeeWorkstationOperationState next) {
+        if (!workstationOperationState.canTransitionTo(next)) {
+            throw new IllegalStateException("Invalid employee workstation operation transition "
+                    + workstationOperationState + " -> " + next);
+        }
+        workstationOperationState = next;
+        workstationOperationStateTick = level().getGameTime();
+    }
+
+    private static String requireOperationText(String value, String fieldName) {
+        String normalized = Objects.requireNonNull(value, fieldName).strip();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return normalized;
     }
 
     private void configureGroundNavigation() {
@@ -1021,6 +1147,24 @@ public final class EmployeeEntity extends PathfinderMob {
             lastPathReplacementReason = Objects.requireNonNull(lastPathReplacementReason, "lastPathReplacementReason");
             recoveryPhase = Objects.requireNonNull(recoveryPhase, "recoveryPhase");
             lastFailureReason = Objects.requireNonNull(lastFailureReason, "lastFailureReason");
+        }
+    }
+
+    public record EmployeeOperationDiagnostics(
+            String workstation,
+            String executionId,
+            String reservation,
+            String recipe,
+            String state,
+            String failure
+    ) {
+        public EmployeeOperationDiagnostics {
+            workstation = Objects.requireNonNull(workstation, "workstation");
+            executionId = Objects.requireNonNull(executionId, "executionId");
+            reservation = Objects.requireNonNull(reservation, "reservation");
+            recipe = Objects.requireNonNull(recipe, "recipe");
+            state = Objects.requireNonNull(state, "state");
+            failure = Objects.requireNonNull(failure, "failure");
         }
     }
 

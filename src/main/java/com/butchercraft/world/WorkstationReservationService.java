@@ -303,6 +303,35 @@ public final class WorkstationReservationService {
                 .flatMap(target -> managerFor(level.getServer()).findByWorkstation(target.workstationIdentity()));
     }
 
+    public boolean hasActiveReservationAt(ServerLevel level, BlockPos workstationPos) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(workstationPos, "workstationPos");
+        String dimensionIdentity = EmployeeService.dimensionIdentity(level);
+        return activeReservations(level.getServer()).stream().anyMatch(reservation ->
+                reservation.dimensionIdentity().equals(dimensionIdentity)
+                        && reservation.workstationX() == workstationPos.getX()
+                        && reservation.workstationY() == workstationPos.getY()
+                        && reservation.workstationZ() == workstationPos.getZ());
+    }
+
+    public boolean isWithinOperatingTolerance(
+            ServerLevel level,
+            WorkstationReservationRecord reservation,
+            BlockPos employeePosition
+    ) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(reservation, "reservation");
+        Objects.requireNonNull(employeePosition, "employeePosition");
+        if (!reservation.dimensionIdentity().equals(EmployeeService.dimensionIdentity(level))) {
+            return false;
+        }
+        return resolvePersistedTarget(level, reservation)
+                .map(target -> target.approachCandidates().stream()
+                        .anyMatch(candidate -> employeePosition.distManhattan(candidate)
+                                <= reservation.anchorRadius()))
+                .orElse(false);
+    }
+
     public WorkstationReservationResult<ResolvedWorkstationStatus> status(ServerLevel level, BlockPos workstationPos) {
         WorkstationReservationResult<ResolvedWorkstationTarget> target = resolveSupportedWorkstation(level, workstationPos);
         if (!target.succeeded()) {

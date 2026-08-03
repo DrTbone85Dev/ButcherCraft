@@ -955,6 +955,26 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
                 "Department assignment and navigation do not submit Scheduler work, operate machines, reserve workstations, or carry items");
+        platformContract(builder, "butchercraft:platform_contract/employee_workstation_operation_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-027 Employee Workstation Operation Foundation",
+                "One arrived employee may request the Beef Trim Grinder operation through the workstation-owned processing boundary without mutating workstation inventory");
+        platformContract(builder, "butchercraft:platform_contract/employee_execution_request_boundary",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-027 Employee Workstation Operation Foundation",
+                "Employee integration requests workstation processing while the Grinder issues private Execution authorization and Execution owns operation lifecycle");
+        platformContract(builder, "butchercraft:platform_contract/employee_completion_observation",
+                ValidationCategory.SIMULATION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-027 Employee Workstation Operation Foundation",
+                "Employee completion requires immutable Grinder owner result evidence and terminal Execution result evidence before entering complete state");
+        platformContract(builder, "butchercraft:platform_contract/employee_operation_future_scope_gates",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "IM-027 Employee Workstation Operation Foundation",
+                "Patty Former operation, product carrying, logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -1017,6 +1037,8 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/employee_department_assignments", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_department_navigation", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_navigation_recovery", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_workstation_interaction_request", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_operation_completion_observation", WORKFORCE);
         own(builder, "butchercraft:responsibility/workstation_approach_geometry", WORKSTATION);
         own(builder, "butchercraft:responsibility/department_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
@@ -1264,6 +1286,20 @@ public final class ButcherCraftArchitectureManifest {
                 WORKFORCE,
                 ValidationCategory.SIMULATION,
                 "IM-026 assigns employee destination selection, progress monitoring, bounded retry, and safe movement failure behavior to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_workstation_interaction_request",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-027 assigns the bounded employee Begin Operation request and transient employee operation state to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_operation_completion_observation",
+                WORKFORCE,
+                ValidationCategory.SIMULATION,
+                "IM-027 assigns read-only observation of matching workstation owner and Execution result evidence to Workforce"
         );
         contract(
                 builder,
