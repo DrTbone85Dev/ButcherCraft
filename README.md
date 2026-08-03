@@ -4,9 +4,9 @@ ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic reg
 
 Registered content includes the existing development fixtures, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, six promoted Grinder recipes for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the Beef Patties production chain from Beef Trim to Ground Beef to Beef Patties. The player-facing Production Order item guides and observes the manual multi-workstation chain.
 
-The v0.10.2 Workforce Update adds the employee system foundation, persistent employee identities, employment records, departments, department anchors, Business Runtime integration, business hours, shift observation, employee navigation, workstation reservations, improved employee diagnostics, reliable long-range navigation, and Grinder and Patty Former reservation support. In that release, employees navigate, reserve workstations, and wait without operating machinery.
+The v0.10.3 First Employee Automation Update lets employees perform their first real work. Once assigned to a Grinder and provided with Beef Trim, an employee can request processing through the same deterministic Grinder, Execution, and Scheduler pipeline used by the player. The existing Grinder validation, Scheduler dispatch, and owner-result observation remain authoritative; no subsystem boundary is bypassed.
 
-Current development adds one deliberately narrow employee operation: an operator may use `/butchercraft employee operate <employee>` for an arrived employee to request the preloaded Beef Trim to Ground Beef Grinder process through the existing deterministic workstation, Execution, and Scheduler pipeline. Arrival alone remains passive. Employees still do not carry products, collect output, operate the Patty Former, claim jobs, or automate Production.
+An operator intentionally starts the operation with `/butchercraft employee operate <employee>`. Employees can navigate, reserve workstations, and operate the Grinder, but they still do not transport products, operate the Patty Former, perform autonomous production, or claim Production Orders. This is the first step toward automated production while Workforce, Production, Execution, Scheduler, and Workstations remain independent.
 
 The platform foundation also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler includes internal Production and Planning handlers; Allocation has no live provider or Scheduler handler. General worker automation, pricing, logistics, markets, accounting, and additional employee-operated production remain future work.
 
@@ -19,7 +19,7 @@ The platform foundation also includes immutable regional identity, manufacturers
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.10.2-alpha.1`
+- Version: `0.10.3-alpha.1`
 
 ## Commands
 

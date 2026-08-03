@@ -1,5 +1,49 @@
 # Changelog
 
+## ButcherCraft v0.10.3-alpha.1 - First Employee Automation
+
+Employees can now perform their first real work. Once assigned to a Grinder
+and provided with Beef Trim, an employee can request processing through the
+same deterministic Execution, Scheduler, and Grinder pipeline used by the
+player. This is the first step toward automated production while preserving
+the strict boundaries between Workforce, Production, Execution, Scheduler,
+and Workstations.
+
+### Added
+
+- Added employee-operated Grinder processing for Beef Trim to Ground Beef.
+- Added the Employee Workstation Operation Service.
+- Added `/butchercraft employee operate <employee>` as the manual employee operation command.
+- Added employee operation diagnostics.
+- Added the transient employee operation state machine.
+- Added employee completion observation of Grinder owner and Execution result evidence.
+- Added Execution-backed employee operation through the existing Grinder controller.
+
+### Improved
+
+- Improved employee workstation interaction after reservation arrival.
+- Reused the existing deterministic Execution and Scheduler integration.
+- Improved reservation lifecycle handling for employee operation.
+- Reused authoritative Grinder recipe, input, output, and workstation-state validation.
+- Expanded Workforce diagnostics for operation state, reservation, recipe, Execution identity, and failure.
+
+### Fixed
+
+- Fixed employee operation trigger availability by adding one intentional operator command.
+- Preserved the IM-026 navigation regression corrections and alternate-route behavior.
+- Preserved terminal reservation cleanup after navigation failure.
+- Preserved plant-scale pathfinding and long-range navigation reliability.
+- Improved employee-reference command usability for ordinal, display-name, quoted-name, and canonical references.
+
+### Technical
+
+- Expanded integration with the generic Execution runtime without exposing private authority.
+- Expanded Workforce validation for active presence, shift and plant policy, arrival, physical tolerance, and exclusive reservation.
+- Expanded architecture tests for subsystem ownership and authority boundaries.
+- Expanded the required GameTest suite to 197 tests.
+- Strengthened synchronized command-argument validation.
+- Preserved singular ownership across Workforce, Workstations, Execution, Scheduler, Production, and Inventory.
+
 ## ButcherCraft v0.10.2-alpha.1 - Workforce Navigation Update
 
 ### Added
