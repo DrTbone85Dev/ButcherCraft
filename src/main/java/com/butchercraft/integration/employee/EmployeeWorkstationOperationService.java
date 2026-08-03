@@ -108,8 +108,10 @@ public final class EmployeeWorkstationOperationService {
             }
             employee.resetWorkstationOperation();
         }
-        if (employee.workstationOperationRequestConsumed()
-                || employee.workstationOperationState() != EmployeeWorkstationOperationState.IDLE) {
+        if (employee.workstationOperationState() == EmployeeWorkstationOperationState.OPERATION_COMPLETE) {
+            employee.finishWorkstationOperation();
+        }
+        if (employee.workstationOperationState() != EmployeeWorkstationOperationState.IDLE) {
             return priorRequestResult(employee);
         }
 

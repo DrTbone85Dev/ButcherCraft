@@ -33,6 +33,21 @@ class EmployeeWorkstationOperationBoundaryTest {
     }
 
     @Test
+    void completedRequestDoesNotRetainAnEverIssuedLatch() throws IOException {
+        String service = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/integration/employee/EmployeeWorkstationOperationService.java"
+        ));
+        String entity = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/entity/employee/EmployeeEntity.java"
+        ));
+
+        assertTrue(service.contains("EmployeeWorkstationOperationState.OPERATION_COMPLETE"));
+        assertTrue(service.contains("employee.finishWorkstationOperation()"));
+        assertFalse(service.contains("workstationOperationRequestConsumed"));
+        assertFalse(entity.contains("workstationOperationRequestConsumed"));
+    }
+
+    @Test
     void operatorCommandUsesThePublicCoordinatorAndSynchronizedArgumentType() throws IOException {
         String command = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/command/ButcherCraftDiagnostics.java"

@@ -242,8 +242,8 @@ public final class EmployeeWorkstationOperationGameTests {
                 "Repeated employee observations retain one Execution operation");
         helper.assertTrue(grinder.inventory().input().getCount() == 1,
                 "Repeated employee observations do not mutate reserved input early");
-        helper.assertTrue(employee.workstationOperationRequestConsumed(),
-                "Reservation attempt records one consumed employee request");
+        helper.assertTrue(employee.workstationOperationState().active(),
+                "Duplicate request leaves the original employee operation active");
         helper.succeed();
     }
 
@@ -467,6 +467,65 @@ public final class EmployeeWorkstationOperationGameTests {
         helper.assertTrue(operate(helper, record.employeeId().value()) == 0,
                 "Employee operation requires active employment status");
         helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 220, batch = BATCH + "20_repeat_after_completion")
+    public static void completedOperationAllowsOneNewExplicitRequest(GameTestHelper helper) {
+        setup(helper);
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        insert(helper, grinder, beefTrim());
+        EmployeeRecord record = createPresentProcessingEmployee(helper, "Employee Grinder Repeat");
+        EmployeeEntity employee = assignAndArrive(helper, record);
+        WorkstationReservationRecord reservation = activeReservation(helper, record.employeeId());
+        int[] phase = {0};
+
+        helper.assertTrue(operate(helper, record.employeeId().value()) == 1,
+                "First explicit employee operation is accepted");
+        helper.assertTrue(operate(helper, record.employeeId().value()) == 0,
+                "Duplicate request during the first active operation is rejected");
+        helper.assertTrue(newOperations(helper, before).size() == 1,
+                "First active duplicate creates no additional Execution operation");
+
+        helper.succeedWhen(() -> {
+            if (phase[0] == 0) {
+                helper.assertTrue(employee.workstationOperationState()
+                                == EmployeeWorkstationOperationState.OPERATION_COMPLETE,
+                        "First employee operation reaches terminal success");
+                helper.assertTrue(grinder.inventory().output().is(ModItems.GROUND_BEEF.get())
+                                && grinder.inventory().output().getCount() == 1,
+                        "First employee operation produces exactly one Ground Beef");
+                helper.assertTrue(newOperations(helper, before).size() == 1,
+                        "First employee operation publishes exactly one Execution operation");
+                helper.assertTrue(activeReservation(helper, record.employeeId()).equals(reservation),
+                        "Successful completion preserves the original reservation identity");
+
+                ItemStack extracted = grinder.inventory().extractItem(WorkstationInventory.OUTPUT_SLOT, 1, false);
+                helper.assertTrue(extracted.is(ModItems.GROUND_BEEF.get()) && extracted.getCount() == 1,
+                        "First Ground Beef is explicitly removed before the next request");
+                insert(helper, grinder, beefTrim());
+                helper.assertTrue(operate(helper, record.employeeId().value()) == 1,
+                        "Completed request state permits one new explicit operation");
+                helper.assertTrue(operate(helper, record.employeeId().value()) == 0,
+                        "Duplicate request during the second active operation is rejected");
+                helper.assertTrue(newOperations(helper, before).size() == 2,
+                        "Second request creates exactly one additional Execution operation");
+                helper.assertTrue(activeReservation(helper, record.employeeId()).equals(reservation),
+                        "Second request reuses the unchanged active reservation");
+                phase[0] = 1;
+            }
+
+            helper.assertTrue(employee.workstationOperationState()
+                            == EmployeeWorkstationOperationState.OPERATION_COMPLETE,
+                    "Second employee operation reaches terminal success");
+            helper.assertTrue(grinder.inventory().output().is(ModItems.GROUND_BEEF.get())
+                            && grinder.inventory().output().getCount() == 1,
+                    "Second employee operation produces exactly one Ground Beef");
+            helper.assertTrue(newOperations(helper, before).size() == 2,
+                    "Two explicit successful requests produce exactly two Execution operations");
+            helper.assertTrue(activeReservation(helper, record.employeeId()).equals(reservation),
+                    "Reservation identity remains unchanged across both operations");
+        });
     }
 
     private static void setup(GameTestHelper helper) {

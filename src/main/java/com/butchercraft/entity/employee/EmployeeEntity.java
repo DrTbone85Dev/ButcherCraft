@@ -121,7 +121,6 @@ public final class EmployeeEntity extends PathfinderMob {
     private String workstationOperationFailure = "none";
     private BlockPos workstationOperationPosition;
     private long workstationOperationStateTick;
-    private boolean workstationOperationRequestConsumed;
 
     public EmployeeEntity(EntityType<? extends EmployeeEntity> entityType, Level level) {
         super(entityType, level);
@@ -404,10 +403,6 @@ public final class EmployeeEntity extends PathfinderMob {
         return workstationOperationReservationKey;
     }
 
-    public boolean workstationOperationRequestConsumed() {
-        return workstationOperationRequestConsumed;
-    }
-
     public Optional<BlockPos> workstationOperationPosition() {
         return Optional.ofNullable(workstationOperationPosition);
     }
@@ -431,7 +426,6 @@ public final class EmployeeEntity extends PathfinderMob {
         workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
         workstationOperationRecipe = requireOperationText(recipeIdentity, "recipeIdentity");
         workstationOperationFailure = "none";
-        workstationOperationRequestConsumed = true;
     }
 
     public void markWorkstationOperationOperating(String executionId, String reservationState) {
@@ -455,7 +449,6 @@ public final class EmployeeEntity extends PathfinderMob {
         transitionWorkstationOperation(EmployeeWorkstationOperationState.FAILURE);
         workstationOperationReservationState = requireOperationText(reservationState, "reservationState");
         workstationOperationFailure = requireOperationText(failureReason, "failureReason");
-        workstationOperationRequestConsumed = true;
     }
 
     public void refreshWorkstationOperationReservation(String reservationState) {
@@ -478,7 +471,6 @@ public final class EmployeeEntity extends PathfinderMob {
         workstationOperationRecipe = "none";
         workstationOperationFailure = "none";
         workstationOperationPosition = null;
-        workstationOperationRequestConsumed = false;
     }
 
     private void transitionWorkstationOperation(EmployeeWorkstationOperationState next) {

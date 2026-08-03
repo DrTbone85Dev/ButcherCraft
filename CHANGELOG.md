@@ -40,7 +40,7 @@ and Workstations.
 - Expanded integration with the generic Execution runtime without exposing private authority.
 - Expanded Workforce validation for active presence, shift and plant policy, arrival, physical tolerance, and exclusive reservation.
 - Expanded architecture tests for subsystem ownership and authority boundaries.
-- Expanded the required GameTest suite to 197 tests.
+- Expanded the required GameTest suite to 198 tests.
 - Strengthened synchronized command-argument validation.
 - Preserved singular ownership across Workforce, Workstations, Execution, Scheduler, Production, and Inventory.
 
