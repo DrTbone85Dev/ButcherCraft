@@ -1,12 +1,14 @@
 # ADR-DG-002: Material Handling Custody And Recovery
 
-Status: PROPOSED - OWNER RATIFICATION REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AUTHORIZED, NOT IMPLEMENTED
 
 Decision identifier: DG-002
 
-Authority: Owner-authorized architecture design only. This document does not
-authorize implementation, migration, schema creation, runtime behavior,
-gameplay behavior, commands, content, or Architecture Manifest changes.
+Authority: Owner-ratified architecture direction. This document authorizes the
+IM-028A implementation boundary defined in Section 24. It does not itself
+implement runtime behavior, gameplay behavior, migration, schema files,
+commands, content, persistence, or Architecture Manifest declarations.
+IM-028B and all later implementation remain separately gated.
 
 Canonical platform reference:
 [`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
@@ -117,7 +119,8 @@ Additional constraints:
 - no client request commits a transfer;
 - no automatic retry may repeat an uncertain consequential mutation;
 - no cross-file atomicity is assumed; and
-- implementation requires separate owner authorization.
+- implementation remains limited to separately owner-authorized milestones;
+  this ratification authorizes IM-028A only.
 
 ## 4. Decision
 
@@ -599,8 +602,8 @@ workstation-owned Beef Trim slot, normal block-entity persistence, source
 Freshness Identity, and transfer-aware withdrawal/return contract. It performs
 no cutting operation and creates no product.
 
-The Cutting Table is not authorized by this ADR. It requires the separate
-IM-028A implementation milestone below.
+The Cutting Table is authorized only within the bounded IM-028A implementation
+milestone below. It is not implemented by this ADR.
 
 ## 15. Patty Former Operation Gate
 
@@ -817,7 +820,7 @@ slot authority or full private custom data unnecessarily.
 
 ## 21. Future Architecture Manifest Impact
 
-After ratification and only during an authorized implementation milestone, the
+During IM-028A, and only as each declaration becomes mechanically true, the
 Architecture Manifest should declare:
 
 - Material Handling as a component and singular runtime authority;
@@ -896,11 +899,11 @@ Material Handling persistence exists, rollback to a version that does not
 understand it risks orphaning authoritative custody and is unsupported unless
 an explicit downgrade migration proves no active transfer.
 
-## 24. Proposed IM-028A Boundary
+## 24. Authorized IM-028A Boundary
 
 **IM-028A - Minimal Cutting Table And Material Handling Custody Foundation**
 
-Authorized scope after owner approval:
+Owner-authorized implementation scope:
 
 - one minimal craftable or development Cutting Table;
 - one Cutting-Table-owned source slot accepting Beef Trim only;
@@ -998,36 +1001,34 @@ Future implementation must include automated proof of:
 - checkpoint mixed-generation rejection when integrated; and
 - Architecture Manifest ownership and dependency validation.
 
-## 27. Owner Decisions Required
+## 27. Ratification Notes
 
-1. **Authority:** Approve Material Handling Runtime as the singular transfer
-   lifecycle and exact in-transit custody owner, with workstation-owned slot
-   mutation/results and Workforce-owned employee assignment/display
-   observation; or reject the authority split.
-2. **Durable protocol:** Approve prepare-before-effect publication plus
-   idempotent durable workstation owner results and deterministic
-   reconciliation; or require a different protocol before implementation.
-3. **Persistence:** Approve `material_handling.json` and separately
-   Workforce-owned assignment persistence as schema-versioned owner state; or
-   require another canonical layout.
-4. **Reservations:** Approve source reservation followed by release and then
-   destination reservation, with no simultaneous reservations, no automatic
-   reacquisition loop, and the arrived destination reservation retained after
-   employee deposit for explicit release or existing authorized operation; or
-   reject the transition policy.
-5. **Selection:** Approve explicit source and destination positions through a
-   development command with no automatic search; or require another explicit
-   deterministic assignment surface.
-6. **Cutting Table:** Approve IM-028A to add the minimal one-slot Cutting Table
-   as the canonical Beef Trim source; or select and justify an existing source
-   before IM-028A.
-7. **Patty Former:** Approve a separate explicit-initiation-gate milestone for
-   all Patty Former input before employee deposit is authorized; or accept and
-   document the risks of a transport-specific behavior exception.
-8. **Milestone split:** Approve IM-028A followed by IM-028B, with IM-028B first
-   proving Cutting Table to Grinder transport and Ground Beef to Patty Former
-   remaining gated; or revise the milestone boundaries before implementation.
+Owner ratification approved Material Handling Custody and Recovery as follows:
 
-Until these decisions are ratified, Material Handling implementation,
-persistence, commands, Cutting Table content, carry rendering, Patty Former
-behavior changes, and Architecture Manifest changes remain unauthorized.
+1. Material Handling Runtime is the singular authority for transfer lifecycle
+   and exact in-transit custody.
+2. Material Handling persists the exact in-transit `ItemStack`, including data
+   components and custom data.
+3. Source withdrawal and destination deposit use prepare, effect, and result
+   evidence with deterministic reconciliation.
+4. Unprovable item location becomes `UNKNOWN_OUTCOME`; proven but unresolved
+   custody becomes `RECOVERY_REQUIRED`.
+5. Employees hold one workstation reservation at a time: source first, then
+   destination.
+6. Schema 1 uses explicit source and destination selection and performs no
+   automatic workstation search.
+7. IM-028A is authorized to add the minimal Cutting Table with one
+   authoritative Beef Trim source slot and the Material Handling foundation
+   bounded by Section 24.
+8. Patty Former transport remains gated until explicit operation behavior is
+   separated from automatic processing.
+9. IM-028 is formally split into IM-028A and IM-028B.
+10. Employee-held item rendering is a non-authoritative synchronized display
+    derived only from proven Material Handling custody.
+
+This ratification does not implement Material Handling. IM-028A may proceed
+only as a separate implementation task within Section 24. Architecture
+Manifest entries remain unimplemented until their corresponding contracts are
+mechanically true. Employee transport, visible carrying, Patty Former
+transport, IM-028B, Production-driven transport, automatic workstation
+selection, autonomous chains, and general Logistics remain gated.

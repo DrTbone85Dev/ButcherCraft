@@ -13,7 +13,7 @@ When documents differ, use this authority order:
 
 1. [`CONSTITUTION.md`](../CONSTITUTION.md)
 2. Accepted records in [`DECISIONS.md`](../DECISIONS.md)
-3. Ratified architecture hardening ADRs and
+3. Ratified ADRs, including architecture hardening decisions and the
    [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
 4. [`TECHNICAL_ARCHITECTURE.md`](../TECHNICAL_ARCHITECTURE.md)
 5. Accepted RFC scope and focused subsystem documents
@@ -86,7 +86,14 @@ object graph.
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | Specified by RFC-0023 Draft 2 only; not accepted or implemented |
+| Material Handling | DG-002 ratified; IM-028A authorized but not implemented; employee transport and later capabilities remain gated |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
+
+DG-002 establishes Material Handling transfer and in-transit custody
+architecture without making runtime declarations mechanically true. The
+current Architecture Manifest does not yet declare Material Handling.
+Employee transport, visible carrying, Patty Former transport, Production-driven
+transport, autonomous chains, and general Logistics remain gated.
 
 The live Scheduler currently contains Production and Economic Planning
 handlers, deterministic Invocation Identity, consequential Effect Identity
@@ -651,7 +658,7 @@ nothing.
 - [`SIMULATION_MODEL.md`](../SIMULATION_MODEL.md)
 - [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
 - [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
-- [`Proposed Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
+- [`Ratified Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
 - [`Economic Planning Engine`](ECONOMIC_PLANNING_ENGINE.md)
 - [`Production Framework`](PRODUCTION_FRAMEWORK.md)
