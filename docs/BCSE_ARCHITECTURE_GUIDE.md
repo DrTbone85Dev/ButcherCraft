@@ -651,6 +651,7 @@ nothing.
 - [`SIMULATION_MODEL.md`](../SIMULATION_MODEL.md)
 - [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
 - [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
+- [`Proposed Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
 - [`Economic Planning Engine`](ECONOMIC_PLANNING_ENGINE.md)
 - [`Production Framework`](PRODUCTION_FRAMEWORK.md)
