@@ -1,14 +1,14 @@
-# Proposed ADR DG-002A: Workstation Endpoint Durability And Instance Identity
+# ADR-DG-002A: Workstation Endpoint Durability And Instance Identity
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AUTHORIZED, NOT IMPLEMENTED
 
 Decision identifier: DG-002A
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted decision process.
-It proposes the minimum prerequisite architecture for IM-028A. It does not
-authorize implementation, migration, schema creation, runtime behavior,
-gameplay behavior, commands, content, tests, or Architecture Manifest changes.
+Authority: Owner-ratified architecture direction. Together with DG-002, this
+document authorizes the bounded IM-028A implementation baseline described here.
+It does not itself implement runtime behavior, migration, schema files,
+commands, content, tests, persistence, gameplay, or Architecture Manifest
+declarations. IM-028B and all later implementation remain separately gated.
 
 Governing authority: [`CONSTITUTION.md`](../../CONSTITUTION.md)
 
@@ -87,7 +87,7 @@ The required solution must preserve:
 
 ## 3. Decision Summary
 
-If ratified, DG-002A establishes the following architecture:
+DG-002A establishes the following architecture:
 
 1. The Workstation subsystem owns one world-scoped, versioned workstation
    instance registry and its monotonic generation allocator.
@@ -105,8 +105,8 @@ If ratified, DG-002A establishes the following architecture:
    identity, writes the endpoint journal, or repairs block-entity inventory.
 7. Legacy workstations remain usable for existing behavior but are ineligible
    as transfer endpoints until the Workstation owner enrolls them.
-8. IM-028A remains blocked until this proposal is ratified. Ratification would
-   preserve the existing IM-028A scope: Cutting Table source and Grinder
+8. Ratification removes the endpoint-durability architecture blocker while
+   preserving the existing IM-028A scope: Cutting Table source and Grinder
    destination only.
 
 ## 4. Ownership
@@ -686,7 +686,8 @@ evidence.
 
 ## 21. Existing Workstation Impact
 
-DG-002A authorizes no implementation by itself. If ratified for IM-028A:
+DG-002A authorizes only the bounded IM-028A implementation baseline. It does
+not itself implement that baseline:
 
 - Cutting Table integrates as the only source endpoint;
 - Grinder integrates as the only destination endpoint;
@@ -724,8 +725,8 @@ owner results or advance Material Handling custody.
 
 ## 23. Future Architecture Manifest Declarations
 
-After ratification and only during an owner-authorized implementation milestone,
-the Architecture Manifest may declare each mechanically true fact:
+During IM-028A, and only as each fact becomes mechanically true, the
+Architecture Manifest may declare:
 
 - Workstation Instance Registry ownership;
 - Workstation instance-generation allocation ownership;
@@ -742,14 +743,14 @@ the Architecture Manifest may declare each mechanically true fact:
 - no direct Workstation dependency on Material Handling runtime internals.
 
 Every declaration remains unimplemented until code, persistence, startup
-ordering, and tests make it mechanically true. This proposed ADR changes no
-current manifest status.
+ordering, and tests make it mechanically true. Ratification changes no current
+manifest status.
 
 ## 24. Architecture Gates Preserved
 
 DG-002A does not authorize:
 
-- IM-028A implementation before owner ratification;
+- implementation outside the bounded IM-028A baseline;
 - IM-028B;
 - employee assignment, movement, or carried-item rendering;
 - a transfer command;
@@ -790,38 +791,44 @@ Future implementation must prove at minimum:
 - no machine operation or autonomous runtime loop; and
 - Architecture Manifest ownership and dependency validation.
 
-## 26. Required Owner Decisions
+## 26. Ratification Notes
 
-1. **Instance identity owner:** Approve Workstation as the singular owner of
-   Workstation Instance Identity and its registry; or require a named existing
-   owner before IM-028A.
-2. **Allocation mechanism:** Approve a persisted world-scoped monotonic
-   generation allocated on the serialized Workstation-owner boundary, with no
-   generation reuse; or require another deterministic mechanism.
-3. **Durable publication:** Approve forced temporary-file publication plus
-   atomic replacement with no non-atomic fallback for acknowledged endpoint
-   effects; or define another durability contract.
-4. **Journal authority:** Approve the Workstation endpoint journal as the
-   authority for transfer effect commitment and immutable owner-result history;
-   or select another Workstation-owned durable authority.
-5. **Block-entity projection:** Approve block-entity inventory as the live
-   projection, with NBT alone insufficient to prove a transfer effect; or define
-   another owner-preserving relationship.
-6. **Startup order:** Approve World Identity, instance registry, endpoint
-   journal, block-entity reconciliation, then Material Handling publication and
-   reconciliation; or provide another acyclic owner order.
-7. **Replacement behavior:** Approve new generation on replacement and typed
-   stale, copied, rollback, and type-conflict outcomes with no silent rebinding;
-   or define another non-inheriting rule.
-8. **Downgrade policy:** Approve downgrade only after proving no active,
-   unresolved, recovery-required, unknown, or newer-schema custody reference;
-   or define another no-loss migration policy.
-9. **IM-028A scope:** Approve Cutting Table source and Grinder destination as
-   the only endpoint integrations, with every other workstation gated; or
-   explicitly revise the milestone scope.
-10. **Implementation authorization:** Confirm that ratification of DG-002A
-    removes the two architecture blockers and leaves the existing bounded
-    IM-028A implementation authorization in force; or keep IM-028A blocked for
-    further architecture work.
+Owner ratification approved Workstation Endpoint Durability and Instance
+Identity as follows:
 
-Until all ten decisions are ratified, IM-028A implementation remains blocked.
+1. Workstation is the singular owner of canonical workstation instance
+   identity.
+2. Workstation instance generations are allocated through a persisted monotonic
+   Workstation-owned allocator and are never reused.
+3. Instance identity binds World Identity, workstation type, dimension,
+   position, generation, schema, and allocation configuration.
+4. Replacement or conflicting blocks at the same position do not inherit an
+   earlier endpoint identity.
+5. A Workstation-owned durable endpoint journal is required for consequential
+   transfer endpoint effects.
+6. `EFFECT_COMMITTED` durably freezes the inventory effect and immutable owner
+   result in one Workstation publication boundary.
+7. Block-entity inventory is the live projection; journal-backed endpoint state
+   is the durable consequential-effect authority.
+8. Startup reconciliation order is World Identity, Workstation instance
+   registry, Workstation endpoint journal, block-entity projection
+   reconciliation, Material Handling endpoint validation, then Material
+   Handling reconciliation and authority publication.
+9. Material Handling remains paused for affected transfers until referenced
+   endpoints reconcile or enter an explicit blocked state.
+10. DG-002A authorizes IM-028A only for the Cutting Table source endpoint, the
+    Grinder destination endpoint, and non-employee integration or test proof.
+11. Employee transport, visible carrying, commands for general transfer
+    gameplay, Patty Former transport, machine operation, Production
+    integration, automatic selection, and autonomous logistics remain gated.
+12. Downgrade is permitted only when no active, unresolved, recovery-required,
+    unknown-outcome, or newer-schema endpoint or custody reference remains.
+
+This ratification does not implement Workstation instance allocation, endpoint
+journaling, Material Handling, or any gameplay behavior. IM-028A may proceed
+only as a separate implementation task within the bounded DG-002 and DG-002A
+baseline. Architecture Manifest entries remain unimplemented until their
+corresponding contracts are mechanically true. IM-028B, employee transport,
+visible carrying, Patty Former transport, Production integration, automatic
+selection, autonomous logistics, general Logistics, and public APIs remain
+gated.

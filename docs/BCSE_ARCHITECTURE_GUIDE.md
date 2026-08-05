@@ -86,15 +86,16 @@ object graph.
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | Specified by RFC-0023 Draft 2 only; not accepted or implemented |
-| Material Handling | DG-002 ratified; IM-028A authorized but blocked pending owner review of proposed DG-002A endpoint durability and instance identity prerequisites |
+| Material Handling | DG-002 and DG-002A ratified; bounded IM-028A authorized but not implemented; employee transport and later capabilities remain gated |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 DG-002 establishes Material Handling transfer and in-transit custody
 architecture without making runtime declarations mechanically true. The
 current Architecture Manifest does not yet declare Material Handling.
-Proposed DG-002A defines the missing Workstation-owned instance registry,
-durable endpoint journal, and reconciliation order required before IM-028A may
-begin; it has no authority until owner ratification.
+DG-002A defines the Workstation-owned instance registry, durable endpoint
+journal, and reconciliation order that complete the ratified architecture
+baseline for bounded IM-028A. Those runtime mechanisms and their Architecture
+Manifest declarations remain unimplemented.
 Employee transport, visible carrying, Patty Former transport, Production-driven
 transport, autonomous chains, and general Logistics remain gated.
 
@@ -662,7 +663,7 @@ nothing.
 - [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
 - [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
 - [`Ratified Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
-- [`Proposed Workstation Endpoint Durability And Instance Identity Addendum`](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
+- [`Ratified Workstation Endpoint Durability And Instance Identity Addendum`](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
 - [`Economic Planning Engine`](ECONOMIC_PLANNING_ENGINE.md)
 - [`Production Framework`](PRODUCTION_FRAMEWORK.md)
