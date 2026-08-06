@@ -2,6 +2,7 @@ package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawBlockEntity;
+import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
 import com.butchercraft.machine.packaging.PackagingTableBlockEntity;
@@ -58,6 +59,15 @@ public final class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             PackagingTableBlockEntity::new,
                             ModBlocks.PACKAGING_TABLE.get()
+                    ).build(null)
+            );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CuttingTableBlockEntity>>
+            CUTTING_TABLE = BLOCK_ENTITY_TYPES.register(
+                    "cutting_table",
+                    () -> BlockEntityType.Builder.of(
+                            CuttingTableBlockEntity::new,
+                            ModBlocks.CUTTING_TABLE.get()
                     ).build(null)
             );
 

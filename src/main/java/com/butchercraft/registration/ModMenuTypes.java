@@ -2,6 +2,7 @@ package com.butchercraft.registration;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawMenu;
+import com.butchercraft.machine.cuttingtable.CuttingTableMenu;
 import com.butchercraft.machine.grinder.GrinderMenu;
 import com.butchercraft.machine.pattyformer.PattyFormerMenu;
 import com.butchercraft.machine.packaging.PackagingTableMenu;
@@ -52,6 +53,12 @@ public final class ModMenuTypes {
             PRODUCTION_ORDER = MENU_TYPES.register(
                     "production_order",
                     () -> IMenuTypeExtension.create(ProductionOrderMenu::new)
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<CuttingTableMenu>>
+            CUTTING_TABLE = MENU_TYPES.register(
+                    "cutting_table",
+                    () -> IMenuTypeExtension.create(CuttingTableMenu::new)
             );
 
     private ModMenuTypes() {

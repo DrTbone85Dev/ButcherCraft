@@ -29,8 +29,8 @@ public record WorkstationCapability(
         if (inputSlots <= 0) {
             throw new IllegalArgumentException("Workstations must support at least one input slot");
         }
-        if (outputSlots <= 0) {
-            throw new IllegalArgumentException("Workstations must support at least one output slot");
+        if (outputSlots < 0) {
+            throw new IllegalArgumentException("Workstation output slot count must not be negative");
         }
     }
 

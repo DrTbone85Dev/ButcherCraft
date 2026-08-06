@@ -176,6 +176,43 @@ class WorkstationInventoryTest {
     }
 
     @Test
+    void transferLockBlocksOnlyThePreparedEndpointSlot() {
+        WorkstationInventory inventory = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
+        inventory.setInputValidator(stack -> true);
+        inventory.setOutputExtractionAllowed(() -> true);
+        inventory.setOutputInternal(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+        inventory.setTransferLocked(slot -> slot == WorkstationInventory.INPUT_SLOT);
+
+        ItemStack rejected = inventory.insertItem(
+                WorkstationInventory.INPUT_SLOT,
+                ModItems.BEEF_TRIM_TEST.get().getDefaultInstance(),
+                false
+        );
+        ItemStack extracted = inventory.extractItem(WorkstationInventory.OUTPUT_SLOT, 1, false);
+
+        assertFalse(rejected.isEmpty());
+        assertTrue(inventory.input().isEmpty());
+        assertFalse(extracted.isEmpty());
+        assertTrue(inventory.output().isEmpty());
+    }
+
+    @Test
+    void workstationCommitCannotConsumeATransferLockedEndpointSlot() {
+        WorkstationInventory inventory = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
+        inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+        inventory.setTransferLocked(slot -> slot == WorkstationInventory.INPUT_SLOT);
+        WorkstationInventoryCommitPlan plan = new WorkstationInventoryCommitPlan(
+                inventory,
+                List.of(WorkstationInventory.INPUT_SLOT),
+                List.of(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance())
+        );
+
+        assertThrows(IllegalStateException.class, plan::commit);
+        assertFalse(inventory.input().isEmpty());
+        assertTrue(inventory.output().isEmpty());
+    }
+
+    @Test
     void commitPlanConsumesSelectedInputsAndRestoresSnapshotsOnRollback() {
         WorkstationInventory inventory = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
         inventory.setInputInternal(0, ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());

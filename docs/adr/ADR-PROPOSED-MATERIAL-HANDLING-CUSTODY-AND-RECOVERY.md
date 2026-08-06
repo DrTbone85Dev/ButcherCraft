@@ -1032,3 +1032,36 @@ Manifest entries remain unimplemented until their corresponding contracts are
 mechanically true. Employee transport, visible carrying, Patty Former
 transport, IM-028B, Production-driven transport, automatic workstation
 selection, autonomous chains, and general Logistics remain gated.
+
+## 28. IM-028A Implementation Clarification
+
+The owner ratified the following narrow schema-1 clarification for IM-028A:
+
+1. `CANCELLATION_REQUESTED`, `CANCELLATION_RETURN_PREPARED`, and
+   `CANCELLATION_RETURN_COMMITTED` are persisted Material Handling lifecycle
+   states. They durably represent explicit cancellation acceptance, source-
+   return preparation, and a Workstation-proven source-return commitment.
+2. A `RECOVERY_REQUIRED` transfer may enter this cancellation path only after
+   an explicit request and only when evidence proves the exact `ItemStack`
+   remains in Material Handling custody. Potentially committed withdrawal,
+   deposit, and return effects reconcile before cancellation progresses.
+3. `UNKNOWN_OUTCOME` remains non-cancellable until authoritative
+   reconciliation proves one custody location. No consequential effect is
+   retried automatically or inferred from slot appearance.
+4. Material Handling clears custody and publishes `CANCELLED` only after the
+   source-return owner result and live Workstation projection reconcile.
+5. The exact registry-aware `ItemStack` remains authoritative in Material
+   Handling persistence only while Material Handling holds proven in-transit
+   or unresolved custody. `COMPLETED` and `CANCELLED` records collapse full
+   payload copies and retain material identity, quantity, Content Identity,
+   endpoint references, evidence identities and digests, lifecycle outcome,
+   failure or recovery metadata, governing identities, and revisions.
+6. Workstation-owned endpoint journal records may retain their exact effect
+   representation as immutable owner evidence. That representation remains
+   Workstation-owned evidence and is not Material Handling custody.
+
+These states and terminal-persistence rules are versioned, validated,
+serialized deterministically, and require restart, idempotency, conflict, and
+no-duplication proof. This clarification does not authorize employee
+transport, visible carrying, Patty Former transport, Production integration,
+automatic selection, autonomous chains, or general Logistics.

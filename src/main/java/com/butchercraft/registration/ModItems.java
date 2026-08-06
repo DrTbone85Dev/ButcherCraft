@@ -435,6 +435,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> PACKAGING_TABLE =
             ITEMS.registerSimpleBlockItem(ModBlocks.PACKAGING_TABLE, new Item.Properties());
 
+    public static final DeferredItem<BlockItem> CUTTING_TABLE =
+            ITEMS.registerSimpleBlockItem(ModBlocks.CUTTING_TABLE, new Item.Properties());
+
     private ModItems() {
     }
 

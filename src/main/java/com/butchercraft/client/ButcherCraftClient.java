@@ -2,6 +2,7 @@ package com.butchercraft.client;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.client.screen.BandsawScreen;
+import com.butchercraft.client.screen.CuttingTableScreen;
 import com.butchercraft.client.screen.GrinderScreen;
 import com.butchercraft.client.screen.PackagingTableScreen;
 import com.butchercraft.client.screen.PattyFormerScreen;
@@ -29,6 +30,7 @@ public final class ButcherCraftClient {
         event.register(ModMenuTypes.PATTY_FORMER.get(), PattyFormerScreen::new);
         event.register(ModMenuTypes.BANDSAW.get(), BandsawScreen::new);
         event.register(ModMenuTypes.PACKAGING_TABLE.get(), PackagingTableScreen::new);
+        event.register(ModMenuTypes.CUTTING_TABLE.get(), CuttingTableScreen::new);
         event.register(ModMenuTypes.PRODUCTION_ORDER.get(), ProductionOrderScreen::new);
         ModClientRegistrationStatus.markDevelopmentWorkstationScreenRegistered();
         ModClientRegistrationStatus.markGrinderScreenRegistered();

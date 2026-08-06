@@ -832,3 +832,18 @@ corresponding contracts are mechanically true. IM-028B, employee transport,
 visible carrying, Patty Former transport, Production integration, automatic
 selection, autonomous logistics, general Logistics, and public APIs remain
 gated.
+
+## 27. IM-028A Implementation Clarification Reference
+
+The owner-ratified
+[`DG-002 implementation clarification`](ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md#28-im-028a-implementation-clarification)
+authorizes three persisted Material Handling cancellation substates, explicit
+cancellation from `RECOVERY_REQUIRED` only with proven Material Handling
+custody, and terminal Material Handling payload collapse.
+
+That clarification does not change DG-002A ownership. Workstation remains the
+singular authority for endpoint identity, inventory mutation, prepared locks,
+endpoint reconciliation, the durable endpoint journal, and immutable owner
+results. A proven obsolete projection lock may be cleared only through
+Workstation-owned reconciliation evidence. Material Handling may consume that
+evidence but may not alter the lock or Workstation inventory directly.

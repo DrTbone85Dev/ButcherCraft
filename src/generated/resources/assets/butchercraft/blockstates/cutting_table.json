@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "butchercraft:block/cutting_table",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "butchercraft:block/cutting_table"
+    },
+    "facing=south": {
+      "model": "butchercraft:block/cutting_table",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "butchercraft:block/cutting_table",
+      "y": 270
+    }
+  }
+}

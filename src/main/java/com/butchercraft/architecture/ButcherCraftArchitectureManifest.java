@@ -30,6 +30,7 @@ import com.butchercraft.architecture.validation.ValidationContextBuilder;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarSchema;
 import com.butchercraft.world.execution.ExecutionSchema;
 import com.butchercraft.world.execution.ExecutionWorkTypes;
+import com.butchercraft.world.materialhandling.MaterialHandlingSchema;
 import com.butchercraft.world.planning.EconomicPlanningWorkHandler;
 import com.butchercraft.world.production.ProductionSchema;
 import com.butchercraft.world.production.scheduler.ProductionWorkTypes;
@@ -64,6 +65,7 @@ public final class ButcherCraftArchitectureManifest {
     private static final ArchitectureId ALLOCATION = id("butchercraft:allocation");
     private static final ArchitectureId EXECUTION = id("butchercraft:execution");
     private static final ArchitectureId WORKSTATION = id("butchercraft:workstation");
+    private static final ArchitectureId MATERIAL_HANDLING = id("butchercraft:material_handling");
     private static final ArchitectureId RESOURCE_AUTHORITIES =
             id("butchercraft:resource_authorities");
     private static final ArchitectureId WORLD_SCOPE = id("butchercraft:scope/world");
@@ -129,6 +131,11 @@ public final class ButcherCraftArchitectureManifest {
         builder.component(component(EXECUTION, "Execution", "com.butchercraft.world.execution"));
         builder.component(component(WORKSTATION, "Workstations", "com.butchercraft.workstation"));
         builder.component(component(
+                MATERIAL_HANDLING,
+                "Material Handling",
+                "com.butchercraft.world.materialhandling"
+        ));
+        builder.component(component(
                 RESOURCE_AUTHORITIES,
                 "External Resource Authorities",
                 "external.resource.authorities"
@@ -175,6 +182,16 @@ public final class ButcherCraftArchitectureManifest {
                 "docs/RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md",
                 "ARCHITECTURE_SPECIFICATION_IMPLEMENTATION_NOT_AUTHORIZED",
                 "Draft 2",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/material_handling_custody_adr",
+                "docs/adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md",
+                "RATIFIED_IM_028A_FOUNDATION_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-002 IM-028A",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/workstation_endpoint_durability_adr",
+                "docs/adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md",
+                "RATIFIED_IM_028A_FOUNDATION_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-002A IM-028A",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
     }
 
@@ -1006,6 +1023,10 @@ public final class ButcherCraftArchitectureManifest {
                 EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-011 Generic Execution Runtime Foundation",
                 "One generic Execution Runtime Authority is declared for each loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/material_handling_world",
+                MATERIAL_HANDLING, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028A Cutting Table and Material Handling Runtime Foundation",
+                "One Material Handling Runtime owns transfer lifecycle and exact in-transit custody per loaded world");
     }
 
     private static void addOwnership(ValidationContextBuilder builder) {
@@ -1040,6 +1061,16 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/employee_workstation_interaction_request", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_operation_completion_observation", WORKFORCE);
         own(builder, "butchercraft:responsibility/workstation_approach_geometry", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_instance_identity", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_instance_generation", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_endpoint_journal", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_endpoint_freshness", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_endpoint_owner_results", WORKSTATION);
+        own(builder, "butchercraft:responsibility/material_transfer_identity", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/material_transfer_lifecycle", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/in_transit_item_stack_custody", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/material_transfer_evidence", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/material_handling_persistence", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/department_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
         own(builder, "butchercraft:responsibility/economic_actor_definitions", ACTORS);
@@ -1905,6 +1936,8 @@ public final class ButcherCraftArchitectureManifest {
         depends(builder, WORKSTATION, SCHEDULER);
         depends(builder, WORKSTATION, SIMULATION);
         depends(builder, WORKSTATION, WORLD_IDENTITY);
+        depends(builder, MATERIAL_HANDLING, WORLD_IDENTITY);
+        depends(builder, MATERIAL_HANDLING, WORKSTATION);
 
         forbid(
                 builder,
@@ -1935,6 +1968,12 @@ public final class ButcherCraftArchitectureManifest {
                 INVENTORY,
                 EXECUTION,
                 "Inventory cannot acquire generic Execution authority"
+        );
+        forbid(
+                builder,
+                WORKSTATION,
+                MATERIAL_HANDLING,
+                "Workstation endpoints cannot acquire cross-transfer lifecycle or in-transit custody authority"
         );
         forbid(
                 builder,
@@ -2302,6 +2341,18 @@ public final class ButcherCraftArchitectureManifest {
                 OrderingPolicy.CANONICAL_ID,
                 new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.EXECUTION.value())
         );
+        persistence(builder, "butchercraft:workstation_instances",
+                "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.INSTANCE_FILE_NAME,
+                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:workstation_endpoint_journal",
+                "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.JOURNAL_FILE_NAME,
+                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.CURRENT_VERSION,
+                PersistenceDataKind.IMMUTABLE_HISTORY, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:material_handling",
+                MaterialHandlingSchema.DIRECTORY_NAME + "/" + MaterialHandlingSchema.FILE_NAME,
+                MATERIAL_HANDLING, MaterialHandlingSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
     }
 
     private static void addSchedulerEffects(ValidationContextBuilder builder) {

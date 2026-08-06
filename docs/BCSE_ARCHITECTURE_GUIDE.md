@@ -86,16 +86,16 @@ object graph.
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | Specified by RFC-0023 Draft 2 only; not accepted or implemented |
-| Material Handling | DG-002 and DG-002A ratified; bounded IM-028A authorized but not implemented; employee transport and later capabilities remain gated |
+| Material Handling | DG-002 and DG-002A ratified; bounded IM-028A Cutting Table, endpoint durability, exact custody, and non-employee transfer foundation implemented; employee transport and later capabilities remain gated |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
-DG-002 establishes Material Handling transfer and in-transit custody
-architecture without making runtime declarations mechanically true. The
-current Architecture Manifest does not yet declare Material Handling.
-DG-002A defines the Workstation-owned instance registry, durable endpoint
-journal, and reconciliation order that complete the ratified architecture
-baseline for bounded IM-028A. Those runtime mechanisms and their Architecture
-Manifest declarations remain unimplemented.
+DG-002 establishes Material Handling as the singular transfer-lifecycle and
+in-transit custody authority. DG-002A establishes Workstation-owned instance
+identity, endpoint freshness, durable effect publication, owner results, and
+projection reconciliation. IM-028A implements those bounded foundations for
+the Cutting Table source, Grinder destination, and explicit non-employee
+integration proof. The Architecture Manifest declares only those mechanically
+true responsibilities and persistence files.
 Employee transport, visible carrying, Patty Former transport, Production-driven
 transport, autonomous chains, and general Logistics remain gated.
 

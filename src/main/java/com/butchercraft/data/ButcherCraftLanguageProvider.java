@@ -65,6 +65,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModBlocks.BANDSAW.get(), "Industrial Bandsaw");
         add(ModBlocks.BANDSAW_UPPER.get(), "Industrial Bandsaw");
         add(ModBlocks.PACKAGING_TABLE.get(), "Packaging Table");
+        add(ModBlocks.CUTTING_TABLE.get(), "Cutting Table");
         add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
         add("entity.butchercraft.employee", "Employee");
         add("entity.butchercraft.employee.inspect", "Employee: %s | Status: %s | Presence: %s | Shift: %s");
@@ -73,6 +74,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("container.butchercraft.production_order", "Production Order");
         add("container.butchercraft.bandsaw", "Industrial Bandsaw");
         add("container.butchercraft.packaging_table", "Packaging Table");
+        add("container.butchercraft.cutting_table", "Cutting Table");
         add("container.butchercraft.packaging_table.slot.meat", "Meat");
         add("container.butchercraft.packaging_table.slot.tray", "Tray");
         add("container.butchercraft.packaging_table.slot.wrap", "Wrap");

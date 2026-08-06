@@ -1,6 +1,7 @@
 {
   "block.butchercraft.bandsaw": "Industrial Bandsaw",
   "block.butchercraft.bandsaw_upper": "Industrial Bandsaw",
+  "block.butchercraft.cutting_table": "Cutting Table",
   "block.butchercraft.development_processing_workstation": "Development Processing Workstation",
   "block.butchercraft.grinder": "Grinder",
   "block.butchercraft.packaging_table": "Packaging Table",
@@ -10,6 +11,7 @@
   "commands.butchercraft.info.title": "ButcherCraft",
   "commands.butchercraft.info.version": "Version %s - Early Development / Project Meat Counter",
   "container.butchercraft.bandsaw": "Industrial Bandsaw",
+  "container.butchercraft.cutting_table": "Cutting Table",
   "container.butchercraft.development_processing_workstation": "Development Processing Workstation",
   "container.butchercraft.grinder": "Grinder",
   "container.butchercraft.packaging_table": "Packaging Table",

@@ -3,6 +3,7 @@ package com.butchercraft.machine.grinder;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.butchercraft.world.WorkstationReservationService;
+import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -106,7 +107,9 @@ public final class GrinderBlock extends BaseEntityBlock {
                             "reserved Grinder was removed"
                     );
                 }
-                if (level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity) {
+                boolean contentsMayDrop = !(level instanceof ServerLevel serverLevel)
+                        || WorkstationEndpointService.INSTANCE.retireEndpoint(serverLevel, pos);
+                if (contentsMayDrop && level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity) {
                     blockEntity.dropContents(level, pos);
                 }
             } finally {
