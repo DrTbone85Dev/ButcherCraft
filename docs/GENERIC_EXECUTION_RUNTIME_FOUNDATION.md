@@ -23,6 +23,12 @@ Execution persists schema-1 operation records at:
 
 The file contains immutable authorization evidence, operation lifecycle state, attempt records, owner result evidence, terminal result evidence, and typed failure state. Live runtime authorization consumption tokens are not persisted.
 
+Schema 1 currently requires exact aggregate handler-registry identity equality
+at startup. The documentation-only
+[`DG-003 proposal`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+defines a possible additive registry-evolution policy. It has no authority
+until owner ratification, and no compatibility migration is implemented.
+
 ## Explicitly Gated
 
 - Allocation-to-Execution handoff.
