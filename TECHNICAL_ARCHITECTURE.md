@@ -228,7 +228,7 @@ Required boundaries:
 - Client menus and screens consume synchronized summaries only. They do not mutate product quality, business state, employee skill, inspection outcomes, or saved data directly.
 - Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
 - The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Beef, pork, and bison grinding flows are selected through product/species/profile/operation definitions, not Grinder code branches. IM-012 adds a temporary single-operation Execution adapter for the selected grinder vertical slice; general grinder behavior remains data-driven.
-- The Patty Former consumes the same workstation framework with only the `butchercraft:patty_forming` capability. Ground Beef to Beef Patties is selected through product/species/profile/operation definitions and transformation data, not Patty Former product branches.
+- The Patty Former consumes the same workstation framework with only the `butchercraft:patty_forming` capability. Ground Beef to Beef Patties is selected through product/species/profile/operation definitions and transformation data, not Patty Former product branches. IM-028C configures the Patty Former with the explicit operation start policy: valid input establishes Workstation-owned `READY` state, while only a server-authoritative explicit player or existing typed Production request may ask the private coordinator to create one Execution operation. Server ticks and reload never infer authorization from input validity.
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
 - The Packaging Table consumes the same workstation framework with only the `butchercraft:packaging` capability. Retail packaging output is selected through processing-operation and product packaging metadata, while supply requirements come from packaging definitions rather than table code branches.
 - World Identity remains an immutable generated snapshot. Runtime player identity records are stored separately at `<world>/butchercraft/player_identities.json` and reference world settlement, property, business, ownership, and family ids without embedding or mutating those world records.
@@ -237,7 +237,7 @@ Required boundaries:
 - Business Identity remains immutable inside World Identity. Mutable business runtime state is stored separately at `<world>/butchercraft/business_runtime.json`, references businesses by `BusinessId`, and responds to daily and weekly simulation rollover events without owning an independent clock.
 - Workforce definitions are organizational structure, not employee records. They persist separately at `<world>/butchercraft/workforce_definitions.json`, reference businesses by `BusinessId`, reference Business Runtime shift ids, and resolve required positions for a current shift without assigning workers.
 - Department definitions and anchors are Workforce-owned organizational/location records. They persist separately at `<world>/butchercraft/departments.json`, and employee records reference departments by `DepartmentId`. Departments do not own workstation assignments, jobs, reservations, Production Runs, Scheduler Work, Execution authority, Inventory access, or item movement.
-- Employee navigation quality is Workforce-owned runtime behavior. Employee entities reconstruct transient destinations from department assignment and active workstation reservations, use deterministic approach candidates, monitor progress, retry paths within bounded thresholds, and expose safe failure diagnostics. IM-027 adds one outer integration coordinator for an arrived employee's Beef Trim Grinder request. IM-028B adds a separate Workforce assignment coordinator that observes Material Handling custody and requests Workstation reservations without extracting or inserting directly. Employees do not persist pathfinding, own inventory, dispatch Scheduler Work, consume Execution authority, mutate Production, or become transfer custody authority.
+- Employee navigation quality is Workforce-owned runtime behavior. Employee entities reconstruct transient destinations from department assignment and active workstation reservations, use deterministic approach candidates, monitor progress, retry paths within bounded thresholds, and expose safe failure diagnostics. IM-027 adds one outer integration coordinator for an arrived employee's Beef Trim Grinder request. IM-028B adds a separate Workforce assignment coordinator that observes Material Handling custody and requests Workstation reservations without extracting or inserting directly. IM-028C adds no Workforce behavior; employee Ground Beef transport and Patty Former operation remain gated. Employees do not persist pathfinding, own inventory, dispatch Scheduler Work, consume Execution authority, mutate Production, or become transfer custody authority.
 - Workstation reservation persistence at `<world>/butchercraft/workstation_reservations.json` owns only reservation identity, exclusivity, lifecycle, persisted operating position, and invalidation evidence. It is not a pathfinding engine and does not authorize workstation operation.
 - Economic Actors define participants, not economic behavior. Immutable definitions persist separately at `<world>/butchercraft/economic_actors.json`, reference goods by `GoodId`, and keep mutable runtime status and optional Business Runtime/Workforce assignments outside definition persistence.
 - Economic Inventory defines ownership, location, capacity, and runtime quantities, not movement or production. Containers reference actors and storage nodes, entries reference Goods by `GoodId`, and the pure domain remains independent from Minecraft inventory representation.
@@ -681,6 +681,12 @@ one player-operated recipe runs through Workstation, Execution, and Scheduler;
 broader fabrication remains gated. This is
 not a villager job site system or a general logistics framework.
 
+IM-028C makes the Patty Former a Workstation-owned DG-002A destination for one
+exact Ground Beef stack and adds the explicit operation gate. Deposit commits
+only endpoint custody and `READY` state; it does not issue Execution authority
+or Scheduler work. No Workforce transfer assignment consumes that destination
+until IM-029.
+
 Current model:
 
 - Employee identity and employment state are stored in
@@ -719,9 +725,9 @@ Current model:
   owner and Execution result evidence and never carries or collects product.
 - Unanchored departments remain definitions only.
 
-Patty Former operation, additional employee recipes, job claiming, autonomous
-workflows, product movement, skill gain, scheduling, productivity, and payroll
-remain separately gated.
+Employee Patty Former operation, additional employee recipes, job claiming,
+autonomous workflows, Ground Beef movement, skill gain, scheduling,
+productivity, and payroll remain separately gated.
 
 ## Work-Order Architecture
 

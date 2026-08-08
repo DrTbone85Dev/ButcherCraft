@@ -17,6 +17,95 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WorkstationProcessingControllerTest {
     @Test
+    void explicitPolicyKeepsValidInputReadyAndIdleAcrossTicksAndReload() {
+        Harness harness = Harness.createExplicit();
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+
+        for (int i = 0; i < 120; i++) {
+            harness.tick();
+        }
+
+        assertEquals(WorkstationState.READY, harness.controller.state());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.output().isEmpty());
+        assertTrue(harness.controller.productionSnapshot().activeExecutionOperationId().isEmpty());
+
+        Harness restored = Harness.restoreFrom(harness);
+        restored.tick();
+
+        assertEquals(WorkstationState.READY, restored.controller.state());
+        assertFalse(restored.inventory.input().isEmpty());
+        assertTrue(restored.inventory.output().isEmpty());
+    }
+
+    @Test
+    void explicitRequestStartsOnceAndDuplicateActiveRequestDoesNotRestartProgress() {
+        Harness harness = Harness.createExplicit();
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+        harness.tick();
+
+        assertTrue(harness.request().accepted());
+        harness.tick();
+        int elapsedBeforeDuplicate = harness.controller.elapsedTicks();
+        assertTrue(harness.request().accepted());
+
+        assertEquals(WorkstationState.PROCESSING, harness.controller.state());
+        assertEquals(elapsedBeforeDuplicate, harness.controller.elapsedTicks());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.output().isEmpty());
+    }
+
+    @Test
+    void explicitRequestReportsBlockedOutputWithoutMutationAndCanRetryAfterClearing() {
+        Harness harness = Harness.createExplicit();
+        ItemStack input = ModItems.BEEF_TRIM_TEST.get().getDefaultInstance();
+        ItemStack occupiedOutput = ModItems.GROUND_BEEF_TEST.get().getDefaultInstance();
+        harness.inventory.setInputInternal(input.copy());
+        harness.inventory.setOutputInternal(occupiedOutput.copy());
+        harness.tick();
+
+        WorkstationProductionRequestResult blocked = harness.request();
+
+        assertFalse(blocked.accepted());
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED,
+                harness.controller.lastFailure().orElseThrow().code());
+        assertTrue(ItemStack.isSameItemSameComponents(input, harness.inventory.input()));
+        assertTrue(ItemStack.isSameItemSameComponents(occupiedOutput, harness.inventory.output()));
+
+        harness.inventory.extractItem(WorkstationInventory.OUTPUT_SLOT, 1, false);
+        harness.controller.onInventoryChanged();
+        assertEquals(WorkstationState.READY, harness.controller.state());
+        assertTrue(harness.request().accepted());
+        assertEquals(WorkstationState.PROCESSING, harness.controller.state());
+    }
+
+    @Test
+    void completedExplicitOperationRequiresAnotherRequestForLaterInput() {
+        Harness harness = Harness.createExplicit();
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+        harness.tick();
+        assertTrue(harness.request().accepted());
+        for (int i = 0; i < 60; i++) {
+            harness.tick();
+        }
+        assertEquals(WorkstationState.COMPLETE, harness.controller.state());
+
+        harness.inventory.extractItem(WorkstationInventory.OUTPUT_SLOT, 1, false);
+        harness.controller.onInventoryChanged();
+        harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+        for (int i = 0; i < 120; i++) {
+            harness.tick();
+        }
+
+        assertEquals(WorkstationState.READY, harness.controller.state());
+        assertFalse(harness.inventory.input().isEmpty());
+        assertTrue(harness.inventory.output().isEmpty());
+        assertTrue(harness.request().accepted());
+        assertEquals(WorkstationState.PROCESSING, harness.controller.state());
+    }
+
+    @Test
     void controllerStartsOnceAndDoesNotCompleteEarly() {
         Harness harness = Harness.create();
         harness.inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
@@ -191,13 +280,25 @@ class WorkstationProcessingControllerTest {
     private record Harness(
             WorkstationInventory inventory,
             WorkstationProcessingController controller,
-            AtomicInteger changes
+            AtomicInteger changes,
+            WorkstationOperationStartPolicy startPolicy
     ) {
         static Harness create() {
-            return createWithCoordinator(null);
+            return create(WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY, null);
+        }
+
+        static Harness createExplicit() {
+            return create(WorkstationOperationStartPolicy.EXPLICIT_REQUEST, null);
         }
 
         static Harness createWithCoordinator(WorkstationExecutionCoordinator coordinator) {
+            return create(WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY, coordinator);
+        }
+
+        static Harness create(
+                WorkstationOperationStartPolicy startPolicy,
+                WorkstationExecutionCoordinator coordinator
+        ) {
             AtomicInteger changes = new AtomicInteger();
             WorkstationCapability workstationCapability = DevelopmentWorkstationFixtures.capability();
             WorkstationInventory inventory = new WorkstationInventory(workstationCapability, changes::incrementAndGet);
@@ -213,6 +314,8 @@ class WorkstationProcessingControllerTest {
                             workstationCapability,
                             lookup,
                             DevelopmentProductItemMappings.fixtureMapping(),
+                            WorkstationExecutionStrategy.legacy(),
+                            startPolicy,
                             changes::incrementAndGet
                     )
                     : new WorkstationProcessingController(
@@ -226,7 +329,7 @@ class WorkstationProcessingControllerTest {
                     );
             inventory.setInputLocked(controller::inputLocked);
             inventory.setOutputExtractionAllowed(controller::outputExtractionAllowed);
-            return new Harness(inventory, controller, changes);
+            return new Harness(inventory, controller, changes, startPolicy);
         }
 
         static Harness restoreFrom(Harness source) {
@@ -234,7 +337,7 @@ class WorkstationProcessingControllerTest {
             CompoundTag controllerTag = new CompoundTag();
             source.controller.saveAdditional(controllerTag, RegistryAccess.EMPTY);
 
-            Harness restored = create();
+            Harness restored = create(source.startPolicy, null);
             restored.inventory.deserializeNBT(RegistryAccess.EMPTY, inventoryTag);
             restored.controller.loadAdditional(controllerTag, RegistryAccess.EMPTY);
             return restored;
@@ -242,6 +345,10 @@ class WorkstationProcessingControllerTest {
 
         void tick() {
             controller.serverTick(null);
+        }
+
+        WorkstationProductionRequestResult request() {
+            return controller.requestProcessing(RegistryAccess.EMPTY);
         }
     }
 

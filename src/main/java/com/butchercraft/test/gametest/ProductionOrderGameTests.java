@@ -427,6 +427,7 @@ public final class ProductionOrderGameTests {
             helper.assertTrue(status(helper, player, true).nextAction() == ProductionOrderNextAction.MOVE_GROUND_BEEF,
                     "Order asks for manual Ground Beef transfer before the player moves items");
             transferGroundBeef(helper, grinder, pattyFormer);
+            requestPattyFormerOperation(helper, player);
         });
         helper.runAtTickTime(125, () -> {
             ProductionOrderStatusSnapshot snapshot = status(helper, player, true);
@@ -449,6 +450,7 @@ public final class ProductionOrderGameTests {
 
         helper.runAtTickTime(115, () -> {
             transferGroundBeef(helper, grinder, pattyFormer);
+            requestPattyFormerOperation(helper, player);
             pattyFormer.inventory().setOutputInternal(beefPatties());
         });
         helper.runAtTickTime(230, () -> {
@@ -475,6 +477,7 @@ public final class ProductionOrderGameTests {
             helper.assertTrue(status(helper, player, true).nextAction() == ProductionOrderNextAction.MOVE_GROUND_BEEF,
                     "Order asks for manual Ground Beef transfer before the player moves items");
             transferGroundBeef(helper, grinder, pattyFormer);
+            requestPattyFormerOperation(helper, player);
         });
         helper.runAtTickTime(230, () -> {
             ProductionOrderStatusSnapshot snapshot = status(helper, player, true);
@@ -510,6 +513,7 @@ public final class ProductionOrderGameTests {
             helper.assertTrue(status(helper, player, true).nextAction() == ProductionOrderNextAction.MOVE_GROUND_BEEF,
                     "Order asks for manual Ground Beef transfer before the player moves items");
             transferGroundBeef(helper, grinder, pattyFormer);
+            requestPattyFormerOperation(helper, player);
         });
         helper.runAtTickTime(240, () -> {
             status(helper, player, true);
@@ -676,6 +680,15 @@ public final class ProductionOrderGameTests {
         helper.assertTrue(Objects.equals("butchercraft:ground_beef",
                         extracted.get(ModDataComponents.PRODUCT_DATA.get()).productTypeId()),
                 "Transferred item is Ground Beef");
+    }
+
+    private static void requestPattyFormerOperation(GameTestHelper helper, Player player) {
+        ItemStack order = player.getItemInHand(InteractionHand.MAIN_HAND);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.useBlock(PATTY_FORMER_POS, player);
+        player.setItemInHand(InteractionHand.MAIN_HAND, order);
+        helper.assertTrue(pattyFormer(helper).workstationState() == WorkstationState.PROCESSING,
+                "Player explicitly starts one Patty Former operation after transfer");
     }
 
     private static ItemStack groundBeef() {

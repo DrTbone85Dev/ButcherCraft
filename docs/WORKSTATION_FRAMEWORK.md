@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, promoted machines, and IM-028A/IM-028B durable transfer endpoints
+Status: Milestones 2B through 2E workstation framework, promoted machines, and IM-028A through IM-028C durable transfer endpoints and Patty Former operation gate
 
 ## Purpose
 
@@ -40,7 +40,9 @@ COMPLETE -> IDLE after output removal
 ERROR -> IDLE only through safe reset
 ```
 
-Invalid transitions throw in tests and are not used by the controller.
+`READY` describes valid preparation only; it is not universally equivalent to operation authorization. `WorkstationOperationStartPolicy` preserves the historical `AUTOMATIC_WHEN_READY` behavior for existing machines while IM-028C configures only the Patty Former as `EXPLICIT_REQUEST`. For that machine, server ticks preserve `READY` indefinitely and only an explicit typed request can enter `PROCESSING`.
+
+Invalid transitions throw in tests and are not used by the controller. `COMPLETE -> BLOCKED` is permitted only when a later input is waiting behind occupied completed output; removing that output restores `READY` without authorizing processing.
 
 ## Failure Model
 
@@ -63,7 +65,7 @@ Minimum failure codes from the milestone are represented, with one additional ex
 
 Slot `0` is the first input for current machines. Output slots start at the configured first output slot, which is slot `1` for current one-input machines and slot `3` for the Packaging Table.
 
-Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. The Cutting Table accepts Beef Short Loin for its one authorized recipe. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion for processing machines. Automation uses the same item-handler rules.
+Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. The Cutting Table accepts Beef Short Loin for its one authorized recipe. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed after completion and while recovering an explicit `OUTPUT_OCCUPIED` blockage. Automation uses the same item-handler rules.
 
 ## Material Handling Endpoints
 
@@ -90,6 +92,12 @@ endpoint authority. After a successful employee deposit, the Grinder remains
 idle and its arrived reservation remains available for the separately explicit
 IM-027 operation command.
 
+IM-028C exposes one Patty Former Ground Beef destination endpoint through the
+same instance, freshness, journal, and owner-result contracts. A destination
+deposit changes Workstation inventory and ends in `READY`; it never creates
+Execution authorization or Scheduler work. No employee assignment or Ground
+Beef transport is implemented until IM-029.
+
 Startup order for this boundary is World Identity, Workstation instance
 registry, endpoint journal, block-entity projection reconciliation, Material
 Handling validation/reconciliation, then Workforce assignment reconstruction.
@@ -108,7 +116,7 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 
 - The default legacy strategy preserves the existing processing transaction path.
 - The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path. The IM-012 grinder slice also issues workstation-owned Execution authorization and applies its consequential ItemStack effect only through Scheduler-dispatched generic Execution.
-- The Patty Former uses the same transformation and generic Execution path for `butchercraft:form_beef_patties`, applying its consequential ItemStack effect only through Scheduler-dispatched generic Execution and Patty Former owner-result publication.
+- The Patty Former uses the same transformation and generic Execution path for `butchercraft:form_beef_patties`, applying its consequential ItemStack effect only through Scheduler-dispatched generic Execution and Patty Former owner-result publication. IM-028C requires a server-authoritative empty-hand player interaction or existing typed Production request before that path may create one operation. Repeated requests while active are idempotent and no automatic loop exists.
 - IM-016 adds a read-only Production observation surface over the existing controller state. It can request normal workstation validation for the promoted Grinder path and expose selected operation, active Execution Operation Identity, owner result evidence, and local failure state. It does not let Production mutate slots, bypass workstation validation, or consume Execution authority.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
 - `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
@@ -156,7 +164,7 @@ Processing block entities persist:
 - Reserved input snapshots for all input slots.
 - Completion-committed flag.
 
-Recovery policy: input remains visibly reserved in the input slot. If active saved state is malformed, processing stops in `ERROR` and recoverable inventory remains instead of being deleted. Completed output is never recreated if the output already exists.
+Recovery policy: input remains visibly reserved in the input slot. If active saved state is malformed, processing stops in `ERROR` and recoverable inventory remains instead of being deleted. Completed output is never recreated if the output already exists. A Patty Former saved with valid Ground Beef but no request restores `READY` and stays idle; load never infers operation authorization from recipe validity.
 
 Inventory-only workstations persist only their inventory. The Packaging Table used this path for the v0.8.0 foundation, but Sprint D moves it to the processing block entity path so active packaging progress and reserved inputs persist.
 

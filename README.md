@@ -6,6 +6,8 @@ Registered content includes the Cutting Table, Grinder, Patty Former, Bandsaw, P
 
 The v0.10.4 Material Handling Update introduces the Cutting Table foundation and its first player-operated fabrication recipe: `Beef Short Loin -> T-Bone Steak + Beef Trim`. The Cutting Table keeps separate input, primary-output, and trim-output slots so the T-Bone Steak and Beef Trim remain independently visible and owned by the workstation.
 
+The Patty Former now separates deposit from operation. Inserting Ground Beef leaves the machine `READY` indefinitely, including across save/reload, and creates no Execution operation or Scheduler work. Close the menu and use the READY Patty Former with an empty hand to explicitly start exactly one operation. A later Ground Beef batch requires another explicit request.
+
 Employees can now physically move product through the plant. A player can fabricate the first Cutting Table recipe, explicitly assign an employee to collect one Beef Trim from that Cutting Table, watch the employee visibly carry the actual item across the processing floor, and load it into a selected Grinder. The existing `/butchercraft employee operate <employee>` command then processes it through the same deterministic Grinder, Execution, and Scheduler pipeline used by the player.
 
 Under the hood, the Material Handling Runtime owns exact in-transit `ItemStack` custody while Workstation owns durable endpoint instance identity, prepare/effect/result publication, source and destination reservations, and inventory effects. Transfer recovery and cancellation preserve exact-stack custody, and the DG-003 additive Execution-handler compatibility policy allows new handlers to be registered without invalidating compatible existing saves. These foundations preserve subsystem ownership rather than introducing a second inventory or execution path.
@@ -115,8 +117,8 @@ The world-time diagnostic is `/butchercraft time status`; there is no separate `
 - The Cutting Table has one fabrication recipe.
 - Employee Material Handling moves exactly one Beef Trim at a time.
 - The transfer command requires explicit source and destination coordinates.
-- Ground Beef transport is not implemented.
-- Patty Former transport and employee operation are not implemented.
+- Employee Ground Beef transport and visible carrying are not implemented.
+- The Patty Former destination endpoint is structurally ready, but no Workforce transfer assignment or employee Patty Former operation is implemented.
 - Production does not assign transfers.
 - Employees do not select workstations automatically.
 - General Logistics and autonomous production are not implemented.
@@ -132,7 +134,7 @@ The trim, ground, Beef Patties, forequarter, and beef fabrication products are d
 
 `butchercraft:grinder` is the current Grinder proof block. It uses `butchercraft:grinding` and the same processing graph/resolver/controller path to process Beef, Pork, Chicken, Buffalo, Lamb, and Venison Trim products without species-specific Grinder behavior. Buffalo presentation retains the existing `butchercraft:bison_*` registry identities for compatibility.
 
-`butchercraft:patty_former` is the current Patty Former proof block. It uses `butchercraft:patty_forming` and the same Workstation, Execution, Scheduler, and owner-result path to process Ground Beef into Beef Patties. Ground Beef transfer from the Grinder to the Patty Former is manual.
+`butchercraft:patty_former` is the current Patty Former proof block. It uses `butchercraft:patty_forming` and the same Workstation, Execution, Scheduler, and owner-result path to process Ground Beef into Beef Patties. Ground Beef transfer from the Grinder to the Patty Former is manual. Valid Ground Beef means READY, not authorized: an empty-hand interaction starts one operation, and the machine never auto-loops from input presence.
 
 `butchercraft:production_order` is the current narrow player-facing control item for the fixed Beef Patties chain. It creates or inspects one Beef Trim to Grinder to Ground Beef to Patty Former to Beef Patties Production Run, assigns the two workstations through server-validated block interaction, and displays manual-transfer guidance without moving items automatically.
 

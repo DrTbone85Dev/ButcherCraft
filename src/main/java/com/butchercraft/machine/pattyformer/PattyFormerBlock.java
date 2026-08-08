@@ -3,6 +3,9 @@ package com.butchercraft.machine.pattyformer;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.butchercraft.world.WorkstationReservationService;
+import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.WorkstationTickContext;
+import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -80,6 +83,9 @@ public final class PattyFormerBlock extends BaseEntityBlock {
             Player player,
             BlockHitResult hitResult
     ) {
+        if (requestExplicitOperation(level, pos)) {
+            return InteractionResult.SUCCESS;
+        }
         return openMenu(level, pos, player)
                 ? InteractionResult.sidedSuccess(level.isClientSide)
                 : InteractionResult.PASS;
@@ -98,6 +104,9 @@ public final class PattyFormerBlock extends BaseEntityBlock {
         if (stack.getItem() instanceof ProductionOrderItem orderItem) {
             return orderItem.useOnWorkstation(stack, level, pos, player, hand);
         }
+        if (requestExplicitOperation(level, pos)) {
+            return ItemInteractionResult.SUCCESS;
+        }
         return openMenu(level, pos, player)
                 ? ItemInteractionResult.sidedSuccess(level.isClientSide)
                 : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -114,7 +123,9 @@ public final class PattyFormerBlock extends BaseEntityBlock {
                             "reserved Patty Former was removed"
                     );
                 }
-                if (level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity) {
+                boolean contentsMayDrop = !(level instanceof ServerLevel serverLevel)
+                        || WorkstationEndpointService.INSTANCE.retireEndpoint(serverLevel, pos);
+                if (contentsMayDrop && level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity) {
                     blockEntity.dropContents(level, pos);
                 }
             } finally {
@@ -150,6 +161,17 @@ public final class PattyFormerBlock extends BaseEntityBlock {
             if (!level.isClientSide) {
                 player.openMenu(blockEntity, pos);
             }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean requestExplicitOperation(Level level, BlockPos pos) {
+        if (level instanceof ServerLevel serverLevel
+                && level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity
+                && (blockEntity.workstationState() == WorkstationState.READY
+                || blockEntity.workstationState() == WorkstationState.PROCESSING)) {
+            blockEntity.requestPlayerProcessing(new WorkstationTickContext(serverLevel, pos));
             return true;
         }
         return false;
