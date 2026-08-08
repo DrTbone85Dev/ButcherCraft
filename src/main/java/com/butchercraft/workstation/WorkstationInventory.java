@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.BiPredicate;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 public final class WorkstationInventory extends ItemStackHandler {
@@ -27,6 +28,7 @@ public final class WorkstationInventory extends ItemStackHandler {
     private final Runnable changeListener;
     private BooleanSupplier inputLocked = () -> false;
     private BooleanSupplier outputExtractionAllowed = () -> false;
+    private IntPredicate transferLocked = slot -> false;
     private BiPredicate<Integer, ItemStack> inputValidator =
             (slot, stack) -> ProductStackAdapter.readProductData(stack).succeeded();
     private boolean suppressChangeListener;
@@ -53,8 +55,8 @@ public final class WorkstationInventory extends ItemStackHandler {
         if (inputSlotCount <= 0) {
             throw new IllegalArgumentException("Workstation inventories must support at least one input slot");
         }
-        if (outputSlotCount <= 0) {
-            throw new IllegalArgumentException("Workstation inventories must support at least one output slot");
+        if (outputSlotCount < 0) {
+            throw new IllegalArgumentException("Workstation output slot count must not be negative");
         }
         return inputSlotCount + outputSlotCount;
     }
@@ -95,6 +97,17 @@ public final class WorkstationInventory extends ItemStackHandler {
         this.outputExtractionAllowed = Objects.requireNonNull(outputExtractionAllowed, "outputExtractionAllowed");
     }
 
+    public void setTransferLocked(IntPredicate transferLocked) {
+        this.transferLocked = Objects.requireNonNull(transferLocked, "transferLocked");
+    }
+
+    public boolean isTransferLocked(int slot) {
+        if (slot < 0 || slot >= totalSlotCount) {
+            throw new IllegalArgumentException("Workstation slot is outside inventory range");
+        }
+        return transferLocked.test(slot);
+    }
+
     public void setInputValidator(Predicate<ItemStack> inputValidator) {
         Objects.requireNonNull(inputValidator, "inputValidator");
         this.inputValidator = (slot, stack) -> inputValidator.test(stack);
@@ -125,6 +138,7 @@ public final class WorkstationInventory extends ItemStackHandler {
     }
 
     public ItemStack output() {
+        requireOutputSlot();
         return getStackInSlot(firstOutputSlot);
     }
 
@@ -157,7 +171,15 @@ public final class WorkstationInventory extends ItemStackHandler {
     }
 
     public void setOutputInternal(ItemStack stack) {
+        requireOutputSlot();
         setStackMuted(firstOutputSlot, stack);
+    }
+
+    public void setOutputInternal(int outputIndex, ItemStack stack) {
+        if (outputIndex < 0 || outputIndex >= outputSlotCount) {
+            throw new IllegalArgumentException("Output index is outside workstation inventory range");
+        }
+        setStackMuted(firstOutputSlot + outputIndex, stack);
     }
 
     public void setOutputsInternal(List<ItemStack> stacks) {
@@ -229,6 +251,28 @@ public final class WorkstationInventory extends ItemStackHandler {
         setOutputsInternal(List.of());
     }
 
+    public void clearOutputSlotsInternal(List<Integer> slots) {
+        List<Integer> copiedSlots = List.copyOf(Objects.requireNonNull(slots, "slots"));
+        suppressChangeListener = true;
+        try {
+            for (int slot : copiedSlots) {
+                if (!isOutputSlot(slot)) {
+                    throw new IllegalArgumentException("Only output slots can be cleared by an endpoint effect");
+                }
+                setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
+    }
+
+    private void requireOutputSlot() {
+        if (outputSlotCount == 0) {
+            throw new IllegalStateException("Workstation inventory does not define an output slot");
+        }
+    }
+
     public void clearAllInternal() {
         suppressChangeListener = true;
         try {
@@ -254,6 +298,9 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+        if (transferLocked.test(slot)) {
+            return stack;
+        }
         if (isOutputSlot(slot)) {
             return stack;
         }
@@ -262,6 +309,9 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        if (transferLocked.test(slot)) {
+            return ItemStack.EMPTY;
+        }
         if (isInputSlot(slot) && isInputLocked()) {
             return ItemStack.EMPTY;
         }
@@ -269,6 +319,14 @@ public final class WorkstationInventory extends ItemStackHandler {
             return ItemStack.EMPTY;
         }
         return super.extractItem(slot, amount, simulate);
+    }
+
+    @Override
+    public void setStackInSlot(int slot, ItemStack stack) {
+        if (transferLocked.test(slot) && !suppressChangeListener) {
+            return;
+        }
+        super.setStackInSlot(slot, stack);
     }
 
     @Override

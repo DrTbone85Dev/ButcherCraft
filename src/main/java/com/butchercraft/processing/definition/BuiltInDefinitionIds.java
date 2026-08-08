@@ -63,6 +63,7 @@ public final class BuiltInDefinitionIds {
     public static final ResourceLocation CUT_BEEF_SHORT_LOIN = id("cut_beef_short_loin");
     public static final ResourceLocation CUT_BEEF_ROUND = id("cut_beef_round");
     public static final ResourceLocation CUT_BEEF_SIRLOIN = id("cut_beef_sirloin");
+    public static final ResourceLocation FABRICATE_T_BONE_STEAK = id("fabricate_t_bone_steak");
     public static final ResourceLocation PACKAGE_RETAIL = id("package_retail");
 
     public static final ResourceLocation OPERATION_CATEGORY_GRINDING = id("operation_category/grinding");
@@ -72,6 +73,7 @@ public final class BuiltInDefinitionIds {
     public static final ResourceLocation WORKSTATION_CAPABILITY_GRINDING = id("grinding");
     public static final ResourceLocation WORKSTATION_CAPABILITY_PATTY_FORMING = id("patty_forming");
     public static final ResourceLocation WORKSTATION_CAPABILITY_BANDSAW = id("bandsaw");
+    public static final ResourceLocation WORKSTATION_CAPABILITY_CUTTING_TABLE = id("cutting_table");
     public static final ResourceLocation WORKSTATION_CAPABILITY_PACKAGING = id("packaging");
     public static final ResourceLocation WORKSTATION_CAPABILITY_DEVELOPMENT_PROCESSING =
             id("workstation_capability/development_processing");

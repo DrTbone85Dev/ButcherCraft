@@ -149,6 +149,7 @@ public final class EmployeeService {
         runtime.storage().save(reset.manager().directory());
         runtime.departmentStorage().save(reset.departmentManager().directory());
         WorkstationReservationService.INSTANCE.resetGameTestReservations(server);
+        EmployeeMaterialHandlingService.INSTANCE.resetGameTestAssignments(server);
     }
 
     private EmployeeOperationResult<EmployeeRecord> createEmployee(
@@ -409,7 +410,7 @@ public final class EmployeeService {
                         level,
                         boundRecord,
                         valueObservation,
-                        entity.blockPosition()
+                        entity.position()
                 ));
         EmployeeAnchor activeAnchor = workstationTarget
                 .map(WorkstationReservationService.WorkstationNavigationTarget::anchor)
@@ -439,6 +440,7 @@ public final class EmployeeService {
         } catch (IllegalArgumentException exception) {
             return;
         }
+        EmployeeMaterialHandlingService.INSTANCE.handleNavigationFailure(entity, failureReason);
         WorkstationReservationService.INSTANCE.invalidateByEmployee(
                 level.getServer(),
                 employeeId,

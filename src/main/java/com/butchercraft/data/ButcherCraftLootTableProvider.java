@@ -34,6 +34,7 @@ final class ButcherCraftLootTableProvider extends LootTableProvider {
             dropSelf(ModBlocks.PATTY_FORMER.get());
             dropSelf(ModBlocks.BANDSAW.get());
             dropSelf(ModBlocks.PACKAGING_TABLE.get());
+            dropSelf(ModBlocks.CUTTING_TABLE.get());
         }
 
         @Override
@@ -42,7 +43,8 @@ final class ButcherCraftLootTableProvider extends LootTableProvider {
                     ModBlocks.GRINDER.get(),
                     ModBlocks.PATTY_FORMER.get(),
                     ModBlocks.BANDSAW.get(),
-                    ModBlocks.PACKAGING_TABLE.get()
+                    ModBlocks.PACKAGING_TABLE.get(),
+                    ModBlocks.CUTTING_TABLE.get()
             );
         }
     }

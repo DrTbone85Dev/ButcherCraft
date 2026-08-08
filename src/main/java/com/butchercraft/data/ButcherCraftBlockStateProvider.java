@@ -54,6 +54,10 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
         ModelFile packagingTableModel = packagingTableModel();
         horizontalBlock(ModBlocks.PACKAGING_TABLE.get(), packagingTableModel);
         simpleBlockItem(ModBlocks.PACKAGING_TABLE.get(), packagingTableModel);
+
+        ModelFile cuttingTableModel = cuttingTableModel();
+        horizontalBlock(ModBlocks.CUTTING_TABLE.get(), cuttingTableModel);
+        simpleBlockItem(ModBlocks.CUTTING_TABLE.get(), cuttingTableModel);
     }
 
     @Override
@@ -126,6 +130,20 @@ final class ButcherCraftBlockStateProvider extends BlockStateProvider {
         cuboid(model, 1, 0, 13, 3, 12, 15, "#frame");
         cuboid(model, 13, 0, 13, 15, 12, 15, "#frame");
         cuboid(model, 2, 15, 1, 14, 16, 3, "#roll");
+        return model;
+    }
+
+    private ModelFile cuttingTableModel() {
+        BlockModelBuilder model = models().getBuilder("cutting_table")
+                .texture("particle", PACKAGING_TABLE_SURFACE_TEXTURE)
+                .texture("surface", PACKAGING_TABLE_SURFACE_TEXTURE)
+                .texture("frame", PACKAGING_TABLE_FRAME_TEXTURE);
+
+        cuboid(model, 0, 12, 0, 16, 16, 16, "#surface");
+        cuboid(model, 1, 0, 1, 4, 12, 4, "#frame");
+        cuboid(model, 12, 0, 1, 15, 12, 4, "#frame");
+        cuboid(model, 1, 0, 12, 4, 12, 15, "#frame");
+        cuboid(model, 12, 0, 12, 15, 12, 15, "#frame");
         return model;
     }
 

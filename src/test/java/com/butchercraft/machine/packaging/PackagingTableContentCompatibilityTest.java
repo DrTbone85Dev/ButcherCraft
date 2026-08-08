@@ -32,7 +32,7 @@ class PackagingTableContentCompatibilityTest {
 
         assertEquals(38, snapshot.products().size());
         assertEquals(4, snapshot.packaging().size());
-        assertEquals(12, snapshot.transformations().size());
+        assertEquals(13, snapshot.transformations().size());
         assertTrue(PackagingTableWorkstation.capability().supportsWorkstationCapability(
                 com.butchercraft.processing.definition.BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PACKAGING
         ));

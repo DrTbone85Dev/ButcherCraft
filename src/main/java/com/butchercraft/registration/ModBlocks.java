@@ -3,6 +3,7 @@ package com.butchercraft.registration;
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.bandsaw.BandsawBlock;
 import com.butchercraft.machine.bandsaw.BandsawUpperBlock;
+import com.butchercraft.machine.cuttingtable.CuttingTableBlock;
 import com.butchercraft.machine.grinder.GrinderBlock;
 import com.butchercraft.machine.pattyformer.PattyFormerBlock;
 import com.butchercraft.machine.packaging.PackagingTableBlock;
@@ -69,6 +70,16 @@ public final class ModBlocks {
             BLOCKS.registerBlock(
                     "packaging_table",
                     PackagingTableBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(2.0F)
+                            .sound(SoundType.WOOD)
+                            .noOcclusion()
+            );
+
+    public static final DeferredBlock<CuttingTableBlock> CUTTING_TABLE =
+            BLOCKS.registerBlock(
+                    "cutting_table",
+                    CuttingTableBlock::new,
                     BlockBehaviour.Properties.of()
                             .strength(2.0F)
                             .sound(SoundType.WOOD)

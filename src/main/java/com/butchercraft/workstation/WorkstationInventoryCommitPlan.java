@@ -33,6 +33,9 @@ public final class WorkstationInventoryCommitPlan {
     }
 
     public void commit() {
+        if (consumedInputSlots.stream().anyMatch(inventory::isTransferLocked)) {
+            throw new IllegalStateException("Workstation operation cannot consume a transfer-locked endpoint slot");
+        }
         try {
             inventory.clearInputSlotsInternal(consumedInputSlots);
             inventory.setOutputsInternal(outputStacks);

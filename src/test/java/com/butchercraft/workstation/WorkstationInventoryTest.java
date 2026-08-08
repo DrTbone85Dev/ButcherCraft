@@ -1,12 +1,15 @@
 package com.butchercraft.workstation;
 
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
+import com.butchercraft.machine.cuttingtable.CuttingTableWorkstation;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.machine.packaging.PackagingTableWorkstation;
 import com.butchercraft.registration.ModItems;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +28,7 @@ class WorkstationInventoryTest {
         WorkstationInventory grinder = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
         WorkstationInventory bandsaw = new WorkstationInventory(BandsawWorkstation.capability(), () -> {});
         WorkstationInventory packagingTable = new WorkstationInventory(PackagingTableWorkstation.capability(), () -> {});
+        WorkstationInventory cuttingTable = new WorkstationInventory(CuttingTableWorkstation.capability(), () -> {});
 
         assertEquals(2, development.totalSlotCount());
         assertEquals(2, development.getSlots());
@@ -34,6 +38,11 @@ class WorkstationInventoryTest {
         assertEquals(2, grinder.getSlots());
         assertEquals(List.of(1), grinder.outputSlotRange());
 
+        assertEquals(3, cuttingTable.totalSlotCount());
+        assertEquals(1, cuttingTable.inputSlotCount());
+        assertEquals(2, cuttingTable.outputSlotCount());
+        assertEquals(List.of(1, 2), cuttingTable.outputSlotRange());
+
         assertEquals(9, bandsaw.totalSlotCount());
         assertEquals(9, bandsaw.getSlots());
         assertEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8), bandsaw.outputSlotRange());
@@ -42,6 +51,30 @@ class WorkstationInventoryTest {
         assertEquals(4, packagingTable.getSlots());
         assertEquals(3, packagingTable.inputSlotCount());
         assertEquals(List.of(3), packagingTable.outputSlotRange());
+    }
+
+    @Test
+    void cuttingTablePersistencePreservesDistinctInputPrimaryAndTrimSlots() {
+        WorkstationInventory inventory = new WorkstationInventory(CuttingTableWorkstation.capability(), () -> {});
+        ItemStack futureInput = ModItems.DEVELOPMENT_TEST_ITEM.get().getDefaultInstance();
+        futureInput.set(DataComponents.CUSTOM_NAME, Component.literal("Reserved fabrication input"));
+        ItemStack primaryOutput = ModItems.T_BONE_STEAK.get().getDefaultInstance();
+        primaryOutput.set(DataComponents.CUSTOM_NAME, Component.literal("Primary fabrication output"));
+        ItemStack beefTrimOutput = ModItems.BEEF_TRIM.get().getDefaultInstance();
+        beefTrimOutput.set(DataComponents.CUSTOM_NAME, Component.literal("Trim fabrication output"));
+        inventory.setInputInternal(futureInput.copy());
+        inventory.setOutputInternal(0, primaryOutput.copy());
+        inventory.setOutputInternal(1, beefTrimOutput.copy());
+
+        CompoundTag saved = inventory.serializeNBT(RegistryAccess.EMPTY);
+        WorkstationInventory restored = new WorkstationInventory(CuttingTableWorkstation.capability(), () -> {});
+        restored.deserializeNBT(RegistryAccess.EMPTY, saved);
+
+        assertTrue(ItemStack.isSameItemSameComponents(futureInput, restored.input()));
+        assertTrue(ItemStack.isSameItemSameComponents(primaryOutput, restored.outputs().get(0)));
+        assertTrue(ItemStack.isSameItemSameComponents(beefTrimOutput, restored.outputs().get(1)));
+        assertEquals(0, restored.firstInputSlot());
+        assertEquals(1, restored.firstOutputSlot());
     }
 
     @Test
@@ -173,6 +206,43 @@ class WorkstationInventoryTest {
         ));
 
         assertEquals(8, bandsaw.outputs().stream().filter(stack -> !stack.isEmpty()).count());
+    }
+
+    @Test
+    void transferLockBlocksOnlyThePreparedEndpointSlot() {
+        WorkstationInventory inventory = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
+        inventory.setInputValidator(stack -> true);
+        inventory.setOutputExtractionAllowed(() -> true);
+        inventory.setOutputInternal(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance());
+        inventory.setTransferLocked(slot -> slot == WorkstationInventory.INPUT_SLOT);
+
+        ItemStack rejected = inventory.insertItem(
+                WorkstationInventory.INPUT_SLOT,
+                ModItems.BEEF_TRIM_TEST.get().getDefaultInstance(),
+                false
+        );
+        ItemStack extracted = inventory.extractItem(WorkstationInventory.OUTPUT_SLOT, 1, false);
+
+        assertFalse(rejected.isEmpty());
+        assertTrue(inventory.input().isEmpty());
+        assertFalse(extracted.isEmpty());
+        assertTrue(inventory.output().isEmpty());
+    }
+
+    @Test
+    void workstationCommitCannotConsumeATransferLockedEndpointSlot() {
+        WorkstationInventory inventory = new WorkstationInventory(GrinderWorkstation.capability(), () -> {});
+        inventory.setInputInternal(ModItems.BEEF_TRIM_TEST.get().getDefaultInstance());
+        inventory.setTransferLocked(slot -> slot == WorkstationInventory.INPUT_SLOT);
+        WorkstationInventoryCommitPlan plan = new WorkstationInventoryCommitPlan(
+                inventory,
+                List.of(WorkstationInventory.INPUT_SLOT),
+                List.of(ModItems.GROUND_BEEF_TEST.get().getDefaultInstance())
+        );
+
+        assertThrows(IllegalStateException.class, plan::commit);
+        assertFalse(inventory.input().isEmpty());
+        assertTrue(inventory.output().isEmpty());
     }
 
     @Test

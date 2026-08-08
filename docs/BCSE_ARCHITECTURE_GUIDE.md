@@ -13,7 +13,7 @@ When documents differ, use this authority order:
 
 1. [`CONSTITUTION.md`](../CONSTITUTION.md)
 2. Accepted records in [`DECISIONS.md`](../DECISIONS.md)
-3. Ratified architecture hardening ADRs and
+3. Ratified ADRs, including architecture hardening decisions and the
    [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
 4. [`TECHNICAL_ARCHITECTURE.md`](../TECHNICAL_ARCHITECTURE.md)
 5. Accepted RFC scope and focused subsystem documents
@@ -85,15 +85,32 @@ object graph.
 | Planning | Implemented deterministic Production planning and Scheduler integration |
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
-| Generic Execution | Specified by RFC-0023 Draft 2 only; not accepted or implemented |
+| Generic Execution | IM-011 schema-1 runtime foundation and narrow DG-003 additive handler compatibility implemented; general migration and the full RFC-0023 Draft 2 surface remain separately gated |
+| Material Handling | DG-002 and DG-002A ratified; IM-028A endpoint/custody foundation and IM-028B explicit one-Beef-Trim employee Cutting Table-to-Grinder transfer implemented; later transport scope remains gated |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
-The live Scheduler currently contains Production and Economic Planning
-handlers, deterministic Invocation Identity, consequential Effect Identity
-observation, Unknown Outcome runtime state, and world-scoped dispatch
-authority. The accepted six stages remain at orders 100 through 600. There is
-no Allocation stage 350, Allocation Work handler, generic Execution service, or
-live Allocation-to-Execution gate.
+DG-002 establishes Material Handling as the singular transfer-lifecycle and
+in-transit custody authority. DG-002A establishes Workstation-owned instance
+identity, endpoint freshness, durable effect publication, owner results, and
+projection reconciliation. IM-028A implements those bounded foundations for
+the Cutting Table fabrication-output source and Grinder-input destination. IM-028B adds a
+Workforce-owned explicit employee assignment, one-at-a-time source/destination
+reservation handoff, physical travel, revisioned carry presentation derived
+from Material Handling custody, exact deposit, and source-return cancellation.
+The Architecture Manifest declares only those mechanically true
+responsibilities and persistence files. Ground Beef and Patty Former
+transport, Production-driven assignment, automatic selection, autonomous
+chains, multiple materials or quantities, and general Logistics remain gated.
+Cutting Table fabrication remains bounded to one player-operated Beef Short
+Loin to T-Bone Steak plus Beef Trim recipe. Material Handling binds only the
+dedicated Beef Trim output; broader fabrication remains gated.
+
+The live Scheduler currently contains Production, Economic Planning, and
+generic Execution handlers, deterministic Invocation Identity, consequential
+Effect Identity observation, Unknown Outcome runtime state, and world-scoped
+dispatch authority. The accepted six stages remain at orders 100 through 600.
+There is no Allocation stage 350, Allocation Work handler, or live
+Allocation-to-Execution gate.
 
 ## 4. High-Level Kernel Diagram
 
@@ -135,7 +152,7 @@ that architecture.
 | Planning | Observations used by a cycle, Needs, Constraints, Opportunities, Candidate Plans, Approved Plans, cycle evidence, and submission state | Execution, Inventory mutation, Transactions, Scheduler runtime, durable Capacity reservations | Implemented |
 | Providers | Their source-domain Resources, Capacity, and current facts | Planning decisions, Allocation Commitments, execution, or cross-domain mutation | Generic Allocation provider contract implemented; concrete providers deferred |
 | Allocation | Requirements, Requests, AllocationSets, Commitments, set runtime, detached accounting, Cycle reports, traces, and observation aggregation | Source Resources, source Capacity, Planning artifacts, executable definitions, Transactions, or Inventory | M22A-M22D implemented; live integration deferred |
-| Execution | Generic execution runtime, attempts, progress, lifecycle, Reports, History, and Trace | Plans, Commitments, Resources, Capacity, Transactions, Inventory, or domain semantics | RFC-0023 Draft 2 only |
+| Execution | Generic execution runtime, attempts, progress, lifecycle, Reports, History, and Trace | Plans, Commitments, Resources, Capacity, Transactions, Inventory, or domain semantics | IM-011 schema-1 foundation implemented; full RFC-0023 Draft 2 surface remains gated |
 | Transactions | Economic mutation validation, accepted change plans, atomic execution, audit history, and replay orchestration | Business decisions, production semantics, planning, scheduling, or source-domain policy | Implemented |
 | Inventory | Economic quantities, inventory runtime, storage hierarchy, and capacity invariants | The reason a quantity changes, Production policy, Orders, or market behavior | Implemented |
 | Architecture Validation | Immutable architecture descriptions, rules, deterministic validation, and reports | Any described subsystem state, architecture approval, runtime discovery, or simulation behavior | Implemented build-time framework |
@@ -172,14 +189,26 @@ remain external.
 
 ### Execution
 
-The proposed generic Execution subsystem answers how an already approved and
-authorized work instance progresses. It orchestrates one bounded step through
-an external domain adapter, observes any required Transaction result, and
-publishes runtime and evidence atomically.
+RFC-0023 defines how the full generic Execution subsystem progresses an already
+approved and authorized work instance. The implemented IM-011 schema-1
+foundation provides bounded handler dispatch, lifecycle, owner-result
+observation, terminal evidence, and persistence without authorizing the full
+RFC surface.
 
 Execution does not decide, allocate, interpret industry semantics, or mutate
 authoritative state. This contract is documented by RFC-0023 Draft 2 and is not
 current implementation authority.
+
+The implemented schema-1 Execution foundation classifies exact aggregate
+registry equality as `IDENTICAL`. The owner-ratified
+[`DG-003 Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+also implements narrow additive compatibility for exact recognized historical
+profiles. Execution owns Handler Contract Identity, registry evolution
+classification, historical profiles, retained-operation validation, and
+immutable diagnostics. Unknown profiles remain recovery-blocked, changed or
+removed historical contracts remain incompatible, and unchanged startup does
+not rewrite historical schema-1 metadata. General schema migration,
+handler-removal migration, and changed-contract migration remain gated.
 
 ### Transactions
 
@@ -587,7 +616,8 @@ and the Evidence Lifecycle ADR.
 **Execution**
 
 Deterministic bounded progression of approved and authorized work. Generic
-Execution is currently proposed by RFC-0023, not implemented.
+Execution has an implemented IM-011 schema-1 foundation; the full RFC-0023
+Draft 2 surface remains separately gated.
 
 **Need**
 
@@ -651,6 +681,11 @@ nothing.
 - [`SIMULATION_MODEL.md`](../SIMULATION_MODEL.md)
 - [`Architecture Validation Framework`](ARCHITECTURE_VALIDATION_FRAMEWORK.md)
 - [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
+- [`Ratified Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
+- [`Ratified Workstation Endpoint Durability And Instance Identity Addendum`](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
+- [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+- [`Material Handling Implementation`](MATERIAL_HANDLING.md)
+- [`Cutting Table`](CUTTING_TABLE.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
 - [`Economic Planning Engine`](ECONOMIC_PLANNING_ENGINE.md)
 - [`Production Framework`](PRODUCTION_FRAMEWORK.md)

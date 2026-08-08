@@ -31,7 +31,8 @@ class TransformationDatapackLoaderTest {
             "butchercraft:break_beef_hindquarter",
             "butchercraft:cut_beef_short_loin",
             "butchercraft:cut_beef_round",
-            "butchercraft:cut_beef_sirloin"
+            "butchercraft:cut_beef_sirloin",
+            "butchercraft:fabricate_t_bone_steak"
     );
 
     @AfterEach
@@ -143,7 +144,8 @@ class TransformationDatapackLoaderTest {
                 Set.of(
                         BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING,
                         BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING,
-                        BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW
+                        BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW,
+                        BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_CUTTING_TABLE
                 )
         );
     }

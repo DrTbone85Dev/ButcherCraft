@@ -472,7 +472,10 @@ class ArchitectureRulesTest {
                 "butchercraft:platform_contract/employee_department_navigation_foundation",
                 "butchercraft:platform_contract/department_persistence_foundation",
                 "butchercraft:platform_contract/department_diagnostics_foundation",
-                "butchercraft:platform_contract/department_navigation_boundary_safety"
+                "butchercraft:platform_contract/department_navigation_boundary_safety",
+                "butchercraft:platform_contract/employee_workstation_operation_foundation",
+                "butchercraft:platform_contract/employee_execution_request_boundary",
+                "butchercraft:platform_contract/employee_completion_observation"
         );
 
         for (String contractId : employeeContracts) {
@@ -489,6 +492,14 @@ class ArchitectureRulesTest {
                 descriptor.id().equals("butchercraft:employee_records")
                         && descriptor.ownerId().value().equals("butchercraft:workforce")
                         && descriptor.path().equals("butchercraft/employee_records.json")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/employee_workstation_interaction_request")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/employee_operation_completion_observation")
+                        && assignment.ownerId().value().equals("butchercraft:workforce")));
         assertTrue(context.persistenceDescriptors().stream().anyMatch(descriptor ->
                 descriptor.id().equals("butchercraft:departments")
                         && descriptor.ownerId().value().equals("butchercraft:workforce")
@@ -943,6 +954,12 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/execution_duplicate_conflict_behavior",
                         "butchercraft:platform_contract/execution_unknown_outcome_runtime",
                         "butchercraft:platform_contract/execution_minimal_persistence",
+                        "butchercraft:platform_contract/execution_handler_contract_identity",
+                        "butchercraft:platform_contract/execution_registry_evolution_classification",
+                        "butchercraft:platform_contract/execution_legacy_schema_one_profile",
+                        "butchercraft:platform_contract/execution_additive_compatible_startup",
+                        "butchercraft:platform_contract/execution_registry_compatibility_diagnostics",
+                        "butchercraft:platform_contract/execution_registry_read_only_startup",
                         "butchercraft:platform_contract/evidence_classification_foundation",
                         "butchercraft:platform_contract/evidence_retention_policy_foundation",
                         "butchercraft:platform_contract/evidence_retention_decision_foundation",
@@ -1075,7 +1092,16 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/workstation_approach_candidate_geometry",
                         "butchercraft:platform_contract/department_persistence_foundation",
                         "butchercraft:platform_contract/department_diagnostics_foundation",
-                        "butchercraft:platform_contract/department_navigation_boundary_safety"
+                        "butchercraft:platform_contract/department_navigation_boundary_safety",
+                        "butchercraft:platform_contract/employee_workstation_operation_foundation",
+                        "butchercraft:platform_contract/employee_execution_request_boundary",
+                        "butchercraft:platform_contract/employee_completion_observation",
+                        "butchercraft:platform_contract/cutting_table_output_source_semantics",
+                        "butchercraft:platform_contract/employee_material_handling_assignment",
+                        "butchercraft:platform_contract/employee_explicit_transfer_request",
+                        "butchercraft:platform_contract/employee_transfer_reservation_navigation",
+                        "butchercraft:platform_contract/employee_carry_view_projection",
+                        "butchercraft:platform_contract/employee_transfer_cancellation_recovery"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

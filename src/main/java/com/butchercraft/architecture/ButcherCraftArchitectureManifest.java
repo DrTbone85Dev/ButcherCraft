@@ -30,6 +30,7 @@ import com.butchercraft.architecture.validation.ValidationContextBuilder;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarSchema;
 import com.butchercraft.world.execution.ExecutionSchema;
 import com.butchercraft.world.execution.ExecutionWorkTypes;
+import com.butchercraft.world.materialhandling.MaterialHandlingSchema;
 import com.butchercraft.world.planning.EconomicPlanningWorkHandler;
 import com.butchercraft.world.production.ProductionSchema;
 import com.butchercraft.world.production.scheduler.ProductionWorkTypes;
@@ -38,6 +39,7 @@ import com.butchercraft.world.simulation.scheduler.SchedulerSchema;
 import com.butchercraft.world.simulation.scheduler.SimulationStageDefinition;
 import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
+import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentSchema;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -64,6 +66,7 @@ public final class ButcherCraftArchitectureManifest {
     private static final ArchitectureId ALLOCATION = id("butchercraft:allocation");
     private static final ArchitectureId EXECUTION = id("butchercraft:execution");
     private static final ArchitectureId WORKSTATION = id("butchercraft:workstation");
+    private static final ArchitectureId MATERIAL_HANDLING = id("butchercraft:material_handling");
     private static final ArchitectureId RESOURCE_AUTHORITIES =
             id("butchercraft:resource_authorities");
     private static final ArchitectureId WORLD_SCOPE = id("butchercraft:scope/world");
@@ -129,6 +132,11 @@ public final class ButcherCraftArchitectureManifest {
         builder.component(component(EXECUTION, "Execution", "com.butchercraft.world.execution"));
         builder.component(component(WORKSTATION, "Workstations", "com.butchercraft.workstation"));
         builder.component(component(
+                MATERIAL_HANDLING,
+                "Material Handling",
+                "com.butchercraft.world.materialhandling"
+        ));
+        builder.component(component(
                 RESOURCE_AUTHORITIES,
                 "External Resource Authorities",
                 "external.resource.authorities"
@@ -175,6 +183,16 @@ public final class ButcherCraftArchitectureManifest {
                 "docs/RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md",
                 "ARCHITECTURE_SPECIFICATION_IMPLEMENTATION_NOT_AUTHORIZED",
                 "Draft 2",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/material_handling_custody_adr",
+                "docs/adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md",
+                "RATIFIED_IM_028A_AND_IM_028B_FOUNDATIONS_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-002 IM-028A IM-028B",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/workstation_endpoint_durability_adr",
+                "docs/adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md",
+                "RATIFIED_IM_028A_AND_IM_028B_ENDPOINT_USE_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-002A IM-028A IM-028B",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
     }
 
@@ -560,6 +578,41 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-011 Generic Execution Runtime Foundation",
                 "Execution persists versioned operation runtime, attempts, immutable authorization evidence, and results");
+        platformContract(builder, "butchercraft:platform_contract/execution_handler_contract_identity",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-003 Execution Handler Registry Evolution",
+                "Execution derives one deterministic versioned content identity from every immutable handler contract");
+        platformContract(builder, "butchercraft:platform_contract/execution_registry_evolution_classification",
+                ValidationCategory.PERSISTENCE, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-003 Execution Handler Registry Evolution",
+                "Execution deterministically classifies persisted and current registries as identical, additive-compatible, incompatible, or indeterminate recovery-required");
+        platformContract(builder, "butchercraft:platform_contract/execution_legacy_schema_one_profile",
+                ValidationCategory.PERSISTENCE, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-003 Execution Handler Registry Evolution",
+                "Execution owns one immutable exact pre-Cutting-Table schema-1 compatibility profile with no wildcard matching");
+        platformContract(builder, "butchercraft:platform_contract/execution_additive_compatible_startup",
+                ValidationCategory.PERSISTENCE, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-003 Execution Handler Registry Evolution",
+                "Execution permits schema-1 startup only when every historical handler contract and retained operation binding remains exact under an additive registry");
+        platformContract(builder, "butchercraft:platform_contract/execution_registry_compatibility_diagnostics",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-003 Execution Handler Registry Evolution",
+                "Execution publishes immutable registry compatibility observations without exposing runtime mutation authority");
+        platformContract(builder, "butchercraft:platform_contract/execution_registry_read_only_startup",
+                ValidationCategory.PERSISTENCE, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-003 Execution Handler Registry Evolution",
+                "An unchanged additive-compatible startup and shutdown preserves historical schema-1 registry metadata and operation records byte for byte");
+        platformContract(builder, "butchercraft:platform_contract/execution_registry_migration_gates",
+                ValidationCategory.PERSISTENCE, EXECUTION,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "DG-003 Execution Handler Registry Evolution",
+                "General schema migration, handler-removal migration, changed-contract migration, persistence rewriting, and broad Recovery redesign remain gated");
         platformContract(builder, "butchercraft:platform_contract/execution_independent_of_allocation",
                 ValidationCategory.DEPENDENCIES, EXECUTION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -955,6 +1008,61 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-024 Department Assignment, Employee Presence, and Navigation Foundation",
                 "Department assignment and navigation do not submit Scheduler work, operate machines, reserve workstations, or carry items");
+        platformContract(builder, "butchercraft:platform_contract/employee_workstation_operation_foundation",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-027 Employee Workstation Operation Foundation",
+                "One arrived employee may request the Beef Trim Grinder operation through the workstation-owned processing boundary without mutating workstation inventory");
+        platformContract(builder, "butchercraft:platform_contract/employee_execution_request_boundary",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-027 Employee Workstation Operation Foundation",
+                "Employee integration requests workstation processing while the Grinder issues private Execution authorization and Execution owns operation lifecycle");
+        platformContract(builder, "butchercraft:platform_contract/employee_completion_observation",
+                ValidationCategory.SIMULATION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-027 Employee Workstation Operation Foundation",
+                "Employee completion requires immutable Grinder owner result evidence and terminal Execution result evidence before entering complete state");
+        platformContract(builder, "butchercraft:platform_contract/cutting_table_output_source_semantics",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028B Cutting Table Acceptance Recipe",
+                "Workstation owns the Cutting Table input, primary T-Bone Steak output, and dedicated Beef Trim output; one player recipe commits atomically through Execution and Scheduler while Material Handling withdrawal and return bind only the Beef Trim output");
+        platformContract(builder, "butchercraft:platform_contract/employee_material_handling_assignment",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "Workforce owns one deterministic employee transfer assignment while Material Handling separately owns transfer lifecycle and exact custody");
+        platformContract(builder, "butchercraft:platform_contract/employee_explicit_transfer_request",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "A permission-gated explicit request binds one employee, one Cutting Table fabrication-output endpoint instance, one Grinder-input endpoint instance, and exactly one Beef Trim without workstation search");
+        platformContract(builder, "butchercraft:platform_contract/employee_transfer_reservation_navigation",
+                ValidationCategory.SIMULATION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "Employee transfer navigation holds only the source reservation before custody and only the destination reservation after proven source release");
+        platformContract(builder, "butchercraft:platform_contract/employee_carry_view_projection",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "The synchronized one-item employee carry view is a non-authoritative revisioned display derived only from proven Material Handling custody");
+        platformContract(builder, "butchercraft:platform_contract/employee_transfer_cancellation_recovery",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "Workforce persists assignment intent and reconstructs movement and carry display only after Workstation and Material Handling reconciliation; post-custody cancellation returns through owner protocols");
+        platformContract(builder, "butchercraft:platform_contract/employee_transfer_future_scope_gates",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "Ground Beef and Patty Former transport, multiple materials or quantities, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
+        platformContract(builder, "butchercraft:platform_contract/employee_operation_future_scope_gates",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "IM-027 Employee Workstation Operation Foundation",
+                "Patty Former operation, product carrying beyond the IM-028B Beef Trim transfer, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -986,6 +1094,10 @@ public final class ButcherCraftArchitectureManifest {
                 EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-011 Generic Execution Runtime Foundation",
                 "One generic Execution Runtime Authority is declared for each loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/material_handling_world",
+                MATERIAL_HANDLING, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028A Cutting Table and Material Handling Runtime Foundation",
+                "One Material Handling Runtime owns transfer lifecycle and exact in-transit custody per loaded world");
     }
 
     private static void addOwnership(ValidationContextBuilder builder) {
@@ -1017,7 +1129,22 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/employee_department_assignments", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_department_navigation", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_navigation_recovery", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_workstation_interaction_request", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_operation_completion_observation", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_material_handling_assignments", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_material_handling_assignment_persistence", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_carry_view_projection", WORKFORCE);
         own(builder, "butchercraft:responsibility/workstation_approach_geometry", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_instance_identity", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_instance_generation", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_endpoint_journal", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_endpoint_freshness", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_endpoint_owner_results", WORKSTATION);
+        own(builder, "butchercraft:responsibility/material_transfer_identity", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/material_transfer_lifecycle", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/in_transit_item_stack_custody", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/material_transfer_evidence", MATERIAL_HANDLING);
+        own(builder, "butchercraft:responsibility/material_handling_persistence", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/department_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/good_definitions", GOODS);
         own(builder, "butchercraft:responsibility/economic_actor_definitions", ACTORS);
@@ -1061,6 +1188,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/execution_lifecycle", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_attempts", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_handler_registry", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_handler_contract_identity", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_registry_compatibility", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_legacy_registry_profiles", EXECUTION);
+        own(builder, "butchercraft:responsibility/execution_registry_compatibility_diagnostics", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_domain_effect_identity", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_result_evidence", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_unknown_outcome_runtime", EXECUTION);
@@ -1264,6 +1395,41 @@ public final class ButcherCraftArchitectureManifest {
                 WORKFORCE,
                 ValidationCategory.SIMULATION,
                 "IM-026 assigns employee destination selection, progress monitoring, bounded retry, and safe movement failure behavior to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_workstation_interaction_request",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-027 assigns the bounded employee Begin Operation request and transient employee operation state to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_operation_completion_observation",
+                WORKFORCE,
+                ValidationCategory.SIMULATION,
+                "IM-027 assigns read-only observation of matching workstation owner and Execution result evidence to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_material_handling_assignments",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-028B assigns employee transfer intent, lifecycle observation, and explicit endpoint binding to Workforce without transferring Material Handling custody authority"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_material_handling_assignment_persistence",
+                WORKFORCE,
+                ValidationCategory.PERSISTENCE,
+                "IM-028B assigns schema-versioned employee transfer assignment persistence to Workforce without persisting an ItemStack, path, renderer state, or mutation authority"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_carry_view_projection",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-028B assigns revisioned Employee entity carry presentation to Workforce as a non-authoritative projection of proven Material Handling custody"
         );
         contract(
                 builder,
@@ -1523,6 +1689,34 @@ public final class ButcherCraftArchitectureManifest {
                 EXECUTION,
                 ValidationCategory.EXECUTION,
                 "IM-011 assigns the explicit generic Execution handler registry to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_handler_contract_identity",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "DG-003 assigns deterministic versioned handler contract content identity to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_registry_compatibility",
+                EXECUTION,
+                ValidationCategory.PERSISTENCE,
+                "DG-003 assigns exact registry evolution and retained-operation compatibility classification to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_legacy_registry_profiles",
+                EXECUTION,
+                ValidationCategory.PERSISTENCE,
+                "DG-003 assigns immutable version-controlled schema-1 historical compatibility profiles to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/execution_registry_compatibility_diagnostics",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "DG-003 assigns immutable registry compatibility observations and recovery diagnostics to Execution"
         );
         contract(
                 builder,
@@ -1837,6 +2031,8 @@ public final class ButcherCraftArchitectureManifest {
     private static void addDependencies(ValidationContextBuilder builder) {
         depends(builder, WORKFORCE, WORLD_IDENTITY);
         depends(builder, WORKFORCE, BUSINESS_RUNTIME);
+        depends(builder, WORKFORCE, WORKSTATION);
+        depends(builder, WORKFORCE, MATERIAL_HANDLING);
         depends(builder, ACTORS, GOODS);
         depends(builder, INVENTORY, ACTORS);
         depends(builder, INVENTORY, GOODS);
@@ -1869,6 +2065,8 @@ public final class ButcherCraftArchitectureManifest {
         depends(builder, WORKSTATION, SCHEDULER);
         depends(builder, WORKSTATION, SIMULATION);
         depends(builder, WORKSTATION, WORLD_IDENTITY);
+        depends(builder, MATERIAL_HANDLING, WORLD_IDENTITY);
+        depends(builder, MATERIAL_HANDLING, WORKSTATION);
 
         forbid(
                 builder,
@@ -1899,6 +2097,12 @@ public final class ButcherCraftArchitectureManifest {
                 INVENTORY,
                 EXECUTION,
                 "Inventory cannot acquire generic Execution authority"
+        );
+        forbid(
+                builder,
+                WORKSTATION,
+                MATERIAL_HANDLING,
+                "Workstation endpoints cannot acquire cross-transfer lifecycle or in-transit custody authority"
         );
         forbid(
                 builder,
@@ -2266,6 +2470,23 @@ public final class ButcherCraftArchitectureManifest {
                 OrderingPolicy.CANONICAL_ID,
                 new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.EXECUTION.value())
         );
+        persistence(builder, "butchercraft:workstation_instances",
+                "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.INSTANCE_FILE_NAME,
+                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:workstation_endpoint_journal",
+                "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.JOURNAL_FILE_NAME,
+                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.CURRENT_VERSION,
+                PersistenceDataKind.IMMUTABLE_HISTORY, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:material_handling",
+                MaterialHandlingSchema.DIRECTORY_NAME + "/" + MaterialHandlingSchema.FILE_NAME,
+                MATERIAL_HANDLING, MaterialHandlingSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:employee_material_handling_assignments",
+                EmployeeMaterialHandlingAssignmentSchema.DIRECTORY_NAME + "/"
+                        + EmployeeMaterialHandlingAssignmentSchema.FILE_NAME,
+                WORKFORCE, EmployeeMaterialHandlingAssignmentSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
     }
 
     private static void addSchedulerEffects(ValidationContextBuilder builder) {

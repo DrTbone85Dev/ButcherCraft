@@ -235,6 +235,13 @@ The current manifest encodes, among other accepted contracts:
 - Production owns executable Production Plans.
 - Production owns Production Run runtime.
 - Scheduler owns Work eligibility.
+- Workforce owns employee Material Handling assignment intent and its separate
+  schema-versioned persistence.
+- Material Handling owns transfer lifecycle and exact in-transit ItemStack
+  custody while Workstation owns endpoint identity, journal effects, and owner
+  results.
+- Employee visible carrying is a revisioned non-authoritative projection of
+  proven Material Handling custody.
 
 ## Platform Declaration Validation
 

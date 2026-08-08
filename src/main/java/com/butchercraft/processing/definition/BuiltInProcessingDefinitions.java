@@ -79,6 +79,7 @@ public final class BuiltInProcessingDefinitions {
                         Map.entry(BuiltInDefinitionIds.CUT_BEEF_SHORT_LOIN, cutBeefShortLoinOperation()),
                         Map.entry(BuiltInDefinitionIds.CUT_BEEF_ROUND, cutBeefRoundOperation()),
                         Map.entry(BuiltInDefinitionIds.CUT_BEEF_SIRLOIN, cutBeefSirloinOperation()),
+                        Map.entry(BuiltInDefinitionIds.FABRICATE_T_BONE_STEAK, fabricateTBoneSteakOperation()),
                         Map.entry(BuiltInDefinitionIds.PACKAGE_RETAIL, packageRetailOperation())
                 )
         );
@@ -251,6 +252,10 @@ public final class BuiltInProcessingDefinitions {
         context.register(
                 key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.CUT_BEEF_SIRLOIN),
                 cutBeefSirloinOperation()
+        );
+        context.register(
+                key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.FABRICATE_T_BONE_STEAK),
+                fabricateTBoneSteakOperation()
         );
         context.register(key(ModDataPackRegistries.PROCESSING_OPERATION, BuiltInDefinitionIds.PACKAGE_RETAIL), packageRetailOperation());
     }
@@ -755,6 +760,29 @@ public final class BuiltInProcessingDefinitions {
                         outputQuantity(BuiltInDefinitionIds.BEEF_FAT, BuiltInDefinitionIds.id("fat"), 1_000, 15_000),
                         outputQuantity(BuiltInDefinitionIds.BEEF_BONE, BuiltInDefinitionIds.id("bone"), 1_000, 15_000)
                 )
+        );
+    }
+
+    public static ProcessingOperationDefinition fabricateTBoneSteakOperation() {
+        return new ProcessingOperationDefinition(
+                "definition.butchercraft.processing_operation.fabricate_t_bone_steak",
+                BuiltInDefinitionIds.OPERATION_CATEGORY_FABRICATION,
+                List.of(BuiltInDefinitionIds.RED_MEAT),
+                BuiltInDefinitionIds.BEEF_SHORT_LOIN,
+                BuiltInDefinitionIds.id("primal"),
+                3_000,
+                new QuantityDefinition(15_000, "gram"),
+                600,
+                500,
+                ZeroOutputPolicy.FORBID,
+                List.of(
+                        outputQuantity(BuiltInDefinitionIds.T_BONE_STEAK, BuiltInDefinitionIds.id("steak"), 4_000, 15_000),
+                        outputQuantity(BuiltInDefinitionIds.BEEF_TRIM, BuiltInDefinitionIds.id("trim"), 1_500, 15_000)
+                ),
+                List.of(),
+                java.util.Optional.of(BuiltInDefinitionIds.WORKSTATION_CAPABILITY_CUTTING_TABLE),
+                false,
+                false
         );
     }
 

@@ -47,9 +47,9 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModItems.BEEF_HINDQUARTER_TEST.get(), "Beef Hindquarter Test Product");
         add(ModItems.BEEF_ROUND_TEST.get(), "Beef Round Test Product");
         add(ModItems.BEEF_SIRLOIN_TEST.get(), "Beef Sirloin Test Product");
-        add(ModItems.BEEF_SHORT_LOIN_TEST.get(), "Beef Short Loin Test Product");
+        add(ModItems.BEEF_SHORT_LOIN_TEST.get(), "Beef Short Loin");
         add(ModItems.BEEF_FLANK_TEST.get(), "Beef Flank Test Product");
-        add(ModItems.T_BONE_STEAK_TEST.get(), "T-Bone Steak Test Product");
+        add(ModItems.T_BONE_STEAK_TEST.get(), "T-Bone Steak");
         add(ModItems.PORTERHOUSE_STEAK_TEST.get(), "Porterhouse Steak Test Product");
         add(ModItems.BEEF_STRIP_LOIN_TEST.get(), "Beef Strip Loin Test Product");
         add(ModItems.BEEF_TENDERLOIN_TEST.get(), "Beef Tenderloin Test Product");
@@ -65,6 +65,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add(ModBlocks.BANDSAW.get(), "Industrial Bandsaw");
         add(ModBlocks.BANDSAW_UPPER.get(), "Industrial Bandsaw");
         add(ModBlocks.PACKAGING_TABLE.get(), "Packaging Table");
+        add(ModBlocks.CUTTING_TABLE.get(), "Cutting Table");
         add(ModBlocks.DEVELOPMENT_PROCESSING_WORKSTATION.get(), "Development Processing Workstation");
         add("entity.butchercraft.employee", "Employee");
         add("entity.butchercraft.employee.inspect", "Employee: %s | Status: %s | Presence: %s | Shift: %s");
@@ -73,6 +74,10 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("container.butchercraft.production_order", "Production Order");
         add("container.butchercraft.bandsaw", "Industrial Bandsaw");
         add("container.butchercraft.packaging_table", "Packaging Table");
+        add("container.butchercraft.cutting_table", "Cutting Table");
+        add("screen.butchercraft.cutting_table.input", "Input");
+        add("screen.butchercraft.cutting_table.primary_output", "Primary Output");
+        add("screen.butchercraft.cutting_table.trim_output", "Beef Trim Output");
         add("container.butchercraft.packaging_table.slot.meat", "Meat");
         add("container.butchercraft.packaging_table.slot.tray", "Tray");
         add("container.butchercraft.packaging_table.slot.wrap", "Wrap");
@@ -140,6 +145,7 @@ final class ButcherCraftLanguageProvider extends LanguageProvider {
         add("definition.butchercraft.processing_operation.cut_beef_short_loin", "Cut Beef Short Loin");
         add("definition.butchercraft.processing_operation.cut_beef_round", "Cut Beef Round");
         add("definition.butchercraft.processing_operation.cut_beef_sirloin", "Cut Beef Sirloin");
+        add("definition.butchercraft.processing_operation.fabricate_t_bone_steak", "Fabricate T-Bone Steak");
         add("definition.butchercraft.processing_operation.package_retail", "Package Retail");
         add("tooltip.butchercraft.product_data.product", "Product: %s");
         add("tooltip.butchercraft.product_data.source", "Source: %s");
