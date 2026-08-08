@@ -132,6 +132,7 @@ public final class MaterialHandlingStorage {
         object.addProperty("material_identity", transfer.materialIdentity());
         object.addProperty("quantity", transfer.quantity());
         object.addProperty("assignment_type_identity", transfer.assignmentTypeIdentity());
+        transfer.employeeReference().ifPresent(value -> object.addProperty("employee_reference", value));
         object.addProperty("source_invocation_identity", transfer.sourceInvocationIdentity());
         object.addProperty("destination_invocation_identity", transfer.destinationInvocationIdentity());
         object.addProperty("return_invocation_identity", transfer.returnInvocationIdentity());
@@ -170,6 +171,7 @@ public final class MaterialHandlingStorage {
                 string(object, "material_identity"),
                 integer(object, "quantity"),
                 string(object, "assignment_type_identity"),
+                optionalString(object, "employee_reference"),
                 string(object, "source_invocation_identity"),
                 string(object, "destination_invocation_identity"),
                 string(object, "return_invocation_identity"),

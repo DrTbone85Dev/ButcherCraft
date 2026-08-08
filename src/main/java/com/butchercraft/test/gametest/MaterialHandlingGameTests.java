@@ -36,8 +36,12 @@ public final class MaterialHandlingGameTests {
         GrinderBlockEntity grinder = requireGrinder(helper);
         ItemStack exactStack = ModItems.BEEF_TRIM.get().getDefaultInstance();
         exactStack.set(DataComponents.CUSTOM_NAME, Component.literal("IM-028A Exact Custody"));
-        ItemStack remainder = cuttingTable.inventory().insertItem(0, exactStack.copy(), false);
-        helper.assertTrue(remainder.isEmpty(), "Cutting Table accepts exactly one Beef Trim source item");
+        helper.assertTrue(cuttingTable.preloadOutputForDevelopment(exactStack.copy())
+                        == CuttingTableBlockEntity.DevelopmentOutputPreloadStatus.PRELOADED,
+                "Development preload places exactly one Beef Trim in the Cutting Table output");
+        cuttingTable.inventory().setOutputInternal(0, ModItems.T_BONE_STEAK.get().getDefaultInstance());
+        helper.assertTrue(cuttingTable.inventory().input().isEmpty(),
+                "The reserved fabrication input remains empty before transfer");
 
         MaterialHandlingTransferResult result = MaterialHandlingService.INSTANCE.requestExplicitTransfer(
                 helper.getLevel(),
@@ -53,8 +57,13 @@ public final class MaterialHandlingGameTests {
         helper.assertTrue(result.transfer().orElseThrow().custodyLocation().orElseThrow()
                         == MaterialCustodyLocation.DESTINATION_WORKSTATION,
                 "Completed transfer identifies the destination as authoritative custody");
+        helper.assertTrue(cuttingTable.inventory().getStackInSlot(cuttingTable.trimOutputSlot()).isEmpty(),
+                "Cutting Table Beef Trim output is empty after committed withdrawal");
+        helper.assertTrue(cuttingTable.inventory().getStackInSlot(cuttingTable.primaryOutputSlot())
+                        .is(ModItems.T_BONE_STEAK.get()),
+                "Material Handling leaves the primary output untouched");
         helper.assertTrue(cuttingTable.inventory().input().isEmpty(),
-                "Cutting Table source slot is empty after committed withdrawal");
+                "Material Handling does not mutate the reserved fabrication input");
         ItemStack deposited = grinder.inventory().input();
         helper.assertTrue(deposited.getItem() == ModItems.BEEF_TRIM.get(),
                 "Grinder receives Beef Trim through its Workstation-owned endpoint");
@@ -88,7 +97,10 @@ public final class MaterialHandlingGameTests {
         GrinderBlockEntity grinder = requireGrinder(helper);
         ItemStack exactStack = ModItems.BEEF_TRIM.get().getDefaultInstance();
         exactStack.set(DataComponents.CUSTOM_NAME, Component.literal("IM-028A Cancellation Custody"));
-        cuttingTable.inventory().insertItem(0, exactStack.copy(), false);
+        helper.assertTrue(cuttingTable.preloadOutputForDevelopment(exactStack.copy())
+                        == CuttingTableBlockEntity.DevelopmentOutputPreloadStatus.PRELOADED,
+                "Development preload places Beef Trim in the Cutting Table output");
+        cuttingTable.inventory().setOutputInternal(0, ModItems.T_BONE_STEAK.get().getDefaultInstance());
         grinder.inventory().insertItem(0, ModItems.BEEF_TRIM.get().getDefaultInstance(), false);
 
         MaterialHandlingTransferResult result = MaterialHandlingService.INSTANCE.requestExplicitTransfer(
@@ -105,8 +117,13 @@ public final class MaterialHandlingGameTests {
         helper.assertTrue(result.transfer().orElseThrow().custodyLocation().orElseThrow()
                         == MaterialCustodyLocation.MATERIAL_HANDLING_RUNTIME,
                 "Recovery Required identifies Material Handling as proven custody authority");
-        helper.assertTrue(cuttingTable.inventory().input().isEmpty(),
+        helper.assertTrue(cuttingTable.inventory().getStackInSlot(cuttingTable.trimOutputSlot()).isEmpty(),
                 "Committed source withdrawal is not silently reversed");
+        helper.assertTrue(cuttingTable.inventory().input().isEmpty(),
+                "Committed source withdrawal leaves the reserved fabrication input unchanged");
+        helper.assertTrue(result.transfer().orElseThrow().sourceObservation().orElseThrow().slotIndex()
+                        == cuttingTable.trimOutputSlot(),
+                "Endpoint freshness binds the dedicated Beef Trim output slot");
         helper.assertTrue(grinder.inventory().input().getCount() == 1,
                 "Blocked Grinder input is not overwritten");
 
@@ -118,8 +135,15 @@ public final class MaterialHandlingGameTests {
         helper.assertTrue(cancelled.succeeded(), "Explicit cancellation returns proven custody to the source");
         helper.assertTrue(cancelled.transfer().orElseThrow().lifecycle() == MaterialTransferLifecycle.CANCELLED,
                 "Returned custody publishes CANCELLED");
-        helper.assertTrue(ItemStack.isSameItemSameComponents(exactStack, cuttingTable.inventory().input()),
-                "Source return preserves the exact ItemStack and data components");
+        helper.assertTrue(ItemStack.isSameItemSameComponents(
+                        exactStack,
+                        cuttingTable.inventory().getStackInSlot(cuttingTable.trimOutputSlot())),
+                "Source return preserves the exact ItemStack and data components in the Beef Trim output");
+        helper.assertTrue(cuttingTable.inventory().getStackInSlot(cuttingTable.primaryOutputSlot())
+                        .is(ModItems.T_BONE_STEAK.get()),
+                "Cancellation leaves the primary output untouched");
+        helper.assertTrue(cuttingTable.inventory().input().isEmpty(),
+                "Source return does not write the reserved fabrication input");
         helper.assertTrue(cancelled.transfer().orElseThrow().inTransitCustody().isEmpty(),
                 "Cancelled transfer collapses the in-transit custody payload");
         helper.assertTrue(cancelled.transfer().orElseThrow().returnResult().isEmpty(),
@@ -133,7 +157,7 @@ public final class MaterialHandlingGameTests {
                 "duplicate cancellation"
         );
         helper.assertTrue(duplicate.succeeded(), "Duplicate cancellation observes the authoritative result");
-        helper.assertTrue(cuttingTable.inventory().input().getCount() == 1,
+        helper.assertTrue(cuttingTable.inventory().getStackInSlot(cuttingTable.trimOutputSlot()).getCount() == 1,
                 "Duplicate cancellation does not repeat the source return");
         helper.assertTrue(grinder.inventory().input().getCount() == 1,
                 "Cancellation never mutates the blocked destination");

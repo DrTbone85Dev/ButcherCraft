@@ -95,6 +95,13 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
     }
 
     @Override
+    public int endpointSlotIndex(WorkstationEndpointEffectKind kind) {
+        return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
+                ? inventory().firstInputSlot()
+                : -1;
+    }
+
+    @Override
     public ItemStack endpointStackSnapshot(int slotIndex) {
         return endpointStackSnapshotView(slotIndex);
     }

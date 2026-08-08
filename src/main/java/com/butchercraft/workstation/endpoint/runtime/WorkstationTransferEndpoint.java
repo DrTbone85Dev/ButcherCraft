@@ -14,6 +14,8 @@ public interface WorkstationTransferEndpoint {
 
     WorkstationEndpointProjection endpointProjection();
 
+    int endpointSlotIndex(WorkstationEndpointEffectKind kind);
+
     ItemStack endpointStackSnapshot(int slotIndex);
 
     boolean endpointAccepts(WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactStack);

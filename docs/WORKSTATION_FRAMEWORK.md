@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, v0.8.0 Packaging Table gameplay, IM-017 Grinder recipe expansion, and IM-018 Patty Former gameplay
+Status: Milestones 2B through 2E workstation framework, promoted machines, and IM-028A/IM-028B durable transfer endpoints
 
 ## Purpose
 
@@ -18,6 +18,13 @@ This is not final artwork, not a player recipe-selection system, not a label sys
 - `AbstractInventoryWorkstationBlockEntity` owns shared inventory persistence, menu creation, item-handler inventory ownership, update tags, and block-break recovery for workstation foundations.
 - `AbstractProcessingWorkstationBlockEntity` adds processing controller state, server ticking, operation resolution, and completion behavior for machines that execute processing.
 - `ProcessingWorkstationMenu` and its client screens are temporary views. They do not own inventory or processing state.
+- The Workstation endpoint runtime owns canonical instance identity, persisted
+  monotonic generation allocation, endpoint freshness, prepared effects,
+  durable journal commits, immutable owner results, and block-entity projection
+  reconciliation for consequential Material Handling effects.
+- Material Handling may request and observe endpoint effects but never mutate a
+  workstation slot. Workforce may reserve and navigate to endpoints but never
+  gains endpoint mutation authority.
 
 ## State Machine
 
@@ -52,10 +59,40 @@ Minimum failure codes from the milestone are represented, with one additional ex
 | Patty Former | 1 | 1 | 2 |
 | Bandsaw | 1 | 8 | 9 |
 | Packaging Table | 3 | 1 | 4 |
+| Cutting Table | 1 fabrication input | 2 (primary and Beef Trim) | 3 |
 
 Slot `0` is the first input for current machines. Output slots start at the configured first output slot, which is slot `1` for current one-input machines and slot `3` for the Packaging Table.
 
-Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion for processing machines. Automation uses the same item-handler rules.
+Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. The Cutting Table accepts Beef Short Loin for its one authorized recipe. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed only after completion for processing machines. Automation uses the same item-handler rules.
+
+## Material Handling Endpoints
+
+IM-028A establishes the Cutting Table fabrication output as the source endpoint and one Grinder
+destination endpoint under DG-002 and DG-002A. Each endpoint reference binds
+world, workstation type, dimension, position, generation, schema, and allocator
+configuration. Replacing a block at the same position creates a different
+instance and cannot inherit an earlier transfer's identity.
+
+Consequential withdrawal, deposit, and source-return effects follow one
+Workstation-owned prepare, effect, and immutable owner-result boundary. The
+durable endpoint journal is authoritative for those effects; block-entity
+inventory is the live reconciled projection. Repeated requests observe the
+same owner result and cannot apply the inventory effect twice.
+
+The Cutting Table source-withdraw and source-return effects bind only its
+dedicated Beef Trim output slot and that slot's freshness. Its input and
+primary T-Bone Steak output are not Material Handling sources and remain
+unchanged by transfer.
+
+IM-028B adds Cutting Table reservations and physical employee approach using
+the existing deterministic workstation navigation contract. It does not alter
+endpoint authority. After a successful employee deposit, the Grinder remains
+idle and its arrived reservation remains available for the separately explicit
+IM-027 operation command.
+
+Startup order for this boundary is World Identity, Workstation instance
+registry, endpoint journal, block-entity projection reconciliation, Material
+Handling validation/reconciliation, then Workforce assignment reconstruction.
 
 ## Operation Resolution
 
@@ -235,4 +272,4 @@ The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, general employee automation beyond the IM-027 Beef Grinder request, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, animations, complex rendering, recipe-selection UI, labels, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, employee automation beyond the IM-027 Beef Grinder request and IM-028B explicit Beef Trim transfer, Ground Beef transport, Patty Former employee operation, Production-driven logistics, automatic workstation selection, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.

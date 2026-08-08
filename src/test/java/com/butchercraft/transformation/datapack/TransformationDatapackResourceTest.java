@@ -30,7 +30,8 @@ class TransformationDatapackResourceTest {
             "butchercraft:break_beef_hindquarter",
             "butchercraft:cut_beef_short_loin",
             "butchercraft:cut_beef_round",
-            "butchercraft:cut_beef_sirloin"
+            "butchercraft:cut_beef_sirloin",
+            "butchercraft:fabricate_t_bone_steak"
     );
 
     @Test
@@ -55,7 +56,7 @@ class TransformationDatapackResourceTest {
     void builtInRegistryIsLoadedFromTransformationDatapackResources() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(12, registry.size());
+        assertEquals(13, registry.size());
         assertEquals(EXPECTED_BUNDLED_TRANSFORMATION_IDS, registry.stream()
                         .map(definition -> definition.id().value())
                         .toList());

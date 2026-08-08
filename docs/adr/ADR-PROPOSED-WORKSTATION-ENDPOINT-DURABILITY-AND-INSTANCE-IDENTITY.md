@@ -1,6 +1,6 @@
 # ADR-DG-002A: Workstation Endpoint Durability And Instance Identity
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AUTHORIZED, NOT IMPLEMENTED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A IMPLEMENTED; IM-028B ENDPOINT USE IMPLEMENTED; LATER SCOPE GATED
 
 Decision identifier: DG-002A
 
@@ -8,7 +8,8 @@ Authority: Owner-ratified architecture direction. Together with DG-002, this
 document authorizes the bounded IM-028A implementation baseline described here.
 It does not itself implement runtime behavior, migration, schema files,
 commands, content, tests, persistence, gameplay, or Architecture Manifest
-declarations. IM-028B and all later implementation remain separately gated.
+declarations. IM-028B was later separately owner-authorized and consumes these
+implemented endpoint contracts. All later implementation remains gated.
 
 Governing authority: [`CONSTITUTION.md`](../../CONSTITUTION.md)
 
@@ -106,8 +107,8 @@ DG-002A establishes the following architecture:
 7. Legacy workstations remain usable for existing behavior but are ineligible
    as transfer endpoints until the Workstation owner enrolls them.
 8. Ratification removes the endpoint-durability architecture blocker while
-   preserving the existing IM-028A scope: Cutting Table source and Grinder
-   destination only.
+   preserving the existing IM-028A scope: Cutting Table fabrication-output
+   source and Grinder-input destination only.
 
 ## 4. Ownership
 
@@ -689,7 +690,7 @@ evidence.
 DG-002A authorizes only the bounded IM-028A implementation baseline. It does
 not itself implement that baseline:
 
-- Cutting Table integrates as the only source endpoint;
+- Cutting Table integrates its Beef Trim fabrication output as the only source endpoint;
 - Grinder integrates as the only destination endpoint;
 - Patty Former remains excluded until its separately gated explicit operation
   initiation work is accepted;
@@ -787,7 +788,7 @@ Future implementation must prove at minimum:
 - malformed and unsupported files fail visibly;
 - bounded capacity and retention behavior;
 - downgrade gates;
-- Cutting Table source and Grinder destination scope only;
+- Cutting Table fabrication-output source and Grinder-input destination scope only;
 - no machine operation or autonomous runtime loop; and
 - Architecture Manifest ownership and dependency validation.
 
@@ -816,22 +817,21 @@ Identity as follows:
    Handling reconciliation and authority publication.
 9. Material Handling remains paused for affected transfers until referenced
    endpoints reconcile or enter an explicit blocked state.
-10. DG-002A authorizes IM-028A only for the Cutting Table source endpoint, the
-    Grinder destination endpoint, and non-employee integration or test proof.
+10. DG-002A authorizes IM-028A only for the Cutting Table fabrication-output
+    source endpoint, the Grinder-input destination endpoint, and non-employee
+    integration or test proof.
 11. Employee transport, visible carrying, commands for general transfer
     gameplay, Patty Former transport, machine operation, Production
     integration, automatic selection, and autonomous logistics remain gated.
 12. Downgrade is permitted only when no active, unresolved, recovery-required,
     unknown-outcome, or newer-schema endpoint or custody reference remains.
 
-This ratification does not implement Workstation instance allocation, endpoint
-journaling, Material Handling, or any gameplay behavior. IM-028A may proceed
-only as a separate implementation task within the bounded DG-002 and DG-002A
-baseline. Architecture Manifest entries remain unimplemented until their
-corresponding contracts are mechanically true. IM-028B, employee transport,
-visible carrying, Patty Former transport, Production integration, automatic
-selection, autonomous logistics, general Logistics, and public APIs remain
-gated.
+This ratification did not itself implement Workstation instance allocation,
+endpoint journaling, Material Handling, or gameplay. IM-028A and the separately
+owner-authorized IM-028B endpoint consumer are now implemented against this
+baseline, and their mechanically true Architecture Manifest contracts are
+enforced. Patty Former transport, Production integration, automatic selection,
+autonomous logistics, general Logistics, and public APIs remain gated.
 
 ## 27. IM-028A Implementation Clarification Reference
 

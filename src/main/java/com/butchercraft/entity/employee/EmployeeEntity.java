@@ -2,6 +2,7 @@ package com.butchercraft.entity.employee;
 
 import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
 import com.butchercraft.world.EmployeeService;
+import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
 import com.butchercraft.world.workforce.employee.EmployeeId;
@@ -20,6 +21,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -56,6 +58,14 @@ public final class EmployeeEntity extends PathfinderMob {
             SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> NAVIGATION_STATE =
             SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<ItemStack> CARRIED_ITEM =
+            SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<String> CARRY_TRANSFER =
+            SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> CARRY_STATE =
+            SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Long> CARRY_REVISION =
+            SynchedEntityData.defineId(EmployeeEntity.class, EntityDataSerializers.LONG);
 
     private static final String TAG_EMPLOYEE_ID = "EmployeeId";
     private static final String TAG_ANCHOR_X = "AnchorX";
@@ -80,7 +90,6 @@ public final class EmployeeEntity extends PathfinderMob {
     private static final double TRAVEL_SPEED = 1.0D;
     private static final double IDLE_SPEED = 0.65D;
     private static final double MIN_NEXT_NODE_PROGRESS_DISTANCE_SQUARED = 0.04D;
-    private static final double ARRIVAL_HORIZONTAL_TOLERANCE = 1.1D;
     private static final double ARRIVAL_VERTICAL_TOLERANCE = 1.25D;
 
     private BlockPos anchorPos = BlockPos.ZERO;
@@ -153,6 +162,10 @@ public final class EmployeeEntity extends PathfinderMob {
         builder.define(PRESENCE, "unknown");
         builder.define(SHIFT, "Unassigned");
         builder.define(NAVIGATION_STATE, EmployeeNavigationState.OFF_SHIFT.serializedName());
+        builder.define(CARRIED_ITEM, ItemStack.EMPTY);
+        builder.define(CARRY_TRANSFER, "none");
+        builder.define(CARRY_STATE, "none");
+        builder.define(CARRY_REVISION, 0L);
     }
 
     @Override
@@ -168,6 +181,7 @@ public final class EmployeeEntity extends PathfinderMob {
                 return;
             }
         }
+        EmployeeMaterialHandlingService.INSTANCE.tick(this);
         EmployeeNavigationState state = navigationStateOrDefault();
         tickNavigationController(state);
         EmployeeWorkstationOperationService.INSTANCE.tick(this);
@@ -177,6 +191,7 @@ public final class EmployeeEntity extends PathfinderMob {
     @Override
     public void remove(RemovalReason reason) {
         if (!level().isClientSide && level() instanceof ServerLevel serverLevel) {
+            EmployeeMaterialHandlingService.INSTANCE.handleEmployeeRemoval(this);
             try {
                 EmployeeId employeeId = new EmployeeId(employeeIdValue());
                 WorkstationReservationService.INSTANCE.invalidateByEmployee(
@@ -297,6 +312,81 @@ public final class EmployeeEntity extends PathfinderMob {
 
     public String navigationStateValue() {
         return entityData.get(NAVIGATION_STATE);
+    }
+
+    public boolean applyCarryObservation(
+            String transferReference,
+            ItemStack displayStack,
+            String displayState,
+            long observationRevision
+    ) {
+        Objects.requireNonNull(transferReference, "transferReference");
+        Objects.requireNonNull(displayStack, "displayStack");
+        Objects.requireNonNull(displayState, "displayState");
+        if (displayStack.isEmpty() || displayStack.getCount() != 1) {
+            throw new IllegalArgumentException("Employee carry display must contain exactly one item");
+        }
+        long currentRevision = carryObservationRevision();
+        if (observationRevision < currentRevision) {
+            return false;
+        }
+        ItemStack current = entityData.get(CARRIED_ITEM);
+        if (observationRevision == currentRevision) {
+            return transferReference.equals(entityData.get(CARRY_TRANSFER))
+                    && displayState.equals(entityData.get(CARRY_STATE))
+                    && current.getCount() == displayStack.getCount()
+                    && ItemStack.isSameItemSameComponents(current, displayStack);
+        }
+        entityData.set(CARRIED_ITEM, displayStack.copy());
+        entityData.set(CARRY_TRANSFER, transferReference);
+        entityData.set(CARRY_STATE, displayState);
+        entityData.set(CARRY_REVISION, observationRevision);
+        return true;
+    }
+
+    public boolean clearCarryObservation(long observationRevision) {
+        long currentRevision = carryObservationRevision();
+        if (observationRevision < currentRevision) {
+            return false;
+        }
+        if (observationRevision == currentRevision) {
+            return entityData.get(CARRIED_ITEM).isEmpty()
+                    && "none".equals(entityData.get(CARRY_TRANSFER))
+                    && "none".equals(entityData.get(CARRY_STATE));
+        }
+        entityData.set(CARRIED_ITEM, ItemStack.EMPTY);
+        entityData.set(CARRY_TRANSFER, "none");
+        entityData.set(CARRY_STATE, "none");
+        entityData.set(CARRY_REVISION, observationRevision);
+        return true;
+    }
+
+    public long carryObservationRevision() {
+        return entityData.get(CARRY_REVISION);
+    }
+
+    public String carryTransferReference() {
+        return entityData.get(CARRY_TRANSFER);
+    }
+
+    public String carryDisplayState() {
+        return entityData.get(CARRY_STATE);
+    }
+
+    public void resetGameTestCarryObservation() {
+        String className = level().getServer().getClass().getName();
+        if (!className.contains("GameTestServer")) {
+            throw new IllegalStateException("Carry observation reset requires GameTestServer");
+        }
+        entityData.set(CARRIED_ITEM, ItemStack.EMPTY);
+        entityData.set(CARRY_TRANSFER, "none");
+        entityData.set(CARRY_STATE, "none");
+        entityData.set(CARRY_REVISION, 0L);
+    }
+
+    @Override
+    public ItemStack getMainHandItem() {
+        return entityData.get(CARRIED_ITEM).copy();
     }
 
     public BlockPos anchorPos() {
@@ -645,8 +735,8 @@ public final class EmployeeEntity extends PathfinderMob {
                 workstationType,
                 workstationCandidates,
                 rangeTarget,
-                ARRIVAL_HORIZONTAL_TOLERANCE,
-                ARRIVAL_VERTICAL_TOLERANCE,
+                WorkstationReservationService.operatingHorizontalTolerance(anchorRadius),
+                WorkstationReservationService.operatingVerticalTolerance(anchorRadius),
                 Optional.ofNullable(lookTargetPos)
         );
     }

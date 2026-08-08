@@ -1,6 +1,6 @@
 # ADR-DG-002: Material Handling Custody And Recovery
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AUTHORIZED, NOT IMPLEMENTED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; LATER SCOPE GATED
 
 Decision identifier: DG-002
 
@@ -8,7 +8,8 @@ Authority: Owner-ratified architecture direction. This document authorizes the
 IM-028A implementation boundary defined in Section 24. It does not itself
 implement runtime behavior, gameplay behavior, migration, schema files,
 commands, content, persistence, or Architecture Manifest declarations.
-IM-028B and all later implementation remain separately gated.
+IM-028B was later separately owner-authorized and is implemented within the
+Section 25 boundary. All later implementation remains separately gated.
 
 Canonical platform reference:
 [`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
@@ -597,10 +598,11 @@ gameplay meaning.
 This ADR recommends **Option A**: authorize a later minimal Cutting Table as
 the canonical schema-1 Beef Trim source.
 
-The Cutting Table begins as a narrow source workstation with one
-workstation-owned Beef Trim slot, normal block-entity persistence, source
-Freshness Identity, and transfer-aware withdrawal/return contract. It performs
-no cutting operation and creates no product.
+The Cutting Table begins as a future fabrication workstation with one reserved
+input and one workstation-owned Beef Trim output. That output is the schema-1
+Material Handling source and has normal block-entity persistence, source
+Freshness Identity, and a transfer-aware withdrawal/return contract. The
+milestone performs no cutting operation and creates no product.
 
 The Cutting Table is authorized only within the bounded IM-028A implementation
 milestone below. It is not implemented by this ADR.
@@ -906,9 +908,10 @@ an explicit downgrade migration proves no active transfer.
 Owner-authorized implementation scope:
 
 - one minimal craftable or development Cutting Table;
-- one Cutting-Table-owned source slot accepting Beef Trim only;
+- one reserved Cutting Table fabrication input and one Cutting-Table-owned
+  Beef Trim output serving as the source endpoint;
 - block-entity inventory and endpoint-marker persistence;
-- Cutting Table source Freshness Identity;
+- Cutting Table fabrication-output source Freshness Identity;
 - transfer-aware withdrawal and return owner contract;
 - Grinder destination Freshness Identity and transfer-aware deposit owner
   contract;
@@ -1017,21 +1020,21 @@ Owner ratification approved Material Handling Custody and Recovery as follows:
    destination.
 6. Schema 1 uses explicit source and destination selection and performs no
    automatic workstation search.
-7. IM-028A is authorized to add the minimal Cutting Table with one
-   authoritative Beef Trim source slot and the Material Handling foundation
-   bounded by Section 24.
+7. IM-028A is authorized to add the minimal Cutting Table with one reserved
+   fabrication input, one authoritative Beef Trim output source, and the
+   Material Handling foundation bounded by Section 24.
 8. Patty Former transport remains gated until explicit operation behavior is
    separated from automatic processing.
 9. IM-028 is formally split into IM-028A and IM-028B.
 10. Employee-held item rendering is a non-authoritative synchronized display
     derived only from proven Material Handling custody.
 
-This ratification does not implement Material Handling. IM-028A may proceed
-only as a separate implementation task within Section 24. Architecture
-Manifest entries remain unimplemented until their corresponding contracts are
-mechanically true. Employee transport, visible carrying, Patty Former
-transport, IM-028B, Production-driven transport, automatic workstation
-selection, autonomous chains, and general Logistics remain gated.
+This ratification did not itself implement Material Handling. IM-028A and the
+separately owner-authorized IM-028B are now implemented within Sections 24 and
+25, and their mechanically true Architecture Manifest contracts are enforced.
+Patty Former transport, Production-driven transport, automatic workstation
+selection, autonomous chains, multiple materials or quantities, and general
+Logistics remain gated.
 
 ## 28. IM-028A Implementation Clarification
 
@@ -1063,5 +1066,7 @@ The owner ratified the following narrow schema-1 clarification for IM-028A:
 These states and terminal-persistence rules are versioned, validated,
 serialized deterministically, and require restart, idempotency, conflict, and
 no-duplication proof. This clarification does not authorize employee
-transport, visible carrying, Patty Former transport, Production integration,
-automatic selection, autonomous chains, or general Logistics.
+transport. IM-028B was later separately owner-authorized and implemented
+without changing these cancellation rules. Patty Former transport, Production
+integration, automatic selection, autonomous chains, and general Logistics
+remain gated.

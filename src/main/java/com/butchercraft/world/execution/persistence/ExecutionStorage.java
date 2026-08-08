@@ -7,6 +7,10 @@ import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
 import com.butchercraft.world.execution.ExecutionFailure;
 import com.butchercraft.world.execution.ExecutionFailureCode;
 import com.butchercraft.world.execution.ExecutionHandlerRegistry;
+import com.butchercraft.world.execution.ExecutionRegistryCompatibilityClassification;
+import com.butchercraft.world.execution.ExecutionRegistryCompatibilityClassifier;
+import com.butchercraft.world.execution.ExecutionRegistryCompatibilityException;
+import com.butchercraft.world.execution.ExecutionRegistryCompatibilityObservation;
 import com.butchercraft.world.execution.ExecutionManager;
 import com.butchercraft.world.execution.ExecutionOperationId;
 import com.butchercraft.world.execution.ExecutionOperationSnapshot;
@@ -41,34 +45,66 @@ public final class ExecutionStorage {
     private final Path filePath;
     private final ExecutionHandlerRegistry handlerRegistry;
     private final ExecutionRuntimeConfiguration configuration;
+    private final ExecutionRegistryCompatibilityClassifier compatibilityClassifier;
+    private volatile ExecutionRegistryCompatibilityObservation compatibilityObservation;
+    private LoadedPersistenceBaseline loadedBaseline;
 
     public ExecutionStorage(
             Path filePath,
             ExecutionHandlerRegistry handlerRegistry,
             ExecutionRuntimeConfiguration configuration
     ) {
+        this(filePath, handlerRegistry, configuration, ExecutionRegistryCompatibilityClassifier.standard());
+    }
+
+    public ExecutionStorage(
+            Path filePath,
+            ExecutionHandlerRegistry handlerRegistry,
+            ExecutionRuntimeConfiguration configuration,
+            ExecutionRegistryCompatibilityClassifier compatibilityClassifier
+    ) {
         this.filePath = Objects.requireNonNull(filePath, "filePath");
         this.handlerRegistry = Objects.requireNonNull(handlerRegistry, "handlerRegistry");
         this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.compatibilityClassifier = Objects.requireNonNull(compatibilityClassifier, "compatibilityClassifier");
     }
 
     public Path filePath() {
         return filePath;
     }
 
-    public ExecutionManager load() {
+    public synchronized ExecutionManager load() {
         if (!Files.exists(filePath)) {
-            return new ExecutionManager(handlerRegistry, configuration);
+            ExecutionManager manager = new ExecutionManager(handlerRegistry, configuration);
+            compatibilityObservation = compatibilityClassifier.classify(
+                    ExecutionSchema.CURRENT_VERSION,
+                    handlerRegistry.registryIdentity(),
+                    configuration.configurationIdentity(),
+                    handlerRegistry,
+                    configuration,
+                    List.of()
+            );
+            loadedBaseline = null;
+            return manager;
         }
         try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
+            ExecutionManager manager = deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
+            loadedBaseline = new LoadedPersistenceBaseline(
+                    manager,
+                    manager.operations(),
+                    compatibilityObservation.classification()
+            );
+            return manager;
         } catch (IOException exception) {
             throw new UncheckedIOException("Failed to load Execution runtime from " + filePath, exception);
         }
     }
 
-    public void save(ExecutionManager manager) {
+    public synchronized void save(ExecutionManager manager) {
         Objects.requireNonNull(manager, "manager").validateForPersistence();
+        if (loadedBaseline != null && loadedBaseline.preserveHistoricalPersistence(manager)) {
+            return;
+        }
         try {
             Path parent = filePath.getParent();
             if (parent != null) {
@@ -77,6 +113,7 @@ public final class ExecutionStorage {
             Path temporary = filePath.resolveSibling(filePath.getFileName() + ".tmp");
             Files.writeString(temporary, serialize(manager), StandardCharsets.UTF_8);
             moveIntoPlace(temporary);
+            loadedBaseline = null;
         } catch (IOException exception) {
             throw new UncheckedIOException("Failed to save Execution runtime to " + filePath, exception);
         }
@@ -93,27 +130,49 @@ public final class ExecutionStorage {
         return GSON.toJson(document) + System.lineSeparator();
     }
 
-    public ExecutionManager deserialize(String json) {
+    public synchronized ExecutionManager deserialize(String json) {
         Objects.requireNonNull(json, "json");
         try {
             ExecutionDocument document = Objects.requireNonNull(
                     GSON.fromJson(json, ExecutionDocument.class),
                     "Execution persistence root"
             );
-            int schema = requireSchema(document.schemaVersion());
-            if (!Objects.equals(document.handlerRegistryIdentity(), handlerRegistry.registryIdentity())) {
-                throw new IllegalArgumentException("Execution handler registry identity mismatch");
-            }
-            if (!Objects.equals(document.configurationIdentity(), configuration.configurationIdentity())) {
-                throw new IllegalArgumentException("Execution runtime configuration identity mismatch");
+            int schema = Objects.requireNonNull(document.schemaVersion(), "Execution schema version");
+            if (schema != ExecutionSchema.CURRENT_VERSION) {
+                compatibilityObservation = compatibilityClassifier.classify(
+                        schema,
+                        document.handlerRegistryIdentity(),
+                        document.configurationIdentity(),
+                        handlerRegistry,
+                        configuration,
+                        List.of()
+                );
+                throw new ExecutionRegistryCompatibilityException(compatibilityObservation);
             }
             List<ExecutionOperationSnapshot> snapshots = requireList(document.operations(), "operations").stream()
                     .map(record -> fromOperationRecord(record, schema))
                     .toList();
+            compatibilityObservation = compatibilityClassifier.classify(
+                    schema,
+                    document.handlerRegistryIdentity(),
+                    document.configurationIdentity(),
+                    handlerRegistry,
+                    configuration,
+                    snapshots
+            );
+            if (!compatibilityObservation.permitsExecutionAuthority()) {
+                throw new ExecutionRegistryCompatibilityException(compatibilityObservation);
+            }
             return new ExecutionManager(handlerRegistry, configuration, snapshots);
+        } catch (ExecutionRegistryCompatibilityException exception) {
+            throw exception;
         } catch (JsonParseException | NullPointerException | IllegalStateException exception) {
             throw new IllegalArgumentException("Corrupt Execution persistence", exception);
         }
+    }
+
+    public Optional<ExecutionRegistryCompatibilityObservation> compatibilityObservation() {
+        return Optional.ofNullable(compatibilityObservation);
     }
 
     private static OperationRecord toOperationRecord(ExecutionOperationSnapshot snapshot) {
@@ -329,14 +388,6 @@ public final class ExecutionStorage {
         }
     }
 
-    private static int requireSchema(Integer value) {
-        int schema = Objects.requireNonNull(value, "Execution schema version");
-        if (schema != ExecutionSchema.CURRENT_VERSION) {
-            throw new IllegalArgumentException("Unsupported Execution schema version: " + schema);
-        }
-        return schema;
-    }
-
     private static int recordSchema(Integer value, int documentSchema) {
         return value == null ? documentSchema : value;
     }
@@ -443,4 +494,22 @@ public final class ExecutionStorage {
             String message,
             @SerializedName("reference_identity") String referenceIdentity
     ) { }
+
+    private record LoadedPersistenceBaseline(
+            ExecutionManager manager,
+            List<ExecutionOperationSnapshot> operations,
+            ExecutionRegistryCompatibilityClassification classification
+    ) {
+        private LoadedPersistenceBaseline {
+            Objects.requireNonNull(manager, "manager");
+            operations = List.copyOf(Objects.requireNonNull(operations, "operations"));
+            Objects.requireNonNull(classification, "classification");
+        }
+
+        private boolean preserveHistoricalPersistence(ExecutionManager candidate) {
+            return classification == ExecutionRegistryCompatibilityClassification.ADDITIVE_COMPATIBLE
+                    && manager == candidate
+                    && operations.equals(candidate.operations());
+        }
+    }
 }

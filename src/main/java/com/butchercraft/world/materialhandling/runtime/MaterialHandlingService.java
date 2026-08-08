@@ -32,6 +32,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
@@ -51,6 +52,7 @@ public final class MaterialHandlingService {
     private static final String GRINDER_TYPE = "butchercraft:grinder";
     private static final String BEEF_TRIM_MATERIAL = "butchercraft:beef_trim";
     private static final String NON_EMPLOYEE_ASSIGNMENT = "butchercraft:assignment/non_employee_integration";
+    private static final String EMPLOYEE_ASSIGNMENT = "butchercraft:assignment/employee_explicit";
 
     private final WorldIdentityService worldIdentityService;
     private final WorkstationEndpointService endpointService;
@@ -102,9 +104,46 @@ public final class MaterialHandlingService {
             BlockPos sourcePosition,
             BlockPos destinationPosition
     ) {
+        MaterialHandlingTransferResult requested = requestTransfer(
+                level,
+                sourcePosition,
+                destinationPosition,
+                NON_EMPLOYEE_ASSIGNMENT,
+                Optional.empty()
+        );
+        if (!requested.succeeded()) {
+            return requested;
+        }
+        return resume(level, requested.transfer().orElseThrow().transferId());
+    }
+
+    public synchronized MaterialHandlingTransferResult requestEmployeeTransfer(
+            ServerLevel level,
+            BlockPos sourcePosition,
+            BlockPos destinationPosition,
+            String employeeReference
+    ) {
+        return requestTransfer(
+                level,
+                sourcePosition,
+                destinationPosition,
+                EMPLOYEE_ASSIGNMENT,
+                Optional.of(Objects.requireNonNull(employeeReference, "employeeReference"))
+        );
+    }
+
+    private MaterialHandlingTransferResult requestTransfer(
+            ServerLevel level,
+            BlockPos sourcePosition,
+            BlockPos destinationPosition,
+            String assignmentType,
+            Optional<String> employeeReference
+    ) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(sourcePosition, "sourcePosition");
         Objects.requireNonNull(destinationPosition, "destinationPosition");
+        Objects.requireNonNull(assignmentType, "assignmentType");
+        Objects.requireNonNull(employeeReference, "employeeReference");
         if (!level.hasChunkAt(sourcePosition) || !level.hasChunkAt(destinationPosition)) {
             return MaterialHandlingTransferResult.failed(Optional.empty(), "Transfer endpoint chunk is not loaded");
         }
@@ -137,14 +176,69 @@ public final class MaterialHandlingService {
                 destination,
                 BEEF_TRIM_MATERIAL,
                 1,
-                NON_EMPLOYEE_ASSIGNMENT,
+                assignmentType,
+                employeeReference,
                 configuration.maximumTransfers()
         );
         publish(runtime, allocation.runtime());
-        return resume(level, allocation.transfer().transferId());
+        return MaterialHandlingTransferResult.requested(allocation.transfer());
     }
 
     public synchronized MaterialHandlingTransferResult resume(ServerLevel level, MaterialTransferId transferId) {
+        return advance(level, transferId, false);
+    }
+
+    public synchronized MaterialHandlingTransferResult withdrawToCustody(
+            ServerLevel level,
+            MaterialTransferId transferId
+    ) {
+        MaterialTransferRecord transfer = findTransfer(level.getServer(), transferId).orElse(null);
+        if (transfer == null) {
+            return MaterialHandlingTransferResult.failed(Optional.empty(), "Unknown Material Transfer");
+        }
+        if (transfer.lifecycle() == MaterialTransferLifecycle.IN_TRANSIT) {
+            return MaterialHandlingTransferResult.custodyAccepted(transfer);
+        }
+        if (transfer.lifecycle() != MaterialTransferLifecycle.REQUESTED
+                && transfer.lifecycle() != MaterialTransferLifecycle.SOURCE_BOUND
+                && transfer.lifecycle() != MaterialTransferLifecycle.SOURCE_WITHDRAW_PREPARED
+                && transfer.lifecycle() != MaterialTransferLifecycle.SOURCE_WITHDRAW_COMMITTED) {
+            return MaterialHandlingTransferResult.failed(
+                    Optional.of(transfer),
+                    "Material Transfer has advanced beyond source withdrawal: " + transfer.lifecycle()
+            );
+        }
+        return advance(level, transferId, true);
+    }
+
+    public synchronized MaterialHandlingTransferResult depositFromCustody(
+            ServerLevel level,
+            MaterialTransferId transferId
+    ) {
+        MaterialTransferRecord transfer = findTransfer(level.getServer(), transferId).orElse(null);
+        if (transfer == null) {
+            return MaterialHandlingTransferResult.failed(Optional.empty(), "Unknown Material Transfer");
+        }
+        if (transfer.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
+            return MaterialHandlingTransferResult.succeeded(transfer);
+        }
+        if (transfer.lifecycle() != MaterialTransferLifecycle.IN_TRANSIT
+                && transfer.lifecycle() != MaterialTransferLifecycle.DESTINATION_BOUND
+                && transfer.lifecycle() != MaterialTransferLifecycle.DESTINATION_DEPOSIT_PREPARED
+                && transfer.lifecycle() != MaterialTransferLifecycle.DESTINATION_DEPOSIT_COMMITTED) {
+            return MaterialHandlingTransferResult.failed(
+                    Optional.of(transfer),
+                    "Material Transfer does not hold depositable custody: " + transfer.lifecycle()
+            );
+        }
+        return advance(level, transferId, false);
+    }
+
+    private MaterialHandlingTransferResult advance(
+            ServerLevel level,
+            MaterialTransferId transferId,
+            boolean stopAfterCustody
+    ) {
         ActiveMaterialHandling runtime = load(level.getServer());
         MaterialTransferRecord transfer = runtime.runtime().find(transferId).orElse(null);
         if (transfer == null) return MaterialHandlingTransferResult.failed(Optional.empty(), "Unknown Material Transfer");
@@ -278,6 +372,9 @@ public final class MaterialHandlingService {
         }
         if (transfer.lifecycle() == MaterialTransferLifecycle.SOURCE_WITHDRAW_COMMITTED) {
             transfer = transitionRetaining(level.getServer(), transfer, MaterialTransferLifecycle.IN_TRANSIT);
+        }
+        if (stopAfterCustody && transfer.lifecycle() == MaterialTransferLifecycle.IN_TRANSIT) {
+            return MaterialHandlingTransferResult.custodyAccepted(transfer);
         }
         if (transfer.lifecycle() == MaterialTransferLifecycle.IN_TRANSIT) {
             WorkstationEndpointObservationResult observed = endpointService.observeDepositOne(
@@ -708,6 +805,24 @@ public final class MaterialHandlingService {
 
     public Optional<MaterialHandlingRuntime> currentRuntime() {
         return Optional.ofNullable(active.get()).map(ActiveMaterialHandling::runtime);
+    }
+
+    public Optional<MaterialTransferRecord> findTransfer(MinecraftServer server, MaterialTransferId transferId) {
+        return load(Objects.requireNonNull(server, "server")).runtime()
+                .find(Objects.requireNonNull(transferId, "transferId"));
+    }
+
+    public Optional<ItemStack> carryDisplayStack(MinecraftServer server, MaterialTransferId transferId) {
+        MaterialTransferRecord transfer = findTransfer(server, transferId).orElse(null);
+        if (transfer == null || !transfer.hasProvenMaterialHandlingCustody()) {
+            return Optional.empty();
+        }
+        return transfer.inTransitCustody()
+                .map(payload -> {
+                    ItemStack display = stackCodec.decode(server.registryAccess(), payload).copy();
+                    display.setCount(1);
+                    return display;
+                });
     }
 
     public static Path stateFile(MinecraftServer server) {

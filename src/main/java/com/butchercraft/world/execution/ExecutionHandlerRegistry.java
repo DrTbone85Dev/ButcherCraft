@@ -52,15 +52,44 @@ public final class ExecutionHandlerRegistry {
         return List.copyOf(handlersByOperationType.values());
     }
 
+    public List<ExecutionHandlerContractDescriptor> contractDescriptors() {
+        return handlersByHandlerId.values().stream()
+                .map(handler -> ExecutionHandlerContractDescriptor.from(handler.contract()))
+                .sorted()
+                .toList();
+    }
+
     public int size() {
         return handlersByOperationType.size();
     }
 
     public String registryIdentity() {
+        return registryIdentity(ExecutionSchema.CURRENT_VERSION, contractDescriptors());
+    }
+
+    static String registryIdentity(
+            int schemaVersion,
+            Collection<ExecutionHandlerContractDescriptor> descriptors
+    ) {
+        ExecutionValidation.requireSchema(schemaVersion, "Execution handler registry identity");
+        List<ExecutionHandlerContractDescriptor> ordered = Objects.requireNonNull(descriptors, "descriptors").stream()
+                .map(descriptor -> Objects.requireNonNull(descriptor, "descriptor"))
+                .sorted(Comparator.comparing(ExecutionHandlerContractDescriptor::operationType))
+                .toList();
+        if (ordered.stream().anyMatch(descriptor -> descriptor.schemaVersion() != schemaVersion)) {
+            throw new IllegalArgumentException("Execution handler descriptor schema does not match registry schema");
+        }
+        if (ordered.stream().map(ExecutionHandlerContractDescriptor::handlerId).distinct().count() != ordered.size()) {
+            throw new IllegalArgumentException("Duplicate Execution handler id in registry identity input");
+        }
+        if (ordered.stream().map(ExecutionHandlerContractDescriptor::operationType).distinct().count()
+                != ordered.size()) {
+            throw new IllegalArgumentException("Duplicate Execution operation type in registry identity input");
+        }
         ExecutionCanonicalDigest digest = ExecutionCanonicalDigest.create("butchercraft:execution_handler_registry");
-        digest.add(ExecutionSchema.CURRENT_VERSION).add(handlersByOperationType.size());
-        handlersByOperationType.values().forEach(handler -> digest.add(handler.contract().contractIdentity()));
-        return "butchercraft:execution_handler_registry/v" + ExecutionSchema.CURRENT_VERSION + "/"
+        digest.add(schemaVersion).add(ordered.size());
+        ordered.forEach(descriptor -> digest.add(descriptor.contractIdentity()));
+        return "butchercraft:execution_handler_registry/v" + schemaVersion + "/"
                 + ExecutionValidation.digestIdSuffix(digest.finish());
     }
 }

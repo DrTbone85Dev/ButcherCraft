@@ -175,6 +175,13 @@ public final class WorkstationInventory extends ItemStackHandler {
         setStackMuted(firstOutputSlot, stack);
     }
 
+    public void setOutputInternal(int outputIndex, ItemStack stack) {
+        if (outputIndex < 0 || outputIndex >= outputSlotCount) {
+            throw new IllegalArgumentException("Output index is outside workstation inventory range");
+        }
+        setStackMuted(firstOutputSlot + outputIndex, stack);
+    }
+
     public void setOutputsInternal(List<ItemStack> stacks) {
         List<ItemStack> copiedStacks = List.copyOf(Objects.requireNonNull(stacks, "stacks"));
         if (copiedStacks.size() > outputSlotCount) {
@@ -242,6 +249,22 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     public void clearOutputsInternal() {
         setOutputsInternal(List.of());
+    }
+
+    public void clearOutputSlotsInternal(List<Integer> slots) {
+        List<Integer> copiedSlots = List.copyOf(Objects.requireNonNull(slots, "slots"));
+        suppressChangeListener = true;
+        try {
+            for (int slot : copiedSlots) {
+                if (!isOutputSlot(slot)) {
+                    throw new IllegalArgumentException("Only output slots can be cleared by an endpoint effect");
+                }
+                setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
     }
 
     private void requireOutputSlot() {

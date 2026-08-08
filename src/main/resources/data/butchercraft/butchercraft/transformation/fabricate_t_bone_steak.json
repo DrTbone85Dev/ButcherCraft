@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "butchercraft:fabricate_t_bone_steak",
+  "display_name": "Fabricate T-Bone Steak",
+  "required_capability": "butchercraft:cutting_table",
+  "inputs": [
+    {
+      "product_id": "butchercraft:beef_short_loin",
+      "quantity": 15000,
+      "unit": "gram"
+    }
+  ],
+  "outputs": [
+    {
+      "product_id": "butchercraft:t_bone_steak",
+      "quantity": 4000,
+      "unit": "gram",
+      "classification": "primary"
+    },
+    {
+      "product_id": "butchercraft:beef_trim",
+      "quantity": 1500,
+      "unit": "gram",
+      "classification": "byproduct"
+    }
+  ],
+  "duration": {
+    "milliseconds": 3000
+  },
+  "yield": {
+    "numerator": 11,
+    "denominator": 30
+  },
+  "metadata": {
+    "butchercraft:schema/source": "built_in"
+  }
+}

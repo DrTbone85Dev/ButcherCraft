@@ -1,9 +1,12 @@
 package com.butchercraft.world;
 
+import com.butchercraft.ButcherCraft;
+import com.butchercraft.machine.cuttingtable.execution.CuttingTableExecutionOperationHandler;
 import com.butchercraft.machine.grinder.execution.GrinderExecutionOperationHandler;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionOperationHandler;
 import com.butchercraft.world.execution.ExecutionHandlerRegistry;
 import com.butchercraft.world.execution.ExecutionManager;
+import com.butchercraft.world.execution.ExecutionRegistryCompatibilityObservation;
 import com.butchercraft.world.execution.ExecutionRuntimeConfiguration;
 import com.butchercraft.world.execution.ExecutionSchema;
 import com.butchercraft.world.execution.GenericExecutionWorkHandler;
@@ -73,6 +76,11 @@ public final class ExecutionService {
         return Optional.ofNullable(activeState.get()).map(ActiveExecution::manager);
     }
 
+    public Optional<ExecutionRegistryCompatibilityObservation> currentCompatibilityObservation() {
+        return Optional.ofNullable(activeState.get())
+                .flatMap(active -> active.storage().compatibilityObservation());
+    }
+
     private ActiveExecution load(MinecraftServer server) {
         Objects.requireNonNull(server, "server");
         ActiveExecution existing = activeState.get();
@@ -82,6 +90,8 @@ public final class ExecutionService {
         ExecutionHandlerRegistry handlerRegistry = handlerRegistryFactory.apply(server);
         ExecutionStorage storage = new ExecutionStorage(executionFile(server), handlerRegistry, configuration);
         ExecutionManager manager = storage.load();
+        storage.compatibilityObservation().ifPresent(observation ->
+                ButcherCraft.LOGGER.info("Execution registry compatibility: {}", observation.diagnosticSummary()));
         ActiveExecution created = new ActiveExecution(server, storage, manager);
         activeState.set(created);
         return created;
@@ -89,6 +99,7 @@ public final class ExecutionService {
 
     private static ExecutionHandlerRegistry defaultHandlerRegistry(MinecraftServer server) {
         return new ExecutionHandlerRegistry(java.util.List.of(
+                new CuttingTableExecutionOperationHandler(server),
                 new GrinderExecutionOperationHandler(server),
                 new PattyFormerExecutionOperationHandler(server)
         ));

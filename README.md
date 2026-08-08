@@ -8,6 +8,27 @@ The v0.10.3 First Employee Automation Update lets employees perform their first 
 
 An operator intentionally starts the operation with `/butchercraft employee operate <employee>`. Employees can navigate, reserve workstations, and operate the Grinder, but they still do not transport products, operate the Patty Former, perform autonomous production, or claim Production Orders. This is the first step toward automated production while Workforce, Production, Execution, Scheduler, and Workstations remain independent.
 
+IM-028B adds one bounded material-handling flow. The Cutting Table now supports
+one player-operated `Beef Short Loin -> T-Bone Steak + Beef Trim` recipe with
+separate primary and Beef Trim outputs. An
+operator may bind one employee to that output and one explicit Grinder with:
+
+```text
+/butchercraft employee transfer <employee> <source-x> <source-y> <source-z> <destination-x> <destination-y> <destination-z>
+```
+
+The development-only
+`/butchercraft workstation preload-cutting-table-output <x> <y> <z>` command
+remains available for focused transfer testing, but normal acceptance produces
+Beef Trim through the Cutting Table recipe.
+The employee walks to the source, visibly carries exactly one Beef Trim only after Material Handling
+proves custody, deposits it through the Grinder endpoint owner, and remains
+reserved at the Grinder. `transfer-status` reports the assignment and
+`transfer-cancel` safely returns proven custody to the source. Ground Beef
+transport, Patty Former employee use, automatic workstation selection,
+Production dispatch, autonomous logistics, and employee inventory remain
+unimplemented.
+
 The platform foundation also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler includes internal Production and Planning handlers; Allocation has no live provider or Scheduler handler. General worker automation, pricing, logistics, markets, accounting, and additional employee-operated production remain future work.
 
 ## Project Identity
@@ -111,6 +132,11 @@ The industry-neutral participant model, actor capabilities, Good relationships, 
 The actor-owned runtime quantity model, storage hierarchy, capacity rules, and separation from Minecraft inventories are documented in `docs/INVENTORY_FRAMEWORK.md`.
 
 The universal economic mutation pipeline, validation and execution contract, audit history, persistence, and replay philosophy are documented in `docs/TRANSACTION_FRAMEWORK.md`.
+
+The ratified Material Handling custody protocol and its implemented explicit
+employee transfer boundary are documented in `docs/MATERIAL_HANDLING.md`. The
+future fabrication workstation and its current output-source boundary are
+documented in `docs/CUTTING_TABLE.md`.
 
 The immutable Order and Contract intent model, runtime lifecycles, transaction-linked fulfillment rules, and persistence are documented in `docs/ORDERS_AND_CONTRACTS.md`.
 

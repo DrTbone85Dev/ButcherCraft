@@ -4,6 +4,88 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-028B: Employee Cutting Table To Grinder Material Handling
+
+Goal: allow one explicitly selected employee to physically and visibly move
+exactly one Beef Trim from the fabrication output of one explicitly selected Cutting Table to one
+explicitly selected Grinder through the ratified Material Handling and
+Workstation endpoint protocols.
+
+Included work:
+
+- Workforce-owned deterministic transfer assignments with a typed lifecycle,
+  explicit endpoint-instance bindings, revision, and failure state.
+- Permission-gated `transfer`, `transfer-status`, and `transfer-cancel`
+  commands using friendly employee references and synchronized built-in
+  command arguments.
+- Cutting Table output-source reservation, physical arrival, Material Handling
+  withdrawal, proven source release, Grinder destination reservation,
+  physical arrival, and Material Handling deposit.
+- One acceptance-completion Cutting Table recipe that converts one Beef Short
+  Loin into one T-Bone Steak primary output and one Beef Trim byproduct through
+  Workstation-owned atomic completion, Execution, and Scheduler.
+- A revisioned one-item Employee carry projection derived only from proven
+  exact Material Handling custody and rendered with Minecraft's normal held
+  ItemStack layer.
+- Post-custody cancellation through physical source return and the existing
+  prepare, effect, owner-result, and reconciliation protocol.
+- Schema-versioned Workforce assignment persistence at
+  `<world>/butchercraft/employee_material_handling_assignments.json` and
+  startup reconstruction after Workstation and Material Handling recovery.
+- Focused unit, persistence, boundary, command, and server-world GameTests.
+
+Excluded work:
+
+- Ground Beef transport, Patty Former destination or operation, multiple
+  items or materials, employee inventory, cross-dimension transfer,
+  Production-driven assignment, automatic workstation selection, autonomous
+  queues, general Logistics, or public APIs.
+
+Acceptance criteria:
+
+- The employee holds only the source reservation before custody and only the
+  destination reservation after source release.
+- Withdrawal and deposit occur exactly once through Workstation-owned endpoint
+  effects; Workforce never mutates either inventory.
+- The visible Beef Trim appears only while Material Handling proves custody
+  and clears only after a proven deposit or source return.
+- Cancellation never abandons custody, guesses an Unknown Outcome, or returns
+  an item twice.
+- A completed transfer leaves the Grinder idle, retains the employee's Grinder
+  reservation, and permits the existing explicit IM-027 operation command.
+
+Automated verification:
+
+- `.\gradlew.bat --no-daemon test --rerun-tasks`
+- `.\gradlew.bat --no-daemon build`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runData`
+- `.\gradlew.bat --no-daemon runGameTestServer`
+- `git diff --check`
+
+Manual verification:
+
+- In a development client, place a Cutting Table and Grinder 10-30 blocks
+  apart, confirm the distinct Input, Primary Output, and Beef Trim Output
+  labels, place one Beef Short Loin in the input, and confirm one T-Bone Steak
+  plus one Beef Trim are produced before issuing the explicit transfer. The
+  development preload command remains optional for focused transfer tests.
+- Issue the explicit employee transfer and
+  observe physical travel, visible custody, exact deposit, retained destination
+  reservation, and no automatic Grinder processing.
+- Confirm the input and primary T-Bone Steak remain unchanged during transfer,
+  and cancellation while carrying returns the exact Beef Trim to its dedicated output.
+- Retest source and destination conflicts, cancellation before and after
+  custody, save/reload while carrying, endpoint replacement, the IM-027
+  operation handoff, player-inventory isolation, and existing/new world entry.
+
+Rollback considerations:
+
+- Remove the Workforce assignment service and persistence, carry projection,
+  transfer commands, Cutting Table reservation integration, manifest entries,
+  docs, and focused tests. DG-002/DG-002A Material Handling and Workstation
+  endpoint foundations remain intact.
+
 ## IM-027: Employee Workstation Operation Foundation
 
 Goal: allow one arrived employee with one active Grinder reservation to request

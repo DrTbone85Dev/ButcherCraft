@@ -7,6 +7,7 @@ import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.evaluation.ProcessingEvaluator;
 import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
+import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.processing.definition.DefinitionRegistryLoadResult;
@@ -35,6 +36,7 @@ import com.butchercraft.workstation.WorkstationDuration;
 import com.butchercraft.workstation.WorkstationOperationResolution;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.world.BusinessRuntimeCalendarService;
+import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
@@ -120,11 +122,13 @@ public final class ButcherCraftDiagnostics {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "bandsaw");
     private static final String EMPLOYEE_ARGUMENT = "employee";
     private static final String EMPLOYEE_COMMAND_TAIL_ARGUMENT = "employee_command";
+    private static final String EMPLOYEE_TRANSFER_ARGUMENT = "employee_transfer";
     private static final String DEPARTMENT_ARGUMENT = "department";
     private static final String DEPARTMENT_ANCHOR_POSITION_ARGUMENT = "anchor";
     private static final String WORKSTATION_POSITION_ARGUMENT = "position";
     private static final int DEPARTMENT_ANCHOR_PERMISSION_LEVEL = 2;
     private static final int EMPLOYEE_OPERATION_PERMISSION_LEVEL = 2;
+    private static final int CUTTING_TABLE_PRELOAD_PERMISSION_LEVEL = 2;
     private static final SuggestionProvider<CommandSourceStack> EMPLOYEE_LOOKUP_SUGGESTIONS =
             (context, builder) -> suggestEmployeeReferences(context.getSource(), builder);
     private static final SuggestionProvider<CommandSourceStack> DEPARTMENT_LOOKUP_SUGGESTIONS =
@@ -201,6 +205,27 @@ public final class ButcherCraftDiagnostics {
                                         .executes(context -> runEmployeeOperate(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
+                        .then(Commands.literal("transfer")
+                                .requires(ButcherCraftDiagnostics::canOperateEmployee)
+                                .then(Commands.argument(EMPLOYEE_TRANSFER_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeTransfer(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_TRANSFER_ARGUMENT)))))
+                        .then(Commands.literal("transfer-status")
+                                .requires(ButcherCraftDiagnostics::canOperateEmployee)
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeTransferStatus(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
+                        .then(Commands.literal("transfer-cancel")
+                                .requires(ButcherCraftDiagnostics::canOperateEmployee)
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeTransferCancel(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
                         .then(Commands.literal("release-workstation")
                                 .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
@@ -236,6 +261,14 @@ public final class ButcherCraftDiagnostics {
                 .then(Commands.literal("workstation")
                         .then(Commands.literal("reservations")
                                 .executes(context -> runWorkstationReservations(context.getSource())))
+                        .then(Commands.literal("preload-cutting-table-output")
+                                .requires(ButcherCraftDiagnostics::canPreloadCuttingTableOutput)
+                                .then(Commands.argument(WORKSTATION_POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                                        .executes(context -> runCuttingTableOutputPreload(
+                                                context.getSource(),
+                                                BlockPosArgument.getLoadedBlockPos(
+                                                        context,
+                                                        WORKSTATION_POSITION_ARGUMENT)))))
                         .then(Commands.literal("status")
                                 .then(Commands.argument(WORKSTATION_POSITION_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(WORKSTATION_POSITION_SUGGESTIONS)
@@ -601,6 +634,68 @@ public final class ButcherCraftDiagnostics {
         return result.accepted() ? Command.SINGLE_SUCCESS : 0;
     }
 
+    private static int runEmployeeTransfer(CommandSourceStack source, String commandTail) {
+        EmployeeTransferCommand command = parseEmployeeTransferCommand(source, commandTail);
+        if (command == null) {
+            return 0;
+        }
+        EmployeeId employeeId = employeeId(command.employeeReference(), source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeMaterialHandlingService.AssignmentResult result =
+                EmployeeMaterialHandlingService.INSTANCE.request(
+                        source.getLevel(),
+                        employeeId,
+                        command.source(),
+                        command.destination()
+                );
+        source.sendSuccess(() -> Component.literal(employeeTransferFeedback(result)), false);
+        return result.accepted() ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int runEmployeeTransferStatus(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeMaterialHandlingService.TransferDiagnostics diagnostics =
+                EmployeeMaterialHandlingService.INSTANCE.diagnostics(source.getLevel(), employeeId);
+        source.sendSuccess(() -> Component.literal("Employee Material Handling assignment: "
+                + diagnostics.assignmentIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Transfer: " + diagnostics.transferIdentity()
+                + " | assignment state: " + diagnostics.assignmentState()
+                + " | Material Handling: " + diagnostics.materialHandlingLifecycle()), false);
+        source.sendSuccess(() -> Component.literal("Source: " + diagnostics.source()), false);
+        source.sendSuccess(() -> Component.literal("Destination: " + diagnostics.destination()), false);
+        source.sendSuccess(() -> Component.literal("Reservation: " + diagnostics.activeReservation()
+                + " | navigation: " + diagnostics.navigationTarget()), false);
+        source.sendSuccess(() -> Component.literal("Custody: " + diagnostics.custodyLocation()
+                + " | displayed item: " + diagnostics.displayedItem()
+                + " | display revision: " + diagnostics.displayRevision()), false);
+        source.sendSuccess(() -> Component.literal("Failure: " + diagnostics.failure()
+                + " | required operator action: " + diagnostics.requiredOperatorAction()), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeTransferCancel(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) {
+            return 0;
+        }
+        EmployeeMaterialHandlingService.AssignmentResult result = EmployeeMaterialHandlingService.INSTANCE.cancel(
+                source.getLevel(),
+                employeeId,
+                "Operator requested employee transfer cancellation"
+        );
+        source.sendSuccess(() -> Component.literal(employeeTransferFeedback(result)), false);
+        return switch (result.status()) {
+            case ASSIGNMENT_ACCEPTED, EXISTING_IDENTICAL_ASSIGNMENT, CANCELLATION_REQUESTED, CANCELLED, COMPLETED ->
+                    Command.SINGLE_SUCCESS;
+            default -> 0;
+        };
+    }
+
     private static int runDepartmentList(CommandSourceStack source) {
         List<DepartmentRecord> records = EmployeeService.INSTANCE.departmentManagerFor(source.getServer())
                 .registry()
@@ -747,6 +842,44 @@ public final class ButcherCraftDiagnostics {
         return Command.SINGLE_SUCCESS;
     }
 
+    private static int runCuttingTableOutputPreload(CommandSourceStack source, BlockPos position) {
+        if (!(source.getLevel().getBlockEntity(position) instanceof CuttingTableBlockEntity cuttingTable)) {
+            source.sendSuccess(() -> Component.literal(
+                    "Cutting Table output preload rejected: target is not a Cutting Table"), false);
+            return 0;
+        }
+        CuttingTableBlockEntity.DevelopmentOutputPreloadStatus status =
+                cuttingTable.preloadOutputForDevelopment(ModItems.BEEF_TRIM.get().getDefaultInstance());
+        return switch (status) {
+            case PRELOADED -> {
+                source.sendSuccess(() -> Component.literal(
+                        "Cutting Table development output preloaded with one Beef Trim at " + position.toShortString()),
+                        false);
+                yield Command.SINGLE_SUCCESS;
+            }
+            case ALREADY_PRESENT -> {
+                source.sendSuccess(() -> Component.literal(
+                        "Cutting Table output already contains the identical Beef Trim"), false);
+                yield Command.SINGLE_SUCCESS;
+            }
+            case OUTPUT_OCCUPIED -> {
+                source.sendSuccess(() -> Component.literal(
+                        "Cutting Table output preload rejected: output is occupied"), false);
+                yield 0;
+            }
+            case ENDPOINT_LOCKED -> {
+                source.sendSuccess(() -> Component.literal(
+                        "Cutting Table output preload rejected: Material Handling owns a prepared endpoint lock"), false);
+                yield 0;
+            }
+            case INVALID_STACK -> {
+                source.sendSuccess(() -> Component.literal(
+                        "Cutting Table output preload rejected: development stack is invalid"), false);
+                yield 0;
+            }
+        };
+    }
+
     private static EmployeeId employeeId(String value, CommandSourceStack source) {
         List<EmployeeRecord> records = EmployeeService.INSTANCE.managerFor(source.getServer()).registry().records();
         EmployeeLookupResult lookup = resolveEmployeeReference(value, records);
@@ -833,6 +966,10 @@ public final class ButcherCraftDiagnostics {
         return source.hasPermission(EMPLOYEE_OPERATION_PERMISSION_LEVEL);
     }
 
+    private static boolean canPreloadCuttingTableOutput(CommandSourceStack source) {
+        return source.hasPermission(CUTTING_TABLE_PRELOAD_PERMISSION_LEVEL);
+    }
+
     static String employeeOperationFeedback(EmployeeWorkstationOperationService.RequestResult result) {
         return switch (Objects.requireNonNull(result, "result").status()) {
             case ACCEPTED -> "Employee operation accepted: " + result.detail();
@@ -847,6 +984,28 @@ public final class ButcherCraftDiagnostics {
             case EXECUTION_REJECTED -> "Execution rejected: " + result.detail();
             case UNKNOWN_OUTCOME -> "Unknown Outcome; recovery required: " + result.detail();
             case RECOVERY_REQUIRED -> "Recovery required: " + result.detail();
+        };
+    }
+
+    static String employeeTransferFeedback(EmployeeMaterialHandlingService.AssignmentResult result) {
+        return switch (Objects.requireNonNull(result, "result").status()) {
+            case ASSIGNMENT_ACCEPTED -> "Assignment accepted: " + result.detail();
+            case EXISTING_IDENTICAL_ASSIGNMENT -> "Existing identical assignment observed: " + result.detail();
+            case EMPLOYEE_UNAVAILABLE -> "Employee unavailable: " + result.detail();
+            case EMPLOYEE_OFF_SHIFT -> "Employee off shift: " + result.detail();
+            case PLANT_CLOSED -> "Plant closed: " + result.detail();
+            case ASSIGNMENT_CONFLICT -> "Assignment conflict: " + result.detail();
+            case ASSIGNMENT_NOT_FOUND -> "Assignment not found: " + result.detail();
+            case INVALID_SOURCE -> "Invalid source: " + result.detail();
+            case INVALID_DESTINATION -> "Invalid destination: " + result.detail();
+            case SOURCE_EMPTY -> "Source empty: " + result.detail();
+            case RESERVATION_CONFLICT -> "Reservation conflict: " + result.detail();
+            case TRANSFER_REJECTED -> "Transfer rejected: " + result.detail();
+            case RECOVERY_REQUIRED -> "Transfer recovery required: " + result.detail();
+            case UNKNOWN_OUTCOME -> "Unknown Outcome: " + result.detail();
+            case CANCELLATION_REQUESTED -> "Cancellation requested: " + result.detail();
+            case CANCELLED -> "Assignment cancelled: " + result.detail();
+            case COMPLETED -> "Assignment completed: " + result.detail();
         };
     }
 
@@ -940,6 +1099,45 @@ public final class ButcherCraftDiagnostics {
             return new EmployeeCommandTail(employeeReference, "");
         }
         return new EmployeeCommandTail(employeeReference, reader.getRemaining().strip());
+    }
+
+    private static EmployeeTransferCommand parseEmployeeTransferCommand(
+            CommandSourceStack source,
+            String value
+    ) {
+        try {
+            EmployeeCommandTail command = parseEmployeeCommandTail(value);
+            StringReader reader = new StringReader(command.value());
+            int sourceX = readCoordinate(reader);
+            int sourceY = readCoordinate(reader);
+            int sourceZ = readCoordinate(reader);
+            int destinationX = readCoordinate(reader);
+            int destinationY = readCoordinate(reader);
+            int destinationZ = readCoordinate(reader);
+            skipWhitespace(reader);
+            if (command.employeeReference().isBlank() || reader.canRead()) {
+                throw new IllegalArgumentException("Employee reference and exactly six coordinates are required");
+            }
+            return new EmployeeTransferCommand(
+                    command.employeeReference(),
+                    new BlockPos(sourceX, sourceY, sourceZ),
+                    new BlockPos(destinationX, destinationY, destinationZ)
+            );
+        } catch (CommandSyntaxException | IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal("Invalid employee transfer request: "
+                    + exception.getMessage()
+                    + ". Use: /butchercraft employee transfer <employee> "
+                    + "<source-x> <source-y> <source-z> <destination-x> <destination-y> <destination-z>"), false);
+            return null;
+        }
+    }
+
+    private static int readCoordinate(StringReader reader) throws CommandSyntaxException {
+        skipWhitespace(reader);
+        if (!reader.canRead()) {
+            throw new IllegalArgumentException("Missing coordinate");
+        }
+        return reader.readInt();
     }
 
     static Optional<BlockPos> parseWorkstationPosition(String value) {
@@ -1223,6 +1421,18 @@ public final class ButcherCraftDiagnostics {
         private EmployeeCommandTail {
             employeeReference = Objects.requireNonNull(employeeReference, "employeeReference").strip();
             value = Objects.requireNonNull(value, "value").strip();
+        }
+    }
+
+    private record EmployeeTransferCommand(
+            String employeeReference,
+            BlockPos source,
+            BlockPos destination
+    ) {
+        private EmployeeTransferCommand {
+            employeeReference = Objects.requireNonNull(employeeReference, "employeeReference").strip();
+            source = Objects.requireNonNull(source, "source").immutable();
+            destination = Objects.requireNonNull(destination, "destination").immutable();
         }
     }
 

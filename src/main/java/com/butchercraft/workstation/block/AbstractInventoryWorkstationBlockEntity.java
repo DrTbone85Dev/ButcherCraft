@@ -203,12 +203,15 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         Objects.requireNonNull(exactStack, "exactStack");
         if (slotIndex < 0 || slotIndex >= inventory.totalSlotCount() || exactStack.isEmpty()) return false;
         return switch (kind) {
-            case SOURCE_WITHDRAWAL -> inventory.isInputSlot(slotIndex)
+            case SOURCE_WITHDRAWAL -> (inventory.isInputSlot(slotIndex) || inventory.isOutputSlot(slotIndex))
                     && ItemStack.isSameItemSameComponents(inventory.getStackInSlot(slotIndex), exactStack)
                     && inventory.getStackInSlot(slotIndex).getCount() == exactStack.getCount();
-            case DESTINATION_DEPOSIT, SOURCE_RETURN -> inventory.isInputSlot(slotIndex)
+            case DESTINATION_DEPOSIT -> inventory.isInputSlot(slotIndex)
                     && inventory.getStackInSlot(slotIndex).isEmpty()
                     && inventory.isItemValid(slotIndex, exactStack);
+            case SOURCE_RETURN -> inventory.getStackInSlot(slotIndex).isEmpty()
+                    && (inventory.isOutputSlot(slotIndex)
+                    || inventory.isInputSlot(slotIndex) && inventory.isItemValid(slotIndex, exactStack));
         };
     }
 
@@ -268,9 +271,22 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
             throw new IllegalStateException("Live Workstation projection no longer accepts committed endpoint effect");
         }
         switch (kind) {
-            case SOURCE_WITHDRAWAL -> inventory.clearInputSlotsInternal(java.util.List.of(slotIndex));
-            case DESTINATION_DEPOSIT, SOURCE_RETURN ->
+            case SOURCE_WITHDRAWAL -> {
+                if (inventory.isInputSlot(slotIndex)) {
+                    inventory.clearInputSlotsInternal(java.util.List.of(slotIndex));
+                } else {
+                    inventory.clearOutputSlotsInternal(java.util.List.of(slotIndex));
+                }
+            }
+            case DESTINATION_DEPOSIT ->
                     inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactStack.copy());
+            case SOURCE_RETURN -> {
+                if (inventory.isInputSlot(slotIndex)) {
+                    inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactStack.copy());
+                } else {
+                    inventory.setOutputInternal(slotIndex - inventory.firstOutputSlot(), exactStack.copy());
+                }
+            }
         }
         if (endpointProjection.inventoryRevision() != postInventoryRevision) {
             throw new IllegalStateException("Workstation inventory mutation did not publish the committed revision");

@@ -28,7 +28,8 @@ class TransformationRegistryTest {
             "butchercraft:break_beef_hindquarter",
             "butchercraft:cut_beef_short_loin",
             "butchercraft:cut_beef_round",
-            "butchercraft:cut_beef_sirloin"
+            "butchercraft:cut_beef_sirloin",
+            "butchercraft:fabricate_t_bone_steak"
     );
 
     @Test
@@ -87,7 +88,7 @@ class TransformationRegistryTest {
     void builtInRegistryContainsExistingGrinderTransformations() {
         TransformationRegistry registry = BuiltInTransformationRegistry.builtInRegistry();
 
-        assertEquals(12, registry.size());
+        assertEquals(13, registry.size());
         assertEquals(EXPECTED_BUILT_IN_TRANSFORMATION_IDS, registry.stream()
                 .map(definition -> definition.id().value())
                 .toList());
@@ -116,6 +117,10 @@ class TransformationRegistryTest {
                         "butchercraft:cut_beef_sirloin"
                 ),
                 registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW)
+                        .map(definition -> definition.id().value())
+                        .toList());
+        assertEquals(List.of("butchercraft:fabricate_t_bone_steak"),
+                registry.findByCapability(BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_CUTTING_TABLE)
                         .map(definition -> definition.id().value())
                         .toList());
     }

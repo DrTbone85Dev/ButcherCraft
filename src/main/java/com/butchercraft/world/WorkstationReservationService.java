@@ -4,6 +4,8 @@ import com.butchercraft.entity.employee.EmployeeEntity;
 import com.butchercraft.machine.grinder.GrinderBlock;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.machine.grinder.execution.GrinderWorkstationReference;
+import com.butchercraft.machine.cuttingtable.CuttingTableBlock;
+import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.pattyformer.PattyFormerBlock;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerWorkstationReference;
@@ -15,6 +17,8 @@ import com.butchercraft.workstation.reservation.WorkstationReservationRequest;
 import com.butchercraft.workstation.reservation.WorkstationReservationResult;
 import com.butchercraft.workstation.reservation.WorkstationReservationSchema;
 import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
+import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReferenceResult;
+import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
 import com.butchercraft.world.workforce.employee.EmployeeEntityLink;
 import com.butchercraft.world.workforce.employee.EmployeeId;
@@ -27,6 +31,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelResource;
@@ -46,8 +51,11 @@ public final class WorkstationReservationService {
     );
 
     private static final int OPERATING_ANCHOR_RADIUS = 1;
+    private static final double OPERATING_HORIZONTAL_MARGIN = 0.1D;
+    private static final double OPERATING_VERTICAL_MARGIN = 0.25D;
     private static final String GRINDER_TYPE = "grinder";
     private static final String PATTY_FORMER_TYPE = "patty_former";
+    private static final String CUTTING_TABLE_TYPE = "cutting_table";
 
     private final EmployeeService employeeService;
     private final AtomicReference<ActiveWorkstationReservations> active = new AtomicReference<>();
@@ -211,16 +219,35 @@ public final class WorkstationReservationService {
         );
     }
 
+    public Optional<WorkstationReservationRecord> invalidateCuttingTable(
+            ServerLevel level,
+            BlockPos workstationPos,
+            String reason
+    ) {
+        WorkstationEndpointReferenceResult reference = WorkstationEndpointService.INSTANCE.referenceFor(
+                level,
+                workstationPos
+        );
+        if (!reference.succeeded()) {
+            return Optional.empty();
+        }
+        return invalidateKnownWorkstation(
+                level,
+                reference.reference().orElseThrow().instanceId().value(),
+                reason
+        );
+    }
+
     public Optional<WorkstationNavigationTarget> navigationTargetFor(
             ServerLevel level,
             EmployeeRecord employee,
             EmployeePresenceObservation observation,
-            BlockPos entityPos
+            Vec3 entityPosition
     ) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(employee, "employee");
         Objects.requireNonNull(observation, "observation");
-        Objects.requireNonNull(entityPos, "entityPos");
+        Objects.requireNonNull(entityPosition, "entityPosition");
         ActiveWorkstationReservations runtime = load(level.getServer());
         WorkstationReservationRecord record = runtime.manager()
                 .findByEmployee(employee.employeeId().value())
@@ -264,9 +291,11 @@ public final class WorkstationReservationService {
             ).orElse(current);
             runtime.storage().save(runtime.manager().directory());
         }
-        int arrivalRadius = current.anchorRadius();
-        boolean inside = target.approachCandidates().stream()
-                .anyMatch(candidate -> entityPos.distManhattan(candidate) <= arrivalRadius);
+        boolean inside = withinOperatingTolerance(
+                entityPosition,
+                target.approachCandidates(),
+                current.anchorRadius()
+        );
         Optional<WorkstationReservationRecord> transitioned = inside
                 ? runtime.manager().markArrived(employee.employeeId().value(), current.workstationIdentity())
                 : runtime.manager().markEnRoute(employee.employeeId().value(), current.workstationIdentity());
@@ -317,7 +346,7 @@ public final class WorkstationReservationService {
     public boolean isWithinOperatingTolerance(
             ServerLevel level,
             WorkstationReservationRecord reservation,
-            BlockPos employeePosition
+            Vec3 employeePosition
     ) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(reservation, "reservation");
@@ -326,10 +355,35 @@ public final class WorkstationReservationService {
             return false;
         }
         return resolvePersistedTarget(level, reservation)
-                .map(target -> target.approachCandidates().stream()
-                        .anyMatch(candidate -> employeePosition.distManhattan(candidate)
-                                <= reservation.anchorRadius()))
+                .map(target -> withinOperatingTolerance(
+                        employeePosition,
+                        target.approachCandidates(),
+                        reservation.anchorRadius()
+                ))
                 .orElse(false);
+    }
+
+    public static double operatingHorizontalTolerance(int anchorRadius) {
+        return anchorRadius + OPERATING_HORIZONTAL_MARGIN;
+    }
+
+    public static double operatingVerticalTolerance(int anchorRadius) {
+        return anchorRadius + OPERATING_VERTICAL_MARGIN;
+    }
+
+    private static boolean withinOperatingTolerance(
+            Vec3 position,
+            List<BlockPos> candidates,
+            int anchorRadius
+    ) {
+        double horizontalTolerance = operatingHorizontalTolerance(anchorRadius);
+        double verticalTolerance = operatingVerticalTolerance(anchorRadius);
+        return candidates.stream().anyMatch(candidate -> {
+            double dx = candidate.getX() + 0.5D - position.x;
+            double dz = candidate.getZ() + 0.5D - position.z;
+            return dx * dx + dz * dz <= horizontalTolerance * horizontalTolerance
+                    && Math.abs(candidate.getY() - position.y) <= verticalTolerance;
+        });
     }
 
     public WorkstationReservationResult<ResolvedWorkstationStatus> status(ServerLevel level, BlockPos workstationPos) {
@@ -420,6 +474,29 @@ public final class WorkstationReservationService {
         Objects.requireNonNull(workstationPos, "workstationPos");
         BlockEntity blockEntity = level.getBlockEntity(workstationPos);
         BlockState state = level.getBlockState(workstationPos);
+        if (blockEntity instanceof CuttingTableBlockEntity) {
+            WorkstationEndpointReferenceResult reference = WorkstationEndpointService.INSTANCE.referenceFor(
+                    level,
+                    workstationPos
+            );
+            if (!reference.succeeded()) {
+                return WorkstationReservationResult.failed(
+                        WorkstationReservationFailureCode.UNSUPPORTED_WORKSTATION,
+                        "Cutting Table endpoint is unavailable: " + reference.detail()
+                );
+            }
+            Direction facing = state.hasProperty(CuttingTableBlock.FACING)
+                    ? state.getValue(CuttingTableBlock.FACING)
+                    : Direction.NORTH;
+            return WorkstationReservationResult.succeeded(new ResolvedWorkstationTarget(
+                    reference.reference().orElseThrow().instanceId().value(),
+                    CUTTING_TABLE_TYPE,
+                    EmployeeService.dimensionIdentity(level),
+                    workstationPos.immutable(),
+                    operatingPosition(workstationPos, facing),
+                    approachCandidates(workstationPos, facing)
+            ));
+        }
         if (blockEntity instanceof GrinderBlockEntity) {
             Direction facing = state.hasProperty(GrinderBlock.FACING)
                     ? state.getValue(GrinderBlock.FACING)
@@ -448,7 +525,7 @@ public final class WorkstationReservationService {
         }
         return WorkstationReservationResult.failed(
                 WorkstationReservationFailureCode.UNSUPPORTED_WORKSTATION,
-                "Target block is not a supported Grinder or Patty Former workstation"
+                "Target block is not a supported Cutting Table, Grinder, or Patty Former workstation"
         );
     }
 

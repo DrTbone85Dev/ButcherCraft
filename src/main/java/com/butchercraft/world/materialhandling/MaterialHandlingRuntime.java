@@ -71,6 +71,7 @@ public record MaterialHandlingRuntime(
             String materialIdentity,
             int quantity,
             String assignmentTypeIdentity,
+            Optional<String> employeeReference,
             int maximumTransfers
     ) {
         if (transfers.size() >= maximumTransfers) throw new IllegalStateException("Material Transfer capacity exhausted");
@@ -83,6 +84,7 @@ public record MaterialHandlingRuntime(
                 materialIdentity,
                 quantity,
                 assignmentTypeIdentity,
+                Objects.requireNonNull(employeeReference, "employeeReference"),
                 configurationIdentity,
                 revision
         );
@@ -98,6 +100,25 @@ public record MaterialHandlingRuntime(
                         candidate
                 ),
                 record
+        );
+    }
+
+    public AllocationCandidate request(
+            WorkstationEndpointReference source,
+            WorkstationEndpointReference destination,
+            String materialIdentity,
+            int quantity,
+            String assignmentTypeIdentity,
+            int maximumTransfers
+    ) {
+        return request(
+                source,
+                destination,
+                materialIdentity,
+                quantity,
+                assignmentTypeIdentity,
+                Optional.empty(),
+                maximumTransfers
         );
     }
 

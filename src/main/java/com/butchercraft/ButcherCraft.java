@@ -19,6 +19,7 @@ import com.butchercraft.world.BusinessRuntimeCalendarService;
 import com.butchercraft.world.EconomicActorService;
 import com.butchercraft.world.EconomicPlanningService;
 import com.butchercraft.world.EmployeeService;
+import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.GoodService;
 import com.butchercraft.world.InventoryService;
@@ -90,6 +91,8 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(EmployeeService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(WorkstationReservationService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(WorkstationReservationService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(EmployeeMaterialHandlingService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(EmployeeMaterialHandlingService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(GoodService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ManualProductionChainBootstrap.INSTANCE::ensureGoods);
         NeoForge.EVENT_BUS.addListener(GoodService.INSTANCE::save);

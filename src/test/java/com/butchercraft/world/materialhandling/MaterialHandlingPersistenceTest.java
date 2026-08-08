@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,9 +38,44 @@ class MaterialHandlingPersistenceTest {
     private static final WorkstationEndpointConfiguration ENDPOINT_CONFIG = WorkstationEndpointConfiguration.standard();
     private static final String MATERIAL = "butchercraft:beef_trim";
     private static final String ASSIGNMENT = "butchercraft:assignment/non_employee_integration";
+    private static final String EMPLOYEE_ASSIGNMENT = "butchercraft:assignment/employee_explicit_transfer";
+    private static final String EMPLOYEE = "butchercraft:employee/v1/test_employee";
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void employeeReferenceBindsTransferIdentityAndRoundTrips() {
+        MaterialHandlingRuntime.AllocationCandidate employeeTransfer = MaterialHandlingRuntime
+                .empty(WORLD, CONFIG.configurationIdentity())
+                .request(source(), destination(), MATERIAL, 1, EMPLOYEE_ASSIGNMENT,
+                        Optional.of(EMPLOYEE), 10);
+        MaterialHandlingRuntime.AllocationCandidate otherEmployee = MaterialHandlingRuntime
+                .empty(WORLD, CONFIG.configurationIdentity())
+                .request(source(), destination(), MATERIAL, 1, EMPLOYEE_ASSIGNMENT,
+                        Optional.of(EMPLOYEE + "_other"), 10);
+        MaterialHandlingStorage storage = new MaterialHandlingStorage(tempDir.resolve("employee-transfer.json"));
+
+        storage.save(employeeTransfer.runtime());
+        MaterialTransferRecord restored = storage.loadExisting().orElseThrow().transfers().getFirst();
+
+        assertEquals(Optional.of(EMPLOYEE), restored.employeeReference());
+        assertNotEquals(employeeTransfer.transfer().requestContentDigest(),
+                otherEmployee.transfer().requestContentDigest());
+        assertNotEquals(employeeTransfer.transfer().transferId(), otherEmployee.transfer().transferId());
+        assertTrue(storage.serialize(employeeTransfer.runtime()).contains("employee_reference"));
+    }
+
+    @Test
+    void legacyNonEmployeeRecordWithoutEmployeeReferenceStillLoads() {
+        MaterialHandlingStorage storage = new MaterialHandlingStorage(tempDir.resolve("non-employee.json"));
+        String serialized = storage.serialize(requested().runtime());
+
+        MaterialTransferRecord restored = storage.deserialize(serialized).transfers().getFirst();
+
+        assertTrue(restored.employeeReference().isEmpty());
+        assertFalse(serialized.contains("employee_reference"));
+    }
 
     @Test
     void materialPreparationPersistsBeforeWorkstationPreparation() {

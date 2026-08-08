@@ -1,13 +1,16 @@
 # Workforce Framework
 
-Status: implemented workforce, employee, navigation, reservation, and one Grinder operation foundation
+Status: implemented workforce, employee, navigation, reservation, one Grinder operation, and one explicit Beef Trim transfer foundation
 
 The Workforce Framework defines the staffing structure a business requires to
 operate and owns individual Employee Identity, Employment Records, Department
 definitions, department assignments, and department navigation anchors. It
 also owns the transient employee request and completion-observation state for
-the one IM-027 Grinder operation. It still does not add job claiming, item
-carrying, hiring markets, payroll, production authority, or general automation.
+the one IM-027 Grinder operation and the persisted employee assignment intent
+for the one IM-028B Cutting Table-to-Grinder transfer. Material Handling owns
+exact custody; Workstation owns endpoint mutation. Workforce still does not add
+job claiming, employee inventory, hiring markets, payroll, Production
+authority, or general automation.
 
 ## Architecture
 
@@ -36,6 +39,10 @@ The workforce package owns:
   failure diagnostics.
 - Transient employee operation state for one reservation-scoped Grinder
   request and read-only completion observation.
+- `EmployeeMaterialHandlingAssignment` and its manager for one deterministic
+  explicit employee/source/destination transfer intent and typed lifecycle.
+- `EmployeeMaterialHandlingAssignmentStorage` for Workforce-owned assignment
+  persistence without ItemStacks, paths, renderer state, or mutation authority.
 - `DepartmentId`, `DepartmentRecord`, `DepartmentRegistry`, and
   `DepartmentManager` for Workforce-owned department definitions, anchors,
   and employee assignment validation.
@@ -169,6 +176,56 @@ Employee operation state is not stored in employee records or reservation
 persistence. Active-operation association is not reconstructed as general
 startup recovery. The Grinder and Execution owners retain their existing
 save-safety behavior independently.
+
+## Employee Material Handling
+
+IM-028B supports exactly one Beef Trim moved from the output of one explicit
+Cutting Table to the input of one explicit Grinder in the executing operator's
+current dimension:
+
+```text
+/butchercraft employee transfer <employee> <source-x> <source-y> <source-z> <destination-x> <destination-y> <destination-z>
+/butchercraft employee transfer-status <employee>
+/butchercraft employee transfer-cancel <employee>
+```
+
+Employee references accept `#1`, unique plain names, quoted names, and
+canonical Employee Identity. The transfer command performs no workstation
+search and accepts no material or quantity argument.
+
+Workforce owns the assignment states `IDLE`, `WALKING_TO_SOURCE`,
+`WAITING_FOR_SOURCE_RESERVATION`, `WITHDRAWAL_REQUESTED`,
+`CARRYING_TO_DESTINATION`, `WAITING_FOR_DESTINATION_RESERVATION`,
+`DEPOSIT_REQUESTED`, `COMPLETED`, `CANCELLATION_REQUESTED`, `CANCELLED`,
+`RECOVERY_REQUIRED`, and `FAILED`. These states observe but never replace the
+separate Material Handling transfer lifecycle.
+
+Reservation order is singular:
+
+1. Acquire the Cutting Table reservation and walk to a valid approach.
+2. Request Material Handling withdrawal from the Cutting Table output through
+   the Workstation source owner. The reserved fabrication input is untouched.
+3. Release the source only after custody is proven.
+4. Acquire the explicitly bound Grinder reservation and walk to it.
+5. Request Material Handling deposit through the Workstation destination owner.
+6. Retain the arrived Grinder reservation after completion.
+
+The employee never holds both reservations. It never extracts or inserts an
+ItemStack directly. The one-item held display contains only a copy derived from
+proven Material Handling custody plus transfer reference, display state, and
+observation revision. Vanilla tracked entity data resynchronizes that bounded
+view for login and tracking; stale or conflicting revisions are rejected.
+
+Cancellation before custody leaves source inventory unchanged. Cancellation
+after custody keeps the display visible, reacquires the explicit source,
+physically returns, and invokes the Material Handling source-return protocol.
+Unknown Outcome is never guessed. Proven unresolved custody remains visible
+and operator-gated as Recovery Required.
+
+Startup restores Workstation endpoint authority and Material Handling before
+loading Workforce assignments. Assignment intent then resumes from reconciled
+state, and carry presentation is reconstructed from Material Handling rather
+than Workforce persistence.
 
 Server stop:
 
@@ -354,3 +411,13 @@ Still out of scope after IM-027:
 - Production-driven assignment, job claiming, or autonomous workflows
 - employee skills, productivity, morale, fatigue, payroll, or training
 - Allocation integration or startup recovery orchestration
+
+Still out of scope after IM-028B:
+
+- Ground Beef transport or Patty Former destination/operation
+- more than one item, material, employee assignment, or destination per request
+- employee inventory, backpacks, hidden slots, or item drops
+- cross-dimension transfer or automatic workstation search
+- Production-driven assignment, autonomous queues, or general Logistics
+- employee-owned Workstation, Material Handling, Scheduler, or Execution authority
+- public transport APIs or custom carrying animation frameworks

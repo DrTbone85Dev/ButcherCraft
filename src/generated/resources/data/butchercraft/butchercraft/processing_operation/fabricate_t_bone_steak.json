@@ -1,0 +1,42 @@
+{
+  "base_duration_milliseconds": 3000,
+  "display_name_key": "definition.butchercraft.processing_operation.fabricate_t_bone_steak",
+  "input_product": "butchercraft:beef_short_loin",
+  "minimum_cleanliness_factor": 600,
+  "minimum_equipment_condition_factor": 500,
+  "minimum_input_quantity": {
+    "amount": 15000,
+    "unit": "gram"
+  },
+  "operation_category": "butchercraft:operation_category/fabrication",
+  "outputs": [
+    {
+      "allow_zero": false,
+      "product": "butchercraft:t_bone_steak",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:steak",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 4000
+      }
+    },
+    {
+      "allow_zero": false,
+      "product": "butchercraft:beef_trim",
+      "quality_adjustment": -5,
+      "quantity_unit": "gram",
+      "state": "butchercraft:trim",
+      "yield": {
+        "denominator": 15000,
+        "numerator": 1500
+      }
+    }
+  ],
+  "required_input_processing_state": "butchercraft:primal",
+  "required_processing_profiles": [
+    "butchercraft:red_meat"
+  ],
+  "workstation_capability": "butchercraft:cutting_table",
+  "zero_output_policy": "forbid"
+}

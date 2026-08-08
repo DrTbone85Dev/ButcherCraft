@@ -64,9 +64,6 @@ public final class EmployeeWorkstationReservationGameTests {
     private static final BlockPos PATTY_FORMER_POS = new BlockPos(3, 1, 2);
     private static final BlockPos UNSUPPORTED_POS = new BlockPos(2, 1, 3);
     private static final int MAX_NAVIGATION_RANGE = EmployeeSchema.SCHEMA_1_MAX_NAVIGATION_RANGE_BLOCKS;
-    private static final double OPERATING_HORIZONTAL_TOLERANCE = 1.1D;
-    private static final double OPERATING_VERTICAL_TOLERANCE = 1.25D;
-
     private EmployeeWorkstationReservationGameTests() {
     }
 
@@ -105,6 +102,32 @@ public final class EmployeeWorkstationReservationGameTests {
         helper.assertTrue(entity.getMainHandItem().isEmpty() && entity.getOffhandItem().isEmpty(),
                 "Waiting employee does not hold products");
         assertWorkstationUnchanged(helper, grinder, before);
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100, batch = BATCH)
+    public static void geometricOperatingToleranceMatchesNavigationArrival(GameTestHelper helper) {
+        setupOpenField(helper, 5, 4);
+        EmployeeRecord employee = createPresentProcessingEmployee(helper, "Geometric Arrival", EMPLOYEE_POS);
+        placeGrinder(helper);
+        assign(helper, employee.employeeId(), absolute(helper, GRINDER_POS)).orThrow();
+        EmployeeEntity entity = entity(helper, employee);
+
+        BlockPos candidate = absolute(helper, GRINDER_POS.relative(Direction.EAST, 2));
+        entity.moveTo(candidate.getX() + 1.01D, candidate.getY(), candidate.getZ() - 0.01D, 0.0F, 0.0F);
+        EmployeeService.INSTANCE.synchronizeEntity(entity);
+
+        WorkstationReservationRecord reservation = WorkstationReservationService.INSTANCE
+                .managerFor(helper.getLevel().getServer())
+                .findByEmployee(employee.employeeId().value())
+                .orElseThrow();
+        helper.assertTrue(entity.blockPosition().distManhattan(candidate) == 2,
+                "Fixture occupies a diagonal block outside the former Manhattan acceptance region");
+        helper.assertTrue(reservation.state() == WorkstationReservationState.EMPLOYEE_ARRIVED,
+                "Reservation accepts the same geometric operating tolerance used by navigation");
+        helper.assertTrue(WorkstationReservationService.INSTANCE.isWithinOperatingTolerance(
+                        helper.getLevel(), reservation, entity.position()),
+                "Consequential operation checks share the authoritative reservation tolerance");
         helper.succeed();
     }
 
@@ -734,8 +757,11 @@ public final class EmployeeWorkstationReservationGameTests {
         BlockPos endpoint = path.getEndNode().asBlockPos();
         double dx = endpoint.getX() + 0.5D - (candidate.getX() + 0.5D);
         double dz = endpoint.getZ() + 0.5D - (candidate.getZ() + 0.5D);
-        return dx * dx + dz * dz <= OPERATING_HORIZONTAL_TOLERANCE * OPERATING_HORIZONTAL_TOLERANCE
-                && Math.abs(endpoint.getY() - candidate.getY()) <= OPERATING_VERTICAL_TOLERANCE;
+        double horizontalTolerance = WorkstationReservationService.operatingHorizontalTolerance(1);
+        return dx * dx + dz * dz
+                <= horizontalTolerance * horizontalTolerance
+                && Math.abs(endpoint.getY() - candidate.getY())
+                <= WorkstationReservationService.operatingVerticalTolerance(1);
     }
 
     private static CommandSourceStack commandSource(GameTestHelper helper) {

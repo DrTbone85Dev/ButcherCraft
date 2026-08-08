@@ -210,7 +210,8 @@ public final class ContentSnapshotService {
         return Set.of(
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_GRINDING,
                 BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_PATTY_FORMING,
-                BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW
+                BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_BANDSAW,
+                BuiltInTransformationRegistry.WORKSTATION_CAPABILITY_CUTTING_TABLE
         );
     }
 

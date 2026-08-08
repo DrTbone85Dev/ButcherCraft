@@ -1,6 +1,7 @@
 package com.butchercraft.command;
 
 import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
+import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 import com.butchercraft.world.workforce.employee.EmployeeId;
@@ -159,12 +160,56 @@ class EmployeeCommandLookupTest {
                 "Recovery required");
     }
 
+    @Test
+    void transferFeedbackNamesEveryCommandOutcome() {
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.ASSIGNMENT_ACCEPTED,
+                "Assignment accepted");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.EXISTING_IDENTICAL_ASSIGNMENT,
+                "Existing identical assignment observed");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.EMPLOYEE_UNAVAILABLE,
+                "Employee unavailable");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.EMPLOYEE_OFF_SHIFT,
+                "Employee off shift");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.PLANT_CLOSED,
+                "Plant closed");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.ASSIGNMENT_CONFLICT,
+                "Assignment conflict");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.INVALID_SOURCE,
+                "Invalid source");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.INVALID_DESTINATION,
+                "Invalid destination");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.SOURCE_EMPTY,
+                "Source empty");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.RESERVATION_CONFLICT,
+                "Reservation conflict");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.RECOVERY_REQUIRED,
+                "Transfer recovery required");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.UNKNOWN_OUTCOME,
+                "Unknown Outcome");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.CANCELLATION_REQUESTED,
+                "Cancellation requested");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.CANCELLED,
+                "Assignment cancelled");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.COMPLETED,
+                "Assignment completed");
+    }
+
     private static void assertOperationFeedback(
             EmployeeWorkstationOperationService.RequestStatus status,
             String expectedPrefix
     ) {
         String feedback = ButcherCraftDiagnostics.employeeOperationFeedback(
                 new EmployeeWorkstationOperationService.RequestResult(status, "test detail")
+        );
+        assertTrue(feedback.startsWith(expectedPrefix + ":"), feedback);
+    }
+
+    private static void assertTransferFeedback(
+            EmployeeMaterialHandlingService.AssignmentStatus status,
+            String expectedPrefix
+    ) {
+        String feedback = ButcherCraftDiagnostics.employeeTransferFeedback(
+                new EmployeeMaterialHandlingService.AssignmentResult(status, Optional.empty(), "test detail")
         );
         assertTrue(feedback.startsWith(expectedPrefix + ":"), feedback);
     }

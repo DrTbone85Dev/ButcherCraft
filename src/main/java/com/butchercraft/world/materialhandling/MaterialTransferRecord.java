@@ -23,6 +23,7 @@ public record MaterialTransferRecord(
         String materialIdentity,
         int quantity,
         String assignmentTypeIdentity,
+        Optional<String> employeeReference,
         String sourceInvocationIdentity,
         String destinationInvocationIdentity,
         String returnInvocationIdentity,
@@ -62,6 +63,8 @@ public record MaterialTransferRecord(
         materialIdentity = MaterialHandlingValidation.id(materialIdentity, "material identity");
         quantity = MaterialHandlingValidation.positive(quantity, "material quantity");
         assignmentTypeIdentity = MaterialHandlingValidation.id(assignmentTypeIdentity, "assignment type identity");
+        employeeReference = Objects.requireNonNull(employeeReference, "employeeReference")
+                .map(value -> MaterialHandlingValidation.id(value, "employee reference"));
         sourceInvocationIdentity = MaterialHandlingValidation.id(sourceInvocationIdentity, "source invocation identity");
         destinationInvocationIdentity = MaterialHandlingValidation.id(
                 destinationInvocationIdentity,
@@ -101,6 +104,7 @@ public record MaterialTransferRecord(
                 materialIdentity,
                 quantity,
                 assignmentTypeIdentity,
+                employeeReference,
                 configurationIdentity
         );
         MaterialTransferId expectedId = MaterialTransferId.create(
@@ -188,6 +192,7 @@ public record MaterialTransferRecord(
             String materialIdentity,
             int quantity,
             String assignmentTypeIdentity,
+            Optional<String> employeeReference,
             String configurationIdentity,
             long ownerRevision
     ) {
@@ -198,6 +203,7 @@ public record MaterialTransferRecord(
                 materialIdentity,
                 quantity,
                 assignmentTypeIdentity,
+                employeeReference,
                 configurationIdentity
         );
         MaterialTransferId id = MaterialTransferId.create(
@@ -218,6 +224,7 @@ public record MaterialTransferRecord(
                 materialIdentity,
                 quantity,
                 assignmentTypeIdentity,
+                employeeReference,
                 "butchercraft:material_handling_invocation/v1/" + suffix + "/source",
                 "butchercraft:material_handling_invocation/v1/" + suffix + "/destination",
                 "butchercraft:material_handling_invocation/v1/" + suffix + "/return",
@@ -336,6 +343,7 @@ public record MaterialTransferRecord(
                 materialIdentity,
                 quantity,
                 assignmentTypeIdentity,
+                employeeReference,
                 sourceInvocationIdentity,
                 destinationInvocationIdentity,
                 returnInvocationIdentity,
@@ -370,6 +378,7 @@ public record MaterialTransferRecord(
             String materialIdentity,
             int quantity,
             String assignmentTypeIdentity,
+            Optional<String> employeeReference,
             String sourceInvocationIdentity,
             String destinationInvocationIdentity,
             String returnInvocationIdentity,
@@ -423,6 +432,7 @@ public record MaterialTransferRecord(
                 materialIdentity,
                 quantity,
                 assignmentTypeIdentity,
+                employeeReference,
                 sourceInvocationIdentity,
                 destinationInvocationIdentity,
                 returnInvocationIdentity,
@@ -758,9 +768,10 @@ public record MaterialTransferRecord(
             String materialIdentity,
             int quantity,
             String assignmentTypeIdentity,
+            Optional<String> employeeReference,
             String configurationIdentity
     ) {
-        return MaterialHandlingDigest.create("butchercraft:material_transfer_request")
+        MaterialHandlingDigest digest = MaterialHandlingDigest.create("butchercraft:material_transfer_request")
                 .add(MaterialHandlingSchema.CURRENT_VERSION)
                 .add(worldIdentity.identity())
                 .add(worldIdentity.rootDigest())
@@ -772,9 +783,9 @@ public record MaterialTransferRecord(
                 .add(destination.generation())
                 .add(materialIdentity)
                 .add(quantity)
-                .add(assignmentTypeIdentity)
-                .add(configurationIdentity)
-                .finish();
+                .add(assignmentTypeIdentity);
+        employeeReference.ifPresent(digest::add);
+        return digest.add(configurationIdentity).finish();
     }
 
     private static String calculateStateDigest(

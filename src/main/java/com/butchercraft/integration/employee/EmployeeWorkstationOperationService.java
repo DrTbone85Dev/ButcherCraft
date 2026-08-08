@@ -88,7 +88,7 @@ public final class EmployeeWorkstationOperationService {
         if (!WorkstationReservationService.INSTANCE.isWithinOperatingTolerance(
                 level,
                 value,
-                employee.blockPosition()
+                employee.position()
         )) {
             return RequestResult.rejected(RequestStatus.EMPLOYEE_NOT_AT_WORKSTATION,
                     "employee is outside the reserved Grinder operating tolerance");

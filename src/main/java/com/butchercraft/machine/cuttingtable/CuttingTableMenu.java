@@ -21,4 +21,17 @@ public final class CuttingTableMenu extends ProcessingWorkstationMenu {
     public CuttingTableMenu(int containerId, Inventory playerInventory, CuttingTableBlockEntity blockEntity) {
         super(ModMenuTypes.CUTTING_TABLE.get(), containerId, playerInventory, blockEntity, ModBlocks.CUTTING_TABLE.get());
     }
+
+    @Override
+    public int workstationSlotX(int slot) {
+        return slot < firstOutputSlot() ? 26 : 108;
+    }
+
+    @Override
+    public int workstationSlotY(int slot) {
+        if (slot < firstOutputSlot()) {
+            return 35;
+        }
+        return slot == firstOutputSlot() ? 27 : 62;
+    }
 }

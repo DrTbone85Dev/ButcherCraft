@@ -23,11 +23,17 @@ Execution persists schema-1 operation records at:
 
 The file contains immutable authorization evidence, operation lifecycle state, attempt records, owner result evidence, terminal result evidence, and typed failure state. Live runtime authorization consumption tokens are not persisted.
 
-Schema 1 currently requires exact aggregate handler-registry identity equality
-at startup. The documentation-only
-[`DG-003 proposal`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
-defines a possible additive registry-evolution policy. It has no authority
-until owner ratification, and no compatibility migration is implemented.
+Schema 1 now classifies exact aggregate identity as `IDENTICAL` and permits a
+strict additive handler set only through exact historical contract proof. The
+owner-ratified
+[`DG-003 Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+is implemented for the released pre-Cutting-Table Grinder and Patty Former
+profile. Retained operations are validated through their persisted handler id,
+operation type, configuration identity, and immutable authorization binding
+against that profile. Unknown registry identities remain recovery-blocked,
+incompatible contracts fail visibly, unchanged additive-compatible startup
+does not rewrite historical persistence, and general Execution migration
+remains gated.
 
 ## Explicitly Gated
 

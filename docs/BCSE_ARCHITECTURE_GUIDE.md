@@ -85,7 +85,7 @@ object graph.
 | Planning | Implemented deterministic Production planning and Scheduler integration |
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
-| Generic Execution | IM-011 schema-1 runtime foundation implemented; full RFC-0023 Draft 2 surface remains separately gated |
+| Generic Execution | IM-011 schema-1 runtime foundation and narrow DG-003 additive handler compatibility implemented; general migration and the full RFC-0023 Draft 2 surface remain separately gated |
 | Material Handling | DG-002 and DG-002A ratified; IM-028A endpoint/custody foundation and IM-028B explicit one-Beef-Trim employee Cutting Table-to-Grinder transfer implemented; later transport scope remains gated |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
@@ -199,12 +199,16 @@ Execution does not decide, allocate, interpret industry semantics, or mutate
 authoritative state. This contract is documented by RFC-0023 Draft 2 and is not
 current implementation authority.
 
-The implemented schema-1 Execution foundation currently requires exact
-aggregate handler-registry identity equality when loading persistence. The
-documentation-only
-[`DG-003 Execution Handler Registry Evolution proposal`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
-defines a possible additive compatibility policy. It remains unratified and
-unimplemented.
+The implemented schema-1 Execution foundation classifies exact aggregate
+registry equality as `IDENTICAL`. The owner-ratified
+[`DG-003 Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+also implements narrow additive compatibility for exact recognized historical
+profiles. Execution owns Handler Contract Identity, registry evolution
+classification, historical profiles, retained-operation validation, and
+immutable diagnostics. Unknown profiles remain recovery-blocked, changed or
+removed historical contracts remain incompatible, and unchanged startup does
+not rewrite historical schema-1 metadata. General schema migration,
+handler-removal migration, and changed-contract migration remain gated.
 
 ### Transactions
 
@@ -679,7 +683,7 @@ nothing.
 - [`Platform Canonicalization Addendum`](adr/ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md)
 - [`Ratified Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
 - [`Ratified Workstation Endpoint Durability And Instance Identity Addendum`](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
-- [`Proposed Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+- [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
 - [`Material Handling Implementation`](MATERIAL_HANDLING.md)
 - [`Cutting Table`](CUTTING_TABLE.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)

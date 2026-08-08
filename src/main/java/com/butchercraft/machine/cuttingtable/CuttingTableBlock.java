@@ -2,6 +2,7 @@ package com.butchercraft.machine.cuttingtable;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
+import com.butchercraft.world.WorkstationReservationService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,6 +20,8 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -50,6 +53,23 @@ public final class CuttingTableBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new CuttingTableBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            Level level,
+            BlockState state,
+            BlockEntityType<T> blockEntityType
+    ) {
+        if (level.isClientSide) {
+            return null;
+        }
+        return createTickerHelper(
+                blockEntityType,
+                ModBlockEntityTypes.CUTTING_TABLE.get(),
+                CuttingTableBlockEntity::serverTick
+        );
     }
 
     @Override
@@ -84,6 +104,13 @@ public final class CuttingTableBlock extends BaseEntityBlock {
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) {
             try {
+                if (level instanceof ServerLevel serverLevel) {
+                    WorkstationReservationService.INSTANCE.invalidateCuttingTable(
+                            serverLevel,
+                            pos,
+                            "reserved Cutting Table was removed"
+                    );
+                }
                 boolean contentsMayDrop = !(level instanceof ServerLevel serverLevel)
                         || WorkstationEndpointService.INSTANCE.retireEndpoint(serverLevel, pos);
                 if (contentsMayDrop && level.getBlockEntity(pos) instanceof CuttingTableBlockEntity blockEntity) {

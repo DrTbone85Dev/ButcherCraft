@@ -43,7 +43,7 @@ class ContentSnapshotServiceTest {
         assertTrue(result.succeeded(), result::describeErrors);
         assertEquals(38, ContentSnapshotService.currentProductRegistry().size());
         assertEquals(4, ContentSnapshotService.currentPackagingRegistry().size());
-        assertEquals(12, ContentSnapshotService.currentTransformationRegistry().size());
+        assertEquals(13, ContentSnapshotService.currentTransformationRegistry().size());
         assertEquals(previous.products().stream().toList(), ContentSnapshotService.currentProductRegistry().stream().toList());
         assertEquals(previous.packaging().stream().toList(), ContentSnapshotService.currentPackagingRegistry().stream().toList());
         assertEquals(previous.transformations().stream().toList(),

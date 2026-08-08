@@ -1,16 +1,17 @@
-# Proposed ADR: Execution Handler Registry Evolution And Save Compatibility
+# ADR-DG-003: Execution Handler Registry Evolution And Save Compatibility
 
-Status: PROPOSED - OWNER APPROVAL REQUIRED
+Status: RATIFIED ARCHITECTURAL DIRECTION - NARROW SCHEMA-1 ADDITIVE COMPATIBILITY IMPLEMENTED; GENERAL MIGRATION GATED
 
 Decision identifier: DG-003
 
 Package: Execution Persistence Compatibility
 
-Authority: This document has no authority until explicitly approved by the
-project owner and recorded through the repository's accepted Decision process.
-It proposes architecture only. It does not authorize runtime code, persistence
-migration, schema publication, Architecture Manifest status changes, gameplay,
-or resumption of the paused Cutting Table acceptance work by itself.
+Authority: Owner-ratified architectural direction. This document authorized
+only the narrow Execution compatibility implementation required to classify
+schema-1 handler-registry evolution and preserve additive save compatibility.
+The authorized runtime support is now implemented. General Execution
+migration, handler-removal migration, changed-contract migration, broad
+Recovery redesign, and silent compatibility-metadata rewriting remain gated.
 
 Canonical platform references:
 
@@ -21,6 +22,36 @@ Canonical platform references:
 - [`Checkpoint Recovery ADR`](ADR-PROPOSED-CHECKPOINT-RECOVERY.md)
 - [`RFC-0023 Deterministic Execution Engine`](../RFC-0023_DETERMINISTIC_EXECUTION_ENGINE.md)
 - [`Generic Execution Runtime Foundation`](../GENERIC_EXECUTION_RUNTIME_FOUNDATION.md)
+
+## Implementation Status
+
+The narrow DG-003 runtime milestone implements:
+
+- deterministic `IDENTICAL`, `ADDITIVE_COMPATIBLE`, `INCOMPATIBLE`, and
+  `INDETERMINATE_RECOVERY_REQUIRED` classification;
+- canonical schema-1 Handler Contract Identity descriptors derived from the
+  existing `ExecutionHandlerContract.contractIdentity()`;
+- one immutable, exact pre-Cutting-Table schema-1 profile proven from
+  repository history;
+- retained-operation validation using persisted handler id, operation type,
+  handler configuration identity, authorization digest, and the profile's
+  exact historical Handler Contract Identity;
+- immutable compatibility diagnostics available from Execution persistence
+  and the active world-scoped Execution service;
+- startup authority only after compatible classification; and
+- byte-for-byte preservation of additive-compatible historical persistence
+  when startup and shutdown make no Execution state change.
+
+The implemented profile binds the released Grinder and Patty Former handler
+contracts to aggregate registry identity
+`butchercraft:execution_handler_registry/v1/6515eccd6845bc157a18980a1ed34e8d06f6adba736c7c8217fff149480413d1`.
+The additive registry containing the Cutting Table handler has identity
+`butchercraft:execution_handler_registry/v1/d0337e2d8560f661a17f3e7520c65a24bd039578e4ae337209e99e81edcc92ee`.
+
+Schema 1 remains unchanged. General migration, changed-contract adaptation,
+handler-removal migration, and a broader Recovery mechanism are not
+implemented. The Ratification Notes below retain the owner decision and the
+state that existed when ratification was recorded.
 
 ## Context
 
@@ -64,7 +95,7 @@ The solution must not silently reinterpret schema-1 operations, infer missing
 contract facts from current Java objects, or overwrite historical registry
 metadata merely because startup observed a compatible current registry.
 
-## Current Repository Behavior
+## Pre-Implementation Repository Behavior
 
 ### Schema
 
@@ -128,7 +159,7 @@ This proves which handler id and operation type were authorized. It does not,
 by itself, prove the complete handler contract content under which the
 operation was accepted.
 
-### Startup Order
+### Pre-Implementation Startup Order
 
 Current startup performs this effective sequence:
 
@@ -638,8 +669,8 @@ Future implementation should propose manifest contracts equivalent to:
 - startup compatibility observation does not silently rewrite persistence.
 
 All such manifest entries remain **unimplemented** until runtime code,
-persistence, diagnostics, and tests make them mechanically true. This proposal
-does not modify the Architecture Manifest.
+persistence, diagnostics, and tests make them mechanically true. This ADR does
+not modify the Architecture Manifest.
 
 ## Compatibility With Existing Architecture
 
@@ -771,72 +802,65 @@ Any implementation requires automated coverage for:
   because schema 1 cannot prove retained Replay, Recovery, or audit
   dependencies are absent.
 
-## Owner Decisions Required
+## Ratification Notes
 
-1. **Additive registration compatibility**
-   - Approve: A strict exact-contract superset is save-compatible.
-   - Revise: Continue requiring complete registry equality.
+Owner ratification approved Execution Handler Registry Evolution and Save
+Compatibility as follows:
 
-2. **Aggregate registry role**
-   - Approve: Retain it as Registry Observation/Configuration Identity, not the
-     sole operation compatibility authority.
-   - Revise: Define another aggregate role before implementation.
+1. Purely additive Execution handler registration is save-compatible only
+   when compatibility is proven.
+2. Aggregate handler-registry identity remains a replay-relevant Registry
+   Observation and Configuration Identity. Aggregate inequality alone does not
+   prove incompatibility.
+3. Execution owns one canonical, versioned Handler Contract Identity for each
+   handler.
+4. Persisted operations remain attributable to the exact handler contract
+   under which they were authorized.
+5. An empty schema-1 operation set may start after an additive change only
+   when its prior aggregate identity resolves to a recognized immutable
+   historical compatibility profile.
+6. A schema-1 world with retained operations may start after an additive
+   change only when every referenced historical handler remains present and
+   its exact contract is proven unchanged.
+7. Handler removal remains incompatible for schema 1 unless a future ratified
+   migration policy explicitly permits it.
+8. A materially changed handler contract remains incompatible unless a future
+   explicit migration and version policy proves compatibility.
+9. Unknown historical aggregate identities classify as
+   `INDETERMINATE_RECOVERY_REQUIRED`. Runtime shall not guess the historical
+   handler set or contract identities.
+10. Startup compatibility checks are read-only. Existing persistence shall not
+    be silently rewritten merely because the current registry changed.
+11. Future persistence schemas may store per-handler and per-operation
+    contract identities, but general schema migration remains separately
+    gated.
+12. Ratification authorizes only the narrow Execution compatibility
+    implementation required before the paused Cutting Table acceptance work
+    may resume.
 
-3. **Per-handler contract identity**
-   - Approve: Use an Execution-owned versioned Content Identity binding all
-     operation-relevant handler contract facts.
-   - Revise: Specify additional or excluded canonical fields.
+The canonical compatibility classifications are:
 
-4. **Persisted operation binding**
-   - Approve: Every retained operation binds exact handler id, operation type,
-     and Handler Contract Identity.
-   - Revise: Define a different proof contract.
+- `IDENTICAL`;
+- `ADDITIVE_COMPATIBLE`;
+- `INCOMPATIBLE`; and
+- `INDETERMINATE_RECOVERY_REQUIRED`.
 
-5. **Empty-operation-set compatibility**
-   - Approve: A recognized schema-1 profile that is an exact subset starts
-     without rewriting persistence.
-   - Revise: Require migration publication before startup authority.
+Execution-owned schema-1 historical profiles are authorized as immutable,
+version-controlled configuration evidence. They must bind the aggregate
+registry identity, exact historical handler set, each Handler Contract
+Identity, schema identity, and relevant replay configuration. Wildcard
+compatibility and arbitrary unknown-hash acceptance remain prohibited.
 
-6. **Referenced handler removal**
-   - Approve: Removal is incompatible while any compatibility-relevant record
-     remains; schema 1 treats every profile removal as incompatible.
-   - Revise: Authorize a specific retention-aware removal rule.
+The known pre-Cutting-Table registry may become the first historical profile
+only when its exact handler set and contracts are proven from repository and
+release evidence.
 
-7. **Handler contract changes**
-   - Approve: Schema 1 requires exact contract identity; changed identity is
-     incompatible without an explicit migration.
-   - Revise: Define a specific compatible predecessor/successor rule.
+At ratification time, runtime support was not yet implemented and Cutting Table
+acceptance remained paused pending the narrow compatibility proof. The
+Implementation Status section records the subsequently implemented runtime
+support; this paragraph preserves the ratification-time state.
 
-8. **Legacy schema-1 handling**
-   - Approve: Support only exact aggregate equality or explicit immutable
-     Legacy Registry Compatibility Profiles; never infer history from current
-     code.
-   - Revise: Define another source of historical proof.
-
-9. **Metadata update and publication**
-   - Approve: Startup is read-only; later authorized atomic publication retains
-     prior registry/evolution evidence and uses owner/checkpoint boundaries.
-   - Revise: Define a different publication trigger and crash contract.
-
-10. **Paused Cutting Table work**
-    - Approve: Ratification authorizes a narrow DG-003 compatibility
-      implementation; Cutting Table acceptance resumes only after that
-      implementation passes existing-world validation.
-    - Revise: Require a separate implementation authorization after
-      ratification.
-
-## Owner Approval Checklist
-
-- [ ] Approve additive handler registration as save-compatible under exact
-  shared-contract proof.
-- [ ] Approve the aggregate registry identity's diagnostic and configuration
-  role.
-- [ ] Approve Execution Handler Contract Identity as Content Identity.
-- [ ] Approve exact per-operation handler contract binding.
-- [ ] Approve recognized empty schema-1 world compatibility.
-- [ ] Approve conservative handler-removal behavior.
-- [ ] Approve exact schema-1 contract equality.
-- [ ] Approve immutable legacy compatibility profiles.
-- [ ] Approve read-only startup and later atomic metadata publication.
-- [ ] Authorize the narrow compatibility implementation that must precede
-  resumption of the Cutting Table acceptance work.
+General Execution schema migration, handler-removal migration,
+changed-contract migration, broad Recovery redesign, silent persistence
+rewriting, unrelated Execution features, and Architecture Manifest
+implementation status changes remain gated.

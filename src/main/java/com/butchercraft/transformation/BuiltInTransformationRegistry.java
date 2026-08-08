@@ -22,12 +22,14 @@ public final class BuiltInTransformationRegistry {
             "data/butchercraft/butchercraft/transformation/break_beef_hindquarter.json",
             "data/butchercraft/butchercraft/transformation/cut_beef_short_loin.json",
             "data/butchercraft/butchercraft/transformation/cut_beef_round.json",
-            "data/butchercraft/butchercraft/transformation/cut_beef_sirloin.json"
+            "data/butchercraft/butchercraft/transformation/cut_beef_sirloin.json",
+            "data/butchercraft/butchercraft/transformation/fabricate_t_bone_steak.json"
     );
 
     public static final EngineId WORKSTATION_CAPABILITY_GRINDING = EngineId.of("butchercraft:grinding");
     public static final EngineId WORKSTATION_CAPABILITY_PATTY_FORMING = EngineId.of("butchercraft:patty_forming");
     public static final EngineId WORKSTATION_CAPABILITY_BANDSAW = EngineId.of("butchercraft:bandsaw");
+    public static final EngineId WORKSTATION_CAPABILITY_CUTTING_TABLE = EngineId.of("butchercraft:cutting_table");
 
     private BuiltInTransformationRegistry() {
     }

@@ -357,6 +357,8 @@ public final class ModItems {
             () -> beefOutputFixture("butchercraft:beef_short_loin", "butchercraft:primal", 15_000)
     );
 
+    public static final DeferredItem<ProductTestItem> BEEF_SHORT_LOIN = BEEF_SHORT_LOIN_TEST;
+
     public static final DeferredItem<ProductTestItem> BEEF_FLANK_TEST = ITEMS.register(
             "beef_flank_test",
             () -> beefOutputFixture("butchercraft:beef_flank", "butchercraft:primal", 7_500)
@@ -366,6 +368,8 @@ public final class ModItems {
             "t_bone_steak_test",
             () -> beefOutputFixture("butchercraft:t_bone_steak", "butchercraft:steak", 4_000)
     );
+
+    public static final DeferredItem<ProductTestItem> T_BONE_STEAK = T_BONE_STEAK_TEST;
 
     public static final DeferredItem<ProductTestItem> PORTERHOUSE_STEAK_TEST = ITEMS.register(
             "porterhouse_steak_test",

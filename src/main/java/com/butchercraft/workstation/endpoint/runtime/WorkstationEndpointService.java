@@ -100,7 +100,14 @@ public final class WorkstationEndpointService {
             return WorkstationEndpointObservationResult.failed(failure.code(), failure.detail());
         }
         WorkstationTransferEndpoint endpoint = resolved.endpoint().orElseThrow();
-        ItemStack exactStack = endpoint.endpointStackSnapshot(0);
+        int sourceSlot = endpoint.endpointSlotIndex(WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL);
+        if (sourceSlot < 0) {
+            return WorkstationEndpointObservationResult.failed(
+                    WorkstationEndpointResultCode.UNSUPPORTED_EFFECT,
+                    "Workstation does not expose an authoritative withdrawal slot"
+            );
+        }
+        ItemStack exactStack = endpoint.endpointStackSnapshot(sourceSlot);
         if (exactStack.isEmpty()) {
             return WorkstationEndpointObservationResult.failed(
                     WorkstationEndpointResultCode.SOURCE_EMPTY,
@@ -126,6 +133,7 @@ public final class WorkstationEndpointService {
                 level,
                 resolved,
                 WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL,
+                sourceSlot,
                 payload
         );
     }
@@ -147,10 +155,19 @@ public final class WorkstationEndpointService {
             WorkstationEndpointEffectResult failure = resolved.failure().orElseThrow();
             return WorkstationEndpointObservationResult.failed(failure.code(), failure.detail());
         }
+        int destinationSlot = resolved.endpoint().orElseThrow()
+                .endpointSlotIndex(WorkstationEndpointEffectKind.DESTINATION_DEPOSIT);
+        if (destinationSlot < 0) {
+            return WorkstationEndpointObservationResult.failed(
+                    WorkstationEndpointResultCode.UNSUPPORTED_EFFECT,
+                    "Workstation does not expose an authoritative deposit slot"
+            );
+        }
         return observeEffect(
                 level,
                 resolved,
                 WorkstationEndpointEffectKind.DESTINATION_DEPOSIT,
+                destinationSlot,
                 exactStack
         );
     }
@@ -172,7 +189,21 @@ public final class WorkstationEndpointService {
             WorkstationEndpointEffectResult failure = resolved.failure().orElseThrow();
             return WorkstationEndpointObservationResult.failed(failure.code(), failure.detail());
         }
-        return observeEffect(level, resolved, WorkstationEndpointEffectKind.SOURCE_RETURN, exactStack);
+        int sourceSlot = resolved.endpoint().orElseThrow()
+                .endpointSlotIndex(WorkstationEndpointEffectKind.SOURCE_RETURN);
+        if (sourceSlot < 0) {
+            return WorkstationEndpointObservationResult.failed(
+                    WorkstationEndpointResultCode.UNSUPPORTED_EFFECT,
+                    "Workstation does not expose an authoritative source-return slot"
+            );
+        }
+        return observeEffect(
+                level,
+                resolved,
+                WorkstationEndpointEffectKind.SOURCE_RETURN,
+                sourceSlot,
+                exactStack
+        );
     }
 
     public synchronized WorkstationEndpointPreparationResult prepareObservedEffect(
@@ -587,6 +618,7 @@ public final class WorkstationEndpointService {
             ServerLevel level,
             ResolvedEndpoint resolved,
             WorkstationEndpointEffectKind kind,
+            int slotIndex,
             WorkstationEndpointStackPayload payload
     ) {
         if (payload.decodedStack().length > configuration.maximumPayloadBytes()) {
@@ -614,7 +646,7 @@ public final class WorkstationEndpointService {
                     "Endpoint slot is already locked by a prepared effect"
             );
         }
-        if (!endpoint.endpointAccepts(kind, 0, stack)) {
+        if (!endpoint.endpointAccepts(kind, slotIndex, stack)) {
             return WorkstationEndpointObservationResult.failed(
                     kind == WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL
                             ? WorkstationEndpointResultCode.SOURCE_MISMATCH
@@ -625,7 +657,7 @@ public final class WorkstationEndpointService {
         return WorkstationEndpointObservationResult.observed(WorkstationEndpointObservation.create(
                 resolved.instance().orElseThrow().instanceId(),
                 kind,
-                0,
+                slotIndex,
                 payload,
                 projection.inventoryRevision(),
                 projection.endpointEffectRevision(),
@@ -663,6 +695,7 @@ public final class WorkstationEndpointService {
         if (existing.isPresent()) {
             WorkstationEndpointJournalRecord record = existing.orElseThrow();
             if (!record.exactStack().equals(payload)
+                    || record.slotIndex() != observation.slotIndex()
                     || record.expectedInventoryRevision() != observation.inventoryRevision()
                     || record.expectedEndpointEffectRevision() != observation.endpointEffectRevision()
                     || !record.preFreshnessIdentity().equals(observation.freshnessIdentity())
@@ -718,7 +751,9 @@ public final class WorkstationEndpointService {
             );
         }
         long expectedRevision = observation.inventoryRevision();
-        if (!endpoint.endpointAccepts(kind, 0, stack)) {
+        int slotIndex = observation.slotIndex();
+        if (endpoint.endpointSlotIndex(kind) != slotIndex
+                || !endpoint.endpointAccepts(kind, slotIndex, stack)) {
             return WorkstationEndpointPreparationResult.failed(
                     kind == WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL
                             ? WorkstationEndpointResultCode.SOURCE_MISMATCH
@@ -730,7 +765,7 @@ public final class WorkstationEndpointService {
                 resolved.instance().orElseThrow().instanceId(),
                 invocationIdentity,
                 kind,
-                0,
+                slotIndex,
                 payload,
                 expectedRevision,
                 observation.endpointEffectRevision(),
