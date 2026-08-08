@@ -9,6 +9,7 @@ import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationFailure;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationOperationLookup;
+import com.butchercraft.workstation.WorkstationOperationStartPolicy;
 import com.butchercraft.workstation.WorkstationProcessingController;
 import com.butchercraft.workstation.WorkstationProductionRequestResult;
 import com.butchercraft.workstation.WorkstationProductionSnapshot;
@@ -90,6 +91,30 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
             WorkstationExecutionStrategy executionStrategy,
             WorkstationExecutionCoordinator executionCoordinator
     ) {
+        this(
+                type,
+                pos,
+                blockState,
+                capability,
+                resolver,
+                outputMapping,
+                executionStrategy,
+                executionCoordinator,
+                WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY
+        );
+    }
+
+    protected AbstractProcessingWorkstationBlockEntity(
+            BlockEntityType<?> type,
+            BlockPos pos,
+            BlockState blockState,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            WorkstationExecutionCoordinator executionCoordinator,
+            WorkstationOperationStartPolicy startPolicy
+    ) {
         super(type, pos, blockState, capability);
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.controller = executionCoordinator == null
@@ -99,6 +124,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
                         resolver,
                         Objects.requireNonNull(outputMapping, "outputMapping"),
                         Objects.requireNonNull(executionStrategy, "executionStrategy"),
+                        Objects.requireNonNull(startPolicy, "startPolicy"),
                         this::markChanged
                 )
                 : new WorkstationProcessingController(
@@ -108,6 +134,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
                         Objects.requireNonNull(outputMapping, "outputMapping"),
                         Objects.requireNonNull(executionStrategy, "executionStrategy"),
                         executionCoordinator,
+                        Objects.requireNonNull(startPolicy, "startPolicy"),
                         this::markChanged
                 );
         inventory().setInputLocked(controller::inputLocked);

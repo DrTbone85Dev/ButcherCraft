@@ -773,6 +773,21 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-018 Patty Former and First Multi-Workstation Production Chain",
                 "Patty Former interaction, Scheduler dispatch, owner-result observation, serialization, and repeated ticks do not duplicate output");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_explicit_operation_gate",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028C Patty Former Explicit Operation Gate and Ground Beef Transfer Readiness",
+                "Valid Ground Beef establishes READY state but cannot create Execution authority or Scheduler work until one explicit operation request is accepted");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_ready_persistence",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028C Patty Former Explicit Operation Gate and Ground Beef Transfer Readiness",
+                "Ground Beef inventory and READY state persist without automatic operation creation on load while active and completed Execution recovery remain unchanged");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_destination_endpoint_readiness",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-028C Patty Former Explicit Operation Gate and Ground Beef Transfer Readiness",
+                "The Patty Former exposes one Workstation-owned DG-002A Ground Beef destination endpoint whose deposit effect changes custody and readiness but never grants Execution authority");
         platformContract(builder, "butchercraft:platform_contract/production_two_step_workstation_chain",
                 ValidationCategory.PRODUCTION, PRODUCTION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1057,12 +1072,12 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
                 "IM-028B Employee Cutting Table To Grinder Material Handling",
-                "Ground Beef and Patty Former transport, multiple materials or quantities, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
+                "Employee Grinder-to-Patty Former Ground Beef transport, multiple materials or quantities, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
         platformContract(builder, "butchercraft:platform_contract/employee_operation_future_scope_gates",
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
                 "IM-027 Employee Workstation Operation Foundation",
-                "Patty Former operation, product carrying beyond the IM-028B Beef Trim transfer, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
+                "Employee Patty Former operation, product carrying beyond the IM-028B Beef Trim transfer, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {

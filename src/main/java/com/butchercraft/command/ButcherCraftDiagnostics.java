@@ -9,6 +9,8 @@ import com.butchercraft.integration.employee.EmployeeWorkstationOperationService
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
+import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
+import com.butchercraft.machine.pattyformer.PattyFormerOperationDiagnostics;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.processing.definition.DefinitionRegistryLoadResult;
 import com.butchercraft.processing.definition.DefinitionRegistryView;
@@ -839,7 +841,34 @@ public final class ButcherCraftDiagnostics {
         } else {
             source.sendSuccess(() -> Component.literal("Reservation: unreserved"), false);
         }
+        sendPattyFormerOperationStatus(source, position);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static void sendPattyFormerOperationStatus(CommandSourceStack source, BlockPos position) {
+        if (!(source.getLevel().getBlockEntity(position) instanceof PattyFormerBlockEntity pattyFormer)) {
+            return;
+        }
+        PattyFormerOperationDiagnostics diagnostics = PattyFormerOperationDiagnostics.observe(
+                source.getLevel(),
+                pattyFormer
+        );
+        source.sendSuccess(() -> Component.literal("Patty Former readiness: input_present="
+                + diagnostics.inputPresent()
+                + " | recipe_valid=" + diagnostics.recipeValid()
+                + " | ready=" + diagnostics.ready()), false);
+        source.sendSuccess(() -> Component.literal("Patty Former authority: operation_requested="
+                + diagnostics.operationRequested()
+                + " | active_execution=" + diagnostics.activeExecutionState()
+                + " | scheduler_work=" + diagnostics.schedulerWorkState()), false);
+        source.sendSuccess(() -> Component.literal("Patty Former lifecycle: processing="
+                + diagnostics.processing()
+                + " | progress=" + diagnostics.elapsedTicks() + "/" + diagnostics.totalTicks()
+                + " | output_blocked=" + diagnostics.outputBlocked()
+                + " | completed=" + diagnostics.completed()), false);
+        source.sendSuccess(() -> Component.literal("Patty Former recovery: state="
+                + diagnostics.workstationState()
+                + " | failure=" + diagnostics.failureOrRecoveryState()), false);
     }
 
     private static int runCuttingTableOutputPreload(CommandSourceStack source, BlockPos position) {

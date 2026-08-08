@@ -1,6 +1,6 @@
 # ButcherCraft Material Handling
 
-Status: DG-002 and DG-002A ratified; IM-028A and IM-028B foundations implemented
+Status: DG-002 and DG-002A ratified; IM-028A through IM-028C foundations implemented
 
 ## Authority
 
@@ -71,6 +71,27 @@ Schema 1 permits one employee reservation at a time:
 
 The Grinder remains idle. Processing begins only through the separately
 explicit `/butchercraft employee operate <employee>` command.
+
+## Patty Former Destination Readiness
+
+IM-028C adds one structurally ready Workstation-owned Patty Former destination
+endpoint for an exact one-item Ground Beef deposit. It reuses DG-002A instance
+identity, freshness, prepare/effect/result publication, durable endpoint
+journal, and projection reconciliation. Patty Former validation rejects other
+products.
+
+A committed Ground Beef deposit changes the Patty Former from `IDLE` to
+`READY`. It does not create an Execution operation, submit Scheduler work,
+consume input, or produce Beef Patties. This is the enforced boundary:
+
+```text
+MATERIAL DEPOSIT != MACHINE OPERATION AUTHORIZATION
+```
+
+IM-028C does not create the Grinder source endpoint selection, Material
+Handling transfer request, Workforce assignment, employee carry view, or
+employee Patty Former operation needed to exercise that destination. Those
+remain gated for IM-029.
 
 ## Carry View
 
@@ -145,10 +166,11 @@ retry consequential effects.
 
 ## Current Gates
 
-The following remain unimplemented and unauthorized by IM-028B:
+The following remain unimplemented and unauthorized by IM-028C:
 
-- Ground Beef transport;
-- Patty Former destination or employee operation;
+- employee Ground Beef transport and visible carrying;
+- Grinder-to-Patty Former Workforce assignment;
+- employee Patty Former operation;
 - multiple materials or quantities;
 - employee inventory or item drops;
 - cross-dimension transfer;

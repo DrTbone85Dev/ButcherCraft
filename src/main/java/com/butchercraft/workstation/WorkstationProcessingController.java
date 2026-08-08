@@ -49,6 +49,7 @@ public final class WorkstationProcessingController {
     private final DevelopmentProductItemMapping outputMapping;
     private final WorkstationExecutionStrategy executionStrategy;
     private final Optional<WorkstationExecutionCoordinator> executionCoordinator;
+    private final WorkstationOperationStartPolicy startPolicy;
     private final Runnable changed;
 
     private WorkstationState state = WorkstationState.IDLE;
@@ -74,7 +75,16 @@ public final class WorkstationProcessingController {
             DevelopmentProductItemMapping outputMapping,
             Runnable changed
     ) {
-        this(inventory, capability, resolver, outputMapping, WorkstationExecutionStrategy.legacy(), changed);
+        this(
+                inventory,
+                capability,
+                resolver,
+                outputMapping,
+                WorkstationExecutionStrategy.legacy(),
+                Optional.empty(),
+                WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY,
+                changed
+        );
     }
 
     public WorkstationProcessingController(
@@ -85,7 +95,37 @@ public final class WorkstationProcessingController {
             WorkstationExecutionStrategy executionStrategy,
             Runnable changed
     ) {
-        this(inventory, capability, resolver, outputMapping, executionStrategy, Optional.empty(), changed);
+        this(
+                inventory,
+                capability,
+                resolver,
+                outputMapping,
+                executionStrategy,
+                Optional.empty(),
+                WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY,
+                changed
+        );
+    }
+
+    public WorkstationProcessingController(
+            WorkstationInventory inventory,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            WorkstationOperationStartPolicy startPolicy,
+            Runnable changed
+    ) {
+        this(
+                inventory,
+                capability,
+                resolver,
+                outputMapping,
+                executionStrategy,
+                Optional.empty(),
+                startPolicy,
+                changed
+        );
     }
 
     public WorkstationProcessingController(
@@ -97,13 +137,38 @@ public final class WorkstationProcessingController {
             WorkstationExecutionCoordinator executionCoordinator,
             Runnable changed
     ) {
-        this.inventory = Objects.requireNonNull(inventory, "inventory");
-        this.capability = Objects.requireNonNull(capability, "capability");
-        this.resolver = Objects.requireNonNull(resolver, "resolver");
-        this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
-        this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");
-        this.executionCoordinator = Optional.of(Objects.requireNonNull(executionCoordinator, "executionCoordinator"));
-        this.changed = Objects.requireNonNull(changed, "changed");
+        this(
+                inventory,
+                capability,
+                resolver,
+                outputMapping,
+                executionStrategy,
+                Optional.of(Objects.requireNonNull(executionCoordinator, "executionCoordinator")),
+                WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY,
+                changed
+        );
+    }
+
+    public WorkstationProcessingController(
+            WorkstationInventory inventory,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            WorkstationExecutionCoordinator executionCoordinator,
+            WorkstationOperationStartPolicy startPolicy,
+            Runnable changed
+    ) {
+        this(
+                inventory,
+                capability,
+                resolver,
+                outputMapping,
+                executionStrategy,
+                Optional.of(Objects.requireNonNull(executionCoordinator, "executionCoordinator")),
+                startPolicy,
+                changed
+        );
     }
 
     private WorkstationProcessingController(
@@ -113,6 +178,7 @@ public final class WorkstationProcessingController {
             DevelopmentProductItemMapping outputMapping,
             WorkstationExecutionStrategy executionStrategy,
             Optional<WorkstationExecutionCoordinator> executionCoordinator,
+            WorkstationOperationStartPolicy startPolicy,
             Runnable changed
     ) {
         this.inventory = Objects.requireNonNull(inventory, "inventory");
@@ -121,6 +187,7 @@ public final class WorkstationProcessingController {
         this.outputMapping = Objects.requireNonNull(outputMapping, "outputMapping");
         this.executionStrategy = Objects.requireNonNull(executionStrategy, "executionStrategy");
         this.executionCoordinator = Objects.requireNonNull(executionCoordinator, "executionCoordinator");
+        this.startPolicy = Objects.requireNonNull(startPolicy, "startPolicy");
         this.changed = Objects.requireNonNull(changed, "changed");
     }
 
@@ -148,6 +215,23 @@ public final class WorkstationProcessingController {
 
     public WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
         Objects.requireNonNull(tickContext, "tickContext");
+        return requestProcessing(tickContext.registryAccess(), tickContext);
+    }
+
+    public WorkstationProductionRequestResult requestProcessing(RegistryAccess registryAccess) {
+        return requestProcessing(Objects.requireNonNull(registryAccess, "registryAccess"), null);
+    }
+
+    private WorkstationProductionRequestResult requestProcessing(
+            RegistryAccess registryAccess,
+            WorkstationTickContext tickContext
+    ) {
+        if (state == WorkstationState.COMPLETE && !inventory.input().isEmpty() && !inventory.outputsEmpty()) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.OUTPUT_OCCUPIED,
+                    "Completed output must be removed before another operation can start"
+            ));
+        }
         if (state == WorkstationState.IDLE) {
             if (inventory.input().isEmpty()) {
                 WorkstationFailure failure = WorkstationFailure.of(
@@ -159,7 +243,7 @@ public final class WorkstationProcessingController {
             setState(WorkstationState.READY);
         }
         if (state == WorkstationState.READY) {
-            startProcessing(tickContext.registryAccess(), tickContext);
+            startProcessing(registryAccess, tickContext);
         }
         WorkstationProductionSnapshot snapshot = productionSnapshot();
         if (state == WorkstationState.BLOCKED || state == WorkstationState.ERROR) {
@@ -185,10 +269,21 @@ public final class WorkstationProcessingController {
     }
 
     public boolean outputExtractionAllowed() {
-        return state == WorkstationState.COMPLETE;
+        return state == WorkstationState.COMPLETE
+                || state == WorkstationState.BLOCKED && !inventory.outputsEmpty();
     }
 
     public void onInventoryChanged() {
+        if (state == WorkstationState.BLOCKED
+                && lastFailure != null
+                && lastFailure.code() == WorkstationFailureCode.OUTPUT_OCCUPIED
+                && inventory.outputsEmpty()) {
+            resetRuntimeProgress();
+            lastFailure = null;
+            state = inventory.input().isEmpty() ? WorkstationState.IDLE : WorkstationState.READY;
+            changed.run();
+            return;
+        }
         if (state == WorkstationState.COMPLETE && inventory.outputsEmpty()) {
             resetToIdle();
             return;
@@ -225,7 +320,9 @@ public final class WorkstationProcessingController {
         }
 
         if (state == WorkstationState.READY) {
-            startProcessing(registryAccess, tickContext);
+            if (startPolicy == WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY) {
+                startProcessing(registryAccess, tickContext);
+            }
             return;
         }
 
@@ -256,7 +353,9 @@ public final class WorkstationProcessingController {
         }
 
         if (state == WorkstationState.BLOCKED) {
-            retryBlockedCompletion(registryAccess);
+            if (startPolicy == WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY) {
+                retryBlockedCompletion(registryAccess);
+            }
         }
     }
 

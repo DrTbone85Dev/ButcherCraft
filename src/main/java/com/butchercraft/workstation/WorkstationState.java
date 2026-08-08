@@ -42,7 +42,7 @@ public enum WorkstationState {
         map.put(READY, EnumSet.of(READY, PROCESSING, BLOCKED, IDLE, ERROR));
         map.put(PROCESSING, EnumSet.of(PROCESSING, COMPLETE, BLOCKED, ERROR, IDLE));
         map.put(BLOCKED, EnumSet.of(BLOCKED, READY, PROCESSING, IDLE, ERROR));
-        map.put(COMPLETE, EnumSet.of(COMPLETE, IDLE, ERROR));
+        map.put(COMPLETE, EnumSet.of(COMPLETE, BLOCKED, IDLE, ERROR));
         map.put(ERROR, EnumSet.of(ERROR, IDLE));
         return Map.copyOf(map);
     }

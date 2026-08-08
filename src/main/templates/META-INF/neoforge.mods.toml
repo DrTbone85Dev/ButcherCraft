@@ -8,9 +8,11 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="To Be Determined"
 description='''
-ButcherCraft is a Minecraft industrial and regional simulation project with playable production workflows and workforce foundations.
+ButcherCraft is a Minecraft industrial and regional simulation project with playable production workflows, workforce foundations, and deterministic material handling.
 
-This alpha is the First Employee Automation Update. Employees can navigate, reserve workstations, and operate a Grinder through the existing deterministic Grinder, Execution, and Scheduler pipeline. The manual operator command preserves authoritative Grinder validation and owner-result observation without bypassing subsystem ownership. Employees do not transport products, operate the Patty Former, perform autonomous production, or claim Production Orders. Grinder, Patty Former, six Grinder recipes, the manual Beef Patties production chain, Production Order guidance, and deterministic platform foundations remain included from earlier alpha releases. Broader economy, worker automation, logistics, and expansion APIs remain in development.
+This alpha is the Material Handling Update. Players can fabricate Beef Short Loin into a T-Bone Steak and Beef Trim at the Cutting Table, assign an employee to move exactly one Beef Trim between explicit Cutting Table and Grinder endpoints, watch the employee visibly carry it, and use the existing employee operation command to grind it. Material Handling owns exact in-transit ItemStack custody, Workstation owns durable endpoint publication and reservations, and additive Execution handler compatibility preserves existing saves as new handlers are registered.
+
+Employees do not transport Ground Beef, operate or supply the Patty Former, select workstations automatically, claim Production Orders, run Production-driven transfers, or own inventory. Grinder, Patty Former, six Grinder recipes, the manual Beef Patties production chain, Production Order guidance, and deterministic platform foundations remain included from earlier alpha releases. Broader economy, autonomous production, general Logistics, and expansion APIs remain in development.
 '''
 
 [[dependencies.${mod_id}]]

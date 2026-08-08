@@ -4,6 +4,54 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-028C: Patty Former Explicit Operation Gate And Ground Beef Transfer Readiness
+
+Goal: separate Ground Beef deposit from Patty Former operation authorization so
+valid input may remain safely READY until one explicit player or existing typed
+Production request asks the established Execution and Scheduler path to run one
+operation.
+
+Included work:
+
+- Patty Former-only `EXPLICIT_REQUEST` start policy; other processing machines
+  retain their existing start behavior.
+- READY Ground Beef persistence with no implicit Execution operation, Scheduler
+  work, input consumption, output creation, or reload side effect.
+- Server-authoritative empty-hand Patty Former interaction that requests one
+  operation and remains idempotent while that operation is active.
+- Recoverable output blocking before authorization, atomic completion, and a
+  later separately authorized operation after output removal.
+- One Workstation-owned DG-002A Patty Former Ground Beef destination endpoint
+  for structural readiness only.
+- Extended workstation diagnostics, focused tests, real block-entity GameTests,
+  and Architecture Manifest contracts.
+
+Acceptance criteria:
+
+- `VALID INPUT != AUTHORIZED OPERATION`: Ground Beef remains READY indefinitely
+  and across reload until explicitly started.
+- One explicit request creates at most one Patty Former Execution operation;
+  no automatic loop starts another batch.
+- Output blockage consumes no input and creates no duplicate output; clearing
+  it permits a later explicit request.
+- Existing active/completed Execution recovery and the DG-003 handler contract
+  remain compatible.
+- The Patty Former can validate one exact Ground Beef destination deposit under
+  the existing endpoint model without any Workforce transfer assignment.
+
+Excluded work:
+
+- Employee Ground Beef transport or carrying, Grinder-to-Patty Former Workforce
+  assignment, employee Patty Former operation, Production-driven transfer,
+  automatic workstation selection, autonomous logistics, general Logistics,
+  additional recipes, yield changes, packaging, or IM-029 implementation.
+
+Manual acceptance still required:
+
+- Place a Patty Former, insert Ground Beef, wait, save/reload, confirm READY and
+  unchanged input, explicitly start one operation, verify one Beef Patties
+  output, then repeat with a second Ground Beef and a second explicit request.
+
 ## IM-028B: Employee Cutting Table To Grinder Material Handling
 
 Goal: allow one explicitly selected employee to physically and visibly move
