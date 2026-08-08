@@ -1,5 +1,229 @@
 # Changelog
 
+## ButcherCraft v0.10.4-alpha.1 - Material Handling Update
+
+Employees can now physically move product through the plant. The new Cutting
+Table introduces the first fabrication workflow: process Beef Short Loin into
+a T-Bone Steak and Beef Trim, then explicitly assign an employee to collect
+the trim, visibly carry it across the processing floor, and load it into a
+Grinder. The existing employee operation command can then grind the delivered
+trim through the same deterministic Execution, Scheduler, and Grinder path.
+
+The IM-028 series also establishes durable Material Handling and Workstation
+endpoint foundations designed to prevent duplication, loss, stale-machine
+conflicts, and ambiguous recovery during transfers.
+
+### IM-028A - Material Handling And Workstation Endpoint Foundation
+
+- Added one Material Handling Runtime per loaded world as the singular owner of
+  transfer identity, lifecycle, exact in-transit `ItemStack` custody, evidence,
+  persistence, and reconciliation.
+- Preserved the complete withdrawn `ItemStack`, including data components and
+  custom data, rather than reducing custody to an item identifier or quantity.
+- Added deterministic transfer identities bound to World Identity, source and
+  destination endpoint instances, material identity, quantity, configuration,
+  and request identity.
+- Added the typed transfer lifecycle from request and endpoint binding through
+  source withdrawal, in-transit custody, destination deposit, completion,
+  cancellation return, explicit failure, `RECOVERY_REQUIRED`, and
+  `UNKNOWN_OUTCOME`.
+- Added Workstation-owned source-withdrawal, destination-deposit, and
+  source-return contracts using prepare, effect, immutable owner-result, and
+  observation boundaries.
+- Added canonical Workstation instance identity bound to world, workstation
+  type, dimension, position, monotonic generation, schema, and allocation
+  configuration.
+- Added a persisted monotonic Workstation generation allocator. A removed or
+  replaced block at the same position cannot inherit an earlier endpoint
+  identity or unresolved transfer.
+- Added the durable Workstation endpoint journal with requested, prepared,
+  effect-committed, and result-published state.
+- Made `EFFECT_COMMITTED` freeze the inventory effect and immutable owner result
+  in one Workstation publication boundary.
+- Kept block-entity inventory as the live projection while the endpoint journal
+  remains the durable authority for consequential transfer effects.
+- Added strict schema validation, canonical serialization, deterministic
+  digests, atomic JSON publication, unsupported-schema rejection, and
+  interrupted-publication detection.
+- Added startup ordering for World Identity, workstation instances, endpoint
+  journal, block-entity projection reconciliation, Material Handling endpoint
+  validation, and Material Handling authority publication.
+- Added exact-once reconciliation so reconnect, retry, restart, duplicate
+  requests, or repeated cancellation cannot apply an endpoint effect twice.
+- Added the bounded Cutting Table source endpoint and Grinder destination
+  endpoint used by the non-employee IM-028A integration proof.
+
+### IM-028B - Employee Cutting Table To Grinder Transfer
+
+- Added Workforce-owned deterministic employee transfer assignments with typed
+  lifecycle state, revision, failure reason, explicit endpoint bindings, and
+  separate schema-versioned persistence.
+- Added explicit one-unit Beef Trim transfer from one selected Cutting Table to
+  one selected Grinder in the employee and command source's current dimension.
+- Added friendly employee references using `#1`, unique display names, quoted
+  display names, or canonical Employee Identity.
+- Added synchronized built-in command arguments and permission-gated transfer,
+  status, and cancellation commands.
+- Added source reservation, employee travel, physical source arrival,
+  Workstation-proven withdrawal, source release, destination reservation,
+  physical destination arrival, Workstation-proven deposit, and retained
+  Grinder reservation.
+- Enforced one workstation reservation per employee. Source and destination
+  reservations are never held simultaneously.
+- Added path and reservation agreement at shared workstation interaction
+  tolerance without teleportation or per-tick route replacement.
+- Added a revisioned one-item employee carry projection derived only from
+  proven Material Handling custody.
+- Rendered the actual registered Beef Trim `ItemStack` with Minecraft's normal
+  held-item renderer while the employee is carrying it.
+- Added tracked carry-state synchronization for entity tracking, login, reload,
+  and startup reconstruction without creating employee inventory or client
+  authority.
+- Added post-custody cancellation that keeps the item visibly carried, releases
+  the destination, reacquires the original source, physically returns, and uses
+  the Workstation source-return protocol.
+- Added pre-custody cancellation that releases the source reservation without
+  changing Cutting Table inventory.
+- Preserved custody during plant closure, shift changes, entity removal,
+  reservation loss, navigation failure, endpoint replacement, and recovery.
+- Left the employee arrived and reserved at the Grinder after successful
+  deposit so `/butchercraft employee operate <employee>` can intentionally
+  start the existing IM-027 Grinder operation.
+- Kept transfer completion passive: deposit does not automatically start the
+  Grinder, retry, loop, or claim Production work.
+
+### Cutting Table Acceptance Completion
+
+- Added the placeable Cutting Table block, item, block entity, menu, screen,
+  creative-tab entry, language entries, model, blockstate, and loot data.
+- Added one player-operated fabrication recipe:
+  `Beef Short Loin -> T-Bone Steak + Beef Trim`.
+- Added separate Cutting Table input, primary-output, and Beef Trim byproduct
+  slots with clear player-facing labels.
+- Routed fabrication through Workstation-owned validation and atomic slot
+  mutation, the generic Execution runtime, Scheduler dispatch, and immutable
+  owner-result observation.
+- Made occupied output slots block completion without consuming input or
+  partially publishing output.
+- Kept normal output insertion prohibited and product-bearing stacks limited to
+  the existing one-stack product policy.
+- Retained a permission-level-2 Cutting Table output preload command only as a
+  focused development harness; normal acceptance produces Beef Trim through
+  fabrication.
+- Added safe block-removal handling that drops recoverable contents only when
+  endpoint retirement proves unresolved custody cannot be duplicated.
+
+### Commands
+
+```text
+/butchercraft employee transfer <employee> <source-x> <source-y> <source-z> <destination-x> <destination-y> <destination-z>
+/butchercraft employee transfer-status <employee>
+/butchercraft employee transfer-cancel <employee>
+/butchercraft workstation preload-cutting-table-output <x> <y> <z>
+/butchercraft employee operate <employee>
+```
+
+The transfer command requires explicit coordinates and performs no workstation
+search. It accepts no material or quantity argument because schema 1 authorizes
+only exactly one Beef Trim from a Cutting Table byproduct output to a Grinder.
+
+### Persistence And Recovery
+
+- Added `<world>/butchercraft/workstation_instances.json` for Workstation-owned
+  instance identity and monotonic generation allocation.
+- Added `<world>/butchercraft/workstation_endpoint_journal.json` for durable
+  endpoint effects and immutable owner results.
+- Added `<world>/butchercraft/material_handling.json` for transfer lifecycle,
+  evidence, and exact in-transit custody.
+- Added
+  `<world>/butchercraft/employee_material_handling_assignments.json` for
+  Workforce-owned assignment intent, references, state, revision, and failure.
+- Kept exact `ItemStack` custody exclusively in Material Handling persistence;
+  employee records and assignment persistence contain no hidden item storage.
+- Added fail-visible handling for malformed data, unsupported schemas,
+  interrupted writes, unreconciled endpoints, recovery-required custody, and
+  unknown outcomes.
+- Added startup reconstruction only after Workstation and Material Handling
+  owners reconcile authoritative state.
+
+### DG-003 - Execution Handler Save Compatibility
+
+- Added deterministic versioned content identity for immutable Execution
+  handler contracts.
+- Added exact classification of persisted versus current handler registries as
+  identical, additive-compatible, incompatible, or indeterminate and requiring
+  recovery.
+- Added one immutable exact schema-1 compatibility profile for worlds created
+  before the Cutting Table Execution handler existed.
+- Allowed startup only when every historical handler contract and retained
+  operation binding remains exact under an additive registry.
+- Preserved historical schema-1 registry metadata and operation records byte
+  for byte during unchanged additive-compatible startup and shutdown.
+- Kept handler removal, changed-contract migration, general schema migration,
+  persistence rewriting, and broad recovery tooling explicitly gated.
+
+### Added
+
+- Added architecture manifest ownership, dependency, runtime-authority,
+  persistence, replay, and implementation-gate entries for DG-002, DG-002A,
+  DG-003, IM-028A, and IM-028B.
+- Added focused unit, persistence, compatibility, boundary, command, and
+  server-world GameTest coverage for the complete bounded flow.
+- Added player and operator documentation for Cutting Table fabrication,
+  Material Handling, employee carrying, transfer commands, cancellation,
+  recovery, and the existing Grinder-operation handoff.
+
+### Improved
+
+- Improved employee arrival consistency at workstation operating positions.
+- Aligned navigation arrival tolerance with workstation reservation tolerance.
+- Improved source-to-destination reservation handoff without simultaneous reservations.
+- Preserved compatible existing saves when additive Execution handlers are registered.
+- Improved Material Handling recovery, cancellation, and exact source return.
+- Improved Cutting Table UI slot labeling.
+- Expanded exact-stack persistence and recovery diagnostics.
+- Kept Workstation, Material Handling, Workforce, Execution, Scheduler, and
+  Grinder authority singular throughout the flow.
+
+### Fixed
+
+- Fixed the Cutting Table incorrectly treating Beef Trim as fabrication input.
+- Fixed Material Handling withdrawal binding to the wrong Cutting Table slot.
+- Fixed employee arrival disagreement between navigation and reservation state.
+- Fixed existing-world startup after additive Execution handler registration.
+- Fixed cancellation and source-return persistence and recovery edge cases.
+- Fixed stale endpoint reuse when a workstation is removed and replaced at the
+  same position.
+- Fixed carry-view timing so the held item appears only after proven withdrawal
+  and clears only after proven deposit or source return.
+- Fixed reservation cleanup and reconstruction across terminal failure,
+  cancellation, employee removal, and save/reload boundaries.
+
+### Technical
+
+- Ratified and implemented the bounded DG-002 Material Handling custody architecture.
+- Ratified and implemented the bounded DG-002A Workstation endpoint durability and instance-identity architecture.
+- Ratified and implemented DG-003 additive Execution handler registry evolution.
+- Added exact Workstation endpoint prepare/effect/result publication.
+- Added restart-safe Material Handling custody with fail-visible reconciliation.
+- Added strict schema validation and fail-visible unsupported-state handling.
+- Expanded architecture, persistence, cancellation, and recovery coverage.
+- Verified 1,487 automated unit tests for the current repository state.
+- Tracks 235 required GameTests across the current registered GameTest suite.
+
+### Remaining Alpha Limits
+
+- One Cutting Table fabrication recipe only.
+- One employee, one explicitly selected same-dimension Cutting Table source,
+  one explicitly selected Grinder destination, and one Beef Trim per request.
+- No Ground Beef transport or Patty Former transport.
+- No employee Cutting Table or Patty Former operation.
+- No automatic workstation selection, Production-driven transfer assignment,
+  autonomous queues, general Logistics, cross-dimension transfer, or public
+  transport API.
+- No employee inventory, hidden slot, backpack, item drop, or independent
+  client-side custody.
+
 ## ButcherCraft v0.10.3-alpha.1 - First Employee Automation
 
 Employees can now perform their first real work. Once assigned to a Grinder
