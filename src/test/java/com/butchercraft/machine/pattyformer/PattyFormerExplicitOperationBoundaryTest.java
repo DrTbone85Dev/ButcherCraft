@@ -25,7 +25,7 @@ class PattyFormerExplicitOperationBoundaryTest {
     }
 
     @Test
-    void employeeOperationAndTransportRemainOutsidePattyFormerScope() throws IOException {
+    void employeeTransportCannotStartPattyFormerOperation() throws IOException {
         String employeeOperation = source(
                 "src/main/java/com/butchercraft/integration/employee/EmployeeWorkstationOperationService.java"
         );
@@ -37,7 +37,11 @@ class PattyFormerExplicitOperationBoundaryTest {
         assertFalse(employeeOperation.contains("GROUND_BEEF"));
         assertFalse(employeeTransport.contains("PattyFormer"));
         assertFalse(employeeTransport.contains("GROUND_BEEF"));
-        assertFalse(employeeTransport.contains("ground_beef"));
+        assertTrue(employeeTransport.contains("materialHandlingService.employeeRoute"));
+        assertTrue(employeeTransport.contains("butchercraft:ground_beef"));
+        assertFalse(employeeTransport.contains("requestEmployeeProcessing"));
+        assertFalse(employeeTransport.contains("ExecutionService"));
+        assertFalse(employeeTransport.contains("SimulationSchedulerService"));
     }
 
     @Test

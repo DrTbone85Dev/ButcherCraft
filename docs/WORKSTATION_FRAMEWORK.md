@@ -95,8 +95,9 @@ IM-027 operation command.
 IM-028C exposes one Patty Former Ground Beef destination endpoint through the
 same instance, freshness, journal, and owner-result contracts. A destination
 deposit changes Workstation inventory and ends in `READY`; it never creates
-Execution authorization or Scheduler work. No employee assignment or Ground
-Beef transport is implemented until IM-029.
+Execution authorization or Scheduler work. IM-029 connects that endpoint to an
+exact one-unit Grinder Ground Beef output source and preserves the explicit
+operation gate after employee delivery.
 
 Startup order for this boundary is World Identity, Workstation instance
 registry, endpoint journal, block-entity projection reconciliation, Material
@@ -280,4 +281,4 @@ The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, employee automation beyond the IM-027 Beef Grinder request and IM-028B explicit Beef Trim transfer, Ground Beef transport, Patty Former employee operation, Production-driven logistics, automatic workstation selection, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, employee automation beyond the IM-027 Beef Grinder request, IM-028B explicit Beef Trim transfer, and IM-029 explicit Ground Beef transfer, Patty Former employee operation, Production-driven logistics, automatic workstation selection, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.

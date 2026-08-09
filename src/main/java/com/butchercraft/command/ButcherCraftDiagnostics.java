@@ -668,6 +668,8 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Transfer: " + diagnostics.transferIdentity()
                 + " | assignment state: " + diagnostics.assignmentState()
                 + " | Material Handling: " + diagnostics.materialHandlingLifecycle()), false);
+        source.sendSuccess(() -> Component.literal("Route: " + diagnostics.route()
+                + " | material: " + diagnostics.material()), false);
         source.sendSuccess(() -> Component.literal("Source: " + diagnostics.source()), false);
         source.sendSuccess(() -> Component.literal("Destination: " + diagnostics.destination()), false);
         source.sendSuccess(() -> Component.literal("Reservation: " + diagnostics.activeReservation()
@@ -1027,7 +1029,11 @@ public final class ButcherCraftDiagnostics {
             case ASSIGNMENT_NOT_FOUND -> "Assignment not found: " + result.detail();
             case INVALID_SOURCE -> "Invalid source: " + result.detail();
             case INVALID_DESTINATION -> "Invalid destination: " + result.detail();
+            case UNSUPPORTED_ROUTE -> "Unsupported route: " + result.detail();
             case SOURCE_EMPTY -> "Source empty: " + result.detail();
+            case UNSUPPORTED_SOURCE_COUNT -> "Unsupported source count: " + result.detail();
+            case WRONG_PRODUCT -> "Wrong product: " + result.detail();
+            case DESTINATION_BLOCKED -> "Destination blocked: " + result.detail();
             case RESERVATION_CONFLICT -> "Reservation conflict: " + result.detail();
             case TRANSFER_REJECTED -> "Transfer rejected: " + result.detail();
             case RECOVERY_REQUIRED -> "Transfer recovery required: " + result.detail();

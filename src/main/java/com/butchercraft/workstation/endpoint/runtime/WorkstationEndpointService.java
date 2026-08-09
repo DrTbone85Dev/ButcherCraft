@@ -116,7 +116,7 @@ public final class WorkstationEndpointService {
         }
         if (exactStack.getCount() != 1) {
             return WorkstationEndpointObservationResult.failed(
-                    WorkstationEndpointResultCode.SOURCE_MISMATCH,
+                    WorkstationEndpointResultCode.UNSUPPORTED_SOURCE_COUNT,
                     "Schema 1 transfers require exactly one source item"
             );
         }

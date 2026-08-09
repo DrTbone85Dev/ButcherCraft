@@ -88,10 +88,9 @@ consume input, or produce Beef Patties. This is the enforced boundary:
 MATERIAL DEPOSIT != MACHINE OPERATION AUTHORIZATION
 ```
 
-IM-028C does not create the Grinder source endpoint selection, Material
-Handling transfer request, Workforce assignment, employee carry view, or
-employee Patty Former operation needed to exercise that destination. Those
-remain gated for IM-029.
+IM-029 connects the Patty Former destination to the Grinder's exact one-unit
+Ground Beef output through the existing Material Handling and Workforce
+assignment paths. Employee Patty Former operation remains gated.
 
 ## Carry View
 
@@ -104,7 +103,7 @@ snapshot contains only:
 - observation revision.
 
 Minecraft's normal held-item renderer displays the actual registered Beef Trim
-model. The view appears only after custody is proven, remains while custody is
+or Ground Beef model. The view appears only after custody is proven, remains while custody is
 proven, and clears only after a proven deposit or source return. Tracking,
 login, and entity reload use normal tracked entity data; server startup and
 assignment reload reconstruct the view from reconciled Material Handling
@@ -166,12 +165,12 @@ retry consequential effects.
 
 ## Current Gates
 
-The following remain unimplemented and unauthorized by IM-028C:
+The following remain unimplemented and unauthorized by IM-029:
 
-- employee Ground Beef transport and visible carrying;
-- Grinder-to-Patty Former Workforce assignment;
 - employee Patty Former operation;
-- multiple materials or quantities;
+- routes or materials beyond Beef Trim Cutting Table to Grinder and Ground Beef
+  Grinder to Patty Former;
+- partial-stack or batch quantities;
 - employee inventory or item drops;
 - cross-dimension transfer;
 - Production-driven assignment;

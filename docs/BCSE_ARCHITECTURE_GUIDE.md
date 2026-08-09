@@ -86,7 +86,7 @@ object graph.
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | IM-011 schema-1 runtime foundation and narrow DG-003 additive handler compatibility implemented; general migration and the full RFC-0023 Draft 2 surface remain separately gated |
-| Material Handling | DG-002 and DG-002A ratified; IM-028A endpoint/custody foundation, IM-028B explicit one-Beef-Trim employee Cutting Table-to-Grinder transfer, and IM-028C Patty Former Ground Beef destination readiness implemented; employee Ground Beef transport remains gated |
+| Material Handling | DG-002 and DG-002A ratified; IM-028A endpoint/custody foundation, IM-028B exact Beef Trim employee transfer, IM-028C Patty Former destination readiness, and IM-029 exact Ground Beef employee Grinder-to-Patty Former transfer implemented |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 DG-002 establishes Material Handling as the singular transfer-lifecycle and
@@ -100,11 +100,15 @@ from Material Handling custody, exact deposit, and source-return cancellation.
 IM-028C adds one Workstation-owned Patty Former Ground Beef destination endpoint
 and enforces an explicit operation gate: destination deposit publishes only
 custody and READY state, while an independent player request is required before
-Execution authorization or Scheduler work exists.
+Execution authorization or Scheduler work exists. IM-029 adds the exact
+one-unit Grinder Ground Beef source and reuses the Workforce assignment,
+reservation, carry-view, cancellation, persistence, and recovery paths to reach
+that destination without granting operation authority.
 The Architecture Manifest declares only those mechanically true
-responsibilities and persistence files. Employee Grinder-to-Patty Former
-Ground Beef transport, employee Patty Former operation, Production-driven assignment, automatic selection, autonomous
-chains, multiple materials or quantities, and general Logistics remain gated.
+responsibilities and persistence files. Employee Patty Former operation,
+Production-driven assignment, automatic selection, autonomous chains,
+partial-stack or batch transport, additional routes or materials, and general
+Logistics remain gated.
 Cutting Table fabrication remains bounded to one player-operated Beef Short
 Loin to T-Bone Steak plus Beef Trim recipe. Material Handling binds only the
 dedicated Beef Trim output; broader fabrication remains gated.

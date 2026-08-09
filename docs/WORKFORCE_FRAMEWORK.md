@@ -421,3 +421,15 @@ Still out of scope after IM-028B:
 - Production-driven assignment, autonomous queues, or general Logistics
 - employee-owned Workstation, Material Handling, Scheduler, or Execution authority
 - public transport APIs or custom carrying animation frameworks
+
+Still out of scope after IM-029:
+
+- employee Patty Former operation
+- transported products or routes beyond exact one-unit Beef Trim from Cutting
+  Table to Grinder and Ground Beef from Grinder to Patty Former
+- partial-stack or batch transport and stack-size changes
+- employee inventory, backpacks, hidden slots, or item drops
+- cross-dimension transfer or automatic workstation search
+- Production-driven assignment, autonomous queues, or general Logistics
+- employee-owned Workstation, Material Handling, Scheduler, or Execution authority
+- public transport APIs or custom carrying animation frameworks

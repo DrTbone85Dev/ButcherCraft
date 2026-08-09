@@ -18,8 +18,10 @@ class EmployeeMaterialHandlingBoundaryTest {
         assertTrue(service.contains("materialHandlingService.withdrawToCustody"));
         assertTrue(service.contains("materialHandlingService.depositFromCustody"));
         assertTrue(service.contains("materialHandlingService.cancel"));
+        assertTrue(service.contains("materialHandlingService.employeeRoute"));
         assertTrue(service.contains("reservationService.assign"));
         assertTrue(service.contains("reservationService.release"));
+        assertTrue(service.contains("reservationMatchesEndpoint"));
         assertFalse(service.contains(".insertItem("));
         assertFalse(service.contains(".extractItem("));
         assertFalse(service.contains("setInputInternal"));
@@ -30,6 +32,7 @@ class EmployeeMaterialHandlingBoundaryTest {
         assertFalse(service.contains("ProductionService"));
         assertFalse(service.contains("InventoryService"));
         assertFalse(service.contains("PattyFormer"));
+        assertFalse(service.contains("setStackInSlot"));
     }
 
     @Test
