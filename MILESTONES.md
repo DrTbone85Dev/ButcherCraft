@@ -4,6 +4,52 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-029: Employee Grinder To Patty Former Ground Beef Transport
+
+Goal: allow one explicitly selected employee to physically and visibly move
+exactly one Ground Beef from one explicitly selected Grinder output to one
+explicitly selected Patty Former input through the existing Material Handling
+and Workstation endpoint protocols.
+
+Included work:
+
+- The generic employee transfer command deterministically recognizes both
+  Cutting Table to Grinder for Beef Trim and Grinder to Patty Former for Ground
+  Beef from the bound endpoint types.
+- Grinder exposes its output for exact one-unit Ground Beef withdrawal and
+  source return under the unchanged DG-002A schema-1 journal semantics.
+- Workforce reuses the existing assignment lifecycle, source-then-destination
+  reservation handoff, physical navigation, revisioned carry view,
+  cancellation, persistence, and recovery paths.
+- Ground Beef deposit leaves the Patty Former `READY`, retains the employee's
+  destination reservation, and creates no Execution operation or Scheduler
+  work.
+- Focused route, endpoint, command, architecture, persistence, and real
+  server-world GameTest coverage.
+
+Acceptance criteria:
+
+- Exactly one Ground Beef leaves Grinder output, appears in the employee's
+  hand only while Material Handling proves custody, and enters Patty Former
+  input exactly once.
+- Cancellation after withdrawal returns exactly one Ground Beef to Grinder
+  output; duplicate cancellation cannot duplicate it.
+- Source and destination endpoint replacement and reload preserve explicit
+  recovery behavior and exact custody.
+- Patty Former remains `READY` and idle until a player explicitly operates it.
+
+Excluded work:
+
+- Employee Patty Former operation, Production-driven assignment, automatic
+  workstation selection, general Logistics, arbitrary products, batch or
+  partial-stack transfer, stack-size changes, and IM-030.
+
+Manual acceptance still required:
+
+- Complete the Cutting Table to Grinder to employee-operated Grinder flow,
+  transfer Ground Beef to the Patty Former, observe visible carrying and READY
+  idle state, then exercise cancellation and save/reload while carrying.
+
 ## IM-028C: Patty Former Explicit Operation Gate And Ground Beef Transfer Readiness
 
 Goal: separate Ground Beef deposit from Patty Former operation authorization so

@@ -178,8 +178,16 @@ class EmployeeCommandLookupTest {
                 "Invalid source");
         assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.INVALID_DESTINATION,
                 "Invalid destination");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.UNSUPPORTED_ROUTE,
+                "Unsupported route");
         assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.SOURCE_EMPTY,
                 "Source empty");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.UNSUPPORTED_SOURCE_COUNT,
+                "Unsupported source count");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.WRONG_PRODUCT,
+                "Wrong product");
+        assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.DESTINATION_BLOCKED,
+                "Destination blocked");
         assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.RESERVATION_CONFLICT,
                 "Reservation conflict");
         assertTransferFeedback(EmployeeMaterialHandlingService.AssignmentStatus.RECOVERY_REQUIRED,

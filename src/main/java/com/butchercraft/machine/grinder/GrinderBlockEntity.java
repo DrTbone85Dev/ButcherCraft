@@ -84,9 +84,10 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
 
     @Override
     public String endpointPostOperationStateIdentity(WorkstationEndpointEffectKind kind) {
-        return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
-                ? "butchercraft:grinder/ready"
-                : endpointOperationStateIdentity();
+        return switch (kind) {
+            case DESTINATION_DEPOSIT -> "butchercraft:grinder/ready";
+            case SOURCE_WITHDRAWAL, SOURCE_RETURN -> "butchercraft:grinder/idle";
+        };
     }
 
     @Override
@@ -96,9 +97,10 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
 
     @Override
     public int endpointSlotIndex(WorkstationEndpointEffectKind kind) {
-        return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
-                ? inventory().firstInputSlot()
-                : -1;
+        return switch (kind) {
+            case DESTINATION_DEPOSIT -> inventory().firstInputSlot();
+            case SOURCE_WITHDRAWAL, SOURCE_RETURN -> inventory().firstOutputSlot();
+        };
     }
 
     @Override
@@ -108,11 +110,21 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
 
     @Override
     public boolean endpointAccepts(WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactStack) {
-        return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
-                && workstationState() == WorkstationState.IDLE
-                && exactStack.is(ModItems.BEEF_TRIM.get())
-                && exactStack.getCount() == 1
-                && endpointAcceptsView(kind, slotIndex, exactStack);
+        if (exactStack.getCount() != 1) {
+            return false;
+        }
+        return switch (kind) {
+            case DESTINATION_DEPOSIT -> workstationState() == WorkstationState.IDLE
+                    && exactStack.is(ModItems.BEEF_TRIM.get())
+                    && endpointAcceptsView(kind, slotIndex, exactStack);
+            case SOURCE_WITHDRAWAL -> (workstationState() == WorkstationState.COMPLETE
+                    || workstationState() == WorkstationState.IDLE)
+                    && exactStack.is(ModItems.GROUND_BEEF.get())
+                    && endpointAcceptsView(kind, slotIndex, exactStack);
+            case SOURCE_RETURN -> workstationState() == WorkstationState.IDLE
+                    && exactStack.is(ModItems.GROUND_BEEF.get())
+                    && endpointAcceptsView(kind, slotIndex, exactStack);
+        };
     }
 
     @Override

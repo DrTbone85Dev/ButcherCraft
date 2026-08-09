@@ -1051,8 +1051,8 @@ public final class ButcherCraftArchitectureManifest {
         platformContract(builder, "butchercraft:platform_contract/employee_explicit_transfer_request",
                 ValidationCategory.OWNERSHIP, WORKFORCE,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-028B Employee Cutting Table To Grinder Material Handling",
-                "A permission-gated explicit request binds one employee, one Cutting Table fabrication-output endpoint instance, one Grinder-input endpoint instance, and exactly one Beef Trim without workstation search");
+                "IM-029 Employee Grinder To Patty Former Material Handling",
+                "A permission-gated explicit request binds one employee and explicit endpoint instances to exactly one supported route: Cutting Table output to Grinder input for Beef Trim, or Grinder output to Patty Former input for Ground Beef");
         platformContract(builder, "butchercraft:platform_contract/employee_transfer_reservation_navigation",
                 ValidationCategory.SIMULATION, WORKFORCE,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1061,23 +1061,38 @@ public final class ButcherCraftArchitectureManifest {
         platformContract(builder, "butchercraft:platform_contract/employee_carry_view_projection",
                 ValidationCategory.OWNERSHIP, WORKFORCE,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-028B Employee Cutting Table To Grinder Material Handling",
-                "The synchronized one-item employee carry view is a non-authoritative revisioned display derived only from proven Material Handling custody");
+                "IM-029 Employee Grinder To Patty Former Material Handling",
+                "The synchronized one-item Beef Trim or Ground Beef employee carry view is a non-authoritative revisioned display derived only from proven Material Handling custody");
         platformContract(builder, "butchercraft:platform_contract/employee_transfer_cancellation_recovery",
                 ValidationCategory.PERSISTENCE, WORKFORCE,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-028B Employee Cutting Table To Grinder Material Handling",
+                "IM-029 Employee Grinder To Patty Former Material Handling",
                 "Workforce persists assignment intent and reconstructs movement and carry display only after Workstation and Material Handling reconciliation; post-custody cancellation returns through owner protocols");
+        platformContract(builder, "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-029 Employee Grinder To Patty Former Material Handling",
+                "Grinder exposes only its exact one-unit Ground Beef output for Workstation-owned withdrawal and source return under the existing DG-002A endpoint journal");
+        platformContract(builder, "butchercraft:platform_contract/employee_ground_beef_transfer_route",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-029 Employee Grinder To Patty Former Material Handling",
+                "One explicit employee assignment may move exactly one Ground Beef from a bound Grinder output to a bound Patty Former input without workstation search or Production dispatch");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_transport_operation_separation",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-029 Employee Grinder To Patty Former Material Handling",
+                "Material Handling deposit leaves the Patty Former READY and destination-reserved but creates no Execution operation, Scheduler work, automatic processing, or employee operation authority");
         platformContract(builder, "butchercraft:platform_contract/employee_transfer_future_scope_gates",
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-028B Employee Cutting Table To Grinder Material Handling",
-                "Employee Grinder-to-Patty Former Ground Beef transport, multiple materials or quantities, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
+                "IM-029 Employee Grinder To Patty Former Material Handling",
+                "Partial-stack or batch transport, additional routes or materials, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
         platformContract(builder, "butchercraft:platform_contract/employee_operation_future_scope_gates",
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
                 "IM-027 Employee Workstation Operation Foundation",
-                "Employee Patty Former operation, product carrying beyond the IM-028B Beef Trim transfer, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
+                "Employee Patty Former operation, carrying beyond the IM-029 Beef Trim and Ground Beef routes, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {

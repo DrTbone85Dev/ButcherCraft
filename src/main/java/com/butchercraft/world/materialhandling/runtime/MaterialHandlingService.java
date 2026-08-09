@@ -50,7 +50,11 @@ public final class MaterialHandlingService {
 
     private static final String CUTTING_TABLE_TYPE = "butchercraft:cutting_table";
     private static final String GRINDER_TYPE = "butchercraft:grinder";
+    private static final String PATTY_FORMER_TYPE = "butchercraft:patty_former";
     private static final String BEEF_TRIM_MATERIAL = "butchercraft:beef_trim";
+    private static final String GROUND_BEEF_MATERIAL = "butchercraft:ground_beef";
+    private static final String BEEF_TRIM_ITEM = "butchercraft:beef_trim_test";
+    private static final String GROUND_BEEF_ITEM = "butchercraft:ground_beef_test";
     private static final String NON_EMPLOYEE_ASSIGNMENT = "butchercraft:assignment/non_employee_integration";
     private static final String EMPLOYEE_ASSIGNMENT = "butchercraft:assignment/employee_explicit";
 
@@ -160,11 +164,15 @@ public final class MaterialHandlingService {
         }
         WorkstationEndpointReference source = sourceResult.reference().orElseThrow();
         WorkstationEndpointReference destination = destinationResult.reference().orElseThrow();
-        if (!CUTTING_TABLE_TYPE.equals(source.endpointKey().workstationTypeIdentity())
-                || !GRINDER_TYPE.equals(destination.endpointKey().workstationTypeIdentity())) {
+        Optional<SupportedRoute> route = EMPLOYEE_ASSIGNMENT.equals(assignmentType)
+                ? employeeRoute(source, destination)
+                : explicitIntegrationRoute(source, destination);
+        if (route.isEmpty()) {
             return MaterialHandlingTransferResult.failed(
                     Optional.empty(),
-                    "IM-028A authorizes only Cutting Table to Grinder transfer"
+                    EMPLOYEE_ASSIGNMENT.equals(assignmentType)
+                            ? "Unsupported employee Material Handling route"
+                            : "IM-028A authorizes only Cutting Table to Grinder transfer"
             );
         }
         if (!source.endpointKey().dimensionIdentity().equals(destination.endpointKey().dimensionIdentity())) {
@@ -174,7 +182,7 @@ public final class MaterialHandlingService {
         MaterialHandlingRuntime.AllocationCandidate allocation = runtime.runtime().request(
                 source,
                 destination,
-                BEEF_TRIM_MATERIAL,
+                route.orElseThrow().materialIdentity(),
                 1,
                 assignmentType,
                 employeeReference,
@@ -182,6 +190,42 @@ public final class MaterialHandlingService {
         );
         publish(runtime, allocation.runtime());
         return MaterialHandlingTransferResult.requested(allocation.transfer());
+    }
+
+    public Optional<SupportedRoute> employeeRoute(
+            WorkstationEndpointReference source,
+            WorkstationEndpointReference destination
+    ) {
+        Objects.requireNonNull(source, "source");
+        Objects.requireNonNull(destination, "destination");
+        String sourceType = source.endpointKey().workstationTypeIdentity();
+        String destinationType = destination.endpointKey().workstationTypeIdentity();
+        if (CUTTING_TABLE_TYPE.equals(sourceType) && GRINDER_TYPE.equals(destinationType)) {
+            return Optional.of(new SupportedRoute(
+                    sourceType,
+                    destinationType,
+                    BEEF_TRIM_MATERIAL,
+                    BEEF_TRIM_ITEM
+            ));
+        }
+        if (GRINDER_TYPE.equals(sourceType) && PATTY_FORMER_TYPE.equals(destinationType)) {
+            return Optional.of(new SupportedRoute(
+                    sourceType,
+                    destinationType,
+                    GROUND_BEEF_MATERIAL,
+                    GROUND_BEEF_ITEM
+            ));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<SupportedRoute> explicitIntegrationRoute(
+            WorkstationEndpointReference source,
+            WorkstationEndpointReference destination
+    ) {
+        return employeeRoute(source, destination)
+                .filter(route -> CUTTING_TABLE_TYPE.equals(route.sourceTypeIdentity())
+                        && GRINDER_TYPE.equals(route.destinationTypeIdentity()));
     }
 
     public synchronized MaterialHandlingTransferResult resume(ServerLevel level, MaterialTransferId transferId) {
@@ -1174,5 +1218,23 @@ public final class MaterialHandlingService {
             MaterialHandlingStorage storage,
             MaterialHandlingRuntime runtime
     ) {
+    }
+
+    public record SupportedRoute(
+            String sourceTypeIdentity,
+            String destinationTypeIdentity,
+            String materialIdentity,
+            String sourceItemIdentity
+    ) {
+        public SupportedRoute {
+            sourceTypeIdentity = Objects.requireNonNull(sourceTypeIdentity, "sourceTypeIdentity");
+            destinationTypeIdentity = Objects.requireNonNull(destinationTypeIdentity, "destinationTypeIdentity");
+            materialIdentity = Objects.requireNonNull(materialIdentity, "materialIdentity");
+            sourceItemIdentity = Objects.requireNonNull(sourceItemIdentity, "sourceItemIdentity");
+        }
+
+        public String routeIdentity() {
+            return sourceTypeIdentity + "->" + destinationTypeIdentity;
+        }
     }
 }

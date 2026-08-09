@@ -1,6 +1,6 @@
 # ButcherCraft Patty Former
 
-Status: IM-028C explicit operation gate and Ground Beef transfer readiness
+Status: IM-029 employee Ground Beef delivery with IM-028C explicit operation gate
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The Patty Former is a promoted gameplay workstation for one process:
 Ground Beef -> Beef Patties
 ```
 
-It reuses the existing Workstation -> Execution -> Scheduler -> owner-result path proven by the Grinder. IM-028C separates material deposit from operation authority: valid Ground Beef makes the workstation `READY`, but does not itself create an Execution operation or Scheduler work. It does not add employee Ground Beef transfer, employee Patty Former operation, worker AI, Allocation, packaging, cooking, refrigeration, or public workstation APIs.
+It reuses the existing Workstation -> Execution -> Scheduler -> owner-result path proven by the Grinder. IM-028C separates material deposit from operation authority: valid Ground Beef makes the workstation `READY`, but does not itself create an Execution operation or Scheduler work. IM-029 allows an employee to deliver one exact Ground Beef from an explicit Grinder while leaving employee Patty Former operation, worker AI, Allocation, packaging, cooking, refrigeration, and public workstation APIs gated.
 
 ## Gameplay Content
 
@@ -36,15 +36,15 @@ Standalone flow:
 5. Wait for server-authoritative progress to complete.
 6. Retrieve one Beef Patties output.
 
-Manual two-workstation flow:
+Employee-assisted two-workstation flow:
 
 1. Process Beef Trim in the Grinder.
-2. Remove Ground Beef from the Grinder manually.
-3. Insert Ground Beef into the Patty Former manually.
+2. Explicitly assign an employee to transfer Ground Beef from the Grinder to the Patty Former.
+3. Observe exact Material Handling custody and visible employee carrying.
 4. Explicitly request one Patty Former operation.
 5. Process it into Beef Patties.
 
-No system moves Ground Beef between machines in IM-028C. Employee transport remains gated for IM-029.
+The employee transfer ends at `READY`; only the player can authorize the Patty Former operation in IM-029.
 
 ## Explicit Operation Gate
 
@@ -96,7 +96,7 @@ Breaking an idle Patty Former drops contained items. Breaking an active pre-effe
 
 The Patty Former now implements the existing DG-002A Workstation endpoint contract for one exact Ground Beef destination deposit. Workstation owns validation, instance identity, freshness, slot mutation, endpoint journal publication, and owner result. A committed deposit ends with `READY`; it does not call Execution and does not schedule work.
 
-IM-028C registers no Workforce assignment, employee command, carry presentation, Grinder source transfer, or automatic endpoint selection. The structural endpoint is present only so IM-029 can use the ratified ownership model without making deposit an operation authorization.
+IM-029 uses the existing Workforce assignment, generic employee transfer command, carry presentation, and Grinder source endpoint to deliver exactly one Ground Beef. It adds no automatic endpoint selection and does not make deposit an operation authorization.
 
 ## Production Chain
 
@@ -123,9 +123,10 @@ Automated coverage includes:
 - Production chain assignment, manual-transfer waiting state, product-flow mismatch rejection, duplicate observation safety, terminal failure handling, persistence round trip, and legacy single-workstation save compatibility.
 - GameTests for the real server block entities and the manual Grinder to Patty Former chain.
 - READY-without-authority, wrong-input rejection, READY serialization, explicit player start, duplicate active request, blocked-output recovery, a separately authorized second batch, and destination-endpoint validation.
+- Employee Grinder-to-Patty Former delivery, exact Ground Beef custody and carrying, reservation handoff, cancellation return, reload, endpoint replacement, and no-auto-start regressions.
 
 Manual client verification remains required before claiming human acceptance.
 
 ## Explicit Exclusions
 
-IM-028C does not add employee Ground Beef transport or carrying, Grinder-to-Patty Former Workforce assignment, employee Patty Former operation, Production-driven transfer, automatic workstation selection, autonomous logistics, general Logistics, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, startup checkpoint recovery, compensation, final art, or UI polish.
+IM-029 does not add employee Patty Former operation, Production-driven transfer, automatic workstation selection, autonomous logistics, general Logistics, partial-stack or batch transport, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, startup checkpoint recovery, compensation, final art, or UI polish.

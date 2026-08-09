@@ -1107,7 +1107,10 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/employee_explicit_transfer_request",
                         "butchercraft:platform_contract/employee_transfer_reservation_navigation",
                         "butchercraft:platform_contract/employee_carry_view_projection",
-                        "butchercraft:platform_contract/employee_transfer_cancellation_recovery"
+                        "butchercraft:platform_contract/employee_transfer_cancellation_recovery",
+                        "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
+                        "butchercraft:platform_contract/employee_ground_beef_transfer_route",
+                        "butchercraft:platform_contract/patty_former_transport_operation_separation"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
