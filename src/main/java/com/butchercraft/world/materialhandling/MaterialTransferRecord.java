@@ -47,7 +47,7 @@ public record MaterialTransferRecord(
         long lastUpdateRevision,
         String stateEvidenceIdentity,
         String stateContentDigest
-) implements Comparable<MaterialTransferRecord> {
+) implements Comparable<MaterialTransferRecord>, MaterialTransferView {
     private static final String EVIDENCE_PREFIX = "butchercraft:material_transfer_state/v1/";
 
     public MaterialTransferRecord {
@@ -247,6 +247,11 @@ public record MaterialTransferRecord(
                 ownerRevision,
                 ownerRevision
         );
+    }
+
+    @Override
+    public String transferIdentity() {
+        return transferId.value();
     }
 
     public MaterialTransferRecord transition(

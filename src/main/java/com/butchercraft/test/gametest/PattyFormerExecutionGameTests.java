@@ -5,6 +5,7 @@ import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.machine.grinder.execution.GrinderWorkstationReference;
 import com.butchercraft.machine.grinder.production.GrinderProductionAdapter;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
+import com.butchercraft.machine.pattyformer.PattyFormerMenu;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerWorkstationReference;
 import com.butchercraft.machine.pattyformer.production.PattyFormerProductionAdapter;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
@@ -158,6 +159,35 @@ public final class PattyFormerExecutionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 80)
+    public static void normalUseOpensPattyFormerMenuWithoutStartingValidInput(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.inventory().setInputInternal(count(groundBeef(), 10));
+        var player = new MenuTrackingTestPlayer(helper.getLevel(), helper.absolutePos(PATTY_FORMER_POS));
+
+        helper.useBlock(PATTY_FORMER_POS, player);
+
+        helper.assertTrue(player.containerMenu instanceof PattyFormerMenu,
+                "Normal Patty Former use opens the real inventory menu with valid input");
+        helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
+                "Opening the Patty Former menu creates no Execution operation");
+        helper.assertTrue(schedulerWorkForPattyFormer(helper, before).isEmpty(),
+                "Opening the Patty Former menu creates no Scheduler work");
+        helper.runAtTickTime(40, () -> {
+            helper.assertTrue(pattyFormer.workstationState() == WorkstationState.READY,
+                    "Valid multi-count Patty Former input remains READY after normal use");
+            helper.assertTrue(pattyFormer.inventory().input().getCount() == 10
+                            && pattyFormer.inventory().output().isEmpty(),
+                    "Normal Patty Former use consumes no input and creates no output");
+            helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
+                    "Patty Former menu observation never creates delayed Execution work");
+            helper.assertTrue(schedulerWorkForPattyFormer(helper, before).isEmpty(),
+                    "Patty Former menu observation never creates delayed Scheduler work");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = TEMPLATE, timeoutTicks = 180)
     public static void depositedGroundBeefRemainsReadyWithoutExecutionOrSchedulerWork(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
@@ -245,13 +275,13 @@ public final class PattyFormerExecutionGameTests {
         Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
         insertGroundBeef(helper, pattyFormer);
-        pattyFormer.inventory().setOutputInternal(beefPatties());
+        pattyFormer.inventory().setOutputInternal(count(beefPatties(), 64));
 
-        helper.useBlock(PATTY_FORMER_POS);
+        requestPlayerOperation(helper, PATTY_FORMER_POS);
         assertBlockedWith(helper, pattyFormer, WorkstationFailureCode.OUTPUT_OCCUPIED);
         helper.assertFalse(pattyFormer.inventory().input().isEmpty(),
                 "Blocked explicit request does not consume Ground Beef");
-        helper.assertTrue(pattyFormer.inventory().output().getCount() == 1,
+        helper.assertTrue(pattyFormer.inventory().output().getCount() == 64,
                 "Blocked explicit request does not duplicate occupied output");
         helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
                 "Output blockage is rejected before an Execution operation is created");
@@ -261,8 +291,8 @@ public final class PattyFormerExecutionGameTests {
         assertBlockedWith(helper, restored, WorkstationFailureCode.OUTPUT_OCCUPIED);
         helper.assertFalse(restored.inventory().input().isEmpty(),
                 "Blocked Patty Former reload preserves Ground Beef input");
-        helper.assertTrue(restored.inventory().output().getCount() == 1,
-                "Blocked Patty Former reload preserves occupied output exactly once");
+        helper.assertTrue(restored.inventory().output().getCount() == 64,
+                "Blocked Patty Former reload preserves the full occupied output exactly");
 
         ItemStack cleared = restored.inventory().extractItem(
                 WorkstationInventory.OUTPUT_SLOT,
@@ -275,7 +305,14 @@ public final class PattyFormerExecutionGameTests {
         requestPattyFormerOperation(helper);
 
         helper.runAtTickTime(120, () -> {
-            assertCompletedBeefPatties(helper, pattyFormer(helper));
+            PattyFormerBlockEntity completed = pattyFormer(helper);
+            helper.assertTrue(completed.workstationState() == WorkstationState.COMPLETE,
+                    "Patty Former completes after one output space is cleared");
+            helper.assertTrue(completed.inventory().input().isEmpty(),
+                    "Recovered operation consumes exactly one Ground Beef");
+            helper.assertTrue(completed.inventory().output().is(ModItems.BEEF_PATTIES.get())
+                            && completed.inventory().output().getCount() == 64,
+                    "Recovered operation merges one Beef Patties item into the available output space");
             helper.assertTrue(newPattyFormerOperations(helper, before).size() == 1,
                     "A later explicit request creates exactly one operation after blockage clears");
             helper.succeed();
@@ -377,27 +414,26 @@ public final class PattyFormerExecutionGameTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 220)
-    public static void repeatedInteractionDoesNotDuplicatePattyFormerOutput(GameTestHelper helper) {
+    public static void repeatedUseWhileProcessingDoesNotDuplicatePattyFormerOutput(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
         insertAndStartGroundBeef(helper, pattyFormer);
 
         helper.runAtTickTime(8, () -> {
-            PattyFormerBlockEntity active = pattyFormer(helper);
-            ItemStack duplicateRemainder = active.inventory().insertItem(
-                    WorkstationInventory.INPUT_SLOT,
-                    groundBeef(),
-                    false
-            );
-            helper.assertFalse(duplicateRemainder.isEmpty(),
-                    "Second Ground Beef insertion is rejected while slot is occupied");
-            helper.useBlock(PATTY_FORMER_POS);
+            requestPlayerOperation(helper, PATTY_FORMER_POS);
             helper.assertTrue(newPattyFormerOperations(helper, before).size() == 1,
                     "Repeated use while processing does not create another Patty Former Execution operation");
         });
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
-            assertCompletedBeefPatties(helper, pattyFormer(helper));
+            PattyFormerBlockEntity completed = pattyFormer(helper);
+            helper.assertTrue(completed.workstationState() == WorkstationState.COMPLETE,
+                    "Repeated use leaves the Patty Former COMPLETE after one operation");
+            helper.assertTrue(completed.inventory().input().isEmpty(),
+                    "One operation consumes the single reserved Ground Beef input");
+            helper.assertTrue(completed.inventory().output().is(ModItems.BEEF_PATTIES.get())
+                            && completed.inventory().output().getCount() == 1,
+                    "One operation publishes exactly one Beef Patties item");
             helper.assertTrue(newPattyFormerOperations(helper, before).size() == 1,
                     "Only one Patty Former Execution operation exists after repeated interaction");
             helper.succeed();
@@ -508,7 +544,7 @@ public final class PattyFormerExecutionGameTests {
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
         insertAndStartGroundBeef(helper, pattyFormer);
 
-        helper.runAtTickTime(8, () -> pattyFormer(helper).inventory().setOutputInternal(beefPatties()));
+        helper.runAtTickTime(8, () -> pattyFormer(helper).inventory().setOutputInternal(count(beefPatties(), 64)));
 
         helper.runAtTickTime(EXTENDED_ASSERTION_TICK, () -> {
             PattyFormerBlockEntity blocked = pattyFormer(helper);
@@ -601,7 +637,7 @@ public final class PattyFormerExecutionGameTests {
     @GameTest(template = TEMPLATE, timeoutTicks = 220)
     public static void chainGrinderProducesGroundBeef(GameTestHelper helper) {
         GrinderBlockEntity grinder = placeGrinder(helper);
-        insertBeefTrim(helper, grinder);
+        insertAndStartBeefTrim(helper, grinder);
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
             assertCompletedGroundBeef(helper, grinder(helper));
@@ -613,7 +649,7 @@ public final class PattyFormerExecutionGameTests {
     public static void chainManualTransferMovesGroundBeefOnlyByPlayerAction(GameTestHelper helper) {
         GrinderBlockEntity grinder = placeGrinder(helper);
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
-        insertBeefTrim(helper, grinder);
+        insertAndStartBeefTrim(helper, grinder);
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
             assertCompletedGroundBeef(helper, grinder(helper));
@@ -632,7 +668,7 @@ public final class PattyFormerExecutionGameTests {
     public static void chainPattyFormerProducesBeefPattiesAfterManualTransfer(GameTestHelper helper) {
         GrinderBlockEntity grinder = placeGrinder(helper);
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
-        insertBeefTrim(helper, grinder);
+        insertAndStartBeefTrim(helper, grinder);
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
             assertCompletedGroundBeef(helper, grinder(helper));
@@ -927,6 +963,13 @@ public final class PattyFormerExecutionGameTests {
         helper.assertTrue(remainder.isEmpty(), "Beef Trim inserts into Grinder input");
     }
 
+    private static void insertAndStartBeefTrim(GameTestHelper helper, GrinderBlockEntity grinder) {
+        insertBeefTrim(helper, grinder);
+        requestPlayerOperation(helper, GRINDER_POS);
+        helper.assertTrue(grinder(helper).workstationState() == WorkstationState.PROCESSING,
+                "Explicit player block interaction starts one Grinder operation");
+    }
+
     private static void insertGroundBeef(GameTestHelper helper, PattyFormerBlockEntity pattyFormer) {
         ItemStack remainder = pattyFormer.inventory().insertItem(
                 WorkstationInventory.INPUT_SLOT,
@@ -945,9 +988,15 @@ public final class PattyFormerExecutionGameTests {
     }
 
     private static void requestPattyFormerOperation(GameTestHelper helper) {
-        helper.useBlock(PATTY_FORMER_POS);
+        requestPlayerOperation(helper, PATTY_FORMER_POS);
         helper.assertTrue(pattyFormer(helper).workstationState() == WorkstationState.PROCESSING,
                 "Explicit player block interaction starts one Patty Former operation");
+    }
+
+    private static void requestPlayerOperation(GameTestHelper helper, BlockPos position) {
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
+        player.setShiftKeyDown(true);
+        helper.useBlock(position, player);
     }
 
     private static void transferGroundBeef(
@@ -975,6 +1024,11 @@ public final class PattyFormerExecutionGameTests {
 
     private static ItemStack beefPatties() {
         return ModItems.BEEF_PATTIES.get().getDefaultInstance();
+    }
+
+    private static ItemStack count(ItemStack stack, int count) {
+        stack.setCount(count);
+        return stack;
     }
 
     private static void assertCompletedGroundBeef(GameTestHelper helper, GrinderBlockEntity grinder) {

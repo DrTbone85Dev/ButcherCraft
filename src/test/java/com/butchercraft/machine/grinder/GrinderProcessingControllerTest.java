@@ -12,12 +12,14 @@ import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationLookup;
 import com.butchercraft.workstation.WorkstationOperationResolver;
+import com.butchercraft.workstation.WorkstationOperationStartPolicy;
 import com.butchercraft.workstation.WorkstationProcessingController;
 import com.butchercraft.workstation.WorkstationState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -29,6 +31,42 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GrinderProcessingControllerTest {
+    @Test
+    void explicitStackOperationConsumesOneMergesOutputAndDoesNotLoop() {
+        Harness harness = Harness.createActivatedExplicit();
+        harness.inventory.setInputInternal(withCount(ModItems.BEEF_TRIM.get().getDefaultInstance(), 10));
+
+        harness.controller.requestProcessing(RegistryAccess.EMPTY);
+        for (int tick = 0; tick < 61; tick++) harness.tick();
+
+        assertEquals(WorkstationState.COMPLETE, harness.controller.state());
+        assertEquals(9, harness.inventory.input().getCount());
+        assertEquals(1, harness.inventory.output().getCount());
+        for (int tick = 0; tick < 120; tick++) harness.tick();
+        assertEquals(9, harness.inventory.input().getCount());
+        assertEquals(1, harness.inventory.output().getCount());
+
+        harness.controller.requestProcessing(RegistryAccess.EMPTY);
+        for (int tick = 0; tick < 61; tick++) harness.tick();
+        assertEquals(8, harness.inventory.input().getCount());
+        assertEquals(2, harness.inventory.output().getCount());
+    }
+
+    @Test
+    void fullActivatedOutputBlocksBeforeInputConsumption() {
+        Harness harness = Harness.createActivatedExplicit();
+        harness.inventory.setInputInternal(withCount(ModItems.BEEF_TRIM.get().getDefaultInstance(), 10));
+        harness.inventory.setOutputInternal(withCount(ModItems.GROUND_BEEF.get().getDefaultInstance(), 64));
+
+        var result = harness.controller.requestProcessing(RegistryAccess.EMPTY);
+
+        assertFalse(result.accepted());
+        assertEquals(WorkstationState.BLOCKED, harness.controller.state());
+        assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED, harness.controller.lastFailure().orElseThrow().code());
+        assertEquals(10, harness.inventory.input().getCount());
+        assertEquals(64, harness.inventory.output().getCount());
+    }
+
     @Test
     void inputStartsProcessingAndDoesNotCompleteEarly() {
         Harness harness = Harness.create();
@@ -292,6 +330,26 @@ class GrinderProcessingControllerTest {
             return createWithCapabilityAndStrategy(GrinderWorkstation.capability(), executionStrategy);
         }
 
+        static Harness createActivatedExplicit() {
+            AtomicInteger changes = new AtomicInteger();
+            WorkstationInventory inventory = new WorkstationInventory(
+                    GrinderWorkstation.capability(), GrinderWorkstation.slotCapacityPolicy(), changes::incrementAndGet
+            );
+            WorkstationProcessingController controller = new WorkstationProcessingController(
+                    inventory,
+                    GrinderWorkstation.capability(),
+                    (registryAccess, capability, stack) -> new WorkstationOperationResolver().resolve(
+                            BuiltInProcessingDefinitions.builtInView(), capability, stack),
+                    DevelopmentProductItemMappings.fixtureMapping(),
+                    WorkstationExecutionStrategy.transformation(),
+                    WorkstationOperationStartPolicy.EXPLICIT_REQUEST,
+                    changes::incrementAndGet
+            );
+            inventory.setInputLocked(controller::inputLocked);
+            inventory.setOutputExtractionAllowed(controller::outputExtractionAllowed);
+            return new Harness(inventory, controller, changes);
+        }
+
         static Harness createWithCapabilityAndStrategy(
                 WorkstationCapability workstationCapability,
                 WorkstationExecutionStrategy executionStrategy
@@ -341,6 +399,11 @@ class GrinderProcessingControllerTest {
                 1,
                 1
         );
+    }
+
+    private static ItemStack withCount(ItemStack stack, int count) {
+        stack.setCount(count);
+        return stack;
     }
 
     private record RecipeCase(

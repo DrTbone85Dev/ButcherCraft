@@ -31,6 +31,7 @@ import com.butchercraft.world.WorkforceService;
 import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.WorldIdentityService;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
+import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationEndpointRuntimeService;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.player.runtime.PlayerJoinInitializer;
 import com.butchercraft.world.simulation.SimulationClockService;
@@ -71,6 +72,8 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(WorldIdentityService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(WorkstationEndpointService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(WorkstationEndpointService.INSTANCE::stop);
+        NeoForge.EVENT_BUS.addListener(StackAwareWorkstationEndpointRuntimeService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(StackAwareWorkstationEndpointRuntimeService.INSTANCE::stop);
         NeoForge.EVENT_BUS.addListener(MaterialHandlingService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(MaterialHandlingService.INSTANCE::stop);
         NeoForge.EVENT_BUS.addListener(PlayerJoinInitializer.INSTANCE::initialize);

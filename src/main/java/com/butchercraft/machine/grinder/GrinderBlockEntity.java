@@ -12,8 +12,13 @@ import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectId;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectIdV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectKind;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointObservationV2;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointConfiguration;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
+import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationTransferEndpoint;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointProjection;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationTransferEndpoint;
 import com.butchercraft.world.WorkstationReservationService;
@@ -31,7 +36,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlockEntity
-        implements WorkstationTransferEndpoint {
+        implements WorkstationTransferEndpoint, StackAwareWorkstationTransferEndpoint {
     public GrinderBlockEntity(BlockPos pos, BlockState blockState) {
         super(
                 ModBlockEntityTypes.GRINDER.get(),
@@ -41,7 +46,9 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
                 new WorkstationOperationResolver(),
                 DevelopmentProductItemMappings.fixtureMapping(),
                 WorkstationExecutionStrategy.transformation(),
-                GrinderExecutionCoordinator.INSTANCE
+                GrinderExecutionCoordinator.INSTANCE,
+                com.butchercraft.workstation.WorkstationOperationStartPolicy.EXPLICIT_REQUEST,
+                GrinderWorkstation.slotCapacityPolicy()
         );
     }
 
@@ -69,6 +76,10 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
     }
 
     public WorkstationProductionRequestResult requestEmployeeProcessing(WorkstationTickContext tickContext) {
+        return requestProductionProcessing(tickContext);
+    }
+
+    public WorkstationProductionRequestResult requestPlayerProcessing(WorkstationTickContext tickContext) {
         return requestProductionProcessing(tickContext);
     }
 
@@ -125,6 +136,137 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
                     && exactStack.is(ModItems.GROUND_BEEF.get())
                     && endpointAcceptsView(kind, slotIndex, exactStack);
         };
+    }
+
+    @Override
+    public void activateStackAwareEndpoint() {
+        activateStackAwareEndpointView();
+    }
+
+    @Override
+    public WorkstationInstanceId endpointInstanceId() {
+        return stackAwareEndpointInstanceIdView();
+    }
+
+    @Override
+    public WorkstationEndpointKey endpointKey() {
+        return stackAwareEndpointKeyView(endpointTypeIdentity());
+    }
+
+    @Override
+    public String endpointPostOperationStateIdentity(WorkstationEndpointObservationV2 observation) {
+        if (observation.effectKind() == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT) {
+            return "butchercraft:grinder/ready";
+        }
+        if (observation.effectKind() == WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL
+                && workstationState() == WorkstationState.COMPLETE
+                && observation.postStack().isEmpty()) {
+            return "butchercraft:grinder/idle";
+        }
+        return endpointOperationStateIdentity();
+    }
+
+    @Override
+    public String endpointConfigurationIdentity() {
+        return WorkstationEndpointConfiguration.standard().stackAwareEndpointConfigurationIdentity();
+    }
+
+    @Override
+    public int endpointEffectiveCapacity(int slotIndex, ItemStack stack) {
+        return stackAwareEffectiveCapacityView(slotIndex, stack);
+    }
+
+    @Override
+    public long endpointInventoryRevision() {
+        return stackAwareInventoryRevisionView();
+    }
+
+    @Override
+    public long endpointEffectRevision() {
+        return stackAwareEffectRevisionView();
+    }
+
+    @Override
+    public long endpointLastAppliedJournalSequence() {
+        return stackAwareLastJournalSequenceView();
+    }
+
+    @Override
+    public java.util.Optional<WorkstationEndpointEffectIdV2> endpointPreparedEffectId() {
+        return stackAwarePreparedEffectIdView();
+    }
+
+    @Override
+    public java.util.Optional<WorkstationEndpointEffectIdV2> endpointLastEffectId() {
+        return stackAwareLastEffectIdView();
+    }
+
+    @Override
+    public java.util.Optional<String> endpointLastOwnerResultIdentity() {
+        return stackAwareLastOwnerResultIdentityView();
+    }
+
+    @Override
+    public boolean endpointAcceptsCandidate(
+            WorkstationEndpointEffectKind kind,
+            int slotIndex,
+            ItemStack exactPreStack,
+            ItemStack exactPostStack
+    ) {
+        if (!stackAwareAcceptsCandidateView(kind, slotIndex, exactPreStack, exactPostStack)) return false;
+        return switch (kind) {
+            case DESTINATION_DEPOSIT -> (workstationState() == WorkstationState.IDLE
+                    || workstationState() == WorkstationState.READY)
+                    && slotIndex == inventory().firstInputSlot()
+                    && exactPostStack.is(ModItems.BEEF_TRIM.get())
+                    && exactPostStack.getCount() - exactPreStack.getCount() == 1;
+            case SOURCE_WITHDRAWAL -> (workstationState() == WorkstationState.COMPLETE
+                    || workstationState() == WorkstationState.IDLE)
+                    && slotIndex == inventory().firstOutputSlot()
+                    && exactPreStack.is(ModItems.GROUND_BEEF.get())
+                    && exactPreStack.getCount() - exactPostStack.getCount() == 1;
+            case SOURCE_RETURN -> (workstationState() == WorkstationState.IDLE
+                    || workstationState() == WorkstationState.COMPLETE)
+                    && slotIndex == inventory().firstOutputSlot()
+                    && exactPostStack.is(ModItems.GROUND_BEEF.get())
+                    && exactPostStack.getCount() - exactPreStack.getCount() == 1;
+        };
+    }
+
+    @Override
+    public void lockPreparedEndpointEffect(
+            WorkstationEndpointEffectIdV2 effectId,
+            int slotIndex,
+            long expectedInventoryRevision
+    ) {
+        lockStackAwareEndpointEffectView(effectId, slotIndex, expectedInventoryRevision);
+    }
+
+    @Override
+    public void releasePreparedEndpointEffect(WorkstationEndpointEffectIdV2 effectId) {
+        releaseStackAwareEndpointEffectView(effectId);
+    }
+
+    @Override
+    public void applyCommittedEndpointEffect(
+            WorkstationEndpointEffectKind kind,
+            int slotIndex,
+            ItemStack exactPreStack,
+            ItemStack exactPostStack,
+            long expectedInventoryRevision,
+            long postInventoryRevision,
+            long endpointEffectRevision,
+            long journalSequence,
+            WorkstationEndpointEffectIdV2 effectId,
+            String ownerResultIdentity
+    ) {
+        if (!endpointAcceptsCandidate(kind, slotIndex, exactPreStack, exactPostStack)) {
+            throw new IllegalStateException("Grinder rejected the schema-2 transfer endpoint effect");
+        }
+        applyCommittedStackAwareEndpointEffectView(
+                kind, slotIndex, exactPreStack, exactPostStack, expectedInventoryRevision, postInventoryRevision,
+                endpointEffectRevision, journalSequence, effectId, ownerResultIdentity
+        );
     }
 
     @Override

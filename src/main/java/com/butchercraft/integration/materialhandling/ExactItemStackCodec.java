@@ -1,6 +1,7 @@
 package com.butchercraft.integration.materialhandling;
 
 import com.butchercraft.workstation.endpoint.WorkstationEndpointStackPayload;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointStackStateV2;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -44,6 +45,15 @@ public final class ExactItemStackCodec {
         );
     }
 
+    public WorkstationEndpointStackStateV2 encodeState(HolderLookup.Provider registries, ItemStack stack) {
+        Objects.requireNonNull(stack, "stack");
+        if (stack.isEmpty()) return WorkstationEndpointStackStateV2.empty();
+        return WorkstationEndpointStackStateV2.create(
+                encode(registries, stack),
+                encode(registries, stack.copyWithCount(1))
+        );
+    }
+
     public ItemStack decode(HolderLookup.Provider registries, WorkstationEndpointStackPayload payload) {
         Objects.requireNonNull(registries, "registries");
         Objects.requireNonNull(payload, "payload");
@@ -71,6 +81,17 @@ public final class ExactItemStackCodec {
         WorkstationEndpointStackPayload verified = encode(registries, stack);
         if (!verified.equals(payload)) {
             throw new IllegalArgumentException("Decoded ItemStack failed canonical round-trip verification");
+        }
+        return stack;
+    }
+
+    public ItemStack decodeState(HolderLookup.Provider registries, WorkstationEndpointStackStateV2 state) {
+        Objects.requireNonNull(state, "state");
+        if (state.isEmpty()) return ItemStack.EMPTY;
+        ItemStack stack = decode(registries, state.stack().orElseThrow());
+        WorkstationEndpointStackStateV2 verified = encodeState(registries, stack);
+        if (!verified.equals(state)) {
+            throw new IllegalArgumentException("Decoded ItemStack failed schema-2 state verification");
         }
         return stack;
     }

@@ -7,6 +7,7 @@ import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationCapability;
+import com.butchercraft.workstation.WorkstationSlotCapacityPolicy;
 import com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity;
 import com.butchercraft.workstation.block.ProcessingWorkstationBlockEntity;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -62,7 +63,28 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
             Block validBlock,
             WorkstationCapability capability
     ) {
-        this(menuType, containerId, playerInventory, clientInventory(capability), new SimpleContainerData(4), ContainerLevelAccess.NULL, validBlock);
+        this(
+                menuType,
+                containerId,
+                playerInventory,
+                ignoredExtraData,
+                validBlock,
+                capability,
+                WorkstationSlotCapacityPolicy.uniform(capability.inputSlots() + capability.outputSlots(), 1)
+        );
+    }
+
+    protected ProcessingWorkstationMenu(
+            MenuType<?> menuType,
+            int containerId,
+            Inventory playerInventory,
+            RegistryFriendlyByteBuf ignoredExtraData,
+            Block validBlock,
+            WorkstationCapability capability,
+            WorkstationSlotCapacityPolicy slotCapacityPolicy
+    ) {
+        this(menuType, containerId, playerInventory, clientInventory(capability, slotCapacityPolicy),
+                new SimpleContainerData(4), ContainerLevelAccess.NULL, validBlock);
     }
 
     protected ProcessingWorkstationMenu(
@@ -241,8 +263,11 @@ public class ProcessingWorkstationMenu extends AbstractContainerMenu {
         }
     }
 
-    private static WorkstationInventory clientInventory(WorkstationCapability capability) {
-        WorkstationInventory inventory = new WorkstationInventory(capability, () -> {});
+    private static WorkstationInventory clientInventory(
+            WorkstationCapability capability,
+            WorkstationSlotCapacityPolicy slotCapacityPolicy
+    ) {
+        WorkstationInventory inventory = new WorkstationInventory(capability, slotCapacityPolicy, () -> {});
         inventory.setOutputExtractionAllowed(() -> true);
         return inventory;
     }

@@ -21,7 +21,7 @@ import com.butchercraft.world.ProductionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.materialhandling.MaterialTransferLifecycle;
-import com.butchercraft.world.materialhandling.MaterialTransferRecord;
+import com.butchercraft.world.materialhandling.MaterialTransferView;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.execution.ExecutionOperationId;
 import com.butchercraft.world.execution.ExecutionOperationSnapshot;
@@ -139,6 +139,35 @@ public final class EmployeeMaterialHandlingGameTests {
                 "Transport creates no Production, Scheduler, Execution, or economic Inventory mutation");
         helper.assertTrue(player.getInventory().countItem(ModItems.BEEF_TRIM.get()) == playerBeefTrim,
                 "Player inventory remains unchanged");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 120, batch = BATCH + "_01b_stack_transfer")
+    public static void employeeTransfersOneBeefTrimFromLargerSourceIntoCompatibleDestination(GameTestHelper helper) {
+        Fixture fixture = setup(helper, "Stack Transfer");
+        ItemStack source = fixture.exactStack().copy();
+        source.setCount(64);
+        fixture.cuttingTable().inventory().setOutputInternal(1, source);
+        ItemStack destination = fixture.exactStack().copy();
+        destination.setCount(20);
+        fixture.grinder().inventory().setInputInternal(destination);
+
+        request(helper, fixture.record(), "#1");
+        arriveAtSource(helper, fixture);
+
+        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 63,
+                "Employee withdrawal leaves the exact 63-item source remainder");
+        helper.assertTrue(fixture.employee().getMainHandItem().getCount() == 1,
+                "Employee carry projection remains exactly one item");
+
+        arriveAtDestination(helper, fixture);
+        helper.assertTrue(fixture.grinder().inventory().input().getCount() == 21,
+                "Employee deposit merges one Beef Trim into the compatible destination stack");
+        helper.assertTrue(assignment(helper, fixture.record()).state()
+                        == EmployeeMaterialHandlingAssignmentState.COMPLETED,
+                "Workforce observes one completed stack-aware assignment");
+        helper.assertTrue(fixture.grinder().workstationState() != WorkstationState.PROCESSING,
+                "Material delivery does not authorize Grinder operation");
         helper.succeed();
     }
 
@@ -279,8 +308,13 @@ public final class EmployeeMaterialHandlingGameTests {
     @GameTest(template = TEMPLATE, timeoutTicks = 140, batch = BATCH + "_08_cancel_with_custody")
     public static void cancellationWhileCarryingReturnsExactStackOnce(GameTestHelper helper) {
         Fixture fixture = setup(helper, "Cancel While Carrying");
+        ItemStack source = fixture.exactStack().copy();
+        source.setCount(64);
+        fixture.cuttingTable().inventory().setOutputInternal(1, source);
         request(helper, fixture.record(), "#1");
         arriveAtSource(helper, fixture);
+        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 63,
+                "Partial withdrawal retains the exact source remainder before cancellation");
 
         helper.assertTrue(execute(helper, commandSource(helper),
                         "butchercraft employee transfer-cancel #1") == 1,
@@ -293,14 +327,14 @@ public final class EmployeeMaterialHandlingGameTests {
         helper.assertTrue(ItemStack.isSameItemSameComponents(
                         fixture.exactStack(), trimStack(fixture.cuttingTable())),
                 "Cancellation returns the exact stack through the source owner");
-        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 1,
+        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 64,
                 "Source return occurs exactly once");
         helper.assertTrue(fixture.employee().getMainHandItem().isEmpty(),
                 "Display clears only after proven source return");
         helper.assertTrue(execute(helper, commandSource(helper),
                         "butchercraft employee transfer-cancel #1") == 1,
                 "Duplicate cancellation observes the terminal result");
-        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 1,
+        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 64,
                 "Duplicate cancellation cannot return twice");
         helper.succeed();
     }
@@ -646,7 +680,7 @@ public final class EmployeeMaterialHandlingGameTests {
             GameTestHelper helper,
             EmployeeMaterialHandlingAssignment assignment
     ) {
-        MaterialTransferRecord transfer = MaterialHandlingService.INSTANCE.findTransfer(
+        MaterialTransferView transfer = MaterialHandlingService.INSTANCE.findTransfer(
                 helper.getLevel().getServer(), assignment.transferId()
         ).orElseThrow();
         helper.assertTrue(transfer.hasProvenMaterialHandlingCustody(),
@@ -673,7 +707,7 @@ public final class EmployeeMaterialHandlingGameTests {
             EmployeeMaterialHandlingAssignment assignment
     ) {
         WorkstationReservationRecord reservation = reservation(helper, fixture.record());
-        MaterialTransferRecord transfer = MaterialHandlingService.INSTANCE.findTransfer(
+        MaterialTransferView transfer = MaterialHandlingService.INSTANCE.findTransfer(
                 helper.getLevel().getServer(), assignment.transferId()
         ).orElseThrow();
         boolean withinTolerance = WorkstationReservationService.INSTANCE.isWithinOperatingTolerance(

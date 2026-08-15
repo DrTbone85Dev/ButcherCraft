@@ -1071,8 +1071,8 @@ public final class ButcherCraftArchitectureManifest {
         platformContract(builder, "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
                 ValidationCategory.OWNERSHIP, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
-                "IM-029 Employee Grinder To Patty Former Material Handling",
-                "Grinder exposes only its exact one-unit Ground Beef output for Workstation-owned withdrawal and source return under the existing DG-002A endpoint journal");
+                "IM-030B Selective Product Stack Normalization And Material Handling Activation",
+                "Grinder exposes one-unit Workstation-owned Ground Beef withdrawal and source return from an exact component-compatible output stack through schema-2 endpoint evidence");
         platformContract(builder, "butchercraft:platform_contract/employee_ground_beef_transfer_route",
                 ValidationCategory.OWNERSHIP, WORKFORCE,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1083,11 +1083,41 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-029 Employee Grinder To Patty Former Material Handling",
                 "Material Handling deposit leaves the Patty Former READY and destination-reserved but creates no Execution operation, Scheduler work, automatic processing, or employee operation authority");
+        platformContract(builder, "butchercraft:platform_contract/workstation_stack_capacity_foundation",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-030B Selective Product Stack Normalization And Material Handling Activation",
+                "Workstation owns versioned per-slot capacity and effective capacity is bounded by both item maximum and Workstation policy; Cutting Table trim, Grinder input/output, and Patty Former input/output use selective live stack-aware capacities");
+        platformContract(builder, "butchercraft:platform_contract/stack_aware_endpoint_protocol",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-030A Stack-Aware Workstation And Endpoint Foundation",
+                "Schema-2 endpoint evidence durably binds exact pre-stack, transfer payload, remainder, post-stack, revisions, freshness, capacity configuration, and immutable owner result without reinterpreting schema-1 evidence");
+        platformContract(builder, "butchercraft:platform_contract/stack_aware_endpoint_merge",
+                ValidationCategory.OWNERSHIP, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-030A Stack-Aware Workstation And Endpoint Foundation",
+                "Workstation computes exact partial withdrawal and all-or-nothing component-compatible destination and source-return merge candidates inside its serialized owner boundary");
+        platformContract(builder, "butchercraft:platform_contract/stack_aware_migration_gate",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-030A Stack-Aware Workstation And Endpoint Foundation",
+                "Schema-2 candidates preserve immutable schema-1 documents and are blocked by active, unresolved, Recovery Required, Unknown Outcome, stale projection, Workforce, evidence, sequence, or Execution compatibility state");
+        platformContract(builder, "butchercraft:platform_contract/material_handling_schema_2_foundation",
+                ValidationCategory.PERSISTENCE, MATERIAL_HANDLING,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-030B Selective Product Stack Normalization And Material Handling Activation",
+                "Material Handling schema-2 runtime persists exact custody and embedded schema-2 endpoint evidence for the active Beef Trim and Ground Beef routes without changing Material Handling lifecycle or custody ownership");
+        platformContract(builder, "butchercraft:platform_contract/stack_aware_live_activation_gate",
+                ValidationCategory.GENERAL, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-030B Selective Product Stack Normalization And Material Handling Activation",
+                "Beef Trim, Ground Beef, and Beef Patties use max stack 64; approved Workstation slots consume recipe quantities and merge compatible output while each employee assignment and carry remains exactly one item");
         platformContract(builder, "butchercraft:platform_contract/employee_transfer_future_scope_gates",
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-029 Employee Grinder To Patty Former Material Handling",
-                "Partial-stack or batch transport, additional routes or materials, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
+                "IM-030B Selective Product Stack Normalization And Material Handling Activation",
+                "Player-selected quantities, carried quantities above one, batch transport, additional routes or materials, Production dispatch, automatic selection, autonomous queues, employee inventory, cross-dimension transfer, general Logistics, and public APIs remain gated");
         platformContract(builder, "butchercraft:platform_contract/employee_operation_future_scope_gates",
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
@@ -1170,6 +1200,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/workstation_endpoint_journal", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_endpoint_freshness", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_endpoint_owner_results", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_slot_capacity", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_stack_split_and_remainder", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_stack_merge", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_stack_aware_endpoint_recovery", WORKSTATION);
         own(builder, "butchercraft:responsibility/material_transfer_identity", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/material_transfer_lifecycle", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/in_transit_item_stack_custody", MATERIAL_HANDLING);
@@ -2502,11 +2536,11 @@ public final class ButcherCraftArchitectureManifest {
         );
         persistence(builder, "butchercraft:workstation_instances",
                 "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.INSTANCE_FILE_NAME,
-                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.CURRENT_VERSION,
+                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.INSTANCE_SCHEMA_VERSION,
                 PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:workstation_endpoint_journal",
                 "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.JOURNAL_FILE_NAME,
-                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.CURRENT_VERSION,
+                WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION,
                 PersistenceDataKind.IMMUTABLE_HISTORY, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:material_handling",
                 MaterialHandlingSchema.DIRECTORY_NAME + "/" + MaterialHandlingSchema.FILE_NAME,

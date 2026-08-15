@@ -54,7 +54,7 @@ public record WorkstationEndpointJournal(
             String configurationIdentity
     ) {
         return new WorkstationEndpointJournal(
-                WorkstationEndpointSchema.CURRENT_VERSION,
+                WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION,
                 0L,
                 1L,
                 worldIdentity,

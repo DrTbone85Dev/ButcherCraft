@@ -32,7 +32,8 @@ class GrinderMaterialHandlingEndpointTest {
                 + "WorkstationEndpointJournalRecord.java");
 
         assertTrue(inventory.contains("public int getSlotLimit(int slot)"));
-        assertTrue(inventory.contains("return 1;"));
+        assertTrue(inventory.contains("return slotCapacityPolicy.capacity(slot);"));
+        assertTrue(inventory.contains("WorkstationSlotCapacityPolicy.uniform"));
         assertTrue(endpoint.contains("WorkstationEndpointResultCode.UNSUPPORTED_SOURCE_COUNT"));
         assertTrue(endpoint.contains("Schema 1 transfers require exactly one source item"));
         assertTrue(projection.contains("case SOURCE_WITHDRAWAL ->"));

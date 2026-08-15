@@ -6,7 +6,14 @@ Registered content includes the Cutting Table, Grinder, Patty Former, Bandsaw, P
 
 The v0.10.4 Material Handling Update introduces the Cutting Table foundation and its first player-operated fabrication recipe: `Beef Short Loin -> T-Bone Steak + Beef Trim`. The Cutting Table keeps separate input, primary-output, and trim-output slots so the T-Bone Steak and Beef Trim remain independently visible and owned by the workstation.
 
-The Patty Former now separates deposit from operation. Inserting Ground Beef leaves the machine `READY` indefinitely, including across save/reload, and creates no Execution operation or Scheduler work. Close the menu and use the READY Patty Former with an empty hand to explicitly start exactly one operation. A later Ground Beef batch requires another explicit request.
+The Patty Former now separates deposit from operation. Inserting Ground Beef leaves the machine `READY` indefinitely, including across save/reload, and creates no Execution operation or Scheduler work. Normal right-click opens the Grinder or Patty Former inventory; Shift + right-click explicitly starts exactly one operation. Remaining input requires another shifted request.
+
+IM-030B activates practical product stacks without turning capacity into
+throughput. Beef Trim, Ground Beef, and Beef Patties stack to 64. The relevant
+Cutting Table, Grinder, and Patty Former slots use Workstation-owned capacities;
+each explicit operation still consumes and produces only its recipe quantity,
+compatible outputs merge, and remaining input never starts another operation
+automatically.
 
 Employees can now physically move two fixed products through the plant. A player can explicitly assign an employee to carry one Beef Trim from a Cutting Table to a Grinder, operate that Grinder through the existing deterministic Execution and Scheduler path, then assign the employee to carry the resulting one Ground Beef from the Grinder output to a selected Patty Former. Both routes use explicit coordinates and the same `/butchercraft employee transfer` command.
 
@@ -115,11 +122,11 @@ The world-time diagnostic is `/butchercraft time status`; there is no separate `
 ## Alpha Limitations
 
 - The Cutting Table has one fabrication recipe.
-- Employee Material Handling moves exactly one Beef Trim or one Ground Beef on two fixed routes.
+- Employee Material Handling moves exactly one Beef Trim or one Ground Beef per assignment on two fixed routes.
 - The transfer command requires explicit source and destination coordinates.
-- Grinder-to-Patty Former Ground Beef transport and visible carrying are implemented for an exact one-unit Grinder output stack.
+- Either route may withdraw one item from a larger compatible source stack and merge it into a compatible destination stack.
 - Ground Beef delivery leaves the Patty Former `READY` and destination-reserved; employees still cannot operate it.
-- Source stacks with counts other than exactly one are rejected; partial-stack and batch transport are not implemented.
+- Employee carrying remains exactly one item; quantity selection, batch hauling, and automatic repeated transfers are not implemented.
 - Production does not assign transfers.
 - Employees do not select workstations automatically.
 - General Logistics and autonomous production are not implemented.

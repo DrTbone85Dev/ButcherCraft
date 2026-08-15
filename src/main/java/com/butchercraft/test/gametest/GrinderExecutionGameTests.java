@@ -2,6 +2,7 @@ package com.butchercraft.test.gametest;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
+import com.butchercraft.machine.grinder.GrinderMenu;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.machine.grinder.execution.GrinderWorkstationReference;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
@@ -110,6 +111,30 @@ public final class GrinderExecutionGameTests {
         helper.assertTrue(grinder.inventory().input().isEmpty(), "Placed grinder input starts empty");
         helper.assertTrue(grinder.inventory().output().isEmpty(), "Placed grinder output starts empty");
         helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 80)
+    public static void normalUseOpensGrinderMenuWithoutStartingValidInput(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.inventory().setInputInternal(count(beefTrim(), 10));
+        var player = new MenuTrackingTestPlayer(helper.getLevel(), helper.absolutePos(GRINDER_POS));
+
+        helper.useBlock(GRINDER_POS, player);
+
+        helper.assertTrue(player.containerMenu instanceof GrinderMenu,
+                "Normal Grinder use opens the real inventory menu with valid input");
+        helper.assertTrue(newOperations(helper, before).isEmpty(),
+                "Opening the Grinder menu creates no Execution operation");
+        helper.runAtTickTime(40, () -> {
+            helper.assertTrue(grinder.workstationState() == WorkstationState.READY,
+                    "Valid multi-count Grinder input remains READY after normal use");
+            helper.assertTrue(grinder.inventory().input().getCount() == 10 && grinder.inventory().output().isEmpty(),
+                    "Normal Grinder use consumes no input and creates no output");
+            helper.assertTrue(newOperations(helper, before).isEmpty(),
+                    "Grinder menu observation never creates delayed Execution work");
+            helper.succeed();
+        });
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 220)
@@ -345,7 +370,7 @@ public final class GrinderExecutionGameTests {
                     false
             );
             helper.assertFalse(duplicateRemainder.isEmpty(), "Second Pork Trim insertion is rejected while slot is occupied");
-            helper.useBlock(GRINDER_POS);
+            requestPlayerOperation(helper, GRINDER_POS);
             helper.assertTrue(newOperations(helper, before).size() == 1,
                     "Repeated use while Pork Trim is processing does not create another Execution operation");
         });
@@ -360,27 +385,26 @@ public final class GrinderExecutionGameTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 220)
-    public static void repeatedInputAndUseWhileProcessingDoNotDuplicateExecution(GameTestHelper helper) {
+    public static void repeatedUseWhileProcessingDoesNotDuplicateExecution(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIds(helper);
         GrinderBlockEntity grinder = placeGrinder(helper);
         insertBeefTrim(helper, grinder);
 
         helper.runAtTickTime(8, () -> {
-            GrinderBlockEntity active = grinder(helper);
-            ItemStack duplicateRemainder = active.inventory().insertItem(
-                    WorkstationInventory.INPUT_SLOT,
-                    beefTrim(),
-                    false
-            );
-            helper.assertFalse(duplicateRemainder.isEmpty(), "Second input insertion is rejected while slot is occupied");
-            helper.useBlock(GRINDER_POS);
+            requestPlayerOperation(helper, GRINDER_POS);
             helper.assertTrue(newOperations(helper, before).size() == 1,
                     "Repeated use while processing does not create another Execution operation");
         });
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
             GrinderBlockEntity completed = grinder(helper);
-            assertCompletedGroundBeef(helper, completed);
+            helper.assertTrue(completed.workstationState() == WorkstationState.COMPLETE,
+                    "Repeated use leaves the Grinder COMPLETE after one operation");
+            helper.assertTrue(completed.inventory().input().isEmpty(),
+                    "One operation consumes the single reserved Beef Trim input");
+            helper.assertTrue(completed.inventory().output().is(ModItems.GROUND_BEEF.get())
+                            && completed.inventory().output().getCount() == 1,
+                    "One operation publishes exactly one Ground Beef");
             helper.assertTrue(newOperations(helper, before).size() == 1,
                     "Only one Execution operation exists for the repeated initiation attempt");
             helper.succeed();
@@ -562,7 +586,7 @@ public final class GrinderExecutionGameTests {
         GrinderBlockEntity grinder = placeGrinder(helper);
         insertBeefTrim(helper, grinder);
 
-        helper.runAtTickTime(8, () -> grinder(helper).inventory().setOutputInternal(groundBeef()));
+        helper.runAtTickTime(8, () -> grinder(helper).inventory().setOutputInternal(count(groundBeef(), 64)));
 
         helper.runAtTickTime(EXTENDED_ASSERTION_TICK, () -> {
             GrinderBlockEntity blocked = grinder(helper);
@@ -668,7 +692,7 @@ public final class GrinderExecutionGameTests {
             );
             helper.assertFalse(duplicateRemainder.isEmpty(),
                     "Second " + recipe.label() + " Trim insertion is rejected while slot is occupied");
-            helper.useBlock(GRINDER_POS);
+            requestPlayerOperation(helper, GRINDER_POS);
             helper.assertTrue(newOperations(helper, before).size() == 1,
                     "Repeated use while " + recipe.label() + " is processing does not create another Execution operation");
         });
@@ -768,6 +792,7 @@ public final class GrinderExecutionGameTests {
                 false
         );
         helper.assertTrue(remainder.isEmpty(), "Beef Trim inserts into grinder input");
+        requestPlayerOperation(helper, GRINDER_POS);
     }
 
     private static void insertPorkTrim(GameTestHelper helper, GrinderBlockEntity grinder) {
@@ -777,6 +802,7 @@ public final class GrinderExecutionGameTests {
                 false
         );
         helper.assertTrue(remainder.isEmpty(), "Pork Trim inserts into grinder input");
+        requestPlayerOperation(helper, GRINDER_POS);
     }
 
     private static void insertRecipeInput(GameTestHelper helper, GrinderBlockEntity grinder, RecipeCase recipe) {
@@ -786,6 +812,7 @@ public final class GrinderExecutionGameTests {
                 false
         );
         helper.assertTrue(remainder.isEmpty(), recipe.label() + " Trim inserts into grinder input");
+        requestPlayerOperation(helper, GRINDER_POS);
     }
 
     private static ItemStack beefTrim() {
@@ -798,6 +825,17 @@ public final class GrinderExecutionGameTests {
 
     private static ItemStack groundBeef() {
         return ModItems.GROUND_BEEF.get().getDefaultInstance();
+    }
+
+    private static ItemStack count(ItemStack stack, int count) {
+        stack.setCount(count);
+        return stack;
+    }
+
+    private static void requestPlayerOperation(GameTestHelper helper, BlockPos position) {
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
+        player.setShiftKeyDown(true);
+        helper.useBlock(position, player);
     }
 
     private static RecipeCase recipe(String label) {

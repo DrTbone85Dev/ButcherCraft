@@ -24,7 +24,7 @@ public record WorkstationInstanceId(String value) implements Comparable<Workstat
         Objects.requireNonNull(key, "key");
         WorkstationEndpointValidation.positive(generation, "workstation instance generation");
         String digest = WorkstationEndpointCanonicalDigest.create("butchercraft:workstation_instance")
-                .add(WorkstationEndpointSchema.CURRENT_VERSION)
+                .add(WorkstationEndpointSchema.INSTANCE_SCHEMA_VERSION)
                 .add(worldIdentity.identity())
                 .add(worldIdentity.schemaVersion())
                 .add(worldIdentity.rootDigest())

@@ -1,6 +1,6 @@
 # ButcherCraft Material Handling
 
-Status: DG-002 and DG-002A ratified; IM-028A through IM-028C foundations implemented
+Status: DG-002, DG-002A, and DG-004 ratified; IM-028A through IM-029 live routes and IM-030A/IM-030B stack-aware foundation and selective activation implemented
 
 ## Authority
 
@@ -14,6 +14,7 @@ The controlling architecture is:
 
 - [DG-002 Material Handling Custody And Recovery](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
 - [DG-002A Workstation Endpoint Durability And Instance Identity](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
+- [DG-004 Stack-Aware Workstation Inventory And Partial Transfer](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
 
 No subsystem may infer custody from slot appearance or mutate another owner's
 state directly.
@@ -33,8 +34,10 @@ one Cutting Table Beef Trim byproduct output
 
 The request binds one employee, one source endpoint instance, one destination
 endpoint instance, the current world identity, configuration identities, and
-exactly one Beef Trim. There is no material selector, quantity selector,
-workstation search, cross-dimension path, or automatic queue.
+exactly one Beef Trim. IM-030B permits that one unit to be split from a larger
+source stack and merged into a compatible destination stack. There is no
+material selector, quantity selector, workstation search, cross-dimension
+path, or automatic queue.
 
 ## Commands
 
@@ -49,7 +52,7 @@ use synchronized built-in command argument types. Employee references accept
 `#1`, a unique display name, a quoted display name, or canonical Employee
 Identity. Both coordinates resolve only in the command source's current
 dimension. The source must be a Cutting Table whose dedicated byproduct output
-contains one Beef Trim, and the destination must be a Grinder. The Cutting
+contains at least one Beef Trim, and the destination must be a Grinder. The Cutting
 Table input and primary T-Bone Steak output do not participate in transfer.
 
 ## Reservation And Movement
@@ -88,9 +91,10 @@ consume input, or produce Beef Patties. This is the enforced boundary:
 MATERIAL DEPOSIT != MACHINE OPERATION AUTHORIZATION
 ```
 
-IM-029 connects the Patty Former destination to the Grinder's exact one-unit
-Ground Beef output through the existing Material Handling and Workforce
-assignment paths. Employee Patty Former operation remains gated.
+IM-029 connects the Patty Former destination to the Grinder's Ground Beef
+output through the existing Material Handling and Workforce assignment paths.
+IM-030B permits a one-unit withdrawal from a larger output stack and a
+compatible destination merge. Employee Patty Former operation remains gated.
 
 ## Carry View
 
@@ -163,14 +167,32 @@ Startup ordering is:
 Prepared effects without reconciled owner results do not resume movement or
 retry consequential effects.
 
+## Schema-2 Activation
+
+IM-030A adds a schema-aware Material Handling persistence envelope capable of
+round-tripping exact multi-count custody and embedded schema-2 Workstation
+observations, preparations, owner results, identities, and evidence. IM-030B
+selects schema 2 after the conservative migration gate succeeds and activates
+one-unit partial withdrawal, destination merge, and source-return merge on the
+two existing employee routes. Transfer lifecycle and custody ownership do not
+change.
+
+Migration is candidate-based. Complete schema-1 documents are retained as
+immutable legacy evidence, including their original identities and sequences.
+Active transfers, `RECOVERY_REQUIRED`, `UNKNOWN_OUTCOME`, unresolved endpoint
+effects, stale projections, active Workforce assignments, evidence conflict,
+sequence regression, or incompatible Execution work block schema-2 authority.
+Schema-1 readers reject schema-2 documents visibly; downgrade is unsupported
+after schema-2 publication.
+
 ## Current Gates
 
-The following remain unimplemented and unauthorized by IM-029:
+The following remain unimplemented and unauthorized by IM-030B:
 
 - employee Patty Former operation;
 - routes or materials beyond Beef Trim Cutting Table to Grinder and Ground Beef
   Grinder to Patty Former;
-- partial-stack or batch quantities;
+- carried quantities above one and batch hauling;
 - employee inventory or item drops;
 - cross-dimension transfer;
 - Production-driven assignment;

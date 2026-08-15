@@ -226,11 +226,10 @@ public final class WorkstationProcessingController {
             RegistryAccess registryAccess,
             WorkstationTickContext tickContext
     ) {
-        if (state == WorkstationState.COMPLETE && !inventory.input().isEmpty() && !inventory.outputsEmpty()) {
-            block(WorkstationFailure.of(
-                    WorkstationFailureCode.OUTPUT_OCCUPIED,
-                    "Completed output must be removed before another operation can start"
-            ));
+        if (state == WorkstationState.COMPLETE) {
+            resetRuntimeProgress();
+            state = inventory.input().isEmpty() ? WorkstationState.IDLE : WorkstationState.READY;
+            changed.run();
         }
         if (state == WorkstationState.IDLE) {
             if (inventory.input().isEmpty()) {
@@ -277,7 +276,7 @@ public final class WorkstationProcessingController {
         if (state == WorkstationState.BLOCKED
                 && lastFailure != null
                 && lastFailure.code() == WorkstationFailureCode.OUTPUT_OCCUPIED
-                && inventory.outputsEmpty()) {
+                ) {
             resetRuntimeProgress();
             lastFailure = null;
             state = inventory.input().isEmpty() ? WorkstationState.IDLE : WorkstationState.READY;
@@ -286,6 +285,12 @@ public final class WorkstationProcessingController {
         }
         if (state == WorkstationState.COMPLETE && inventory.outputsEmpty()) {
             resetToIdle();
+            return;
+        }
+        if (state == WorkstationState.COMPLETE && !inventory.input().isEmpty()) {
+            resetRuntimeProgress();
+            state = WorkstationState.READY;
+            changed.run();
             return;
         }
         if ((state == WorkstationState.IDLE || state == WorkstationState.BLOCKED) && inventory.input().isEmpty()) {
@@ -485,11 +490,6 @@ public final class WorkstationProcessingController {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Processing is already active"));
             return;
         }
-        if (!inventory.outputsEmpty()) {
-            block(WorkstationFailure.of(WorkstationFailureCode.OUTPUT_OCCUPIED, "Output slot must be empty before processing starts"));
-            return;
-        }
-
         WorkstationOperationResolution resolution = resolver.resolve(registryAccess, capability, inventory.input());
         if (!resolution.succeeded()) {
             block(resolution.failure().orElseThrow());
@@ -502,6 +502,22 @@ public final class WorkstationProcessingController {
             block(WorkstationFailure.of(
                     failureCodeForResult(prepared, WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED),
                     prepared.failureReason().map(reason -> reason.message()).orElse("Processing validation rejected the input")
+            ));
+            return;
+        }
+        if (!outputMapping.canCreateAll(prepared.proposedOutputs())) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.RESULT_CREATION_FAILED,
+                    "No development item mapping exists for one or more operation outputs"
+            ));
+            return;
+        }
+        try {
+            createCommitPlan(operation, prepared.proposedOutputs());
+        } catch (RuntimeException exception) {
+            block(WorkstationFailure.of(
+                    WorkstationFailureCode.OUTPUT_OCCUPIED,
+                    "Workstation output cannot accept the complete operation result: " + exception.getMessage()
             ));
             return;
         }
@@ -559,7 +575,7 @@ public final class WorkstationProcessingController {
             resetToIdle();
             return;
         }
-        if (selectedOperationId != null && elapsedTicks >= totalTicks && inventory.outputsEmpty()) {
+        if (selectedOperationId != null && elapsedTicks >= totalTicks) {
             state = WorkstationState.PROCESSING;
             complete(registryAccess);
         }
@@ -678,11 +694,6 @@ public final class WorkstationProcessingController {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Completion was already committed"));
             return Optional.empty();
         }
-        if (!inventory.outputsEmpty()) {
-            block(WorkstationFailure.of(WorkstationFailureCode.OUTPUT_OCCUPIED, "Output slot is occupied at completion"));
-            return Optional.empty();
-        }
-
         WorkstationOperationResolution resolution = resolver.resolve(registryAccess, capability, inventory.input());
         if (!resolution.succeeded()) {
             block(resolution.failure().orElseThrow());
@@ -736,14 +747,10 @@ public final class WorkstationProcessingController {
 
         WorkstationInventoryCommitPlan commitPlan;
         try {
-            commitPlan = new WorkstationInventoryCommitPlan(
-                    inventory,
-                    executionStrategy.consumedInputSlots(capability, operation, inventory),
-                    outputStacks
-            );
+            commitPlan = createCommitPlan(operation, outputStacks);
         } catch (RuntimeException exception) {
             block(WorkstationFailure.of(
-                    WorkstationFailureCode.RESULT_CREATION_FAILED,
+                    WorkstationFailureCode.OUTPUT_OCCUPIED,
                     "Unable to create a workstation inventory commit plan: " + exception.getMessage()
             ));
             return Optional.empty();
@@ -865,18 +872,50 @@ public final class WorkstationProcessingController {
 
     private boolean reservedInputsMatchInventory() {
         if (reservedInputSnapshots.isEmpty()) {
-            return ItemStack.isSameItemSameComponents(inventory.input(), reservedInputSnapshot);
+            return exactStack(inventory.input(), reservedInputSnapshot);
         }
         List<ItemStack> currentInputs = inventory.inputs();
         if (currentInputs.size() != reservedInputSnapshots.size()) {
             return false;
         }
         for (int inputIndex = 0; inputIndex < currentInputs.size(); inputIndex++) {
-            if (!ItemStack.isSameItemSameComponents(currentInputs.get(inputIndex), reservedInputSnapshots.get(inputIndex))) {
+            if (!exactStack(currentInputs.get(inputIndex), reservedInputSnapshots.get(inputIndex))) {
                 return false;
             }
         }
         return true;
+    }
+
+    private WorkstationInventoryCommitPlan createCommitPlan(
+            ResolvedWorkstationOperation operation,
+            List<? extends Object> outputs
+    ) {
+        List<ItemStack> outputStacks = new ArrayList<>();
+        for (Object output : outputs) {
+            if (output instanceof ItemStack stack) {
+                outputStacks.add(stack.copy());
+            } else if (output instanceof Product product) {
+                outputStacks.add(executionStrategy.createOutputStack(
+                        operation,
+                        product,
+                        inventory.input(),
+                        outputMapping
+                ).orElseThrow(() -> new IllegalArgumentException(
+                        "No development item mapping exists for output product " + product.typeId().value()
+                )));
+            } else {
+                throw new IllegalArgumentException("Unsupported workstation output candidate");
+            }
+        }
+        return new WorkstationInventoryCommitPlan(
+                inventory,
+                executionStrategy.consumedInputSlots(capability, operation, inventory),
+                outputStacks
+        );
+    }
+
+    private static boolean exactStack(ItemStack left, ItemStack right) {
+        return left.getCount() == right.getCount() && ItemStack.isSameItemSameComponents(left, right);
     }
 
     private List<ItemStack> loadReservedInputs(CompoundTag tag, HolderLookup.Provider registries) {

@@ -21,7 +21,7 @@ import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.WorkstationReservationService;
 import com.butchercraft.world.materialhandling.MaterialCustodyLocation;
 import com.butchercraft.world.materialhandling.MaterialTransferLifecycle;
-import com.butchercraft.world.materialhandling.MaterialTransferRecord;
+import com.butchercraft.world.materialhandling.MaterialTransferView;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeePresenceState;
@@ -64,8 +64,15 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
 
         helper.runAtTickTime(100, () -> {
             assertLegitimateGroundBeefOutput(helper, fixture.grinder());
+            ItemStack sourceStack = fixture.grinder().inventory().output().copy();
+            sourceStack.setCount(64);
+            fixture.grinder().inventory().setOutputInternal(sourceStack);
+            ItemStack destinationStack = sourceStack.copy();
+            destinationStack.setCount(20);
+            fixture.pattyFormer().inventory().setInputInternal(destinationStack);
             Counts beforeTransfer = counts(helper);
-            ItemStack exactOutput = fixture.grinder().inventory().output().copy();
+            ItemStack exactOutput = sourceStack.copy();
+            exactOutput.setCount(1);
 
             WorkstationReservationService.INSTANCE.assign(
                     helper.getLevel(), fixture.record().employeeId(), helper.absolutePos(GRINDER_POS)
@@ -79,15 +86,15 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
             EmployeeMaterialHandlingService.INSTANCE.tick(fixture.employee());
 
             EmployeeMaterialHandlingAssignment carrying = assignment(helper, fixture.record());
-            MaterialTransferRecord transfer = transfer(helper, carrying);
+            MaterialTransferView transfer = transfer(helper, carrying);
             helper.assertTrue(carrying.state() == EmployeeMaterialHandlingAssignmentState.CARRYING_TO_DESTINATION,
                     "Workforce observes proven custody before destination travel");
             helper.assertTrue(transfer.lifecycle() == MaterialTransferLifecycle.IN_TRANSIT,
                     "Material Handling owns the in-transit lifecycle");
             helper.assertTrue(transfer.custodyLocation().orElseThrow() == MaterialCustodyLocation.MATERIAL_HANDLING_RUNTIME,
                     "Material Handling is the singular proven custody location");
-            helper.assertTrue(fixture.grinder().inventory().output().isEmpty(),
-                    "Committed schema-1 withdrawal leaves Grinder output empty");
+            helper.assertTrue(fixture.grinder().inventory().output().getCount() == 63,
+                    "Committed schema-2 withdrawal leaves the exact Grinder output remainder");
             helper.assertTrue(ItemStack.isSameItemSameComponents(exactOutput, fixture.employee().getMainHandItem()),
                     "Employee visibly carries the exact one-unit Ground Beef custody projection");
             helper.assertTrue(reservation(helper, fixture.record()).workstationType().equals("patty_former"),
@@ -105,6 +112,8 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
             helper.assertTrue(ItemStack.isSameItemSameComponents(
                             exactOutput, fixture.pattyFormer().inventory().input()),
                     "Patty Former receives the exact Ground Beef stack through its owner endpoint");
+            helper.assertTrue(fixture.pattyFormer().inventory().input().getCount() == 21,
+                    "Patty Former merges exactly one delivered Ground Beef");
             helper.assertTrue(fixture.pattyFormer().workstationState() == WorkstationState.READY,
                     "Ground Beef deposit leaves Patty Former READY");
             helper.assertTrue(fixture.employee().getMainHandItem().isEmpty(),
@@ -131,8 +140,14 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
 
         helper.runAtTickTime(100, () -> {
             assertLegitimateGroundBeefOutput(helper, fixture.grinder());
-            ItemStack exactOutput = fixture.grinder().inventory().output().copy();
-            requestAndWithdraw(helper, fixture);
+            ItemStack sourceStack = fixture.grinder().inventory().output().copy();
+            sourceStack.setCount(64);
+            fixture.grinder().inventory().setOutputInternal(sourceStack);
+            ItemStack exactOutput = sourceStack.copy();
+            exactOutput.setCount(1);
+            requestAndWithdraw(helper, fixture, 63);
+            helper.assertTrue(fixture.grinder().inventory().output().getCount() == 63,
+                    "Ground Beef partial withdrawal retains the exact source remainder");
 
             EmployeeMaterialHandlingService.AssignmentResult requested = EmployeeMaterialHandlingService.INSTANCE.cancel(
                     helper.getLevel(), fixture.record().employeeId(), "GameTest cancellation during custody"
@@ -149,6 +164,8 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
                     "Material Handling publishes terminal cancellation evidence");
             helper.assertTrue(ItemStack.isSameItemSameComponents(exactOutput, fixture.grinder().inventory().output()),
                     "Source return restores exact Ground Beef to Grinder output");
+            helper.assertTrue(fixture.grinder().inventory().output().getCount() == 64,
+                    "Cancellation merges one returned Ground Beef into the source remainder");
             helper.assertTrue(fixture.grinder().inventory().input().isEmpty(),
                     "Source return never targets Grinder input");
             helper.assertTrue(fixture.pattyFormer().inventory().input().isEmpty(),
@@ -161,7 +178,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
             );
             helper.assertTrue(duplicate.status() == EmployeeMaterialHandlingService.AssignmentStatus.CANCELLED,
                     "Duplicate cancellation observes the existing result");
-            helper.assertTrue(fixture.grinder().inventory().output().getCount() == 1,
+            helper.assertTrue(fixture.grinder().inventory().output().getCount() == 64,
                     "Duplicate cancellation does not duplicate Ground Beef");
             helper.succeed();
         });
@@ -174,7 +191,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
         helper.runAtTickTime(100, () -> {
             assertLegitimateGroundBeefOutput(helper, fixture.grinder());
             ItemStack exactOutput = fixture.grinder().inventory().output().copy();
-            requestAndWithdraw(helper, fixture);
+            requestAndWithdraw(helper, fixture, 0);
             EmployeeMaterialHandlingAssignment before = assignment(helper, fixture.record());
 
             fixture.employee().resetGameTestCarryObservation();
@@ -206,7 +223,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
 
         helper.runAtTickTime(100, () -> {
             assertLegitimateGroundBeefOutput(helper, fixture.grinder());
-            requestAndWithdraw(helper, fixture);
+            requestAndWithdraw(helper, fixture, 0);
             EmployeeMaterialHandlingAssignment carrying = assignment(helper, fixture.record());
             ItemStack exactCustody = fixture.employee().getMainHandItem().copy();
 
@@ -216,7 +233,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
             EmployeeMaterialHandlingService.INSTANCE.tick(fixture.employee());
 
             EmployeeMaterialHandlingAssignment blocked = assignment(helper, fixture.record());
-            MaterialTransferRecord transfer = transfer(helper, carrying);
+            MaterialTransferView transfer = transfer(helper, carrying);
             helper.assertTrue(blocked.state() == EmployeeMaterialHandlingAssignmentState.RECOVERY_REQUIRED,
                     "Replacement destination enters explicit Workforce recovery");
             helper.assertTrue(transfer.hasProvenMaterialHandlingCustody(),
@@ -275,7 +292,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
                 .find(created.employeeId()).orElseThrow();
     }
 
-    private static void requestAndWithdraw(GameTestHelper helper, Fixture fixture) {
+    private static void requestAndWithdraw(GameTestHelper helper, Fixture fixture, int expectedSourceRemainderCount) {
         EmployeeMaterialHandlingService.AssignmentResult requested = EmployeeMaterialHandlingService.INSTANCE.request(
                 helper.getLevel(),
                 fixture.record().employeeId(),
@@ -288,7 +305,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
         helper.assertTrue(assignment(helper, fixture.record()).state()
                         == EmployeeMaterialHandlingAssignmentState.CARRYING_TO_DESTINATION,
                 "Employee withdraws only after physical Grinder arrival");
-        helper.assertTrue(fixture.grinder().inventory().output().isEmpty(),
+        helper.assertTrue(fixture.grinder().inventory().output().getCount() == expectedSourceRemainderCount,
                 "Exactly one Ground Beef leaves Grinder output");
         helper.assertTrue(fixture.employee().getMainHandItem().is(ModItems.GROUND_BEEF.get())
                         && fixture.employee().getMainHandItem().getCount() == 1,
@@ -337,7 +354,7 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
         ).orElseThrow();
     }
 
-    private static MaterialTransferRecord transfer(
+    private static MaterialTransferView transfer(
             GameTestHelper helper,
             EmployeeMaterialHandlingAssignment assignment
     ) {

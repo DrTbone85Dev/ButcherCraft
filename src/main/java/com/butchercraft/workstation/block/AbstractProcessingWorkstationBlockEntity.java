@@ -14,6 +14,7 @@ import com.butchercraft.workstation.WorkstationProcessingController;
 import com.butchercraft.workstation.WorkstationProductionRequestResult;
 import com.butchercraft.workstation.WorkstationProductionSnapshot;
 import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.WorkstationSlotCapacityPolicy;
 import com.butchercraft.workstation.WorkstationTickContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -115,7 +116,33 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
             WorkstationExecutionCoordinator executionCoordinator,
             WorkstationOperationStartPolicy startPolicy
     ) {
-        super(type, pos, blockState, capability);
+        this(
+                type,
+                pos,
+                blockState,
+                capability,
+                resolver,
+                outputMapping,
+                executionStrategy,
+                executionCoordinator,
+                startPolicy,
+                WorkstationSlotCapacityPolicy.uniform(capability.inputSlots() + capability.outputSlots(), 1)
+        );
+    }
+
+    protected AbstractProcessingWorkstationBlockEntity(
+            BlockEntityType<?> type,
+            BlockPos pos,
+            BlockState blockState,
+            WorkstationCapability capability,
+            WorkstationOperationLookup resolver,
+            DevelopmentProductItemMapping outputMapping,
+            WorkstationExecutionStrategy executionStrategy,
+            WorkstationExecutionCoordinator executionCoordinator,
+            WorkstationOperationStartPolicy startPolicy,
+            WorkstationSlotCapacityPolicy slotCapacityPolicy
+    ) {
+        super(type, pos, blockState, capability, slotCapacityPolicy);
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.controller = executionCoordinator == null
                 ? new WorkstationProcessingController(

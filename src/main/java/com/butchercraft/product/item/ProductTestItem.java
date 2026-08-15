@@ -20,15 +20,19 @@ import java.util.function.Supplier;
  * Development-only item that carries immutable product component data.
  *
  * <p>The item has no food, processing, or world-changing behavior. It exists only to verify the
- * ItemStack data-component boundary. Product-bearing stacks are max stack size one so ItemStack
- * count cannot conflict with engine quantity.</p>
+ * ItemStack data-component boundary. Stack capacity is selected explicitly by the registering
+ * product so unrelated product definitions remain unchanged.</p>
  */
 public final class ProductTestItem extends Item implements ProductDataCarrier {
     private final ProductStackData defaultProductData;
     private final Supplier<DataComponentType<ProductStackData>> componentType;
 
     public ProductTestItem(Properties properties, ProductStackData defaultProductData) {
-        this(properties, defaultProductData, ModDataComponents.PRODUCT_DATA::get);
+        this(properties, defaultProductData, ModDataComponents.PRODUCT_DATA::get, 1);
+    }
+
+    public ProductTestItem(Properties properties, ProductStackData defaultProductData, int maxStackSize) {
+        this(properties, defaultProductData, ModDataComponents.PRODUCT_DATA::get, maxStackSize);
     }
 
     public ProductTestItem(
@@ -36,7 +40,16 @@ public final class ProductTestItem extends Item implements ProductDataCarrier {
             ProductStackData defaultProductData,
             Supplier<DataComponentType<ProductStackData>> componentType
     ) {
-        super(properties.stacksTo(1));
+        this(properties, defaultProductData, componentType, 1);
+    }
+
+    public ProductTestItem(
+            Properties properties,
+            ProductStackData defaultProductData,
+            Supplier<DataComponentType<ProductStackData>> componentType,
+            int maxStackSize
+    ) {
+        super(properties.stacksTo(maxStackSize));
         this.defaultProductData = Objects.requireNonNull(defaultProductData, "defaultProductData");
         this.componentType = Objects.requireNonNull(componentType, "componentType");
     }

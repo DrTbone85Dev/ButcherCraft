@@ -83,8 +83,9 @@ public final class PattyFormerBlock extends BaseEntityBlock {
             Player player,
             BlockHitResult hitResult
     ) {
-        if (requestExplicitOperation(level, pos)) {
-            return InteractionResult.SUCCESS;
+        if (player.isSecondaryUseActive()) {
+            requestExplicitOperation(level, pos);
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return openMenu(level, pos, player)
                 ? InteractionResult.sidedSuccess(level.isClientSide)
@@ -101,11 +102,12 @@ public final class PattyFormerBlock extends BaseEntityBlock {
             InteractionHand hand,
             BlockHitResult hitResult
     ) {
+        if (player.isSecondaryUseActive()) {
+            requestExplicitOperation(level, pos);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (stack.getItem() instanceof ProductionOrderItem orderItem) {
             return orderItem.useOnWorkstation(stack, level, pos, player, hand);
-        }
-        if (requestExplicitOperation(level, pos)) {
-            return ItemInteractionResult.SUCCESS;
         }
         return openMenu(level, pos, player)
                 ? ItemInteractionResult.sidedSuccess(level.isClientSide)
@@ -170,6 +172,7 @@ public final class PattyFormerBlock extends BaseEntityBlock {
         if (level instanceof ServerLevel serverLevel
                 && level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity
                 && (blockEntity.workstationState() == WorkstationState.READY
+                || blockEntity.workstationState() == WorkstationState.COMPLETE
                 || blockEntity.workstationState() == WorkstationState.PROCESSING)) {
             blockEntity.requestPlayerProcessing(new WorkstationTickContext(serverLevel, pos));
             return true;

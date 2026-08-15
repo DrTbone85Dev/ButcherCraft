@@ -1,6 +1,6 @@
 # ButcherCraft Cutting Table
 
-Status: IM-028B acceptance recipe and employee source use implemented
+Status: IM-028B acceptance recipe and IM-030B stack-aware Beef Trim source implemented
 
 ## Purpose
 
@@ -44,11 +44,13 @@ custody.
 ## Player Use
 
 The block opens a three-slot menu labeled `Input`, `Primary Output`, and
-`Beef Trim Output`. Placing one Beef Short Loin in the input starts the one
-accepted recipe. Completion atomically consumes that input and creates one
-T-Bone Steak in the primary output plus one Beef Trim in the byproduct output.
-Either occupied output blocks the operation without consuming input. Normal
-output insertion remains prohibited.
+`Beef Trim Output`. Its Workstation-owned capacities are `1`, `1`, and `64`.
+Placing one Beef Short Loin in the input starts the one accepted recipe.
+Completion atomically consumes that input and creates one T-Bone Steak in the
+primary output plus one Beef Trim in the byproduct output. Compatible Beef Trim
+merges into the byproduct output. A blocked primary output or a full/incompatible
+trim output prevents the entire commit without consuming input or changing
+either output. Normal output insertion remains prohibited.
 
 For development-only transfer tests, a permission-level-2 operator may still
 preload exactly one Beef Trim directly into the byproduct output:
@@ -72,7 +74,8 @@ accepts exact custody.
 
 Post-custody cancellation returns only to the original endpoint instance. The
 employee reacquires that source reservation and physically returns before
-Material Handling invokes source return to the same Beef Trim output slot. A removed or replaced Cutting Table
+Material Handling invokes source return to the same Beef Trim output slot. A
+one-unit return may merge into a compatible non-full Beef Trim remainder. A removed or replaced Cutting Table
 does not inherit the earlier identity; custody remains fail-visible rather than
 being inserted into a replacement block.
 
@@ -90,11 +93,12 @@ Any active reservation is invalidated on removal.
 
 ## Current Limits
 
-- one Beef Short Loin input;
-- one T-Bone Steak primary output;
-- one Beef Trim byproduct output used as the schema-1 transfer source;
+- one Beef Short Loin input slot with capacity `1`;
+- one T-Bone Steak primary output slot with capacity `1`;
+- one Beef Trim byproduct output slot with capacity `64` used as the schema-2 transfer source;
 - one accepted player-operated recipe only;
 - exactly one Beef Trim per Material Handling request;
+- no employee batch carrying or quantity selection;
 - no broader fabrication catalog or recipe selection;
 - no automatic restocking;
 - no workstation search;

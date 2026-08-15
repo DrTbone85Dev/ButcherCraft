@@ -58,7 +58,7 @@ public record WorkstationInstanceRegistry(
             String configurationIdentity
     ) {
         return new WorkstationInstanceRegistry(
-                WorkstationEndpointSchema.CURRENT_VERSION,
+                WorkstationEndpointSchema.INSTANCE_SCHEMA_VERSION,
                 0L,
                 worldIdentity,
                 1L,

@@ -86,7 +86,7 @@ object graph.
 | Provider Framework | Allocation M22D contracts implemented; no production-grade concrete provider is active |
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | IM-011 schema-1 runtime foundation and narrow DG-003 additive handler compatibility implemented; general migration and the full RFC-0023 Draft 2 surface remain separately gated |
-| Material Handling | DG-002 and DG-002A ratified; IM-028A endpoint/custody foundation, IM-028B exact Beef Trim employee transfer, IM-028C Patty Former destination readiness, and IM-029 exact Ground Beef employee Grinder-to-Patty Former transfer implemented |
+| Material Handling | DG-002, DG-002A, and DG-004 ratified; IM-028A through IM-029 routes implemented; IM-030A schema-2 foundation and IM-030B selective stack-aware activation implemented |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 DG-002 establishes Material Handling as the singular transfer-lifecycle and
@@ -107,8 +107,17 @@ that destination without granting operation authority.
 The Architecture Manifest declares only those mechanically true
 responsibilities and persistence files. Employee Patty Former operation,
 Production-driven assignment, automatic selection, autonomous chains,
-partial-stack or batch transport, additional routes or materials, and general
-Logistics remain gated.
+batch transport, additional routes or materials, and general Logistics remain
+gated.
+DG-004 ratifies a versioned stack-aware Workstation and Material Handling
+evolution. IM-030A implements generic per-slot capacity, exact split/merge
+evidence, schema-2 journal and reconciliation, immutable schema-1 retention,
+migration gates, and Material Handling schema-2 evidence persistence. IM-030B
+activates max-stack-64 Beef Trim, Ground Beef, and Beef Patties, selective
+machine capacities, recipe-quantity processing commits, and one-unit partial
+withdrawal/deposit/return on the existing employee routes. Material Handling
+custody and employee carry remain exactly one item per assignment; no batch
+transport or automatic processing is authorized.
 Cutting Table fabrication remains bounded to one player-operated Beef Short
 Loin to T-Bone Steak plus Beef Trim recipe. Material Handling binds only the
 dedicated Beef Trim output; broader fabrication remains gated.
@@ -692,6 +701,7 @@ nothing.
 - [`Ratified Material Handling Custody And Recovery ADR`](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
 - [`Ratified Workstation Endpoint Durability And Instance Identity Addendum`](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
 - [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
+- [`Ratified Stack-Aware Workstation Inventory And Partial Transfer ADR`](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
 - [`Material Handling Implementation`](MATERIAL_HANDLING.md)
 - [`Cutting Table`](CUTTING_TABLE.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)

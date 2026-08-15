@@ -36,6 +36,16 @@ public final class WorkstationInventoryMaterialStore {
         return builder.build();
     }
 
+    /**
+     * Logical output target used while validating one operation. Physical merge and capacity
+     * remain governed by the later Workstation-owned inventory commit plan.
+     */
+    public static TransformationMaterialStore operationOutputStore(WorkstationInventory inventory) {
+        return InMemoryTransformationMaterialStore.builder()
+                .materialSlotCapacity(inventory.outputSlotCount())
+                .build();
+    }
+
     private static void addStack(InMemoryTransformationMaterialStore.Builder builder, ItemStack stack) {
         if (!stack.isEmpty()) {
             Product product = product(stack);

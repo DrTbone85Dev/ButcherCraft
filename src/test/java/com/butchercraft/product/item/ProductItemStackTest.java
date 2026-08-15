@@ -40,8 +40,11 @@ class ProductItemStackTest {
     }
 
     @Test
-    void productBearingStacksUseSingleStackLimit() {
-        assertEquals(1, productStack().getMaxStackSize());
+    void selectiveProductsStackTo64WithoutChangingOtherProductItems() {
+        assertEquals(64, productStack().getMaxStackSize());
+        assertEquals(64, ModItems.GROUND_BEEF.get().getDefaultInstance().getMaxStackSize());
+        assertEquals(64, ModItems.BEEF_PATTIES.get().getDefaultInstance().getMaxStackSize());
+        assertEquals(1, ModItems.T_BONE_STEAK.get().getDefaultInstance().getMaxStackSize());
     }
 
     @Test

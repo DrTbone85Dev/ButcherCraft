@@ -176,7 +176,7 @@ public record WorkstationEndpointJournalRecord(
                 ? WorkstationEndpointFreshnessIdentity.EMPTY_SLOT_CONTENT_DIGEST
                 : stack.contentDigest();
         return new WorkstationEndpointJournalRecord(
-                WorkstationEndpointSchema.CURRENT_VERSION,
+                WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION,
                 journalSequence,
                 effectId,
                 instanceId,

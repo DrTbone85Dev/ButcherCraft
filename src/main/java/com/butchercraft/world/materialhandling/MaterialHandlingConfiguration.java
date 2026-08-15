@@ -24,4 +24,8 @@ public record MaterialHandlingConfiguration(
                 "butchercraft:material_handling_configuration/v1/standard"
         );
     }
+
+    public String stackAwareConfigurationIdentity() {
+        return "butchercraft:material_handling_configuration/v2/one_item_approved_routes";
+    }
 }

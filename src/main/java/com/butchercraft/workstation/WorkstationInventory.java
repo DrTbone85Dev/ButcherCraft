@@ -25,6 +25,7 @@ public final class WorkstationInventory extends ItemStackHandler {
     private final int firstInputSlot;
     private final int firstOutputSlot;
     private final int totalSlotCount;
+    private final WorkstationSlotCapacityPolicy slotCapacityPolicy;
     private final Runnable changeListener;
     private BooleanSupplier inputLocked = () -> false;
     private BooleanSupplier outputExtractionAllowed = () -> false;
@@ -41,13 +42,39 @@ public final class WorkstationInventory extends ItemStackHandler {
         this(capability.inputSlots(), capability.outputSlots(), changeListener);
     }
 
+    public WorkstationInventory(
+            WorkstationCapability capability,
+            WorkstationSlotCapacityPolicy slotCapacityPolicy,
+            Runnable changeListener
+    ) {
+        this(capability.inputSlots(), capability.outputSlots(), slotCapacityPolicy, changeListener);
+    }
+
     public WorkstationInventory(int inputSlotCount, int outputSlotCount, Runnable changeListener) {
+        this(
+                inputSlotCount,
+                outputSlotCount,
+                WorkstationSlotCapacityPolicy.uniform(totalSlotCount(inputSlotCount, outputSlotCount), 1),
+                changeListener
+        );
+    }
+
+    public WorkstationInventory(
+            int inputSlotCount,
+            int outputSlotCount,
+            WorkstationSlotCapacityPolicy slotCapacityPolicy,
+            Runnable changeListener
+    ) {
         super(totalSlotCount(inputSlotCount, outputSlotCount));
         this.inputSlotCount = inputSlotCount;
         this.outputSlotCount = outputSlotCount;
         this.firstInputSlot = 0;
         this.firstOutputSlot = inputSlotCount;
         this.totalSlotCount = inputSlotCount + outputSlotCount;
+        this.slotCapacityPolicy = Objects.requireNonNull(slotCapacityPolicy, "slotCapacityPolicy");
+        if (slotCapacityPolicy.slotCount() != totalSlotCount) {
+            throw new IllegalArgumentException("Slot-capacity policy must cover every Workstation inventory slot");
+        }
         this.changeListener = Objects.requireNonNull(changeListener, "changeListener");
     }
 
@@ -79,6 +106,17 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     public int totalSlotCount() {
         return totalSlotCount;
+    }
+
+    public WorkstationSlotCapacityPolicy slotCapacityPolicy() {
+        return slotCapacityPolicy;
+    }
+
+    public int effectiveSlotCapacity(int slot, ItemStack stack) {
+        if (slot < 0 || slot >= totalSlotCount) {
+            throw new IllegalArgumentException("Workstation slot is outside inventory range");
+        }
+        return WorkstationStackMutationPlan.effectiveCapacity(stack, slotCapacityPolicy.capacity(slot));
     }
 
     public List<Integer> outputSlotRange() {
@@ -215,6 +253,26 @@ public final class WorkstationInventory extends ItemStackHandler {
         changeListener.run();
     }
 
+    public void publishInventoryCandidateInternal(List<ItemStack> inputs, List<ItemStack> outputs) {
+        List<ItemStack> copiedInputs = List.copyOf(Objects.requireNonNull(inputs, "inputs"));
+        List<ItemStack> copiedOutputs = List.copyOf(Objects.requireNonNull(outputs, "outputs"));
+        if (copiedInputs.size() != inputSlotCount || copiedOutputs.size() != outputSlotCount) {
+            throw new IllegalArgumentException("Inventory candidate must cover every Workstation slot");
+        }
+        suppressChangeListener = true;
+        try {
+            for (int inputIndex = 0; inputIndex < inputSlotCount; inputIndex++) {
+                setStackInSlot(firstInputSlot + inputIndex, copiedInputs.get(inputIndex));
+            }
+            for (int outputIndex = 0; outputIndex < outputSlotCount; outputIndex++) {
+                setStackInSlot(firstOutputSlot + outputIndex, copiedOutputs.get(outputIndex));
+            }
+        } finally {
+            suppressChangeListener = false;
+        }
+        changeListener.run();
+    }
+
     public void clearInputInternal() {
         setStackMuted(firstInputSlot, ItemStack.EMPTY);
     }
@@ -331,7 +389,7 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public int getSlotLimit(int slot) {
-        return 1;
+        return slotCapacityPolicy.capacity(slot);
     }
 
     @Override

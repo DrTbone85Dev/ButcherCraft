@@ -19,6 +19,7 @@ import com.butchercraft.workstation.endpoint.WorkstationInstanceLifecycle;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceRecord;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceRegistry;
 import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalStorage;
+import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalV2Storage;
 import com.butchercraft.workstation.endpoint.persistence.WorkstationInstanceStorage;
 import com.butchercraft.world.WorldIdentityService;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
@@ -36,6 +37,7 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -88,6 +90,15 @@ public final class WorkstationEndpointService {
     public void stop(ServerStoppingEvent event) {
         ActiveEndpoints current = active.get();
         if (current != null && current.server() == event.getServer()) active.compareAndSet(current, null);
+    }
+
+    public synchronized WorkstationEndpointJournal legacyJournalSnapshot(MinecraftServer server) {
+        return load(Objects.requireNonNull(server, "server")).journal();
+    }
+
+    public synchronized void makeLegacyJournalReadOnly(MinecraftServer server) {
+        ActiveEndpoints runtime = load(Objects.requireNonNull(server, "server"));
+        active.set(runtime.withLegacyJournalWritable(false));
     }
 
     public synchronized WorkstationEndpointObservationResult observeWithdrawalOne(
@@ -585,6 +596,13 @@ public final class WorkstationEndpointService {
             }
             runtime = load(level.getServer());
             unresolved = unresolvedReferences(runtime.journal(), record.instanceId());
+        }
+        List<String> stackAwareUnresolved = StackAwareWorkstationEndpointRuntimeService.INSTANCE
+                .unresolvedEffectIdentities(level.getServer(), record.instanceId());
+        if (!stackAwareUnresolved.isEmpty()) {
+            ArrayList<String> combined = new ArrayList<>(unresolved);
+            combined.addAll(stackAwareUnresolved);
+            unresolved = List.copyOf(combined);
         }
         WorkstationInstanceLifecycle target = unresolved.isEmpty()
                 ? WorkstationInstanceLifecycle.RETIRED
@@ -1206,15 +1224,35 @@ public final class WorkstationEndpointService {
         );
         WorkstationInstanceStorage instanceStorage = new WorkstationInstanceStorage(instanceFile(server));
         WorkstationEndpointJournalStorage journalStorage = new WorkstationEndpointJournalStorage(journalFile(server));
+        WorkstationEndpointJournalV2Storage versionedJournalStorage =
+                new WorkstationEndpointJournalV2Storage(journalFile(server));
         WorkstationInstanceRegistry registry = instanceStorage.loadExisting().orElseGet(() ->
                 WorkstationInstanceRegistry.empty(
                         worldIdentity,
                         configuration.instanceAllocationConfigurationIdentity()
                 )
         );
-        WorkstationEndpointJournal journal = journalStorage.loadExisting().orElseGet(() ->
-                WorkstationEndpointJournal.empty(worldIdentity, configuration.endpointConfigurationIdentity())
-        );
+        Optional<WorkstationEndpointJournalV2Storage.LoadedJournal> versioned =
+                versionedJournalStorage.loadVersioned();
+        boolean legacyJournalWritable = versioned.isEmpty()
+                || versioned.orElseThrow() instanceof WorkstationEndpointJournalV2Storage.LegacyJournal;
+        WorkstationEndpointJournal journal = versioned
+                .map(loaded -> {
+                    if (loaded instanceof WorkstationEndpointJournalV2Storage.LegacyJournal legacy) {
+                        return legacy.journal();
+                    }
+                    var stackAware = (WorkstationEndpointJournalV2Storage.StackAwareJournal) loaded;
+                    return stackAware.journal().immutableLegacySchema1Journal()
+                            .map(journalStorage::deserialize)
+                            .orElseGet(() -> WorkstationEndpointJournal.empty(
+                                    worldIdentity,
+                                    configuration.endpointConfigurationIdentity()
+                            ));
+                })
+                .orElseGet(() -> WorkstationEndpointJournal.empty(
+                        worldIdentity,
+                        configuration.endpointConfigurationIdentity()
+                ));
         if (!registry.worldIdentity().equals(worldIdentity) || !journal.worldIdentity().equals(worldIdentity)) {
             throw new IllegalStateException("Workstation endpoint persistence references another World Identity");
         }
@@ -1238,7 +1276,9 @@ public final class WorkstationEndpointService {
             }
             stackCodec.decode(server.registryAccess(), effect.exactStack());
         }
-        ActiveEndpoints loaded = new ActiveEndpoints(server, instanceStorage, journalStorage, registry, journal);
+        ActiveEndpoints loaded = new ActiveEndpoints(
+                server, instanceStorage, journalStorage, registry, journal, legacyJournalWritable
+        );
         active.set(loaded);
         return loaded;
     }
@@ -1249,6 +1289,9 @@ public final class WorkstationEndpointService {
     }
 
     private void publishJournal(ActiveEndpoints runtime, WorkstationEndpointJournal candidate) {
+        if (!runtime.legacyJournalWritable()) {
+            throw new IllegalStateException("Schema-1 endpoint journal is immutable after schema-2 activation");
+        }
         runtime.journalStorage().save(candidate);
         active.set(runtime.withJournal(candidate));
     }
@@ -1323,14 +1366,23 @@ public final class WorkstationEndpointService {
             WorkstationInstanceStorage instanceStorage,
             WorkstationEndpointJournalStorage journalStorage,
             WorkstationInstanceRegistry registry,
-            WorkstationEndpointJournal journal
+            WorkstationEndpointJournal journal,
+            boolean legacyJournalWritable
     ) {
         private ActiveEndpoints withRegistry(WorkstationInstanceRegistry candidate) {
-            return new ActiveEndpoints(server, instanceStorage, journalStorage, candidate, journal);
+            return new ActiveEndpoints(
+                    server, instanceStorage, journalStorage, candidate, journal, legacyJournalWritable
+            );
         }
 
         private ActiveEndpoints withJournal(WorkstationEndpointJournal candidate) {
-            return new ActiveEndpoints(server, instanceStorage, journalStorage, registry, candidate);
+            return new ActiveEndpoints(
+                    server, instanceStorage, journalStorage, registry, candidate, legacyJournalWritable
+            );
+        }
+
+        private ActiveEndpoints withLegacyJournalWritable(boolean writable) {
+            return new ActiveEndpoints(server, instanceStorage, journalStorage, registry, journal, writable);
         }
     }
 

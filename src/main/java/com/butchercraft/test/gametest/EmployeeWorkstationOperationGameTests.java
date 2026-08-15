@@ -182,7 +182,7 @@ public final class EmployeeWorkstationOperationGameTests {
         Set<ExecutionOperationId> before = operationIds(helper);
         GrinderBlockEntity grinder = placeGrinder(helper);
         insert(helper, grinder, beefTrim());
-        grinder.inventory().setOutputInternal(groundBeef());
+        grinder.inventory().setOutputInternal(count(groundBeef(), 64));
         EmployeeRecord record = createPresentProcessingEmployee(helper, "Employee Grinder Blocked Output");
         EmployeeEntity employee = assignAndArrive(helper, record);
 
@@ -657,6 +657,11 @@ public final class EmployeeWorkstationOperationGameTests {
 
     private static ItemStack groundBeef() {
         return ModItems.GROUND_BEEF.get().getDefaultInstance();
+    }
+
+    private static ItemStack count(ItemStack stack, int count) {
+        stack.setCount(count);
+        return stack;
     }
 
     private static void assertFailure(GameTestHelper helper, EmployeeEntity employee, String failure) {

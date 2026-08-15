@@ -81,6 +81,13 @@ public final class ExecutionService {
                 .flatMap(active -> active.storage().compatibilityObservation());
     }
 
+    public ExecutionRegistryCompatibilityObservation compatibilityObservationFor(MinecraftServer server) {
+        return load(Objects.requireNonNull(server, "server")).storage().compatibilityObservation()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Execution compatibility classification was not published during load"
+                ));
+    }
+
     private ActiveExecution load(MinecraftServer server) {
         Objects.requireNonNull(server, "server");
         ActiveExecution existing = activeState.get();

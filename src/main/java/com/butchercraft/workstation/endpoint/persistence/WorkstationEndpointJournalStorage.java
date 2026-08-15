@@ -87,7 +87,7 @@ public final class WorkstationEndpointJournalStorage {
         try {
             JsonObject root = WorkstationEndpointJson.object(JsonParser.parseString(json), "Workstation endpoint root");
             int schema = WorkstationEndpointJson.integer(root, "schema_version");
-            if (schema != WorkstationEndpointSchema.CURRENT_VERSION) {
+            if (schema != WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION) {
                 throw new IllegalArgumentException("Unsupported Workstation endpoint schema version: " + schema);
             }
             List<WorkstationEndpointJournalRecord> records = new ArrayList<>();

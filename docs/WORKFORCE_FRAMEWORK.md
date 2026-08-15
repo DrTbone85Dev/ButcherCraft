@@ -425,11 +425,16 @@ Still out of scope after IM-028B:
 Still out of scope after IM-029:
 
 - employee Patty Former operation
-- transported products or routes beyond exact one-unit Beef Trim from Cutting
-  Table to Grinder and Ground Beef from Grinder to Patty Former
-- partial-stack or batch transport and stack-size changes
+- transported products or routes beyond one-unit Beef Trim from Cutting Table
+  to Grinder and one-unit Ground Beef from Grinder to Patty Former
+- player-selected transfer quantity or batch transport
 - employee inventory, backpacks, hidden slots, or item drops
 - cross-dimension transfer or automatic workstation search
 - Production-driven assignment, autonomous queues, or general Logistics
 - employee-owned Workstation, Material Handling, Scheduler, or Execution authority
 - public transport APIs or custom carrying animation frameworks
+
+IM-030B permits either existing route to withdraw one item from a larger
+compatible source stack and merge it into a compatible destination stack.
+Workforce still assigns and displays exactly one carried item and does not own
+the split, merge, endpoint effect, or in-transit custody.

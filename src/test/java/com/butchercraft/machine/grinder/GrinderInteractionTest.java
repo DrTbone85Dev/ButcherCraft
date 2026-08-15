@@ -22,6 +22,26 @@ class GrinderInteractionTest {
     }
 
     @Test
+    void secondaryUseAloneRequestsAPlayerOperation() throws IOException {
+        String source = source("src/main/java/com/butchercraft/machine/grinder/GrinderBlock.java");
+        String emptyHand = source.substring(
+                source.indexOf("protected InteractionResult useWithoutItem("),
+                source.indexOf("protected ItemInteractionResult useItemOn(")
+        );
+        String heldItem = source.substring(
+                source.indexOf("protected ItemInteractionResult useItemOn("),
+                source.indexOf("protected void onRemove(")
+        );
+
+        assertTrue(emptyHand.contains("if (player.isSecondaryUseActive())"));
+        assertTrue(emptyHand.indexOf("requestExplicitOperation(level, pos)")
+                < emptyHand.indexOf("openMenu(level, pos, player)"));
+        assertTrue(heldItem.contains("if (player.isSecondaryUseActive())"));
+        assertTrue(heldItem.indexOf("requestExplicitOperation(level, pos)")
+                < heldItem.indexOf("openMenu(level, pos, player)"));
+    }
+
+    @Test
     void grinderBlockEntityProvidesGrinderMenu() throws IOException {
         String baseSource = source("src/main/java/com/butchercraft/workstation/block/AbstractInventoryWorkstationBlockEntity.java");
         String source = source("src/main/java/com/butchercraft/machine/grinder/GrinderBlockEntity.java");

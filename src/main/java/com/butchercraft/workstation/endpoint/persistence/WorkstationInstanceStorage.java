@@ -187,7 +187,7 @@ public final class WorkstationInstanceStorage {
     }
 
     private static void requireCurrentSchema(int schema) {
-        if (schema != WorkstationEndpointSchema.CURRENT_VERSION) {
+        if (schema != WorkstationEndpointSchema.INSTANCE_SCHEMA_VERSION) {
             throw new IllegalArgumentException("Unsupported Workstation instance schema version: " + schema);
         }
     }

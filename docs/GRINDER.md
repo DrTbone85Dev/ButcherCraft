@@ -1,6 +1,6 @@
 # ButcherCraft Grinder
 
-Status: Milestone 2C/2D machine wrapper, data-driven grinding proof, v0.7.0 content-snapshot compatibility preserved, IM-014 Grinder gameplay promotion, IM-015 second promoted grinder process, and IM-017 six-product Grinder recipe expansion
+Status: Milestone 2C/2D machine wrapper through IM-017 recipe expansion, IM-027 employee operation, and IM-030B selective stack-aware processing
 
 ## Purpose
 
@@ -43,6 +43,18 @@ workstation_capability: butchercraft:grinding
 
 Each promoted operation runs for 60 server ticks. Chicken uses the `butchercraft:poultry` processing profile. Beef, Pork, Buffalo, Lamb, and Venison use the existing `butchercraft:red_meat` processing profile. Buffalo uses retained `butchercraft:bison_*` registry identities with player-facing Buffalo localization and presentation.
 
+IM-030B configures Grinder input and output capacity `64`. Beef Trim and Ground
+Beef stack to 64; the other promoted trim and ground products retain their
+existing item limits. One explicit player or employee operation consumes one
+recipe input and merges one compatible output. Remaining input never starts
+another operation automatically. A full or component-incompatible output
+blocks the operation before input mutation.
+
+Player controls are explicit: normal right-click opens the Grinder inventory,
+including while valid input is present. Shift + right-click requests exactly
+one operation through the existing Execution and Scheduler path. Opening the
+menu never grants operation authority.
+
 The Grinder is obtainable through a generated shaped crafting recipe, appears in the ButcherCraft creative tab, drops itself through its block loot table, and drops stored contents on removal. All promoted trim and ground products are currently obtainable through the ButcherCraft creative tab as the development-stage acquisition bridge. This bridge is not final upstream butchering progression.
 
 ## Verification Notes
@@ -63,5 +75,8 @@ Automated tests cover:
 - Generated operation JSON using `butchercraft:grinding`.
 - Generated recipe JSON making the Grinder craftable.
 - GameTest coverage for promoted Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim-to-ground execution, process coexistence, deterministic lookup, unsupported input rejection, process isolation, visible menu-data progress, retained legacy item compatibility, save/load non-duplication, duplicate safety, blocked output, wrong-output prevention, and active block-break input preservation.
+- Stack-aware coverage for multi-count Beef Trim input, one-unit consumption,
+  compatible Ground Beef output merge, full-output atomic blocking, repeated
+  explicit operations, no automatic loop, and exact save/reload counts.
 
-Manual verification should craft or obtain the Grinder, place it, insert each promoted Trim product in separate runs, observe 60-tick progress for each, confirm the matching Ground output, confirm wrong inputs and blocked output show visible status, and confirm breaking an idle or active Grinder does not duplicate output. IM-017 automated implementation does not claim a human acceptance pass unless a human tester completes it.
+Manual verification should craft or obtain the Grinder, place it, insert each promoted Trim product in separate runs, normal right-click to inspect the inventory, then Shift + right-click to operate. Observe 60-tick progress for each, confirm the matching Ground output, confirm wrong inputs and blocked output show visible status, and confirm breaking an idle or active Grinder does not duplicate output. For IM-030B, also place multiple Beef Trim, confirm normal right-click leaves the stack unchanged, operate once with Shift + right-click, confirm `N -> N-1`, confirm Ground Beef merges, wait to prove no automatic second operation, and explicitly operate again. Automated implementation does not claim a human acceptance pass unless a human tester completes it.

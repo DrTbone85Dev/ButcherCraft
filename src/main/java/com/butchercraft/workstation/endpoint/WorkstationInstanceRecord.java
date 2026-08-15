@@ -76,7 +76,7 @@ public record WorkstationInstanceRecord(
                 configurationIdentity
         );
         String digest = WorkstationEndpointCanonicalDigest.create("butchercraft:workstation_instance_allocation")
-                .add(WorkstationEndpointSchema.CURRENT_VERSION)
+                .add(WorkstationEndpointSchema.INSTANCE_SCHEMA_VERSION)
                 .add(instanceId.value())
                 .add(worldIdentity.identity())
                 .add(worldIdentity.rootDigest())
@@ -87,7 +87,7 @@ public record WorkstationInstanceRecord(
         String evidence = "butchercraft:workstation_instance_allocation/v1/"
                 + WorkstationEndpointCanonicalDigest.suffix(digest);
         return new WorkstationInstanceRecord(
-                WorkstationEndpointSchema.CURRENT_VERSION,
+                WorkstationEndpointSchema.INSTANCE_SCHEMA_VERSION,
                 instanceId,
                 worldIdentity,
                 endpointKey,

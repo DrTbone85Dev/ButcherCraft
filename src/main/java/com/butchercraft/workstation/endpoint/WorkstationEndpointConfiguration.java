@@ -45,4 +45,8 @@ public record WorkstationEndpointConfiguration(
                 "butchercraft:workstation_endpoint_configuration/v1/standard"
         );
     }
+
+    public String stackAwareEndpointConfigurationIdentity() {
+        return "butchercraft:workstation_endpoint_configuration/v2/selective_meat_stacks_64";
+    }
 }

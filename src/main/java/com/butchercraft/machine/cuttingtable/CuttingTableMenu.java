@@ -14,7 +14,8 @@ public final class CuttingTableMenu extends ProcessingWorkstationMenu {
                 playerInventory,
                 extraData,
                 ModBlocks.CUTTING_TABLE.get(),
-                CuttingTableWorkstation.capability()
+                CuttingTableWorkstation.capability(),
+                CuttingTableWorkstation.slotCapacityPolicy()
         );
     }
 

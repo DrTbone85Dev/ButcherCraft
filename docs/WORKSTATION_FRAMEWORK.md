@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, promoted machines, and IM-028A through IM-028C durable transfer endpoints and Patty Former operation gate
+Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, and IM-030A/IM-030B stack-aware foundation and selective activation
 
 ## Purpose
 
@@ -65,7 +65,21 @@ Minimum failure codes from the milestone are represented, with one additional ex
 
 Slot `0` is the first input for current machines. Output slots start at the configured first output slot, which is slot `1` for current one-input machines and slot `3` for the Packaging Table.
 
-Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. The Cutting Table accepts Beef Short Loin for its one authorized recipe. Output slots reject insertion. Product-bearing stacks remain limited to stack size one. Input extraction is blocked while processing is active. Output extraction is allowed after completion and while recovering an explicit `OUTPUT_OCCUPIED` blockage. Automation uses the same item-handler rules.
+Processing machine primary inputs accept product-bearing stacks only. Slot-aware validation allows multi-input workstations to define auxiliary input rules. The Packaging Table accepts product-bearing stacks in slot `0` and known packaging supply items in slots `1` and `2`. The Cutting Table accepts Beef Short Loin for its one authorized recipe. Output slots reject insertion. Input extraction is blocked while processing is active. Output extraction is allowed after completion and while recovering an explicit `OUTPUT_OCCUPIED` blockage. Automation uses the same item-handler rules.
+
+IM-030A adds `WorkstationSlotCapacityPolicy` as the Workstation-owned,
+versioned per-slot capacity contract. Effective capacity is the lower of the
+registered item's maximum and the configured slot capacity. IM-030B activates
+these live policies:
+
+| Machine | Slot capacities |
+| --- | --- |
+| Cutting Table | input `1`, primary T-Bone output `1`, Beef Trim output `64` |
+| Grinder | input `64`, output `64` |
+| Patty Former | input `64`, output `64` |
+
+Beef Trim, Ground Beef, and Beef Patties have item maximum `64`; no other
+product maximum changes by implication.
 
 ## Material Handling Endpoints
 
@@ -103,6 +117,25 @@ Startup order for this boundary is World Identity, Workstation instance
 registry, endpoint journal, block-entity projection reconciliation, Material
 Handling validation/reconciliation, then Workforce assignment reconstruction.
 
+### Stack-Aware Endpoint Foundation
+
+Schema-2 endpoint types are separate from schema-1 identities and records.
+They bind the complete pre-stack, requested quantity, exact transfer payload,
+withdrawal remainder, committed post-stack, revisions, lock/freshness facts,
+slot capacity, configuration identity, and immutable owner result. Withdrawal
+computes `N -> Q + (N-Q)` inside Workstation. Deposit and source return merge
+only exact item-and-component-compatible stacks and accept the complete payload
+or nothing.
+
+The schema-2 service publishes `EFFECT_COMMITTED` before changing its live
+projection. Restart reconciliation advances an exact stored pre-state to the
+stored post-state once, accepts an already exact post-state, rejects a
+replacement instance, and reports a third state as `UNKNOWN_OUTCOME`. Existing
+schema-1 journal documents remain immutable. IM-030B activates schema 2 for the
+two existing employee routes: one requested item may be withdrawn from a larger
+source stack, deposited into a compatible destination stack, or returned to a
+compatible source stack. The assignment and carry quantity remain one.
+
 ## Operation Resolution
 
 `WorkstationOperationResolver` reads `ProductStackData`, validates it against loaded product definitions, builds a bounded processing graph from current definitions, filters operations by profile, workstation capability, and quantity, then returns deterministic compatible operations.
@@ -137,7 +170,7 @@ On completion:
 3. The selected execution strategy prepares and commits the operation.
 4. Committed engine products are converted into ItemStacks through the temporary development mapping.
 5. The execution strategy may decorate output stacks with workstation-specific metadata.
-6. `WorkstationInventoryCommitPlan` snapshots all inputs and outputs, clears the selected consumed input slots, and inserts ordered outputs.
+6. `WorkstationInventoryCommitPlan` snapshots all inputs and outputs, decrements each selected input by its recipe quantity, and atomically merges ordered compatible outputs within effective capacity.
 7. If commit-time inventory mutation fails, the input and output snapshots are restored.
 8. State becomes `COMPLETE`.
 
@@ -267,7 +300,7 @@ Permanent block:
 butchercraft:patty_former
 ```
 
-The block appears in the ButcherCraft creative tab, opens a processing menu and client screen, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, over 60 server ticks.
+The block appears in the ButcherCraft creative tab, opens a processing menu and client screen on normal right-click, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. Shift + right-click requests exactly one player operation through Execution and Scheduler; menu opening never requests work. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, over 60 server ticks. The Grinder uses the same normal-use/secondary-use distinction. Cutting Table remains menu-only because it has no player explicit-operation gate.
 
 The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
@@ -281,4 +314,4 @@ The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, employee automation beyond the IM-027 Beef Grinder request, IM-028B explicit Beef Trim transfer, and IM-029 explicit Ground Beef transfer, Patty Former employee operation, Production-driven logistics, automatic workstation selection, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, employee automation beyond the IM-027 Beef Grinder request and the two explicit one-item transfer routes, Patty Former employee operation, batch hauling, Production-driven logistics, automatic workstation selection, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.

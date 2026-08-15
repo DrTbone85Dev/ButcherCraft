@@ -357,7 +357,7 @@ public final class ProductionOrderGameTests {
         clickGrinder(helper, player);
         insertBeefTrim(helper, grinder);
 
-        helper.runAtTickTime(8, () -> grinder.inventory().setOutputInternal(groundBeef()));
+        helper.runAtTickTime(8, () -> grinder.inventory().setOutputInternal(count(groundBeef(), 64)));
         helper.runAtTickTime(115, () -> {
             ProductionOrderStatusSnapshot snapshot = status(helper, player, true);
             helper.assertTrue(grinder.lastFailure().orElseThrow().code() == WorkstationFailureCode.OUTPUT_OCCUPIED,
@@ -451,7 +451,7 @@ public final class ProductionOrderGameTests {
         helper.runAtTickTime(115, () -> {
             transferGroundBeef(helper, grinder, pattyFormer);
             requestPattyFormerOperation(helper, player);
-            pattyFormer.inventory().setOutputInternal(beefPatties());
+            pattyFormer.inventory().setOutputInternal(count(beefPatties(), 64));
         });
         helper.runAtTickTime(230, () -> {
             ProductionOrderStatusSnapshot snapshot = status(helper, player, true);
@@ -666,6 +666,7 @@ public final class ProductionOrderGameTests {
                 false
         );
         helper.assertTrue(remainder.isEmpty(), "Beef Trim inserts into Grinder");
+        requestPlayerOperation(helper, GRINDER_POS);
     }
 
     private static void transferGroundBeef(
@@ -685,7 +686,9 @@ public final class ProductionOrderGameTests {
     private static void requestPattyFormerOperation(GameTestHelper helper, Player player) {
         ItemStack order = player.getItemInHand(InteractionHand.MAIN_HAND);
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.setShiftKeyDown(true);
         helper.useBlock(PATTY_FORMER_POS, player);
+        player.setShiftKeyDown(false);
         player.setItemInHand(InteractionHand.MAIN_HAND, order);
         helper.assertTrue(pattyFormer(helper).workstationState() == WorkstationState.PROCESSING,
                 "Player explicitly starts one Patty Former operation after transfer");
@@ -695,8 +698,19 @@ public final class ProductionOrderGameTests {
         return ModItems.GROUND_BEEF.get().getDefaultInstance();
     }
 
+    private static void requestPlayerOperation(GameTestHelper helper, BlockPos position) {
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
+        player.setShiftKeyDown(true);
+        helper.useBlock(position, player);
+    }
+
     private static ItemStack beefPatties() {
         return ModItems.BEEF_PATTIES.get().getDefaultInstance();
+    }
+
+    private static ItemStack count(ItemStack stack, int count) {
+        stack.setCount(count);
+        return stack;
     }
 
     private static ProductionManager saveAndLoadProduction(GameTestHelper helper) {

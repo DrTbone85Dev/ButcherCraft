@@ -9,8 +9,13 @@ import com.butchercraft.workstation.WorkstationExecutionStrategy;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectId;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectIdV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectKind;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointObservationV2;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointConfiguration;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
+import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationTransferEndpoint;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointProjection;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationTransferEndpoint;
 import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
@@ -28,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public final class CuttingTableBlockEntity extends AbstractProcessingWorkstationBlockEntity
-        implements WorkstationTransferEndpoint {
+        implements WorkstationTransferEndpoint, StackAwareWorkstationTransferEndpoint {
     public CuttingTableBlockEntity(BlockPos pos, BlockState blockState) {
         super(
                 ModBlockEntityTypes.CUTTING_TABLE.get(),
@@ -38,7 +43,9 @@ public final class CuttingTableBlockEntity extends AbstractProcessingWorkstation
                 new WorkstationOperationResolver(),
                 DevelopmentProductItemMappings.fixtureMapping(),
                 WorkstationExecutionStrategy.atomicTransformation(),
-                CuttingTableExecutionCoordinator.INSTANCE
+                CuttingTableExecutionCoordinator.INSTANCE,
+                com.butchercraft.workstation.WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY,
+                CuttingTableWorkstation.slotCapacityPolicy()
         );
     }
 
@@ -108,11 +115,70 @@ public final class CuttingTableBlockEntity extends AbstractProcessingWorkstation
                 && endpointAcceptsView(kind, slotIndex, exactStack);
     }
 
+    @Override public void activateStackAwareEndpoint() { activateStackAwareEndpointView(); }
+    @Override public WorkstationInstanceId endpointInstanceId() { return stackAwareEndpointInstanceIdView(); }
+    @Override public WorkstationEndpointKey endpointKey() { return stackAwareEndpointKeyView(endpointTypeIdentity()); }
+    @Override public String endpointPostOperationStateIdentity(WorkstationEndpointObservationV2 observation) {
+        return endpointOperationStateIdentity();
+    }
+    @Override public String endpointConfigurationIdentity() {
+        return WorkstationEndpointConfiguration.standard().stackAwareEndpointConfigurationIdentity();
+    }
+    @Override public int endpointEffectiveCapacity(int slotIndex, ItemStack stack) {
+        return stackAwareEffectiveCapacityView(slotIndex, stack);
+    }
+    @Override public long endpointInventoryRevision() { return stackAwareInventoryRevisionView(); }
+    @Override public long endpointEffectRevision() { return stackAwareEffectRevisionView(); }
+    @Override public long endpointLastAppliedJournalSequence() { return stackAwareLastJournalSequenceView(); }
+    @Override public java.util.Optional<WorkstationEndpointEffectIdV2> endpointPreparedEffectId() {
+        return stackAwarePreparedEffectIdView();
+    }
+    @Override public java.util.Optional<WorkstationEndpointEffectIdV2> endpointLastEffectId() {
+        return stackAwareLastEffectIdView();
+    }
+    @Override public java.util.Optional<String> endpointLastOwnerResultIdentity() {
+        return stackAwareLastOwnerResultIdentityView();
+    }
+    @Override public boolean endpointAcceptsCandidate(
+            WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactPreStack, ItemStack exactPostStack) {
+        if ((kind != WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL
+                && kind != WorkstationEndpointEffectKind.SOURCE_RETURN)
+                || slotIndex != trimOutputSlot()
+                || !stackAwareAcceptsCandidateView(kind, slotIndex, exactPreStack, exactPostStack)) {
+            return false;
+        }
+        return kind == WorkstationEndpointEffectKind.SOURCE_WITHDRAWAL
+                ? exactPreStack.is(ModItems.BEEF_TRIM.get())
+                && exactPreStack.getCount() - exactPostStack.getCount() == 1
+                : exactPostStack.is(ModItems.BEEF_TRIM.get())
+                && exactPostStack.getCount() - exactPreStack.getCount() == 1;
+    }
+    @Override public void lockPreparedEndpointEffect(
+            WorkstationEndpointEffectIdV2 effectId, int slotIndex, long expectedInventoryRevision) {
+        lockStackAwareEndpointEffectView(effectId, slotIndex, expectedInventoryRevision);
+    }
+    @Override public void releasePreparedEndpointEffect(WorkstationEndpointEffectIdV2 effectId) {
+        releaseStackAwareEndpointEffectView(effectId);
+    }
+    @Override public void applyCommittedEndpointEffect(
+            WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactPreStack, ItemStack exactPostStack,
+            long expectedInventoryRevision, long postInventoryRevision, long endpointEffectRevision,
+            long journalSequence, WorkstationEndpointEffectIdV2 effectId, String ownerResultIdentity) {
+        if (!endpointAcceptsCandidate(kind, slotIndex, exactPreStack, exactPostStack)) {
+            throw new IllegalStateException("Cutting Table rejected the schema-2 transfer endpoint effect");
+        }
+        applyCommittedStackAwareEndpointEffectView(
+                kind, slotIndex, exactPreStack, exactPostStack, expectedInventoryRevision, postInventoryRevision,
+                endpointEffectRevision, journalSequence, effectId, ownerResultIdentity
+        );
+    }
+
     public DevelopmentOutputPreloadStatus preloadOutputForDevelopment(ItemStack exactStack) {
         Objects.requireNonNull(exactStack, "exactStack");
         if (level == null || level.isClientSide
                 || !exactStack.is(ModItems.BEEF_TRIM.get())
-                || exactStack.getCount() != 1) {
+                || exactStack.getCount() <= 0
+                || exactStack.getCount() > inventory().effectiveSlotCapacity(trimOutputSlot(), exactStack)) {
             return DevelopmentOutputPreloadStatus.INVALID_STACK;
         }
         if (inventory().isTransferLocked(trimOutputSlot())) {
@@ -123,8 +189,16 @@ public final class CuttingTableBlockEntity extends AbstractProcessingWorkstation
             inventory().setOutputInternal(1, exactStack.copy());
             return DevelopmentOutputPreloadStatus.PRELOADED;
         }
-        if (ItemStack.isSameItemSameComponents(current, exactStack) && current.getCount() == exactStack.getCount()) {
-            return DevelopmentOutputPreloadStatus.ALREADY_PRESENT;
+        if (ItemStack.isSameItemSameComponents(current, exactStack)) {
+            if (current.getCount() == exactStack.getCount()) return DevelopmentOutputPreloadStatus.ALREADY_PRESENT;
+            try {
+                var merged = com.butchercraft.workstation.WorkstationStackMutationPlan.merge(
+                        current, exactStack, inventory().slotCapacityPolicy().capacity(trimOutputSlot()));
+                inventory().setOutputInternal(1, merged.postStack());
+                return DevelopmentOutputPreloadStatus.PRELOADED;
+            } catch (IllegalArgumentException ignored) {
+                return DevelopmentOutputPreloadStatus.OUTPUT_OCCUPIED;
+            }
         }
         return DevelopmentOutputPreloadStatus.OUTPUT_OCCUPIED;
     }

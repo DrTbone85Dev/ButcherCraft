@@ -35,15 +35,15 @@ public record WorkstationEndpointProjection(
         if (lastEffectId.isEmpty() != lastOwnerResultIdentity.isEmpty()) {
             throw new IllegalArgumentException("Endpoint effect and owner result markers must be published together");
         }
-        if (lastEffectId.isEmpty() != (lastAppliedJournalSequence == 0L)) {
-            throw new IllegalArgumentException("Last-applied journal sequence must accompany endpoint result markers");
+        if (lastEffectId.isPresent() && lastAppliedJournalSequence == 0L) {
+            throw new IllegalArgumentException("Schema-1 endpoint result marker requires a journal sequence");
         }
         preparedEffectId = Objects.requireNonNull(preparedEffectId, "preparedEffectId");
-        if (preparedEffectId.isEmpty() && (preparedSlotIndex != -1 || preparedInventoryRevision != 0L)) {
-            throw new IllegalArgumentException("Unlocked endpoint projection cannot retain prepared lock fields");
-        }
         if (preparedEffectId.isPresent() && preparedSlotIndex < 0) {
             throw new IllegalArgumentException("Prepared endpoint lock requires a slot index");
+        }
+        if (preparedSlotIndex < -1 || (preparedSlotIndex == -1 && preparedInventoryRevision != 0L)) {
+            throw new IllegalArgumentException("Endpoint prepared lock fields are inconsistent");
         }
     }
 

@@ -13,7 +13,7 @@ import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.world.materialhandling.MaterialCustodyLocation;
 import com.butchercraft.world.materialhandling.MaterialTransferLifecycle;
-import com.butchercraft.world.materialhandling.MaterialTransferRecord;
+import com.butchercraft.world.materialhandling.MaterialTransferView;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingTransferResult;
 import com.butchercraft.world.workforce.employee.EmployeeEntityLink;
@@ -179,38 +179,41 @@ public final class EmployeeMaterialHandlingService {
             );
         }
 
-        WorkstationEndpointObservationResult sourceObservation = endpointService.observeWithdrawalOne(
-                level,
-                sourcePosition
-        );
-        if (!sourceObservation.succeeded()) {
-            AssignmentStatus status = switch (sourceObservation.code()) {
-                case SOURCE_EMPTY -> AssignmentStatus.SOURCE_EMPTY;
-                case UNSUPPORTED_SOURCE_COUNT -> AssignmentStatus.UNSUPPORTED_SOURCE_COUNT;
-                case SOURCE_MISMATCH -> AssignmentStatus.WRONG_PRODUCT;
-                default -> AssignmentStatus.INVALID_SOURCE;
-            };
-            return AssignmentResult.rejected(status, Optional.empty(), sourceObservation.detail());
-        }
-        WorkstationEndpointObservationResult destinationObservation = endpointService.observeDepositOne(
-                level,
-                destinationPosition,
-                sourceObservation.observation().orElseThrow().exactEffectStack()
-        );
-        if (!sourceObservation.observation().orElseThrow().exactEffectStack().itemIdentity()
-                .equals(route.orElseThrow().sourceItemIdentity())) {
-            return AssignmentResult.rejected(
-                    AssignmentStatus.WRONG_PRODUCT,
-                    Optional.empty(),
-                    workstationName(source) + " source must contain exactly one "
-                            + displayMaterial(route.orElseThrow().materialIdentity())
+        if (!materialHandlingService.stackAwareActiveFor(level.getServer())) {
+            WorkstationEndpointObservationResult sourceObservation = endpointService.observeWithdrawalOne(
+                    level,
+                    sourcePosition
             );
-        }
-        if (!destinationObservation.succeeded()) {
-            AssignmentStatus status = destinationObservation.code() == WorkstationEndpointResultCode.DESTINATION_OCCUPIED
-                    ? AssignmentStatus.DESTINATION_BLOCKED
-                    : AssignmentStatus.INVALID_DESTINATION;
-            return AssignmentResult.rejected(status, Optional.empty(), destinationObservation.detail());
+            if (!sourceObservation.succeeded()) {
+                AssignmentStatus status = switch (sourceObservation.code()) {
+                    case SOURCE_EMPTY -> AssignmentStatus.SOURCE_EMPTY;
+                    case UNSUPPORTED_SOURCE_COUNT -> AssignmentStatus.UNSUPPORTED_SOURCE_COUNT;
+                    case SOURCE_MISMATCH -> AssignmentStatus.WRONG_PRODUCT;
+                    default -> AssignmentStatus.INVALID_SOURCE;
+                };
+                return AssignmentResult.rejected(status, Optional.empty(), sourceObservation.detail());
+            }
+            WorkstationEndpointObservationResult destinationObservation = endpointService.observeDepositOne(
+                    level,
+                    destinationPosition,
+                    sourceObservation.observation().orElseThrow().exactEffectStack()
+            );
+            if (!sourceObservation.observation().orElseThrow().exactEffectStack().itemIdentity()
+                    .equals(route.orElseThrow().sourceItemIdentity())) {
+                return AssignmentResult.rejected(
+                        AssignmentStatus.WRONG_PRODUCT,
+                        Optional.empty(),
+                        workstationName(source) + " source must contain exactly one "
+                                + displayMaterial(route.orElseThrow().materialIdentity())
+                );
+            }
+            if (!destinationObservation.succeeded()) {
+                AssignmentStatus status = destinationObservation.code()
+                        == WorkstationEndpointResultCode.DESTINATION_OCCUPIED
+                        ? AssignmentStatus.DESTINATION_BLOCKED
+                        : AssignmentStatus.INVALID_DESTINATION;
+                return AssignmentResult.rejected(status, Optional.empty(), destinationObservation.detail());
+            }
         }
 
         MaterialHandlingTransferResult transferRequest = materialHandlingService.requestEmployeeTransfer(
@@ -222,18 +225,18 @@ public final class EmployeeMaterialHandlingService {
         if (!transferRequest.succeeded()) {
             return materialFailure(Optional.empty(), transferRequest);
         }
-        MaterialTransferRecord transfer = transferRequest.transfer().orElseThrow();
+        MaterialTransferView transfer = transferRequest.transfer().orElseThrow();
         EmployeeMaterialHandlingAssignmentManager.CreateResult created = runtime.manager().createOrObserve(
                 WorldIdentityRootIdentities.from(worldIdentityService.getOrCreate(level.getServer())),
                 employeeId,
-                transfer.transferId(),
+                transfer.transferReference(),
                 source,
                 destination,
                 level.getGameTime()
         );
         runtime.storage().save(runtime.manager().directory());
         if (created.status() == EmployeeMaterialHandlingAssignmentManager.CreateStatus.CONFLICT) {
-            materialHandlingService.cancel(level, transfer.transferId(), "Workforce assignment conflict");
+            materialHandlingService.cancel(level, transfer.transferReference(), "Workforce assignment conflict");
             return AssignmentResult.rejected(
                     AssignmentStatus.ASSIGNMENT_CONFLICT,
                     Optional.of(created.assignment()),
@@ -253,7 +256,7 @@ public final class EmployeeMaterialHandlingService {
                     "New explicit Material Handling assignment released the completed destination reservation"
             );
             if (!released.succeeded()) {
-                materialHandlingService.cancel(level, transfer.transferId(),
+                materialHandlingService.cancel(level, transfer.transferReference(),
                         "Prior destination reservation could not be released");
                 assignment = transition(
                         runtime,
@@ -279,7 +282,7 @@ public final class EmployeeMaterialHandlingService {
                 sourcePosition
         );
         if (!reservation.succeeded()) {
-            materialHandlingService.cancel(level, transfer.transferId(), "Source reservation was rejected");
+            materialHandlingService.cancel(level, transfer.transferReference(), "Source reservation was rejected");
             assignment = transition(
                     runtime,
                     assignment,
@@ -311,7 +314,7 @@ public final class EmployeeMaterialHandlingService {
             return AssignmentResult.rejected(AssignmentStatus.ASSIGNMENT_NOT_FOUND, latest,
                     "Employee has no active Material Handling assignment");
         }
-        MaterialTransferRecord transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
+        MaterialTransferView transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(null);
         if (transfer == null) {
             EmployeeMaterialHandlingAssignment blocked = recovery(runtime, assignment,
@@ -376,7 +379,7 @@ public final class EmployeeMaterialHandlingService {
                     .ifPresent(value -> employee.clearCarryObservation(value.revision()));
             return;
         }
-        MaterialTransferRecord transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
+        MaterialTransferView transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(null);
         if (transfer == null || !transfer.source().equals(assignment.source())
                 || !transfer.destination().equals(assignment.destination())
@@ -447,7 +450,7 @@ public final class EmployeeMaterialHandlingService {
         if (assignment == null) {
             return;
         }
-        MaterialTransferRecord transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
+        MaterialTransferView transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(null);
         boolean sourceTrip = assignment.state() == EmployeeMaterialHandlingAssignmentState.WALKING_TO_SOURCE
                 || assignment.state() == EmployeeMaterialHandlingAssignmentState.WAITING_FOR_SOURCE_RESERVATION
@@ -458,7 +461,7 @@ public final class EmployeeMaterialHandlingService {
                             : EmployeeMaterialHandlingFailureCode.DESTINATION_UNREACHABLE,
                     "Navigation failed while custody remained proven: " + reason);
         } else if (transfer != null) {
-            materialHandlingService.cancel(level, transfer.transferId(), "Employee navigation failed before custody");
+            materialHandlingService.cancel(level, transfer.transferReference(), "Employee navigation failed before custody");
             transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.FAILED,
                     failure(EmployeeMaterialHandlingFailureCode.SOURCE_UNREACHABLE,
                             "Navigation failed before withdrawal: " + reason));
@@ -480,13 +483,13 @@ public final class EmployeeMaterialHandlingService {
         if (assignment == null) {
             return;
         }
-        MaterialTransferRecord transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
+        MaterialTransferView transfer = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(null);
         if (transfer != null && transfer.hasProvenMaterialHandlingCustody()) {
             recovery(runtime, assignment, EmployeeMaterialHandlingFailureCode.RECOVERY_REQUIRED,
                     "Employee was removed while Material Handling retained custody");
         } else if (transfer != null) {
-            materialHandlingService.cancel(level, transfer.transferId(), "Employee removed before custody");
+            materialHandlingService.cancel(level, transfer.transferReference(), "Employee removed before custody");
             transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.FAILED,
                     failure(EmployeeMaterialHandlingFailureCode.EMPLOYEE_UNAVAILABLE,
                             "Employee was removed before withdrawal"));
@@ -511,7 +514,7 @@ public final class EmployeeMaterialHandlingService {
             return TransferDiagnostics.none(employeeId);
         }
         EmployeeMaterialHandlingAssignment value = assignment.orElseThrow();
-        Optional<MaterialTransferRecord> transfer = materialHandlingService.findTransfer(
+        Optional<MaterialTransferView> transfer = materialHandlingService.findTransfer(
                 level.getServer(),
                 value.transferId()
         );
@@ -525,14 +528,14 @@ public final class EmployeeMaterialHandlingService {
                 transfer.map(record -> record.lifecycle().name().toLowerCase(java.util.Locale.ROOT)).orElse("missing"),
                 transfer.map(record -> record.source().endpointKey().workstationTypeIdentity() + "->"
                         + record.destination().endpointKey().workstationTypeIdentity()).orElse("missing"),
-                transfer.map(MaterialTransferRecord::materialIdentity).orElse("missing"),
+                transfer.map(MaterialTransferView::materialIdentity).orElse("missing"),
                 formatEndpoint(value.source()),
                 formatEndpoint(value.destination()),
                 reservation.map(record -> record.workstationType() + ":" + record.state().serializedName())
                         .orElse("none"),
                 employee.map(entity -> entity.navigationStateValue() + ":" + entity.navigationDiagnostics().destinationType())
                         .orElse("unloaded"),
-                transfer.flatMap(MaterialTransferRecord::custodyLocation).map(Enum::name)
+                transfer.flatMap(MaterialTransferView::custodyLocation).map(Enum::name)
                         .orElse("unproven"),
                 employee.map(entity -> entity.getMainHandItem().isEmpty()
                         ? "none"
@@ -582,7 +585,7 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             EmployeeEntity employee
     ) {
         if (!currentEndpoint(level, assignment.source())) {
@@ -619,7 +622,7 @@ public final class EmployeeMaterialHandlingService {
                 level,
                 requested.transferId()
         );
-        MaterialTransferRecord current = result.transfer().orElse(transfer);
+        MaterialTransferView current = result.transfer().orElse(transfer);
         observeWithdrawal(level, runtime, requested, current, employee);
     }
 
@@ -627,10 +630,10 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             EmployeeEntity employee
     ) {
-        MaterialTransferRecord current = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
+        MaterialTransferView current = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(transfer);
         if (current.hasProvenMaterialHandlingCustody()) {
             EmployeeMaterialHandlingAssignment carrying = transition(
@@ -708,7 +711,7 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             EmployeeEntity employee
     ) {
         if (!transfer.hasProvenMaterialHandlingCustody()) {
@@ -767,10 +770,10 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             EmployeeEntity employee
     ) {
-        MaterialTransferRecord current = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
+        MaterialTransferView current = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(transfer);
         if (current.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
             EmployeeMaterialHandlingAssignment completed = complete(runtime, assignment);
@@ -801,7 +804,7 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             EmployeeEntity employee
     ) {
         if (transfer.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
@@ -853,10 +856,10 @@ public final class EmployeeMaterialHandlingService {
         }
         MaterialHandlingTransferResult cancelled = materialHandlingService.cancel(
                 level,
-                transfer.transferId(),
+                transfer.transferReference(),
                 assignment.failure().map(EmployeeMaterialHandlingFailure::detail).orElse("Employee transfer cancelled")
         );
-        MaterialTransferRecord current = cancelled.transfer().orElse(transfer);
+        MaterialTransferView current = cancelled.transfer().orElse(transfer);
         if (cancelled.succeeded() && current.lifecycle() == MaterialTransferLifecycle.CANCELLED) {
             reservationService.release(level.getServer(), assignment.employeeId(),
                     "Material returned to " + workstationName(assignment.source()));
@@ -882,11 +885,11 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer
+            MaterialTransferView transfer
     ) {
         MaterialHandlingTransferResult cancelled = materialHandlingService.cancel(
                 level,
-                transfer.transferId(),
+                transfer.transferReference(),
                 assignment.failure().map(EmployeeMaterialHandlingFailure::detail).orElse("Employee transfer cancelled")
         );
         reservationService.managerFor(level.getServer()).findByEmployee(assignment.employeeId().value())
@@ -964,7 +967,7 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             Availability availability
     ) {
         reservationService.invalidateByEmployee(level.getServer(), assignment.employeeId(), availability.detail());
@@ -977,7 +980,7 @@ public final class EmployeeMaterialHandlingService {
             recovery(runtime, assignment, code,
                     availability.detail() + "; Material Handling custody remains proven");
         } else {
-            materialHandlingService.cancel(level, transfer.transferId(), availability.detail());
+            materialHandlingService.cancel(level, transfer.transferReference(), availability.detail());
             transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.FAILED,
                     failure(code, availability.detail()));
         }
@@ -987,7 +990,7 @@ public final class EmployeeMaterialHandlingService {
             ServerLevel level,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer,
+            MaterialTransferView transfer,
             EmployeeMaterialHandlingFailureCode code,
             String detail
     ) {
@@ -995,7 +998,7 @@ public final class EmployeeMaterialHandlingService {
         if (transfer.hasProvenMaterialHandlingCustody()) {
             recovery(runtime, assignment, code, detail);
         } else {
-            materialHandlingService.cancel(level, transfer.transferId(), detail);
+            materialHandlingService.cancel(level, transfer.transferReference(), detail);
             transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.FAILED, failure(code, detail));
         }
     }
@@ -1043,7 +1046,7 @@ public final class EmployeeMaterialHandlingService {
     private void refreshCarry(
             EmployeeEntity employee,
             EmployeeMaterialHandlingAssignment assignment,
-            MaterialTransferRecord transfer
+            MaterialTransferView transfer
     ) {
         Optional<ItemStack> display = materialHandlingService.carryDisplayStack(
                 employee.level().getServer(),
@@ -1169,13 +1172,13 @@ public final class EmployeeMaterialHandlingService {
 
     private static String requiredOperatorAction(
             EmployeeMaterialHandlingAssignment assignment,
-            Optional<MaterialTransferRecord> transfer
+            Optional<MaterialTransferView> transfer
     ) {
         if (transfer.filter(value -> value.lifecycle() == MaterialTransferLifecycle.UNKNOWN_OUTCOME).isPresent()) {
             return "reconcile_unknown_outcome";
         }
         return switch (assignment.state()) {
-            case RECOVERY_REQUIRED -> transfer.filter(MaterialTransferRecord::hasProvenMaterialHandlingCustody)
+            case RECOVERY_REQUIRED -> transfer.filter(MaterialTransferView::hasProvenMaterialHandlingCustody)
                     .map(ignored -> "cancel_or_reconcile")
                     .orElse("reconcile");
             case WAITING_FOR_SOURCE_RESERVATION, WAITING_FOR_DESTINATION_RESERVATION -> "resolve_reservation_conflict";
@@ -1195,7 +1198,7 @@ public final class EmployeeMaterialHandlingService {
             Optional<EmployeeMaterialHandlingAssignment> assignment,
             MaterialHandlingTransferResult result
     ) {
-        MaterialTransferLifecycle lifecycle = result.transfer().map(MaterialTransferRecord::lifecycle).orElse(null);
+        MaterialTransferLifecycle lifecycle = result.transfer().map(MaterialTransferView::lifecycle).orElse(null);
         if (lifecycle == MaterialTransferLifecycle.UNKNOWN_OUTCOME) {
             return AssignmentResult.rejected(AssignmentStatus.UNKNOWN_OUTCOME, assignment, result.detail());
         }
@@ -1253,7 +1256,7 @@ public final class EmployeeMaterialHandlingService {
             if (!assignment.active()) {
                 continue;
             }
-            MaterialTransferRecord transfer = materialHandlingService.findTransfer(server, assignment.transferId())
+            MaterialTransferView transfer = materialHandlingService.findTransfer(server, assignment.transferId())
                     .orElse(null);
             if (transfer == null || !transfer.source().equals(assignment.source())
                     || !transfer.destination().equals(assignment.destination())

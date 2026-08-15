@@ -1,6 +1,12 @@
 package com.butchercraft.world.materialhandling.runtime;
 
 import com.butchercraft.integration.materialhandling.ExactItemStackCodec;
+import com.butchercraft.integration.materialhandling.StackAwareEndpointMigrationGate;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointJournalState;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointJournalV2;
+import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalStorage;
+import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalV2Storage;
+import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationEndpointRuntimeService;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointObservation;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointOwnerResult;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointPreparation;
@@ -13,17 +19,23 @@ import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointPreparat
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReference;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReferenceResult;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
+import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.WorldIdentityService;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 import com.butchercraft.world.materialhandling.MaterialHandlingConfiguration;
 import com.butchercraft.world.materialhandling.MaterialCustodyLocation;
 import com.butchercraft.world.materialhandling.MaterialHandlingRuntime;
+import com.butchercraft.world.materialhandling.MaterialHandlingRuntimeV2;
 import com.butchercraft.world.materialhandling.MaterialHandlingSchema;
 import com.butchercraft.world.materialhandling.MaterialTransferId;
 import com.butchercraft.world.materialhandling.MaterialTransferLifecycle;
 import com.butchercraft.world.materialhandling.MaterialTransferRecord;
+import com.butchercraft.world.materialhandling.MaterialTransferRecordV2;
+import com.butchercraft.world.materialhandling.MaterialTransferView;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorage;
+import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorageV2;
+import com.butchercraft.world.workforce.materialhandling.persistence.EmployeeMaterialHandlingAssignmentStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -63,6 +75,7 @@ public final class MaterialHandlingService {
     private final MaterialHandlingConfiguration configuration;
     private final ExactItemStackCodec stackCodec = new ExactItemStackCodec();
     private final AtomicReference<ActiveMaterialHandling> active = new AtomicReference<>();
+    private final StackAwareMaterialHandlingService stackAware;
 
     MaterialHandlingService(
             WorldIdentityService worldIdentityService,
@@ -72,9 +85,19 @@ public final class MaterialHandlingService {
         this.worldIdentityService = Objects.requireNonNull(worldIdentityService, "worldIdentityService");
         this.endpointService = Objects.requireNonNull(endpointService, "endpointService");
         this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.stackAware = new StackAwareMaterialHandlingService(
+                endpointService,
+                StackAwareWorkstationEndpointRuntimeService.INSTANCE,
+                configuration,
+                stackCodec
+        );
     }
 
     public void initialize(ServerStartedEvent event) {
+        if (activateStackAwareIfEligible(event.getServer())) {
+            stackAware.reconcile(event.getServer());
+            return;
+        }
         ActiveMaterialHandling runtime = load(event.getServer());
         int reconciled = 0;
         for (MaterialTransferRecord transfer : runtime.runtime().transfers()) {
@@ -99,6 +122,7 @@ public final class MaterialHandlingService {
     }
 
     public void stop(ServerStoppingEvent event) {
+        stackAware.stop(event.getServer());
         ActiveMaterialHandling current = active.get();
         if (current != null && current.server() == event.getServer()) active.compareAndSet(current, null);
     }
@@ -118,7 +142,7 @@ public final class MaterialHandlingService {
         if (!requested.succeeded()) {
             return requested;
         }
-        return resume(level, requested.transfer().orElseThrow().transferId());
+        return resume(level, requested.transfer().orElseThrow().transferReference());
     }
 
     public synchronized MaterialHandlingTransferResult requestEmployeeTransfer(
@@ -134,6 +158,10 @@ public final class MaterialHandlingService {
                 EMPLOYEE_ASSIGNMENT,
                 Optional.of(Objects.requireNonNull(employeeReference, "employeeReference"))
         );
+    }
+
+    public boolean stackAwareActiveFor(MinecraftServer server) {
+        return stackAware.activeFor(Objects.requireNonNull(server, "server"));
     }
 
     private MaterialHandlingTransferResult requestTransfer(
@@ -177,6 +205,11 @@ public final class MaterialHandlingService {
         }
         if (!source.endpointKey().dimensionIdentity().equals(destination.endpointKey().dimensionIdentity())) {
             return MaterialHandlingTransferResult.failed(Optional.empty(), "Transfer endpoints are in different dimensions");
+        }
+        if (stackAware.activeFor(level.getServer())) {
+            return stackAware.requestTransfer(
+                    level, sourcePosition, destinationPosition, assignmentType, employeeReference, route.orElseThrow()
+            );
         }
         ActiveMaterialHandling runtime = load(level.getServer());
         MaterialHandlingRuntime.AllocationCandidate allocation = runtime.runtime().request(
@@ -229,6 +262,7 @@ public final class MaterialHandlingService {
     }
 
     public synchronized MaterialHandlingTransferResult resume(ServerLevel level, MaterialTransferId transferId) {
+        if (stackAware.activeFor(level.getServer())) return stackAware.resume(level, transferId);
         return advance(level, transferId, false);
     }
 
@@ -236,7 +270,8 @@ public final class MaterialHandlingService {
             ServerLevel level,
             MaterialTransferId transferId
     ) {
-        MaterialTransferRecord transfer = findTransfer(level.getServer(), transferId).orElse(null);
+        if (stackAware.activeFor(level.getServer())) return stackAware.withdrawToCustody(level, transferId);
+        MaterialTransferRecord transfer = load(level.getServer()).runtime().find(transferId).orElse(null);
         if (transfer == null) {
             return MaterialHandlingTransferResult.failed(Optional.empty(), "Unknown Material Transfer");
         }
@@ -259,7 +294,8 @@ public final class MaterialHandlingService {
             ServerLevel level,
             MaterialTransferId transferId
     ) {
-        MaterialTransferRecord transfer = findTransfer(level.getServer(), transferId).orElse(null);
+        if (stackAware.activeFor(level.getServer())) return stackAware.depositFromCustody(level, transferId);
+        MaterialTransferRecord transfer = load(level.getServer()).runtime().find(transferId).orElse(null);
         if (transfer == null) {
             return MaterialHandlingTransferResult.failed(Optional.empty(), "Unknown Material Transfer");
         }
@@ -527,6 +563,7 @@ public final class MaterialHandlingService {
             MaterialTransferId transferId,
             String reason
     ) {
+        if (stackAware.activeFor(level.getServer())) return stackAware.cancel(level, transferId, reason);
         Objects.requireNonNull(level, "level");
         reason = Objects.requireNonNull(reason, "reason").trim();
         if (reason.isEmpty()) throw new IllegalArgumentException("Cancellation reason must not be blank");
@@ -851,13 +888,32 @@ public final class MaterialHandlingService {
         return Optional.ofNullable(active.get()).map(ActiveMaterialHandling::runtime);
     }
 
-    public Optional<MaterialTransferRecord> findTransfer(MinecraftServer server, MaterialTransferId transferId) {
+    public Optional<MaterialHandlingRuntimeV2> currentRuntimeV2(MinecraftServer server) {
+        return stackAware.currentRuntime(Objects.requireNonNull(server, "server"));
+    }
+
+    public Optional<MaterialTransferView> findTransfer(
+            MinecraftServer server,
+            MaterialTransferId transferId
+    ) {
+        if (stackAware.activeFor(server)) {
+            Optional<MaterialTransferView> current = stackAware.findTransfer(server, transferId)
+                    .map(value -> (MaterialTransferView) value);
+            if (current.isPresent()) return current;
+            return stackAware.currentRuntime(server)
+                    .flatMap(runtime -> runtime.immutableLegacySchema1Runtime())
+                    .map(json -> new MaterialHandlingStorage(stateFile(server)).deserialize(json))
+                    .flatMap(runtime -> runtime.find(transferId))
+                    .map(value -> (MaterialTransferView) value);
+        }
         return load(Objects.requireNonNull(server, "server")).runtime()
-                .find(Objects.requireNonNull(transferId, "transferId"));
+                .find(Objects.requireNonNull(transferId, "transferId"))
+                .map(value -> (MaterialTransferView) value);
     }
 
     public Optional<ItemStack> carryDisplayStack(MinecraftServer server, MaterialTransferId transferId) {
-        MaterialTransferRecord transfer = findTransfer(server, transferId).orElse(null);
+        if (stackAware.activeFor(server)) return stackAware.carryDisplayStack(server, transferId);
+        MaterialTransferRecord transfer = load(server).runtime().find(transferId).orElse(null);
         if (transfer == null || !transfer.hasProvenMaterialHandlingCustody()) {
             return Optional.empty();
         }
@@ -1184,6 +1240,111 @@ public final class MaterialHandlingService {
         ActiveMaterialHandling loaded = new ActiveMaterialHandling(server, storage, runtime);
         active.set(loaded);
         return loaded;
+    }
+
+    private boolean activateStackAwareIfEligible(MinecraftServer server) {
+        StackAwareWorkstationEndpointRuntimeService stackAwareEndpoints =
+                StackAwareWorkstationEndpointRuntimeService.INSTANCE;
+        MaterialHandlingStorageV2 materialStorage = new MaterialHandlingStorageV2(stateFile(server));
+        Optional<MaterialHandlingStorageV2.LoadedRuntime> materialLoaded = materialStorage.loadVersioned();
+        WorkstationEndpointJournalV2Storage endpointStorage =
+                new WorkstationEndpointJournalV2Storage(WorkstationEndpointService.journalFile(server));
+        Optional<WorkstationEndpointJournalV2Storage.LoadedJournal> endpointLoaded = endpointStorage.loadVersioned();
+
+        boolean materialV2 = materialLoaded
+                .filter(MaterialHandlingStorageV2.StackAwareRuntime.class::isInstance).isPresent();
+        boolean endpointV2 = endpointLoaded
+                .filter(WorkstationEndpointJournalV2Storage.StackAwareJournal.class::isInstance).isPresent();
+        if (materialV2 && !endpointV2) {
+            throw new IllegalStateException("Schema-2 Material Handling requires schema-2 Workstation endpoints");
+        }
+        if (materialV2) {
+            if (!stackAwareEndpoints.activeFor(server)) {
+                throw new IllegalStateException("Schema-2 Workstation endpoint runtime failed to initialize");
+            }
+            return stackAware.activeFor(server);
+        }
+
+        WorldIdentityRootIdentity worldIdentity = WorldIdentityRootIdentities.from(
+                worldIdentityService.getOrCreate(server)
+        );
+        WorkstationEndpointJournalStorage legacyEndpointStorage =
+                new WorkstationEndpointJournalStorage(WorkstationEndpointService.journalFile(server));
+        com.butchercraft.workstation.endpoint.WorkstationEndpointJournal legacyEndpoint;
+        String immutableLegacyEndpoint;
+        if (endpointLoaded.isPresent()
+                && endpointLoaded.orElseThrow() instanceof WorkstationEndpointJournalV2Storage.LegacyJournal legacy) {
+            legacyEndpoint = legacy.journal();
+            immutableLegacyEndpoint = legacy.immutableCanonicalJson();
+        } else if (endpointV2) {
+            WorkstationEndpointJournalV2 existing =
+                    ((WorkstationEndpointJournalV2Storage.StackAwareJournal) endpointLoaded.orElseThrow()).journal();
+            immutableLegacyEndpoint = existing.immutableLegacySchema1Journal().orElse("");
+            legacyEndpoint = immutableLegacyEndpoint.isBlank()
+                    ? com.butchercraft.workstation.endpoint.WorkstationEndpointJournal.empty(
+                    worldIdentity,
+                    com.butchercraft.workstation.endpoint.WorkstationEndpointConfiguration.standard()
+                            .endpointConfigurationIdentity()
+            ) : legacyEndpointStorage.deserialize(immutableLegacyEndpoint);
+        } else {
+            legacyEndpoint = endpointService.legacyJournalSnapshot(server);
+            immutableLegacyEndpoint = legacyEndpointStorage.serialize(legacyEndpoint);
+        }
+
+        MaterialHandlingStorage legacyMaterialStorage = new MaterialHandlingStorage(stateFile(server));
+        MaterialHandlingRuntime legacyMaterial;
+        String immutableLegacyMaterial;
+        if (materialLoaded.isPresent()
+                && materialLoaded.orElseThrow() instanceof MaterialHandlingStorageV2.LegacyRuntime legacy) {
+            legacyMaterial = legacy.runtime();
+            immutableLegacyMaterial = legacy.immutableCanonicalJson();
+        } else {
+            legacyMaterial = MaterialHandlingRuntime.empty(worldIdentity, configuration.configurationIdentity());
+            immutableLegacyMaterial = legacyMaterialStorage.serialize(legacyMaterial);
+        }
+
+        long activeAssignments = new EmployeeMaterialHandlingAssignmentStorage(
+                com.butchercraft.world.EmployeeMaterialHandlingService.assignmentFile(server)
+        ).load().assignments().stream().filter(value -> value.active()).count();
+        boolean executionCompatibilityProven = ExecutionService.INSTANCE
+                .compatibilityObservationFor(server)
+                .permitsExecutionAuthority();
+        boolean projectionsReconciled = legacyEndpoint.records().stream().allMatch(record ->
+                record.state() == WorkstationEndpointJournalState.RECONCILED
+                        || record.state() == WorkstationEndpointJournalState.REJECTED
+                        || record.state() == WorkstationEndpointJournalState.FAILED
+        );
+        StackAwareEndpointMigrationGate gate = new StackAwareEndpointMigrationGate();
+        StackAwareEndpointMigrationGate.Assessment assessment = gate.assess(
+                new StackAwareEndpointMigrationGate.Input(
+                        legacyEndpoint,
+                        legacyMaterial,
+                        projectionsReconciled,
+                        Math.toIntExact(activeAssignments),
+                        executionCompatibilityProven,
+                        false,
+                        false
+                )
+        );
+        if (assessment.decision() != StackAwareEndpointMigrationGate.Decision.ELIGIBLE) return false;
+
+        if (!endpointV2) {
+            WorkstationEndpointJournalV2 endpointCandidate = WorkstationEndpointJournalV2.migratedFromLegacy(
+                    legacyEndpoint,
+                    immutableLegacyEndpoint,
+                    com.butchercraft.workstation.endpoint.WorkstationEndpointConfiguration.standard()
+                            .stackAwareEndpointConfigurationIdentity()
+            );
+            stackAwareEndpoints.activate(server, endpointCandidate);
+        }
+        MaterialHandlingRuntimeV2 materialCandidate = MaterialHandlingRuntimeV2.migratedFromLegacy(
+                legacyMaterial,
+                immutableLegacyMaterial,
+                configuration.stackAwareConfigurationIdentity()
+        );
+        stackAware.activate(server, materialCandidate);
+        active.set(null);
+        return true;
     }
 
     private void validatePayload(MinecraftServer server, Optional<WorkstationEndpointStackPayload> payload) {

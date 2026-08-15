@@ -17,7 +17,7 @@ public record WorkstationEndpointEffectId(String value) implements Comparable<Wo
     ) {
         WorkstationEndpointValidation.id(invocationIdentity, "endpoint invocation identity");
         String digest = WorkstationEndpointCanonicalDigest.create("butchercraft:workstation_endpoint_effect")
-                .add(WorkstationEndpointSchema.CURRENT_VERSION)
+                .add(WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION)
                 .add(instanceId.value())
                 .add(invocationIdentity)
                 .add(kind.name())

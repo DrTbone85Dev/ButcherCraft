@@ -195,7 +195,7 @@ final class TransformationWorkstationExecutionStrategy implements WorkstationExe
         TransformationExecution execution;
         try {
             TransformationMaterialStore inputStore = WorkstationInventoryMaterialStore.inputStore(inventory);
-            TransformationMaterialStore outputStore = WorkstationInventoryMaterialStore.outputStore(inventory);
+            TransformationMaterialStore outputStore = WorkstationInventoryMaterialStore.operationOutputStore(inventory);
             execution = TransformationExecutor.execute(plan.definition(), plan.context(), plan.evaluation(), inputStore, outputStore);
         } catch (RuntimeException exception) {
             return transformationFailure(

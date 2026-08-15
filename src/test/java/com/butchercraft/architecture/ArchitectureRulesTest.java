@@ -1110,7 +1110,13 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/employee_transfer_cancellation_recovery",
                         "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
                         "butchercraft:platform_contract/employee_ground_beef_transfer_route",
-                        "butchercraft:platform_contract/patty_former_transport_operation_separation"
+                        "butchercraft:platform_contract/patty_former_transport_operation_separation",
+                        "butchercraft:platform_contract/workstation_stack_capacity_foundation",
+                        "butchercraft:platform_contract/stack_aware_endpoint_protocol",
+                        "butchercraft:platform_contract/stack_aware_endpoint_merge",
+                        "butchercraft:platform_contract/stack_aware_migration_gate",
+                        "butchercraft:platform_contract/material_handling_schema_2_foundation",
+                        "butchercraft:platform_contract/stack_aware_live_activation_gate"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));

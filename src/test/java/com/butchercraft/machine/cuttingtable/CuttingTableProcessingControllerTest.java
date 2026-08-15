@@ -28,6 +28,45 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CuttingTableProcessingControllerTest {
     @Test
+    void activatedTrimOutputMergesWhilePrimaryOutputRemainsAtomic() {
+        Harness harness = Harness.createActivated();
+        harness.inventory.setInputInternal(ModItems.BEEF_SHORT_LOIN.get().getDefaultInstance());
+
+        harness.tickThroughCompletion();
+
+        assertTrue(harness.inventory.input().isEmpty());
+        assertEquals(1, harness.inventory.getStackInSlot(harness.inventory.firstOutputSlot()).getCount());
+        assertEquals(1, harness.inventory.getStackInSlot(harness.inventory.firstOutputSlot() + 1).getCount());
+
+        harness.inventory.setOutputInternal(0, ItemStack.EMPTY);
+        harness.controller.onInventoryChanged();
+        harness.inventory.setInputInternal(ModItems.BEEF_SHORT_LOIN.get().getDefaultInstance());
+        harness.controller.onInventoryChanged();
+        harness.tickThroughCompletion();
+
+        assertTrue(harness.inventory.input().isEmpty());
+        assertEquals(1, harness.inventory.getStackInSlot(harness.inventory.firstOutputSlot()).getCount());
+        assertEquals(2, harness.inventory.getStackInSlot(harness.inventory.firstOutputSlot() + 1).getCount());
+    }
+
+    @Test
+    void fullActivatedTrimOutputBlocksEveryRecipeMutation() {
+        Harness harness = Harness.createActivated();
+        ItemStack input = ModItems.BEEF_SHORT_LOIN.get().getDefaultInstance();
+        harness.inventory.setInputInternal(input.copy());
+        ItemStack trim = ModItems.BEEF_TRIM.get().getDefaultInstance();
+        trim.setCount(64);
+        harness.inventory.setOutputInternal(1, trim);
+
+        harness.tickThroughCompletion();
+
+        assertTrue(ItemStack.isSameItemSameComponents(input, harness.inventory.input()));
+        assertTrue(harness.inventory.getStackInSlot(harness.inventory.firstOutputSlot()).isEmpty());
+        assertEquals(64, harness.inventory.getStackInSlot(harness.inventory.firstOutputSlot() + 1).getCount());
+        assertEquals(WorkstationFailureCode.OUTPUT_OCCUPIED, harness.controller.lastFailure().orElseThrow().code());
+    }
+
+    @Test
     void exactlyOneAcceptedCuttingTableRecipeUsesExistingProducts() {
         var operation = BuiltInProcessingDefinitions.fabricateTBoneSteakOperation();
 
@@ -163,11 +202,20 @@ class CuttingTableProcessingControllerTest {
 
     private record Harness(WorkstationInventory inventory, WorkstationProcessingController controller) {
         static Harness create() {
+            return create(false);
+        }
+
+        static Harness createActivated() {
+            return create(true);
+        }
+
+        private static Harness create(boolean activatedCapacity) {
             AtomicInteger changes = new AtomicInteger();
-            WorkstationInventory inventory = new WorkstationInventory(
-                    CuttingTableWorkstation.capability(),
-                    changes::incrementAndGet
-            );
+            WorkstationInventory inventory = activatedCapacity
+                    ? new WorkstationInventory(
+                            CuttingTableWorkstation.capability(), CuttingTableWorkstation.slotCapacityPolicy(),
+                            changes::incrementAndGet)
+                    : new WorkstationInventory(CuttingTableWorkstation.capability(), changes::incrementAndGet);
             WorkstationProcessingController controller = new WorkstationProcessingController(
                     inventory,
                     CuttingTableWorkstation.capability(),

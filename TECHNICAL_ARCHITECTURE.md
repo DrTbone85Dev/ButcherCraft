@@ -150,6 +150,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.workforce.employee` | Pure Employee Identity, Employment Records, lifecycle, shift references, presence observation, entity linkage records, employee record persistence, and the transient IM-027 employee workstation-operation state machine. Runtime employee entities consume these records for movement, one bounded Grinder interaction request, and the non-authoritative IM-028B carry display. |
 | `com.butchercraft.world.workforce.materialhandling` | Pure Workforce-owned employee transfer assignment identity, lifecycle, explicit Workstation endpoint references, typed failures, deterministic registry, and schema-versioned assignment persistence. It stores no ItemStack, path, renderer, reservation authority, or endpoint mutation authority. |
 | `com.butchercraft.world.materialhandling` | Pure Material Handling transfer identity, lifecycle, exact in-transit custody record, evidence bindings, and schema. Minecraft integration persists exact ItemStacks only while Material Handling has proven custody and invokes Workstation-owned endpoint protocols. |
+| `com.butchercraft.workstation.endpoint` schema 2 | Workstation-owned quantity-sensitive pre/transfer/remainder/post evidence, freshness, immutable owner results, durable journal candidates, and legacy schema-1 retention. IM-030B selects this service after conservative migration validation. |
 | `com.butchercraft.world.workforce.department` | Pure Department Identity, department anchors, bounded navigation targets, deterministic department registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.goods` | Pure immutable economic commodity and product definitions, industry ids, units, storage/transport metadata, transformation relationships, deterministic registry, manager, validation, and JSON persistence. |
 | `com.butchercraft.world.economy.actor` | Pure economic actor ids, immutable definitions, typed capabilities, Good relationships, supported-industry metadata, in-memory runtime state, deterministic registry, manager, validation, and JSON definition persistence. |
@@ -201,6 +202,21 @@ The current package layout already aligns with the platform direction and requir
 - `com.butchercraft.content` coordinates validated immutable content snapshots.
 - `com.butchercraft.processing`, `packaging`, `workstation`, and `machine` currently form the flagship Meat Processing implementation and reusable execution boundaries.
 - `com.butchercraft.integration`, registration, menus, screens, ItemStack adapters, and top-level world services remain Minecraft or NeoForge boundaries.
+- IM-030A adds a versioned per-slot `WorkstationSlotCapacityPolicy`. Effective
+  capacity is `min(item maximum, Workstation policy)`. IM-030B configures the
+  Cutting Table as `1/1/64` and the Grinder and Patty Former as `64/64` while
+  leaving other machines on their existing policies. Capacity does not alter
+  recipe quantities, duration, or processing throughput.
+- Schema-2 Workstation endpoint mutation candidates are computed only by the
+  Workstation owner. Withdrawal stores exact pre-stack, transfer, remainder,
+  and post-stack; deposit and return store exact pre, payload, and merged post.
+  Compatible merge requires the same item and complete component map and is
+  all-or-nothing.
+- The schema-aware startup candidate preserves complete schema-1 endpoint and
+  Material Handling documents as immutable legacy evidence. It blocks mutable
+  schema-2 publication for active or uncertain work, stale projections,
+  unresolved Workforce references, evidence or sequence conflict, or
+  incompatible Execution work. No reverse migrator exists.
 
 Future migration recommendations:
 
@@ -237,7 +253,7 @@ Required boundaries:
 - Business Identity remains immutable inside World Identity. Mutable business runtime state is stored separately at `<world>/butchercraft/business_runtime.json`, references businesses by `BusinessId`, and responds to daily and weekly simulation rollover events without owning an independent clock.
 - Workforce definitions are organizational structure, not employee records. They persist separately at `<world>/butchercraft/workforce_definitions.json`, reference businesses by `BusinessId`, reference Business Runtime shift ids, and resolve required positions for a current shift without assigning workers.
 - Department definitions and anchors are Workforce-owned organizational/location records. They persist separately at `<world>/butchercraft/departments.json`, and employee records reference departments by `DepartmentId`. Departments do not own workstation assignments, jobs, reservations, Production Runs, Scheduler Work, Execution authority, Inventory access, or item movement.
-- Employee navigation quality is Workforce-owned runtime behavior. Employee entities reconstruct transient destinations from department assignment and active workstation reservations, use deterministic approach candidates, monitor progress, retry paths within bounded thresholds, and expose safe failure diagnostics. IM-027 adds one outer integration coordinator for an arrived employee's Beef Trim Grinder request. IM-028B adds a separate Workforce assignment coordinator that observes Material Handling custody and requests Workstation reservations without extracting or inserting directly. IM-029 reuses that coordinator for exact one-unit Ground Beef transport from Grinder output to Patty Former input. Employees do not persist pathfinding, own inventory, dispatch Scheduler Work, consume Execution authority, mutate Production, operate the Patty Former, or become transfer custody authority.
+- Employee navigation quality is Workforce-owned runtime behavior. Employee entities reconstruct transient destinations from department assignment and active workstation reservations, use deterministic approach candidates, monitor progress, retry paths within bounded thresholds, and expose safe failure diagnostics. IM-027 adds one outer integration coordinator for an arrived employee's Beef Trim Grinder request. IM-028B adds a separate Workforce assignment coordinator that observes Material Handling custody and requests Workstation reservations without extracting or inserting directly. IM-029 reuses that coordinator for one-unit Ground Beef transport from Grinder output to Patty Former input, and IM-030B permits the one unit to be split from a larger source stack through Workstation-owned schema-2 effects. Employees do not persist pathfinding, own inventory, dispatch Scheduler Work, consume Execution authority, mutate Production, operate the Patty Former, or become transfer custody authority.
 - Workstation reservation persistence at `<world>/butchercraft/workstation_reservations.json` owns only reservation identity, exclusivity, lifecycle, persisted operating position, and invalidation evidence. It is not a pathfinding engine and does not authorize workstation operation.
 - Economic Actors define participants, not economic behavior. Immutable definitions persist separately at `<world>/butchercraft/economic_actors.json`, reference goods by `GoodId`, and keep mutable runtime status and optional Business Runtime/Workforce assignments outside definition persistence.
 - Economic Inventory defines ownership, location, capacity, and runtime quantities, not movement or production. Containers reference actors and storage nodes, entries reference Goods by `GoodId`, and the pure domain remains independent from Minecraft inventory representation.
@@ -573,7 +589,7 @@ Milestone 1D implements the first concrete component:
 
 - `ProductStackData` registered as `butchercraft:product_data`: product type id, source category id, processing state id, exact quantity value, quantity unit id, quality score, and optional stack-level packaging metadata.
 
-This component is persistent, network synchronized, immutable, and validated. Invalid decoded data is rejected rather than replaced with defaults. Product-bearing stacks are max stack size `1` until quantity and stack-count merge rules are deliberately designed.
+This component is persistent, network synchronized, immutable, and validated. Invalid decoded data is rejected rather than replaced with defaults. IM-030A implements generic exact stack-count evidence and Workstation split/merge planning. IM-030B selectively gives Beef Trim, Ground Beef, and Beef Patties max stack size `64`; other product-bearing items keep their existing limits.
 
 Proposed components:
 
@@ -726,9 +742,9 @@ Current model:
   owner and Execution result evidence and never carries or collects product.
 - Unanchored departments remain definitions only.
 
-Employee Patty Former operation, additional employee recipes, job claiming,
-autonomous workflows, Ground Beef movement, skill gain, scheduling,
-productivity, and payroll remain separately gated.
+Employee Patty Former operation, additional employee recipes or transfer
+routes, job claiming, autonomous workflows, batch hauling, skill gain,
+scheduling, productivity, and payroll remain separately gated.
 
 ## Work-Order Architecture
 

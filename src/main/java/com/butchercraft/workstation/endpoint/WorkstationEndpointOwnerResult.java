@@ -89,7 +89,7 @@ public record WorkstationEndpointOwnerResult(
     ) {
         String digest = calculateDigest(
                 record.journalSequence(),
-                WorkstationEndpointSchema.CURRENT_VERSION,
+                WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION,
                 record.effectId(),
                 record.instanceId(),
                 record.invocationIdentity(),
@@ -108,7 +108,7 @@ public record WorkstationEndpointOwnerResult(
         return new WorkstationEndpointOwnerResult(
                 EVIDENCE_PREFIX + WorkstationEndpointCanonicalDigest.suffix(digest),
                 digest,
-                WorkstationEndpointSchema.CURRENT_VERSION,
+                WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION,
                 record.journalSequence(),
                 record.effectId(),
                 record.instanceId(),

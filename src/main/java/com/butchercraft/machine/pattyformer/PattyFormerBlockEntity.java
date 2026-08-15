@@ -12,8 +12,13 @@ import com.butchercraft.workstation.WorkstationProductionRequestResult;
 import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.block.AbstractProcessingWorkstationBlockEntity;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectId;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectIdV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectKind;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointObservationV2;
+import com.butchercraft.workstation.endpoint.WorkstationEndpointConfiguration;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
+import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationTransferEndpoint;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointProjection;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationTransferEndpoint;
 import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
@@ -29,7 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationBlockEntity
-        implements WorkstationTransferEndpoint {
+        implements WorkstationTransferEndpoint, StackAwareWorkstationTransferEndpoint {
     public PattyFormerBlockEntity(BlockPos pos, BlockState blockState) {
         super(
                 ModBlockEntityTypes.PATTY_FORMER.get(),
@@ -40,7 +45,8 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
                 DevelopmentProductItemMappings.fixtureMapping(),
                 WorkstationExecutionStrategy.transformation(),
                 PattyFormerExecutionCoordinator.INSTANCE,
-                WorkstationOperationStartPolicy.EXPLICIT_REQUEST
+                WorkstationOperationStartPolicy.EXPLICIT_REQUEST,
+                PattyFormerWorkstation.slotCapacityPolicy()
         );
     }
 
@@ -107,6 +113,60 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
                 && exactStack.is(ModItems.GROUND_BEEF.get())
                 && exactStack.getCount() == 1
                 && endpointAcceptsView(kind, slotIndex, exactStack);
+    }
+
+    @Override public void activateStackAwareEndpoint() { activateStackAwareEndpointView(); }
+    @Override public WorkstationInstanceId endpointInstanceId() { return stackAwareEndpointInstanceIdView(); }
+    @Override public WorkstationEndpointKey endpointKey() { return stackAwareEndpointKeyView(endpointTypeIdentity()); }
+    @Override public String endpointPostOperationStateIdentity(WorkstationEndpointObservationV2 observation) {
+        return "butchercraft:patty_former/ready";
+    }
+    @Override public String endpointConfigurationIdentity() {
+        return WorkstationEndpointConfiguration.standard().stackAwareEndpointConfigurationIdentity();
+    }
+    @Override public int endpointEffectiveCapacity(int slotIndex, ItemStack stack) {
+        return stackAwareEffectiveCapacityView(slotIndex, stack);
+    }
+    @Override public long endpointInventoryRevision() { return stackAwareInventoryRevisionView(); }
+    @Override public long endpointEffectRevision() { return stackAwareEffectRevisionView(); }
+    @Override public long endpointLastAppliedJournalSequence() { return stackAwareLastJournalSequenceView(); }
+    @Override public java.util.Optional<WorkstationEndpointEffectIdV2> endpointPreparedEffectId() {
+        return stackAwarePreparedEffectIdView();
+    }
+    @Override public java.util.Optional<WorkstationEndpointEffectIdV2> endpointLastEffectId() {
+        return stackAwareLastEffectIdView();
+    }
+    @Override public java.util.Optional<String> endpointLastOwnerResultIdentity() {
+        return stackAwareLastOwnerResultIdentityView();
+    }
+    @Override public boolean endpointAcceptsCandidate(
+            WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactPreStack, ItemStack exactPostStack) {
+        return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
+                && (workstationState() == com.butchercraft.workstation.WorkstationState.IDLE
+                || workstationState() == com.butchercraft.workstation.WorkstationState.READY)
+                && slotIndex == inventory().firstInputSlot()
+                && exactPostStack.is(ModItems.GROUND_BEEF.get())
+                && exactPostStack.getCount() - exactPreStack.getCount() == 1
+                && stackAwareAcceptsCandidateView(kind, slotIndex, exactPreStack, exactPostStack);
+    }
+    @Override public void lockPreparedEndpointEffect(
+            WorkstationEndpointEffectIdV2 effectId, int slotIndex, long expectedInventoryRevision) {
+        lockStackAwareEndpointEffectView(effectId, slotIndex, expectedInventoryRevision);
+    }
+    @Override public void releasePreparedEndpointEffect(WorkstationEndpointEffectIdV2 effectId) {
+        releaseStackAwareEndpointEffectView(effectId);
+    }
+    @Override public void applyCommittedEndpointEffect(
+            WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactPreStack, ItemStack exactPostStack,
+            long expectedInventoryRevision, long postInventoryRevision, long endpointEffectRevision,
+            long journalSequence, WorkstationEndpointEffectIdV2 effectId, String ownerResultIdentity) {
+        if (!endpointAcceptsCandidate(kind, slotIndex, exactPreStack, exactPostStack)) {
+            throw new IllegalStateException("Patty Former rejected the schema-2 transfer endpoint effect");
+        }
+        applyCommittedStackAwareEndpointEffectView(
+                kind, slotIndex, exactPreStack, exactPostStack, expectedInventoryRevision, postInventoryRevision,
+                endpointEffectRevision, journalSequence, effectId, ownerResultIdentity
+        );
     }
 
     @Override

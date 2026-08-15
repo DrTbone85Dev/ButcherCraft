@@ -3,6 +3,8 @@ package com.butchercraft.machine.grinder;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.butchercraft.world.WorkstationReservationService;
+import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -73,6 +75,10 @@ public final class GrinderBlock extends BaseEntityBlock {
             Player player,
             BlockHitResult hitResult
     ) {
+        if (player.isSecondaryUseActive()) {
+            requestExplicitOperation(level, pos);
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         return openMenu(level, pos, player)
                 ? InteractionResult.sidedSuccess(level.isClientSide)
                 : InteractionResult.PASS;
@@ -88,6 +94,10 @@ public final class GrinderBlock extends BaseEntityBlock {
             InteractionHand hand,
             BlockHitResult hitResult
     ) {
+        if (player.isSecondaryUseActive()) {
+            requestExplicitOperation(level, pos);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (stack.getItem() instanceof ProductionOrderItem orderItem) {
             return orderItem.useOnWorkstation(stack, level, pos, player, hand);
         }
@@ -145,6 +155,18 @@ public final class GrinderBlock extends BaseEntityBlock {
             if (!level.isClientSide) {
                 player.openMenu(blockEntity, pos);
             }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean requestExplicitOperation(Level level, BlockPos pos) {
+        if (level instanceof ServerLevel serverLevel
+                && level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity
+                && (blockEntity.workstationState() == WorkstationState.READY
+                || blockEntity.workstationState() == WorkstationState.COMPLETE
+                || blockEntity.workstationState() == WorkstationState.PROCESSING)) {
+            blockEntity.requestPlayerProcessing(new WorkstationTickContext(serverLevel, pos));
             return true;
         }
         return false;

@@ -3,6 +3,7 @@ package com.butchercraft.machine.pattyformer;
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.workstation.WorkstationCapability;
+import com.butchercraft.workstation.WorkstationSlotCapacityPolicy;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Set;
@@ -12,6 +13,8 @@ public final class PattyFormerWorkstation {
             ResourceLocation.fromNamespaceAndPath(ButcherCraft.MOD_ID, "patty_former");
     public static final ResourceLocation CAPABILITY_ID =
             BuiltInDefinitionIds.WORKSTATION_CAPABILITY_PATTY_FORMING;
+    private static final WorkstationSlotCapacityPolicy SLOT_CAPACITY_POLICY =
+            WorkstationSlotCapacityPolicy.perSlot(64, 64);
 
     private PattyFormerWorkstation() {
     }
@@ -28,5 +31,9 @@ public final class PattyFormerWorkstation {
                 1,
                 1
         );
+    }
+
+    public static WorkstationSlotCapacityPolicy slotCapacityPolicy() {
+        return SLOT_CAPACITY_POLICY;
     }
 }

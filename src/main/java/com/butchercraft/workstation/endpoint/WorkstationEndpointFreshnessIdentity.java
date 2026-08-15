@@ -40,7 +40,7 @@ public record WorkstationEndpointFreshnessIdentity(String value) {
         WorkstationEndpointValidation.nonNegative(ownerResultJournalSequence, "owner-result journal sequence");
         WorkstationEndpointValidation.id(configurationIdentity, "endpoint configuration identity");
         String digest = WorkstationEndpointCanonicalDigest.create("butchercraft:workstation_endpoint_freshness")
-                .add(WorkstationEndpointSchema.CURRENT_VERSION)
+                .add(WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION)
                 .add(instanceId.value())
                 .add(slotIndex)
                 .add(inventoryRevision)

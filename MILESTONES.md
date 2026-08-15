@@ -4,6 +4,73 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## IM-030B: Selective Product Stack Normalization And Material Handling Activation
+
+Goal: activate the ratified DG-004/IM-030A stack-aware foundation for Beef
+Trim, Ground Beef, and Beef Patties without changing recipe throughput or
+subsystem authority.
+
+Included work:
+
+- Beef Trim, Ground Beef, and Beef Patties use max stack size 64; other product
+  stack sizes remain unchanged.
+- Cutting Table capacities are input `1`, primary T-Bone output `1`, and Beef
+  Trim output `64`; Grinder and Patty Former input/output capacities are `64`.
+- Workstation processing decrements only recipe-defined input quantities and
+  atomically merges compatible outputs within effective capacity.
+- One explicit Grinder or Patty Former request authorizes one operation only;
+  remaining input never creates an automatic loop.
+- Normal right-click opens the Grinder or Patty Former inventory even when
+  valid input is present. Shift + right-click requests exactly one player
+  operation through the existing Execution and Scheduler path.
+- Material Handling schema 2 is selected only after the conservative migration
+  gate succeeds. Each current employee assignment still transfers exactly one
+  item while allowing partial withdrawal, destination merge, and source-return
+  merge against larger Workstation-owned stacks.
+- Schema-1 evidence remains immutable, unsupported downgrade fails visibly,
+  and restart reconciliation preserves exact counts without duplicate effects.
+
+Preserved gates:
+
+- Employee carrying remains one item per assignment, with no quantity argument,
+  batch hauling, automatic repeated transfer, or employee inventory.
+- Employee Patty Former operation, Production-driven routing, automatic
+  workstation selection, and general Logistics remain unimplemented.
+- Recipe quantities, processing duration, Scheduler authority, and Execution
+  authority remain unchanged.
+
+## IM-030A: Stack-Aware Workstation And Endpoint Foundation
+
+Goal: provide the Workstation-owned capacity, exact split/merge evidence,
+schema-2 endpoint journal, reconciliation, and conservative migration machinery
+required for future stack-aware gameplay without activating that gameplay.
+
+Included work:
+
+- Versioned per-slot Workstation capacity policy with effective capacity bounded
+  by both item maximum and Workstation policy.
+- Exact component-preserving partial-withdrawal candidates proving pre-stack,
+  transfer payload, remainder, and post-stack.
+- All-or-nothing compatible destination-deposit and source-return merge
+  candidates.
+- Quantity-sensitive schema-2 observation, freshness, preparation, immutable
+  owner result, durable journal, projection reconciliation, and retry identity.
+- Version-aware endpoint and Material Handling persistence capable of retaining
+  immutable schema-1 documents and schema-2 embedded endpoint evidence.
+- Conservative migration classification for unresolved endpoint, custody,
+  Workforce, projection, sequence, evidence, and Execution compatibility state.
+
+Preserved gates at IM-030A completion:
+
+- Beef Trim, Ground Beef, and Beef Patties retain max stack size one.
+- Current Cutting Table, Grinder, and Patty Former slots and employee transfer
+  routes remain exact-one schema-1 behavior.
+- Processing commit plans, recipe consumption, output replacement, duration,
+  and throughput are unchanged.
+- Multi-count carry, live partial transfer, batch processing, employee Patty
+  Former operation, Production integration, and general Logistics remain
+  unimplemented.
+
 ## IM-029: Employee Grinder To Patty Former Ground Beef Transport
 
 Goal: allow one explicitly selected employee to physically and visibly move

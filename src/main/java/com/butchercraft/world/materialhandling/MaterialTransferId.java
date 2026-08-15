@@ -3,11 +3,14 @@ package com.butchercraft.world.materialhandling;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 
 public record MaterialTransferId(String value) implements Comparable<MaterialTransferId> {
-    private static final String PREFIX = "butchercraft:material_transfer/v1/";
+    private static final String LEGACY_PREFIX = "butchercraft:material_transfer/v1/";
+    private static final String STACK_AWARE_PREFIX = "butchercraft:material_transfer/v2/";
 
     public MaterialTransferId {
         value = MaterialHandlingValidation.id(value, "material transfer identity");
-        if (!value.startsWith(PREFIX)) throw new IllegalArgumentException("Unsupported Material Transfer identity prefix");
+        if (!value.startsWith(LEGACY_PREFIX) && !value.startsWith(STACK_AWARE_PREFIX)) {
+            throw new IllegalArgumentException("Unsupported Material Transfer identity prefix");
+        }
     }
 
     public static MaterialTransferId create(
@@ -27,7 +30,7 @@ public record MaterialTransferId(String value) implements Comparable<MaterialTra
                 .add(requestContentDigest)
                 .add(configurationIdentity)
                 .finish();
-        return new MaterialTransferId(PREFIX + MaterialHandlingDigest.suffix(digest));
+        return new MaterialTransferId(LEGACY_PREFIX + MaterialHandlingDigest.suffix(digest));
     }
 
     @Override

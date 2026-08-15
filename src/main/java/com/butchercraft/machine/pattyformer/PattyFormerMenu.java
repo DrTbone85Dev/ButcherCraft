@@ -14,7 +14,8 @@ public final class PattyFormerMenu extends ProcessingWorkstationMenu {
                 playerInventory,
                 extraData,
                 ModBlocks.PATTY_FORMER.get(),
-                PattyFormerWorkstation.capability()
+                PattyFormerWorkstation.capability(),
+                PattyFormerWorkstation.slotCapacityPolicy()
         );
     }
 

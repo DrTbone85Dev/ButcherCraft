@@ -68,7 +68,7 @@ public final class ModItems {
                     1_000,
                     QuantityUnit.GRAM,
                     700
-            ))
+            ), 64)
     );
 
     public static final DeferredItem<ProductTestItem> BEEF_TRIM = BEEF_TRIM_TEST;
@@ -85,7 +85,7 @@ public final class ModItems {
                     900,
                     QuantityUnit.GRAM,
                     700
-            ))
+            ), 64)
     );
 
     public static final DeferredItem<ProductTestItem> GROUND_BEEF = GROUND_BEEF_TEST;
@@ -99,7 +99,7 @@ public final class ModItems {
                     900,
                     QuantityUnit.GRAM,
                     700
-            ))
+            ), 64)
     );
 
     public static final DeferredItem<ProductionOrderItem> PRODUCTION_ORDER = ITEMS.register(
