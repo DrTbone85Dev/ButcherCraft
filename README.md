@@ -4,7 +4,7 @@ ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic reg
 
 Registered content includes the Cutting Table, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, six promoted Grinder recipes for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the Beef Patties production chain from Beef Trim to Ground Beef to Beef Patties. The player-facing Production Order item guides and observes the manual multi-workstation chain.
 
-The v0.10.4 Material Handling Update introduces the Cutting Table foundation and its first player-operated fabrication recipe: `Beef Short Loin -> T-Bone Steak + Beef Trim`. The Cutting Table keeps separate input, primary-output, and trim-output slots so the T-Bone Steak and Beef Trim remain independently visible and owned by the workstation.
+The v0.10.5 Continuous Processing Update adds practical stack-aware processing, one-item employee transport between both current production stages, and a persistent player-controlled Grinder Run. The Cutting Table retains its first player-operated fabrication recipe, `Beef Short Loin -> T-Bone Steak + Beef Trim`, with separate input, primary-output, and trim-output slots.
 
 The Grinder now uses the persistent `POWERED_CONTINUOUS_EXPLICIT_STOP` policy. Normal right-click opens its inventory; GUI START creates one Machine Run that admits separately identified, bounded Execution/Scheduler cycles until stopped, empty, blocked, or recovery-gated. GUI STOP closes that exact Run at a safe cycle boundary, GUI RESUME continues the same restart-suspended Run, and Shift + right-click is the state-aware START/STOP shortcut. An empty Grinder remains powered as `RUNNING_EMPTY`; compatible input added later resumes the same Run. Full or incompatible output publishes `OUTPUT_BLOCKED` without consuming input.
 
@@ -34,7 +34,7 @@ The platform foundation also includes immutable regional identity, manufacturers
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.10.4-alpha.1`
+- Version: `0.10.5-alpha.1`
 
 ## Commands
 

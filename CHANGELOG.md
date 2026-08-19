@@ -1,5 +1,101 @@
 # Changelog
 
+## ButcherCraft v0.10.5-alpha.1 - Continuous Processing Update
+
+ButcherCraft processing now supports practical product stacks and a persistent,
+player-controlled Grinder Run. Employees can carry one item through either
+current material-transfer stage, while Workstation, Material Handling,
+Execution, and Scheduler continue to retain their separate authority.
+
+### Stack-Aware Processing
+
+- Increased Beef Trim, Ground Beef, and Beef Patties maximum stack size to 64.
+- Added practical Workstation-owned capacities to the relevant Cutting Table,
+  Grinder, and Patty Former slots.
+- Changed bounded machine operations to consume only the declared recipe
+  quantity, preserve remaining input, and merge compatible output atomically.
+- Kept capacity separate from throughput: each child operation remains a
+  bounded, independently validated Execution/Scheduler cycle.
+
+### Employee Material Transport
+
+- Added explicit one-item Ground Beef transport from a selected Grinder output
+  to a selected Patty Former input using the existing employee transfer command.
+- Allowed both supported employee routes to withdraw one item from a larger
+  compatible source stack while preserving the exact remainder.
+- Added compatible destination merging and exact source-return merging for
+  cancellation without item loss or duplication.
+- Preserved visible one-item carrying, source-then-destination reservations,
+  explicit coordinates, and exact in-transit `ItemStack` custody.
+- Kept Patty Former delivery passive: successful deposit leaves the machine
+  `READY` and does not authorize processing.
+
+### Persistent Machine Runs
+
+- Ratified DG-005 and added the generic persistent Machine Run and Workstation
+  operating-state foundation.
+- Added Execution-owned Run Identity, monotonic Run generations, exact
+  Workstation instance binding, START/STOP authorization evidence, and bounded
+  child-operation admission.
+- Enforced one active Run and at most one nonterminal child operation for an
+  affected workstation.
+- Added restart Policy B: a preserved active Run enters `RESTART_REQUIRED` and
+  requires an explicit RESUME or STOP instead of silently restarting work.
+- Added deterministic persistence, reconciliation, stale-command rejection,
+  unavailable-chunk pausing, endpoint-replacement protection, and diagnostics.
+
+### Continuous Grinder
+
+- Activated `POWERED_CONTINUOUS_EXPLICIT_STOP` for player-controlled Grinder
+  operation.
+- Added explicit START and safe-boundary STOP controls. One active Run admits
+  repeated bounded Grinder cycles without creating an automatic process outside
+  Run authority.
+- Added `RUNNING_EMPTY`; adding compatible input resumes the same Run.
+- Added `OUTPUT_BLOCKED`; restoring compatible output capacity resumes the same
+  Run without consuming blocked input.
+- Added GUI START, STOP, and restart-gated RESUME controls plus the state-aware
+  Shift + right-click START/STOP shortcut.
+- Separated persistent machine state from current child-cycle state in the GUI,
+  with progress representing only the active processing cycle.
+
+### Patty Former Operation Gate
+
+- Kept normal right-click dedicated to opening the Patty Former inventory.
+- Kept Shift + right-click as one explicit bounded operation request.
+- Preserved remaining Ground Beef as `READY` after a completed cycle; no
+  automatic second operation is created.
+
+### Persistence And Recovery
+
+- Added DG-004 schema-2 stack-aware Workstation endpoint and Material Handling
+  persistence with exact pre-state, payload, remainder, and post-state evidence.
+- Added strict schema and configuration validation, exact count reconciliation,
+  and fail-visible migration gates for unsupported or ambiguous state.
+- Preserved duplicate-safe endpoint effects, cancellation, source return, and
+  save/reload behavior across partial stack transfers.
+
+### Improved
+
+- Clarified Grinder machine-state and processing-cycle presentation.
+- Corrected progress-bar behavior when no child cycle is active.
+- Added complete English localization for Run controls, states, recovery
+  guidance, and diagnostics.
+- Expanded architecture, persistence, interaction, command synchronization,
+  unit, integration, and GameTest regression coverage.
+
+### Known Limitations
+
+- The Patty Former remains explicit one-cycle; employee Patty Former operation
+  and Patty Former continuous Run control are not implemented.
+- Employee Grinder operation remains one reservation-scoped bounded request and
+  does not grant employees Grinder START/STOP authority.
+- Employee transfers remain one item per explicit assignment with no selectable
+  quantity, batch hauling, automatic workstation search, autonomous logistics,
+  or Production-driven routing.
+- Machine wear, damage, maintenance, dry-running penalties, forced chunk loading,
+  and automatic restart after reload are not implemented.
+
 ## ButcherCraft v0.10.4-alpha.1 - Material Handling Update
 
 Employees can now physically move product through the plant. The new Cutting
