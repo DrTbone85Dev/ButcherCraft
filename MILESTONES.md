@@ -4,6 +4,34 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## DG-005: Persistent Machine Operating State And Continuous Processing
+
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
+
+The ratified
+[`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
+separates explicit START authorization, persistent Machine Run identity,
+bounded child processing cycles, Workstation-owned operating state, explicit
+STOP, and future machine condition. Ratification makes this direction
+authoritative but implements no runtime change.
+
+The ratified future sequence is below. Every implementation milestone remains
+separately gated:
+
+1. `IM-031A` - Machine Operating Run-State And START/STOP Foundation.
+2. `IM-031B` - Grinder Continuous Operation And Empty-Running State.
+3. `IM-031C` - Patty Former Continuous Operation under its explicitly
+   ratified machine policy.
+4. `IM-032` - Employee Machine START/STOP Operation with the conservative
+   reservation-and-presence-through-STOP policy.
+5. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
+   followed only later by a separately authorized implementation milestone.
+
+The previously referenced but unimplemented `IM-031 - Employee Patty Former
+Operation` is replaced by this sequence. No completed milestone is renumbered.
+IM-030A and IM-030B behavior remains unchanged. DG-005 does not authorize
+IM-031A, DG-006, or any later runtime work.
+
 ## IM-030B: Selective Product Stack Normalization And Material Handling Activation
 
 Goal: activate the ratified DG-004/IM-030A stack-aware foundation for Beef

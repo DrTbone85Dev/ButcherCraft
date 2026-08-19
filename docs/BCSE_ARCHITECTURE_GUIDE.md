@@ -702,6 +702,7 @@ nothing.
 - [`Ratified Workstation Endpoint Durability And Instance Identity Addendum`](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
 - [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
 - [`Ratified Stack-Aware Workstation Inventory And Partial Transfer ADR`](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
+- [`Ratified Persistent Machine Operating State And Continuous Processing ADR`](adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
 - [`Material Handling Implementation`](MATERIAL_HANDLING.md)
 - [`Cutting Table`](CUTTING_TABLE.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)
