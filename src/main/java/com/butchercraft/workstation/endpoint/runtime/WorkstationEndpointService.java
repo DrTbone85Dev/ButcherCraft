@@ -96,6 +96,18 @@ public final class WorkstationEndpointService {
         return load(Objects.requireNonNull(server, "server")).journal();
     }
 
+    public synchronized WorkstationInstanceRegistry instanceRegistrySnapshot(MinecraftServer server) {
+        return load(Objects.requireNonNull(server, "server")).registry();
+    }
+
+    public synchronized Optional<WorkstationInstanceRecord> instanceRecord(
+            MinecraftServer server,
+            WorkstationInstanceId instanceId
+    ) {
+        return load(Objects.requireNonNull(server, "server")).registry()
+                .find(Objects.requireNonNull(instanceId, "instanceId"));
+    }
+
     public synchronized void makeLegacyJournalReadOnly(MinecraftServer server) {
         ActiveEndpoints runtime = load(Objects.requireNonNull(server, "server"));
         active.set(runtime.withLegacyJournalWritable(false));

@@ -6,19 +6,21 @@ Each milestone should remain small, testable, and rollback-friendly. Do not clai
 
 ## DG-005: Persistent Machine Operating State And Continuous Processing
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
+Status: RATIFIED - IM-031A FOUNDATION IMPLEMENTED; CONTINUOUS GAMEPLAY GATED
 
 The ratified
 [`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
 separates explicit START authorization, persistent Machine Run identity,
 bounded child processing cycles, Workstation-owned operating state, explicit
-STOP, and future machine condition. Ratification makes this direction
-authoritative but implements no runtime change.
+STOP, and future machine condition. IM-031A now implements the generic
+persistent Run and machine operating-state foundation without activating
+continuous machine gameplay.
 
-The ratified future sequence is below. Every implementation milestone remains
+The ratified sequence is below. Every later implementation milestone remains
 separately gated:
 
 1. `IM-031A` - Machine Operating Run-State And START/STOP Foundation.
+   Implemented as generic infrastructure.
 2. `IM-031B` - Grinder Continuous Operation And Empty-Running State.
 3. `IM-031C` - Patty Former Continuous Operation under its explicitly
    ratified machine policy.
@@ -29,8 +31,45 @@ separately gated:
 
 The previously referenced but unimplemented `IM-031 - Employee Patty Former
 Operation` is replaced by this sequence. No completed milestone is renumbered.
-IM-030A and IM-030B behavior remains unchanged. DG-005 does not authorize
-IM-031A, DG-006, or any later runtime work.
+IM-030A and IM-030B gameplay behavior remains unchanged. IM-031A does not
+authorize IM-031B, IM-031C, DG-006, or any later runtime work.
+
+## IM-031A: Machine Run-State And START/STOP Foundation
+
+Goal: represent an explicit START, one canonical persistent Machine Run,
+bounded child Execution authority, and exact-Run STOP without enabling a live
+continuous processing loop.
+
+Implemented work:
+
+- Execution-owned canonical Machine Run identity, monotonic instance-local
+  generation, lifecycle, START/STOP evidence, active uniqueness, and schema-1
+  persistence at `<world>/butchercraft/execution_machine_runs.json`.
+- Workstation-owned operating policy, durable `OFF`, `STARTING`, `RUNNING`,
+  `RUNNING_EMPTY`, `OUTPUT_BLOCKED`, `STOPPING`, `RESTART_REQUIRED`, `FAULTED`,
+  and `RECOVERY_REQUIRED` state plus simulation-tick duration evidence at
+  `<world>/butchercraft/machine_operating_states.json`.
+- Exact DG-002A Workstation Instance Identity binding, replacement protection,
+  unavailable-endpoint pause behavior, stable duplicate START/STOP observation,
+  stale exact-Run STOP rejection, and fail-visible unsupported schemas.
+- At most one nonterminal child per Run, monotonic child sequence, durable
+  prepare/admit/result observation, safe pre-invocation cancellation, and no
+  automatic follow-on scheduling.
+- Restart Policy B reconciliation preserves the exact Run identity, resolves
+  incomplete publication boundaries, and publishes `RESTART_REQUIRED` without
+  automatically resuming processing.
+- Read-only diagnostics expose owner state, Run lifecycle, exact child,
+  revisions, endpoint availability, sequence, and recovery detail.
+
+Preserved gates:
+
+- Grinder and Patty Former retain normal right-click GUI access and shifted
+  one-cycle player operation behavior.
+- No continuous Grinder or Patty Former cycling, GUI START/STOP control,
+  shifted START/STOP toggle, employee START/STOP, automatic restart, forced
+  chunk loading, condition/wear, maintenance, or Production machine control.
+
+See [`Machine Run-State Foundation`](docs/MACHINE_RUN_STATE_FOUNDATION.md).
 
 ## IM-030B: Selective Product Stack Normalization And Material Handling Activation
 

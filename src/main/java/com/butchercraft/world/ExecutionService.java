@@ -5,7 +5,11 @@ import com.butchercraft.machine.cuttingtable.execution.CuttingTableExecutionOper
 import com.butchercraft.machine.grinder.execution.GrinderExecutionOperationHandler;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionOperationHandler;
 import com.butchercraft.world.execution.ExecutionHandlerRegistry;
+import com.butchercraft.world.execution.ExecutionAuthorization;
 import com.butchercraft.world.execution.ExecutionManager;
+import com.butchercraft.world.execution.ExecutionOperationId;
+import com.butchercraft.world.execution.ExecutionOperationResult;
+import com.butchercraft.world.execution.ExecutionOperationSnapshot;
 import com.butchercraft.world.execution.ExecutionRegistryCompatibilityObservation;
 import com.butchercraft.world.execution.ExecutionRuntimeConfiguration;
 import com.butchercraft.world.execution.ExecutionSchema;
@@ -70,6 +74,36 @@ public final class ExecutionService {
 
     public ExecutionManager managerFor(MinecraftServer server) {
         return load(server).manager();
+    }
+
+    public synchronized ExecutionOperationResult<ExecutionOperationSnapshot> acceptAuthorizationDurably(
+            MinecraftServer server,
+            ExecutionAuthorization authorization,
+            long tick
+    ) {
+        ActiveExecution active = load(server);
+        ExecutionOperationResult<ExecutionOperationSnapshot> result = active.manager()
+                .acceptAuthorization(authorization, tick);
+        if (result.accepted()) active.storage().save(active.manager());
+        return result;
+    }
+
+    public synchronized ExecutionOperationResult<ExecutionOperationSnapshot> cancelBeforeStartDurably(
+            MinecraftServer server,
+            ExecutionOperationId operationId,
+            long tick,
+            String reason
+    ) {
+        ActiveExecution active = load(server);
+        ExecutionOperationResult<ExecutionOperationSnapshot> result = active.manager()
+                .cancelBeforeStart(operationId, tick, reason);
+        if (result.accepted()) active.storage().save(active.manager());
+        return result;
+    }
+
+    public synchronized void persistNow(MinecraftServer server) {
+        ActiveExecution active = load(server);
+        active.storage().save(active.manager());
     }
 
     public Optional<ExecutionManager> currentManager() {

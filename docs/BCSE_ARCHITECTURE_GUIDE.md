@@ -227,6 +227,13 @@ removed historical contracts remain incompatible, and unchanged startup does
 not rewrite historical schema-1 metadata. General schema migration,
 handler-removal migration, and changed-contract migration remain gated.
 
+DG-005 and IM-031A add an Execution-owned persistent Machine Run above bounded
+child Execution operations. The Run owns identity, generation, START/STOP
+acceptance, active uniqueness, restart-required lifecycle, and child admission.
+Workstation remains the separate owner of machine operating policy and current
+operating state. The integration coordinator composes owner publications but
+owns no canonical runtime state. Continuous machine gameplay remains gated.
+
 ### Transactions
 
 Transactions are the universal economic mutation boundary. A cause supplies an
@@ -703,6 +710,7 @@ nothing.
 - [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
 - [`Ratified Stack-Aware Workstation Inventory And Partial Transfer ADR`](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
 - [`Ratified Persistent Machine Operating State And Continuous Processing ADR`](adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
+- [`IM-031A Machine Run-State Foundation`](MACHINE_RUN_STATE_FOUNDATION.md)
 - [`Material Handling Implementation`](MATERIAL_HANDLING.md)
 - [`Cutting Table`](CUTTING_TABLE.md)
 - [`Simulation Scheduler`](SIMULATION_SCHEDULER.md)

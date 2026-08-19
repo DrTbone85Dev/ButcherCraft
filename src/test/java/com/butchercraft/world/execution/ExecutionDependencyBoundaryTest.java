@@ -22,6 +22,7 @@ class ExecutionDependencyBoundaryTest {
                 "import com.butchercraft.world.planning.",
                 "import com.butchercraft.world.checkpoint.",
                 "import com.butchercraft.world.evidence.",
+                "import com.butchercraft.workstation.",
                 "import net.minecraft.",
                 "import net.neoforged."
         );

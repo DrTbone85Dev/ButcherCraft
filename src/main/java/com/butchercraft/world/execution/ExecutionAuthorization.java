@@ -15,6 +15,10 @@ public final class ExecutionAuthorization {
         return evidence;
     }
 
+    public ExecutionOperationId operationId() {
+        return ExecutionOperationId.derive(evidence);
+    }
+
     public static ExecutionAuthorization issue(ExecutionAuthorizationEvidence evidence) {
         return new ExecutionAuthorization(evidence);
     }

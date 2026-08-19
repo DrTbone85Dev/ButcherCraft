@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, and IM-030A/IM-030B stack-aware foundation and selective activation
+Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, and IM-031A machine operating-state foundation
 
 ## Purpose
 
@@ -43,6 +43,13 @@ ERROR -> IDLE only through safe reset
 `READY` describes valid preparation only; it is not universally equivalent to operation authorization. `WorkstationOperationStartPolicy` preserves the historical `AUTOMATIC_WHEN_READY` behavior for existing machines while IM-028C configures only the Patty Former as `EXPLICIT_REQUEST`. For that machine, server ticks preserve `READY` indefinitely and only an explicit typed request can enter `PROCESSING`.
 
 Invalid transitions throw in tests and are not used by the controller. `COMPLETE -> BLOCKED` is permitted only when a later input is waiting behind occupied completed output; removing that output restores `READY` without authorizing processing.
+
+IM-031A implements a separate Workstation-owned operating-state model for
+generic powered machines: `OFF`, `STARTING`, `RUNNING`, `RUNNING_EMPTY`,
+`OUTPUT_BLOCKED`, `STOPPING`, `RESTART_REQUIRED`, `FAULTED`, and
+`RECOVERY_REQUIRED`. It binds the exact DG-002A Workstation Instance Identity
+and an Execution-owned Machine Run reference. It does not replace per-cycle
+`READY`, `PROCESSING`, `BLOCKED`, or `COMPLETE` state.
 
 ## Failure Model
 
@@ -202,6 +209,14 @@ Recovery policy: input remains visibly reserved in the input slot. If active sav
 
 Inventory-only workstations persist only their inventory. The Packaging Table used this path for the v0.8.0 foundation, but Sprint D moves it to the processing block entity path so active packaging progress and reserved inputs persist.
 
+Generic powered operating state persists separately at
+`<world>/butchercraft/machine_operating_states.json`. Workstation owns policy,
+state, revisions, state-entry simulation tick, completed state durations,
+endpoint availability, active-child observation, blockage, and recovery facts.
+Execution's Run file remains the authority for Run lifecycle and child
+authorization. Restart Policy B preserves the exact Run reference but publishes
+`RESTART_REQUIRED`; no automatic processing resumes.
+
 Inventory load keeps the machine's configured slot count. Extra saved slots are ignored, and missing saved slots remain empty, so older two-slot Grinder/development workstation saves, nine-slot Bandsaw saves, and four-slot Packaging Table saves keep their intended layouts.
 
 ## Synchronization
@@ -311,6 +326,8 @@ The Patty Former is documented in `docs/PATTY_FORMER.md`.
 - Future poultry-specific restrictions should be capability/profile data, not Java species switches.
 - Cleanliness, maintenance, equipment condition, and employee operation currently use centralized prototype context values and can be replaced by real snapshots later.
 - Operation selection UI is deferred until multiple compatible operations are real gameplay.
+- IM-031B and IM-031C may activate the already-defined continuous-explicit-stop
+  policy for Grinder and Patty Former only through separately authorized work.
 
 ## Explicit Exclusions
 

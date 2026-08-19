@@ -30,6 +30,7 @@ import com.butchercraft.architecture.validation.ValidationContextBuilder;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarSchema;
 import com.butchercraft.world.execution.ExecutionSchema;
 import com.butchercraft.world.execution.ExecutionWorkTypes;
+import com.butchercraft.world.execution.MachineRunSchema;
 import com.butchercraft.world.materialhandling.MaterialHandlingSchema;
 import com.butchercraft.world.planning.EconomicPlanningWorkHandler;
 import com.butchercraft.world.production.ProductionSchema;
@@ -40,6 +41,7 @@ import com.butchercraft.world.simulation.scheduler.SimulationStageDefinition;
 import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentSchema;
+import com.butchercraft.workstation.operation.MachineOperatingSchema;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -193,6 +195,11 @@ public final class ButcherCraftArchitectureManifest {
                 "docs/adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md",
                 "RATIFIED_IM_028A_AND_IM_028B_ENDPOINT_USE_IMPLEMENTED_LATER_SCOPE_GATED",
                 "DG-002A IM-028A IM-028B",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/persistent_machine_operating_state_adr",
+                "docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md",
+                "RATIFIED_IM_031A_FOUNDATION_IMPLEMENTED_CONTINUOUS_GAMEPLAY_GATED",
+                "DG-005 IM-031A",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
     }
 
@@ -1123,6 +1130,35 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
                 "IM-027 Employee Workstation Operation Foundation",
                 "Employee Patty Former operation, carrying beyond the IM-029 Beef Trim and Ground Beef routes, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_execution_authority",
+                ValidationCategory.EXECUTION, EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005 and IM-031A",
+                "Execution singularly owns Machine Run identity, generation, lifecycle, START/STOP acceptance, active uniqueness, and child authorization");
+        platformContract(builder, "butchercraft:platform_contract/machine_operating_state_authority",
+                ValidationCategory.OWNERSHIP, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005 and IM-031A",
+                "Workstation singularly owns machine operating policy, state, duration observations, endpoint availability, and operating-state persistence");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_durable_publication",
+                ValidationCategory.PERSISTENCE, EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005 and IM-031A",
+                "A Machine Run is durably accepted by Execution before Workstation publishes RUNNING, with fail-visible reconciliation across owner files");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_bounded_child_admission",
+                ValidationCategory.EXECUTION, EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005 and IM-031A",
+                "One active Run admits at most one nonterminal child bound to its exact identity and monotonic sequence");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_restart_policy_b",
+                ValidationCategory.PERSISTENCE, EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005 and IM-031A",
+                "Restart preserves the exact Run identity but suspends it as restart-required without automatic work");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_endpoint_protection",
+                ValidationCategory.OWNERSHIP, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-002A, DG-005, and IM-031A",
+                "Chunk unavailability pauses child admission without force loading and replacement instances cannot inherit a Run");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_live_activation_gate",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "IM-031A completion boundary",
+                "Continuous Grinder and Patty Former cycling, controls, employee START/STOP, and automatic restart remain unactivated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -1154,6 +1190,10 @@ public final class ButcherCraftArchitectureManifest {
                 EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-011 Generic Execution Runtime Foundation",
                 "One generic Execution Runtime Authority is declared for each loaded world");
+        runtimeAuthority(builder, "butchercraft:runtime_authority/workstation_machine_operating_state_world",
+                WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-031A Machine Run-State / START-STOP Foundation",
+                "One Workstation-owned machine operating-state registry owns persistent powered state per loaded world");
         runtimeAuthority(builder, "butchercraft:runtime_authority/material_handling_world",
                 MATERIAL_HANDLING, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-028A Cutting Table and Material Handling Runtime Foundation",
@@ -1204,6 +1244,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/workstation_stack_split_and_remainder", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_stack_merge", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_stack_aware_endpoint_recovery", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_operating_policy", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_operating_state", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_operating_state_duration", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_operating_state_persistence", WORKSTATION);
         own(builder, "butchercraft:responsibility/material_transfer_identity", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/material_transfer_lifecycle", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/in_transit_item_stack_custody", MATERIAL_HANDLING);
@@ -1260,6 +1304,12 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/execution_result_evidence", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_unknown_outcome_runtime", EXECUTION);
         own(builder, "butchercraft:responsibility/execution_persistence", EXECUTION);
+        own(builder, "butchercraft:responsibility/machine_run_identity", EXECUTION);
+        own(builder, "butchercraft:responsibility/machine_run_generation", EXECUTION);
+        own(builder, "butchercraft:responsibility/machine_run_lifecycle", EXECUTION);
+        own(builder, "butchercraft:responsibility/machine_start_stop_acceptance", EXECUTION);
+        own(builder, "butchercraft:responsibility/machine_run_child_authorization", EXECUTION);
+        own(builder, "butchercraft:responsibility/machine_run_persistence", EXECUTION);
         own(builder, "butchercraft:responsibility/workstation_state", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_slot_inventory", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_operation_preconditions", WORKSTATION);
@@ -1809,6 +1859,76 @@ public final class ButcherCraftArchitectureManifest {
                 EXECUTION,
                 ValidationCategory.PERSISTENCE,
                 "IM-011 assigns versioned generic Execution operation persistence to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_run_identity",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "DG-005 and IM-031A assign canonical Machine Run identity to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_run_generation",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-031A assigns monotonic instance-local Run generation allocation to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_run_lifecycle",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "DG-005 and IM-031A assign persistent Run lifecycle and active uniqueness to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_start_stop_acceptance",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-031A assigns idempotent START and exact-Run STOP acceptance to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_run_child_authorization",
+                EXECUTION,
+                ValidationCategory.EXECUTION,
+                "IM-031A assigns bounded one-nonterminal-child authorization to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_run_persistence",
+                EXECUTION,
+                ValidationCategory.PERSISTENCE,
+                "IM-031A assigns schema-versioned execution_machine_runs.json to Execution"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_operating_policy",
+                WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "DG-005 and IM-031A assign powered machine policy to Workstation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_operating_state",
+                WORKSTATION,
+                ValidationCategory.EXECUTION,
+                "DG-005 and IM-031A assign current machine operating state to Workstation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_operating_state_duration",
+                WORKSTATION,
+                ValidationCategory.SIMULATION,
+                "IM-031A assigns simulation-tick operating-state duration evidence to Workstation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/machine_operating_state_persistence",
+                WORKSTATION,
+                ValidationCategory.PERSISTENCE,
+                "IM-031A assigns schema-versioned machine_operating_states.json to Workstation"
         );
         contract(
                 builder,
@@ -2533,6 +2653,24 @@ public final class ButcherCraftArchitectureManifest {
                 PersistenceDataKind.SEPARATED_DEFINITIONS_AND_RUNTIME,
                 OrderingPolicy.CANONICAL_ID,
                 new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.EXECUTION.value())
+        );
+        persistence(
+                builder,
+                "butchercraft:execution_machine_runs",
+                "butchercraft/" + MachineRunSchema.FILE_NAME,
+                EXECUTION,
+                MachineRunSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME,
+                OrderingPolicy.CANONICAL_ID
+        );
+        persistence(
+                builder,
+                "butchercraft:machine_operating_states",
+                "butchercraft/" + MachineOperatingSchema.FILE_NAME,
+                WORKSTATION,
+                MachineOperatingSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME,
+                OrderingPolicy.CANONICAL_ID
         );
         persistence(builder, "butchercraft:workstation_instances",
                 "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.INSTANCE_FILE_NAME,

@@ -450,6 +450,31 @@ files. The command surface rejects live loaded-world restoration; a controlled
 Java harness proves coordinated Clock/Scheduler restoration without changing
 server lifecycle behavior.
 
+## Machine Run-State Architecture
+
+IM-031A implements the DG-005 generic persistent machine Run foundation while
+leaving current Grinder and Patty Former one-cycle gameplay unchanged.
+Execution owns canonical Machine Run identity, instance-local generation,
+START/STOP acceptance, active uniqueness, Run lifecycle, child authorization,
+and `<world>/butchercraft/execution_machine_runs.json`. Workstation owns the
+operating policy, current operating state, state-duration evidence, endpoint
+availability, and `<world>/butchercraft/machine_operating_states.json`.
+
+`MachineRunCoordinatorService` composes those owners but stores no canonical
+state. START persists Workstation `STARTING`, then Execution acceptance, then
+Workstation `RUNNING`. STOP first commits the exact-Run Execution transition,
+then publishes Workstation `STOPPING`; no later child can be admitted. Safe
+pre-invocation cancellation is reused, while an invoked child must reach a
+proven terminal owner result before `OFF` and `STOPPED` publish.
+
+Startup loads World Identity and Workstation instances first, then operating
+state, generic Execution, Machine Runs, Scheduler evidence, and reconciliation.
+An active Run retains its exact identity but becomes
+`SUSPENDED_RESTART_REQUIRED`/`RESTART_REQUIRED`; no child or resume is inferred.
+Unavailable chunks block admission without force loading. A retired, replaced,
+or identity-conflicting endpoint enters explicit recovery and cannot inherit
+the prior Run. See `docs/MACHINE_RUN_STATE_FOUNDATION.md`.
+
 ## Industry-Neutral Production Architecture
 
 Phase 20 introduces `com.butchercraft.world.production` as a pure Java operational domain. It does not replace the economic `GoodTransformation` relationship or the existing local workstation transformation engine. A `ProductionProcessDefinition` describes a reusable executable Process with exact input and output lines, whole-batch deterministic yield, duration, required capabilities, optional Business and Workforce requirements, policy, tags, and typed metadata.

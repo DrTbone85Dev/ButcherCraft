@@ -1116,7 +1116,13 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/stack_aware_endpoint_merge",
                         "butchercraft:platform_contract/stack_aware_migration_gate",
                         "butchercraft:platform_contract/material_handling_schema_2_foundation",
-                        "butchercraft:platform_contract/stack_aware_live_activation_gate"
+                        "butchercraft:platform_contract/stack_aware_live_activation_gate",
+                        "butchercraft:platform_contract/machine_run_execution_authority",
+                        "butchercraft:platform_contract/machine_operating_state_authority",
+                        "butchercraft:platform_contract/machine_run_durable_publication",
+                        "butchercraft:platform_contract/machine_run_bounded_child_admission",
+                        "butchercraft:platform_contract/machine_run_restart_policy_b",
+                        "butchercraft:platform_contract/machine_run_endpoint_protection"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
@@ -1129,6 +1135,32 @@ class ArchitectureRulesTest {
         assertTrue(context.runtimeAuthorities().stream()
                 .anyMatch(authority -> authority.id().value().equals("butchercraft:runtime_authority/execution_world")
                         && authority.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+    }
+
+    @Test
+    void currentManifestRegistersMachineRunFoundationWithoutActivatingContinuousGameplay() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.architectureDocuments().stream().anyMatch(document -> document.id().value()
+                .equals("butchercraft:document/persistent_machine_operating_state_adr")
+                && document.status().equals("RATIFIED_IM_031A_FOUNDATION_IMPLEMENTED_CONTINUOUS_GAMEPLAY_GATED")));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/machine_run_execution_authority")
+                && contract.ownerId().value().equals("butchercraft:execution")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/machine_operating_state_authority")
+                && contract.ownerId().value().equals("butchercraft:workstation")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/machine_run_live_activation_gate")
+                && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
+                .equals("butchercraft:execution_machine_runs")
+                && persistence.ownerId().value().equals("butchercraft:execution")));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
+                .equals("butchercraft:machine_operating_states")
+                && persistence.ownerId().value().equals("butchercraft:workstation")));
     }
 
     private static ValidationResult validate(ValidationRule rule, ValidationContext context) {
