@@ -1122,7 +1122,8 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/machine_run_durable_publication",
                         "butchercraft:platform_contract/machine_run_bounded_child_admission",
                         "butchercraft:platform_contract/machine_run_restart_policy_b",
-                        "butchercraft:platform_contract/machine_run_endpoint_protection"
+                        "butchercraft:platform_contract/machine_run_endpoint_protection",
+                        "butchercraft:platform_contract/grinder_continuous_run_activation"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
@@ -1138,12 +1139,13 @@ class ArchitectureRulesTest {
     }
 
     @Test
-    void currentManifestRegistersMachineRunFoundationWithoutActivatingContinuousGameplay() {
+    void currentManifestRegistersMachineRunFoundationAndGrinderOnlyActivation() {
         ValidationContext context = ArchitectureValidationTestFixtures.validContext();
 
         assertTrue(context.architectureDocuments().stream().anyMatch(document -> document.id().value()
                 .equals("butchercraft:document/persistent_machine_operating_state_adr")
-                && document.status().equals("RATIFIED_IM_031A_FOUNDATION_IMPLEMENTED_CONTINUOUS_GAMEPLAY_GATED")));
+                && document.status().equals(
+                        "RATIFIED_IM_031A_FOUNDATION_AND_IM_031B_GRINDER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED")));
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
                 .equals("butchercraft:platform_contract/machine_run_execution_authority")
                 && contract.ownerId().value().equals("butchercraft:execution")
@@ -1153,7 +1155,10 @@ class ArchitectureRulesTest {
                 && contract.ownerId().value().equals("butchercraft:workstation")
                 && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
-                .equals("butchercraft:platform_contract/machine_run_live_activation_gate")
+                .equals("butchercraft:platform_contract/grinder_continuous_run_activation")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/machine_run_remaining_activation_gates")
                 && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
         assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
                 .equals("butchercraft:execution_machine_runs")

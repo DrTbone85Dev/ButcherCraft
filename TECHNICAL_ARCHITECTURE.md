@@ -158,7 +158,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.inventory.freshness` | Pure Inventory-owned freshness identity support for deterministic source-owned Inventory Freshness Identity components. Live Transaction validation uses scoped freshness without introducing a global Inventory revision, runtime migration, or persistence schema change. |
 | `com.butchercraft.world.transaction.binding` | Pure Transaction-owned validation binding support for Proposal Identity, Validation Plan Identity, Validation Consumption Authority, duplicate/conflict classification, result evidence identity, and typed binding failures. IM-008 wires these primitives into live Transaction execution while durable binding persistence remains gated. |
 | `com.butchercraft.world.planning` | Pure immutable Planning artifacts, exact Needs and capacity claims, deterministic cadence and trigger evidence, candidate evaluation and selection, typed Production submission, cycle reports, and Planning-owned JSON persistence. |
-| `com.butchercraft.world.execution` | Pure generic Execution runtime foundation for operation identity, immutable authorization evidence consumption, lifecycle, attempts, handler boundary, owner result evidence, Unknown Outcome state, Scheduler handler integration, and versioned operation persistence. IM-012 registers the first grinder workstation handler through the generic boundary, IM-016 lets Production observe that handler's terminal evidence without acquiring Execution authority, IM-018 registers the Patty Former handler on the same path, and IM-027 lets one employee observe the existing Beef Grinder operation without receiving Execution authority. It has no Allocation integration, Planning handoff, public handler API, checkpoint owner snapshots, broad workstation framework, or general worker automation. |
+| `com.butchercraft.world.execution` | Pure generic Execution runtime foundation for operation identity, immutable authorization evidence consumption, lifecycle, attempts, handler boundary, owner result evidence, Unknown Outcome state, Scheduler handler integration, and versioned operation persistence. IM-012 registers the first Grinder workstation handler, IM-018 registers the Patty Former handler, IM-027 lets one employee observe one bounded Beef Grinder operation, and IM-031A/IM-031B add Execution-owned persistent Machine Runs and live Grinder child admission without transferring authority to Workstation or Scheduler. It has no Allocation integration, Planning handoff, public handler API, checkpoint owner snapshots, broad workstation framework, or general worker automation. |
 | `com.butchercraft.world.allocation` | Pure Resource Allocation definitions, deterministic AllocationSet lifecycle and Cycle execution, detached Capacity accounting, atomic Commitment publication, immutable registries, views, history, queries, reports, traces, and typed validation. |
 | `com.butchercraft.world.evidence` | Pure Evidence Lifecycle foundation for owner metadata, evidence identity validation, classification, retention-policy inputs, deterministic retention decisions, and typed lifecycle failures. It owns no subsystem facts, persistence, archive movement, checkpoint recovery, or gameplay behavior. |
 | `com.butchercraft.world.checkpoint` | Pure Checkpoint Recovery foundation for generation identity, owner snapshot metadata, generation manifests, head records, integrity validation, explicit-root filesystem publication, dual-head recovery selection, rollback selection, owner snapshot coordination, all-or-nothing restoration coordination, storage artifact classification, and typed checkpoint failures. It owns no owner snapshot content, live save hooks, startup recovery, migration, automatic runtime activation, or gameplay behavior. |
@@ -243,7 +243,7 @@ Required boundaries:
 - Facility state owns identity and membership summaries only; business, inspections, work orders, refrigeration, and cleanliness keep their own domain state.
 - Client menus and screens consume synchronized summaries only. They do not mutate product quality, business state, employee skill, inspection outcomes, or saved data directly.
 - Workstations consume definition registries and engine transactions through explicit resolver/controller boundaries. Generic workstation code must not hardcode species, operation, or product ids.
-- The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Beef, pork, and bison grinding flows are selected through product/species/profile/operation definitions, not Grinder code branches. IM-012 adds a temporary single-operation Execution adapter for the selected grinder vertical slice; general grinder behavior remains data-driven.
+- The Grinder consumes the same workstation framework with only the `butchercraft:grinding` capability. Its six grinding flows remain selected through product/species/profile/operation definitions, not Grinder code branches. IM-031B activates one persistent player Machine Run above the existing bounded Execution adapter; every child still resolves, schedules, validates, and commits one recipe quantity independently.
 - The Patty Former consumes the same workstation framework with only the `butchercraft:patty_forming` capability. Ground Beef to Beef Patties is selected through product/species/profile/operation definitions and transformation data, not Patty Former product branches. IM-028C configures the Patty Former with the explicit operation start policy: valid input establishes Workstation-owned `READY` state, while only a server-authoritative explicit player or existing typed Production request may ask the private coordinator to create one Execution operation. Server ticks and reload never infer authorization from input validity.
 - The Bandsaw consumes the same workstation framework with only the `butchercraft:bandsaw` capability. Beef forequarter fabrication outputs are selected through operation output definitions, not Bandsaw code branches.
 - The Packaging Table consumes the same workstation framework with only the `butchercraft:packaging` capability. Retail packaging output is selected through processing-operation and product packaging metadata, while supply requirements come from packaging definitions rather than table code branches.
@@ -452,13 +452,22 @@ server lifecycle behavior.
 
 ## Machine Run-State Architecture
 
-IM-031A implements the DG-005 generic persistent machine Run foundation while
-leaving current Grinder and Patty Former one-cycle gameplay unchanged.
+IM-031A implements the DG-005 generic persistent machine Run foundation.
 Execution owns canonical Machine Run identity, instance-local generation,
 START/STOP acceptance, active uniqueness, Run lifecycle, child authorization,
 and `<world>/butchercraft/execution_machine_runs.json`. Workstation owns the
 operating policy, current operating state, state-duration evidence, endpoint
 availability, and `<world>/butchercraft/machine_operating_states.json`.
+
+IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for the Grinder only.
+Player START creates or observes one exact-instance Run. The Grinder
+integration coordinator admits at most one bounded child at a time through the
+existing Execution/Scheduler/Workstation path, observes its proven terminal
+result, then re-evaluates eligibility before admitting another child. Empty
+input publishes `RUNNING_EMPTY`; full or incompatible output publishes
+`OUTPUT_BLOCKED` without admitting known-failing work. Identical empty or
+blocked observations do not rewrite persistence every tick. Material arrival
+never creates a Run.
 
 `MachineRunCoordinatorService` composes those owners but stores no canonical
 state. START persists Workstation `STARTING`, then Execution acceptance, then
@@ -473,7 +482,8 @@ An active Run retains its exact identity but becomes
 `SUSPENDED_RESTART_REQUIRED`/`RESTART_REQUIRED`; no child or resume is inferred.
 Unavailable chunks block admission without force loading. A retired, replaced,
 or identity-conflicting endpoint enters explicit recovery and cannot inherit
-the prior Run. See `docs/MACHINE_RUN_STATE_FOUNDATION.md`.
+the prior Run. The Patty Former remains one-cycle and the Cutting Table remains
+discrete. See `docs/MACHINE_RUN_STATE_FOUNDATION.md`.
 
 ## Industry-Neutral Production Architecture
 

@@ -315,9 +315,21 @@ Permanent block:
 butchercraft:patty_former
 ```
 
-The block appears in the ButcherCraft creative tab, opens a processing menu and client screen on normal right-click, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. Shift + right-click requests exactly one player operation through Execution and Scheduler; menu opening never requests work. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, over 60 server ticks. The Grinder uses the same normal-use/secondary-use distinction. Cutting Table remains menu-only because it has no player explicit-operation gate.
+The block appears in the ButcherCraft creative tab, opens a processing menu and client screen on normal right-click, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. Shift + right-click requests exactly one player operation through Execution and Scheduler; menu opening never requests work. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, over 60 server ticks. Cutting Table remains menu-only because it has no player explicit-operation gate.
 
 The Patty Former is documented in `docs/PATTY_FORMER.md`.
+
+## Grinder Run Activation
+
+IM-031B activates the Grinder only as
+`POWERED_CONTINUOUS_EXPLICIT_STOP`. Normal right-click opens the inventory.
+GUI START/STOP/RESUME and state-aware Shift + right-click START/STOP compose the
+generic Execution-owned Machine Run and Workstation-owned operating-state
+services. The controller still consumes and produces one recipe quantity per
+bounded child, and Scheduler still dispatches each child independently.
+`RUNNING_EMPTY` and `OUTPUT_BLOCKED` keep the Run powered without creating
+failing work or mutating inventory. The Patty Former does not share this live
+activation.
 
 ## Future Extension Points
 
@@ -326,8 +338,8 @@ The Patty Former is documented in `docs/PATTY_FORMER.md`.
 - Future poultry-specific restrictions should be capability/profile data, not Java species switches.
 - Cleanliness, maintenance, equipment condition, and employee operation currently use centralized prototype context values and can be replaced by real snapshots later.
 - Operation selection UI is deferred until multiple compatible operations are real gameplay.
-- IM-031B and IM-031C may activate the already-defined continuous-explicit-stop
-  policy for Grinder and Patty Former only through separately authorized work.
+- IM-031C may activate the already-defined continuous-explicit-stop policy for
+  Patty Former only through separately authorized work.
 
 ## Explicit Exclusions
 

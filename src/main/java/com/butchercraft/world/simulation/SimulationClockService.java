@@ -48,6 +48,12 @@ public final class SimulationClockService {
         return load(server).clock();
     }
 
+    /** Persists the Clock authority before another owner publishes evidence at its current tick. */
+    public synchronized void persistNow(MinecraftServer server) {
+        ActiveSimulation active = load(server);
+        active.storage().save(active.clock().state());
+    }
+
     public Optional<SimulationClock> currentClock() {
         return Optional.ofNullable(activeSimulation.get()).map(ActiveSimulation::clock);
     }

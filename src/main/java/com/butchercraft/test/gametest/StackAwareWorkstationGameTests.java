@@ -9,6 +9,7 @@ import com.butchercraft.registration.ModBlocks;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.operation.MachineOperatingState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -45,34 +46,24 @@ public final class StackAwareWorkstationGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = TEMPLATE, timeoutTicks = 280)
-    public static void grinderConsumesAndMergesOnePerExplicitOperationWithoutLooping(GameTestHelper helper) {
+    @GameTest(template = TEMPLATE, timeoutTicks = 760)
+    public static void grinderProcessesStackAsBoundedCyclesUnderOneContinuousRun(GameTestHelper helper) {
         helper.setBlock(GRINDER_POS, ModBlocks.GRINDER.get().defaultBlockState());
         GrinderBlockEntity grinder = require(helper, GRINDER_POS, GrinderBlockEntity.class);
         grinder.inventory().setInputInternal(count(ModItems.BEEF_TRIM.get().getDefaultInstance(), 10));
         requestPlayerOperation(helper, GRINDER_POS);
+        var runIdentity = grinder.runStatus().runIdentity().orElseThrow();
 
-        helper.runAtTickTime(100, () -> {
-            helper.assertTrue(grinder.workstationState() == WorkstationState.COMPLETE,
-                    "First explicit Grinder operation completes");
-            helper.assertTrue(grinder.inventory().input().getCount() == 9,
-                    "First operation consumes one Beef Trim");
-            helper.assertTrue(grinder.inventory().output().getCount() == 1,
-                    "First operation publishes one Ground Beef");
-            requestPlayerOperation(helper, GRINDER_POS);
-        });
-        helper.runAtTickTime(210, () -> {
-            helper.assertTrue(grinder.workstationState() == WorkstationState.COMPLETE,
-                    "Second explicit Grinder operation completes");
-            helper.assertTrue(grinder.inventory().input().getCount() == 8,
-                    "Second operation consumes only one more Beef Trim");
-            helper.assertTrue(grinder.inventory().output().getCount() == 2,
-                    "Second operation merges one Ground Beef into the existing output");
-        });
-        helper.runAtTickTime(250, () -> {
-            helper.assertTrue(grinder.inventory().input().getCount() == 8
-                            && grinder.inventory().output().getCount() == 2,
-                    "Remaining input does not authorize an automatic third operation");
+        helper.runAtTickTime(700, () -> {
+            helper.assertTrue(grinder.inventory().input().isEmpty()
+                            && grinder.inventory().output().getCount() == 10,
+                    "One continuous Grinder Run completes ten separately bounded cycles");
+            helper.assertTrue(grinder.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "All ten bounded cycles retain one Machine Run identity");
+            helper.assertTrue(grinder.runStatus().completedChildren() == 10,
+                    "The Machine Run records ten terminal child operations");
+            helper.assertTrue(grinder.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "Input exhaustion leaves the Grinder powered and RUNNING_EMPTY");
             helper.succeed();
         });
     }

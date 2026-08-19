@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 public final class WorkstationProcessingController {
     private static final String STATE_TAG = "State";
@@ -215,16 +216,29 @@ public final class WorkstationProcessingController {
 
     public WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
         Objects.requireNonNull(tickContext, "tickContext");
-        return requestProcessing(tickContext.registryAccess(), tickContext);
+        return requestProcessing(tickContext.registryAccess(), tickContext, Optional.empty());
+    }
+
+    public WorkstationProductionRequestResult requestProductionProcessing(
+            WorkstationTickContext tickContext,
+            Function<WorkstationExecutionStartRequest, WorkstationExecutionStartResult> executionStart
+    ) {
+        Objects.requireNonNull(tickContext, "tickContext");
+        return requestProcessing(
+                tickContext.registryAccess(),
+                tickContext,
+                Optional.of(Objects.requireNonNull(executionStart, "executionStart"))
+        );
     }
 
     public WorkstationProductionRequestResult requestProcessing(RegistryAccess registryAccess) {
-        return requestProcessing(Objects.requireNonNull(registryAccess, "registryAccess"), null);
+        return requestProcessing(Objects.requireNonNull(registryAccess, "registryAccess"), null, Optional.empty());
     }
 
     private WorkstationProductionRequestResult requestProcessing(
             RegistryAccess registryAccess,
-            WorkstationTickContext tickContext
+            WorkstationTickContext tickContext,
+            Optional<Function<WorkstationExecutionStartRequest, WorkstationExecutionStartResult>> executionStart
     ) {
         if (state == WorkstationState.COMPLETE) {
             resetRuntimeProgress();
@@ -242,7 +256,7 @@ public final class WorkstationProcessingController {
             setState(WorkstationState.READY);
         }
         if (state == WorkstationState.READY) {
-            startProcessing(registryAccess, tickContext);
+            startProcessing(registryAccess, tickContext, executionStart);
         }
         WorkstationProductionSnapshot snapshot = productionSnapshot();
         if (state == WorkstationState.BLOCKED || state == WorkstationState.ERROR) {
@@ -275,7 +289,8 @@ public final class WorkstationProcessingController {
     public void onInventoryChanged() {
         if (state == WorkstationState.BLOCKED
                 && lastFailure != null
-                && lastFailure.code() == WorkstationFailureCode.OUTPUT_OCCUPIED
+                && (lastFailure.code() == WorkstationFailureCode.OUTPUT_OCCUPIED
+                || lastFailure.code() == WorkstationFailureCode.OUTPUT_INCOMPATIBLE)
                 ) {
             resetRuntimeProgress();
             lastFailure = null;
@@ -326,7 +341,7 @@ public final class WorkstationProcessingController {
 
         if (state == WorkstationState.READY) {
             if (startPolicy == WorkstationOperationStartPolicy.AUTOMATIC_WHEN_READY) {
-                startProcessing(registryAccess, tickContext);
+                startProcessing(registryAccess, tickContext, Optional.empty());
             }
             return;
         }
@@ -485,7 +500,11 @@ public final class WorkstationProcessingController {
         }
     }
 
-    private void startProcessing(RegistryAccess registryAccess, WorkstationTickContext tickContext) {
+    private void startProcessing(
+            RegistryAccess registryAccess,
+            WorkstationTickContext tickContext,
+            Optional<Function<WorkstationExecutionStartRequest, WorkstationExecutionStartResult>> executionStart
+    ) {
         if (state == WorkstationState.PROCESSING) {
             block(WorkstationFailure.of(WorkstationFailureCode.TRANSACTION_ALREADY_ACTIVE, "Processing is already active"));
             return;
@@ -543,15 +562,16 @@ public final class WorkstationProcessingController {
         sourceFreshnessIdentity = null;
         ownerResultEvidence = null;
         if (executionCoordinator.isPresent()) {
-            WorkstationExecutionStartResult startResult = executionCoordinator.orElseThrow().start(
-                    new WorkstationExecutionStartRequest(
-                            tickContext,
-                            capability,
-                            operation,
-                            reservedInputSnapshots,
-                            prepared.proposedOutputs()
-                    )
+            WorkstationExecutionStartRequest startRequest = new WorkstationExecutionStartRequest(
+                    tickContext,
+                    capability,
+                    operation,
+                    reservedInputSnapshots,
+                    prepared.proposedOutputs()
             );
+            WorkstationExecutionStartResult startResult = executionStart
+                    .map(start -> start.apply(startRequest))
+                    .orElseGet(() -> executionCoordinator.orElseThrow().start(startRequest));
             if (!startResult.accepted()) {
                 resetRuntimeProgress();
                 block(startResult.failure().orElseThrow());

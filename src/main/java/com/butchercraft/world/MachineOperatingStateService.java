@@ -24,18 +24,21 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class MachineOperatingStateService {
     public static final MachineOperatingStateService INSTANCE = new MachineOperatingStateService(
             WorldIdentityService.INSTANCE,
             MachineOperatingConfiguration.standard(),
-            MachineOperatingStateService::stateFile
+            MachineOperatingStateService::stateFile,
+            com.butchercraft.world.simulation.SimulationClockService.INSTANCE::persistNow
     );
 
     private final WorldIdentityService worldIdentityService;
     private final MachineOperatingConfiguration configuration;
     private final Function<MinecraftServer, Path> pathFactory;
+    private final Consumer<MinecraftServer> clockPersistence;
     private final AtomicReference<ActiveState> activeState = new AtomicReference<>();
 
     public MachineOperatingStateService(
@@ -43,9 +46,19 @@ public final class MachineOperatingStateService {
             MachineOperatingConfiguration configuration,
             Function<MinecraftServer, Path> pathFactory
     ) {
+        this(worldIdentityService, configuration, pathFactory, server -> { });
+    }
+
+    public MachineOperatingStateService(
+            WorldIdentityService worldIdentityService,
+            MachineOperatingConfiguration configuration,
+            Function<MinecraftServer, Path> pathFactory,
+            Consumer<MinecraftServer> clockPersistence
+    ) {
         this.worldIdentityService = Objects.requireNonNull(worldIdentityService, "worldIdentityService");
         this.configuration = Objects.requireNonNull(configuration, "configuration");
         this.pathFactory = Objects.requireNonNull(pathFactory, "pathFactory");
+        this.clockPersistence = Objects.requireNonNull(clockPersistence, "clockPersistence");
     }
 
     public void initialize(ServerStartedEvent event) {
@@ -255,6 +268,7 @@ public final class MachineOperatingStateService {
         ActiveState active = load(server);
         MachineOperatingMutation mutation = mutationFactory.apply(active.registry());
         if (mutation.changed()) {
+            clockPersistence.accept(server);
             active.storage().save(mutation.registry());
             active = new ActiveState(active.server(), active.storage(), mutation.registry(), true);
             activeState.set(active);

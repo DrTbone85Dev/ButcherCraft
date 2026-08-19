@@ -1,6 +1,9 @@
 package com.butchercraft.machine.grinder;
 
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
+import com.butchercraft.integration.machine.grinder.GrinderContinuousRunService;
+import com.butchercraft.integration.machine.grinder.GrinderRunControlResult;
+import com.butchercraft.integration.machine.grinder.GrinderRunStatus;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.registration.ModItems;
 import com.butchercraft.machine.grinder.execution.GrinderExecutionCoordinator;
@@ -30,6 +33,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,6 +41,32 @@ import org.jetbrains.annotations.Nullable;
 
 public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlockEntity
         implements WorkstationTransferEndpoint, StackAwareWorkstationTransferEndpoint {
+    private final ContainerData runMenuData = new ContainerData() {
+        @Override
+        public int get(int index) {
+            GrinderRunStatus status = runStatus();
+            return switch (index) {
+                case 0 -> status.operatingState().ordinal();
+                case 1 -> status.runLifecycle().map(Enum::ordinal).orElse(-1);
+                case 2 -> status.activeChild().isPresent() ? 1 : 0;
+                case 3 -> boundedInt(status.generation());
+                case 4 -> boundedInt(status.completedChildren());
+                case 5 -> boundedInt(status.nextChildSequence());
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            // Server-owned view data; client writes are ignored.
+        }
+
+        @Override
+        public int getCount() {
+            return GrinderMenu.RUN_DATA_COUNT;
+        }
+    };
+
     public GrinderBlockEntity(BlockPos pos, BlockState blockState) {
         super(
                 ModBlockEntityTypes.GRINDER.get(),
@@ -53,13 +83,27 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, GrinderBlockEntity blockEntity) {
-        if (level instanceof ServerLevel serverLevel
-                && (blockEntity.workstationState() == WorkstationState.IDLE
-                || blockEntity.workstationState() == WorkstationState.READY)
-                && WorkstationReservationService.INSTANCE.hasActiveReservationAt(serverLevel, pos)) {
+        if (level instanceof ServerLevel serverLevel) {
+            boolean playerRunActive = GrinderContinuousRunService.INSTANCE.hasActiveRun(serverLevel, blockEntity);
+            boolean reservationPausesIdleController = (blockEntity.workstationState() == WorkstationState.IDLE
+                    || blockEntity.workstationState() == WorkstationState.READY)
+                    && WorkstationReservationService.INSTANCE.hasActiveReservationAt(serverLevel, pos)
+                    && !playerRunActive;
+            if (!reservationPausesIdleController) {
+                AbstractProcessingWorkstationBlockEntity.serverTick(level, pos, state, blockEntity);
+            }
+            GrinderContinuousRunService.INSTANCE.tick(serverLevel, blockEntity);
             return;
         }
         AbstractProcessingWorkstationBlockEntity.serverTick(level, pos, state, blockEntity);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level instanceof ServerLevel serverLevel) {
+            GrinderContinuousRunService.INSTANCE.endpointLoaded(serverLevel, this);
+        }
     }
 
     @Override
@@ -79,8 +123,50 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
         return requestProductionProcessing(tickContext);
     }
 
-    public WorkstationProductionRequestResult requestPlayerProcessing(WorkstationTickContext tickContext) {
-        return requestProductionProcessing(tickContext);
+    public WorkstationProductionRequestResult requestRunProcessing(
+            WorkstationTickContext tickContext,
+            java.util.function.Function<com.butchercraft.workstation.WorkstationExecutionStartRequest,
+                    com.butchercraft.workstation.WorkstationExecutionStartResult> executionStart
+    ) {
+        return requestProductionProcessing(tickContext, executionStart);
+    }
+
+    public GrinderRunControlResult startRun() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Grinder START requires an authoritative server level");
+        }
+        return GrinderContinuousRunService.INSTANCE.start(serverLevel, this);
+    }
+
+    public GrinderRunControlResult stopRun() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Grinder STOP requires an authoritative server level");
+        }
+        return GrinderContinuousRunService.INSTANCE.stop(serverLevel, this);
+    }
+
+    public GrinderRunControlResult resumeRun() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Grinder RESUME requires an authoritative server level");
+        }
+        return GrinderContinuousRunService.INSTANCE.resume(serverLevel, this);
+    }
+
+    public GrinderRunControlResult shiftControl() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Grinder control requires an authoritative server level");
+        }
+        return GrinderContinuousRunService.INSTANCE.shiftControl(serverLevel, this);
+    }
+
+    public GrinderRunStatus runStatus() {
+        return level instanceof ServerLevel serverLevel
+                ? GrinderContinuousRunService.INSTANCE.status(serverLevel, this)
+                : GrinderRunStatus.off();
+    }
+
+    public ContainerData runMenuData() {
+        return runMenuData;
     }
 
     @Override
@@ -320,5 +406,9 @@ public final class GrinderBlockEntity extends AbstractProcessingWorkstationBlock
     @Override
     protected AbstractContainerMenu createWorkstationMenu(int containerId, Inventory playerInventory, Player player) {
         return new GrinderMenu(containerId, playerInventory, this);
+    }
+
+    private static int boundedInt(long value) {
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, value));
     }
 }

@@ -1,6 +1,7 @@
 package com.butchercraft.integration.employee;
 
 import com.butchercraft.entity.employee.EmployeeEntity;
+import com.butchercraft.integration.machine.grinder.GrinderContinuousRunService;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
 import com.butchercraft.product.integration.ProductStackAdapter;
@@ -97,6 +98,10 @@ public final class EmployeeWorkstationOperationService {
         if (!(level.getBlockEntity(workstationPos) instanceof GrinderBlockEntity grinder) || grinder.isRemoved()) {
             return RequestResult.rejected(RequestStatus.RESERVATION_MISSING_OR_INVALID,
                     "reserved Grinder is missing or invalid");
+        }
+        if (GrinderContinuousRunService.INSTANCE.hasActiveRun(level, grinder)) {
+            return RequestResult.rejected(RequestStatus.ALREADY_REQUESTED,
+                    "Grinder is controlled by an active player Machine Run");
         }
 
         String reservationKey = reservationKey(value);
@@ -198,6 +203,11 @@ public final class EmployeeWorkstationOperationService {
             employee.markWorkstationOperationFailure(reservation.state().serializedName(), "workstation_removed");
             return RequestResult.rejected(RequestStatus.RESERVATION_MISSING_OR_INVALID,
                     "reserved Grinder was removed");
+        }
+        if (GrinderContinuousRunService.INSTANCE.hasActiveRun(level, grinder)) {
+            employee.markWorkstationOperationFailure(reservation.state().serializedName(), "machine_run_active");
+            return RequestResult.rejected(RequestStatus.ALREADY_REQUESTED,
+                    "Grinder is controlled by an active player Machine Run");
         }
         if (!grinder.inventory().output().isEmpty()) {
             employee.markWorkstationOperationFailure(reservation.state().serializedName(), "blocked_output");

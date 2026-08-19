@@ -1,6 +1,8 @@
 package com.butchercraft.test.gametest;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.integration.machine.grinder.GrinderRunControlCode;
+import com.butchercraft.integration.machine.grinder.GrinderRunControlResult;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.machine.grinder.GrinderMenu;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
@@ -15,6 +17,7 @@ import com.butchercraft.workstation.WorkstationFailureCode;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.WorkstationState;
+import com.butchercraft.workstation.operation.MachineOperatingState;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.execution.ExecutionManager;
@@ -133,6 +136,196 @@ public final class GrinderExecutionGameTests {
                     "Normal Grinder use consumes no input and creates no output");
             helper.assertTrue(newOperations(helper, before).isEmpty(),
                     "Grinder menu observation never creates delayed Execution work");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void emptyStartCreatesPoweredRunningEmptyRunWithoutWork(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+
+        var started = grinder.startRun();
+
+        helper.assertTrue(started.accepted(), "Empty Grinder START is accepted");
+        helper.assertTrue(grinder.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                "Empty Grinder publishes RUNNING_EMPTY");
+        helper.assertTrue(grinder.runStatus().runIdentity().isPresent(),
+                "Empty Grinder retains one active Machine Run");
+        helper.runAtTickTime(40, () -> {
+            helper.assertTrue(newOperations(helper, before).isEmpty(),
+                    "RUNNING_EMPTY creates no Scheduler-bound child operations");
+            helper.assertTrue(grinder(helper).runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "Empty Grinder remains powered without busy work");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 320)
+    public static void oneRunProcessesThreeBoundedCyclesThenRemainsRunningEmpty(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.inventory().setInputInternal(count(beefTrim(), 3));
+        var started = grinder.startRun();
+        var runIdentity = started.runIdentity().orElseThrow();
+        helper.assertTrue(started.accepted(), "Three-cycle Grinder START is accepted: " + started.detail());
+        helper.assertTrue(grinder.workstationState() == WorkstationState.PROCESSING,
+                "Three-cycle Grinder admits its first bounded child: "
+                        + grinder.runStatus().operatingState() + " / "
+                        + grinder.lastFailure().map(failure -> failure.developerExplanation()).orElse("none"));
+
+        helper.runAtTickTime(240, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            helper.assertTrue(completed.inventory().input().isEmpty(), "Three cycles consume three Beef Trim");
+            helper.assertTrue(completed.inventory().output().getCount() == 3,
+                    "Three bounded cycles produce three Ground Beef");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "All cycles retain the exact Machine Run identity");
+            helper.assertTrue(completed.runStatus().completedChildren() == 3,
+                    "Run records exactly three terminal children");
+            helper.assertTrue(completed.runStatus().activeChild().isEmpty(),
+                    "No fourth child is admitted after input exhaustion");
+            helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "Input exhaustion leaves the Grinder powered RUNNING_EMPTY");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 360)
+    public static void newInputResumesTheSameRunningEmptyRun(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.startRun();
+        var runIdentity = grinder.runStatus().runIdentity().orElseThrow();
+
+        helper.runAtTickTime(30, () -> grinder(helper).inventory().setInputInternal(count(beefTrim(), 2)));
+        helper.runAtTickTime(220, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            helper.assertTrue(completed.inventory().output().getCount() == 2,
+                    "Input added while powered completes two bounded cycles");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "Input arrival does not allocate a replacement Run");
+            helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "Same Run returns to RUNNING_EMPTY");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 320)
+    public static void fullOutputBlocksWithoutConsumptionThenResumesSameRun(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIds(helper);
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.inventory().setInputInternal(beefTrim());
+        grinder.startRun();
+        var runIdentity = grinder.runStatus().runIdentity().orElseThrow();
+
+        helper.runAtTickTime(100, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            helper.assertTrue(completed.inventory().input().isEmpty()
+                            && completed.inventory().output().getCount() == 1,
+                    "The first bounded child produces canonical Ground Beef output");
+            ItemStack fullCompatibleOutput = completed.inventory().output().copy();
+            fullCompatibleOutput.setCount(64);
+            completed.inventory().setOutputInternal(fullCompatibleOutput);
+            completed.inventory().setInputInternal(count(beefTrim(), 2));
+        });
+        helper.runAtTickTime(120, () -> {
+            GrinderBlockEntity blocked = grinder(helper);
+            helper.assertTrue(blocked.runStatus().operatingState() == MachineOperatingState.OUTPUT_BLOCKED,
+                    "Full compatible output publishes OUTPUT_BLOCKED");
+            helper.assertTrue(blocked.inventory().input().getCount() == 2,
+                    "Blocked eligibility consumes no Beef Trim");
+            helper.assertTrue(newOperations(helper, before).size() == 1,
+                    "Known output blockage admits no failing Execution child");
+        });
+
+        helper.runAtTickTime(125, () -> {
+            ItemStack extracted = grinder(helper).inventory().extractItem(
+                    WorkstationInventory.OUTPUT_SLOT, 1, false);
+            helper.assertTrue(extracted.is(groundBeef().getItem()) && extracted.getCount() == 1,
+                    "One Ground Beef can be removed to restore output capacity");
+        });
+        helper.runAtTickTime(240, () -> {
+            GrinderBlockEntity resumed = grinder(helper);
+            helper.assertTrue(resumed.inventory().input().getCount() == 1,
+                    "Restored capacity permits exactly one next bounded cycle; input="
+                            + resumed.inventory().input().getCount()
+                            + ", output=" + resumed.inventory().output().getCount()
+                            + ", machine=" + resumed.runStatus().operatingState().serializedName()
+                            + ", workstation=" + resumed.workstationState());
+            helper.assertTrue(resumed.inventory().output().getCount() == 64,
+                    "Resumed cycle atomically refills output capacity");
+            helper.assertTrue(resumed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "Output capacity restoration preserves the same Run");
+            helper.assertTrue(resumed.runStatus().operatingState() == MachineOperatingState.OUTPUT_BLOCKED,
+                    "Remaining input returns to OUTPUT_BLOCKED at full capacity");
+            helper.assertTrue(newOperations(helper, before).size() == 2,
+                    "Capacity restoration admits exactly one additional bounded child");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 260)
+    public static void stopDuringProcessingPreventsAnyLaterChild(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.inventory().setInputInternal(count(beefTrim(), 3));
+        grinder.startRun();
+        int[] stoppedCounts = new int[2];
+
+        helper.runAtTickTime(75, () -> {
+            GrinderBlockEntity active = grinder(helper);
+            active.stopRun();
+            stoppedCounts[0] = active.inventory().input().getCount();
+            stoppedCounts[1] = active.inventory().output().getCount();
+        });
+        helper.runAtTickTime(180, () -> {
+            GrinderBlockEntity stopped = grinder(helper);
+            helper.assertTrue(stopped.runStatus().operatingState() == MachineOperatingState.OFF,
+                    "STOP reaches OFF at a deterministic safe child boundary");
+            helper.assertTrue(stopped.inventory().input().getCount() == stoppedCounts[0]
+                            && stopped.inventory().output().getCount() == stoppedCounts[1],
+                    "No child is admitted after STOP");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void runningGrinderMenuSynchronizesMachineControlState(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.startRun();
+        var player = new MenuTrackingTestPlayer(helper.getLevel(), helper.absolutePos(GRINDER_POS));
+
+        helper.useBlock(GRINDER_POS, player);
+
+        helper.assertTrue(player.containerMenu instanceof GrinderMenu,
+                "Normal right-click opens the Grinder GUI while its Run is active");
+        GrinderMenu menu = (GrinderMenu) player.containerMenu;
+        helper.assertTrue(menu.machineOperatingState() == MachineOperatingState.RUNNING_EMPTY,
+                "Menu synchronizes RUNNING_EMPTY from server-owned data");
+        helper.assertTrue(menu.runGeneration() == 1, "Menu synchronizes the active Run generation");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 4300)
+    public static void oneRunProcessesSixtyFourBoundedCyclesWithoutAChildSixtyFive(GameTestHelper helper) {
+        GrinderBlockEntity grinder = placeGrinder(helper);
+        grinder.inventory().setInputInternal(count(beefTrim(), 64));
+        grinder.startRun();
+        var runIdentity = grinder.runStatus().runIdentity().orElseThrow();
+
+        helper.runAtTickTime(4100, () -> {
+            GrinderBlockEntity completed = grinder(helper);
+            helper.assertTrue(completed.inventory().input().isEmpty(), "64 cycles exhaust exactly 64 Beef Trim");
+            helper.assertTrue(completed.inventory().output().getCount() == 64,
+                    "64 cycles produce exactly 64 Ground Beef");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "The 64-cycle scenario uses exactly one Run");
+            helper.assertTrue(completed.runStatus().completedChildren() == 64,
+                    "The Run records exactly 64 terminal children");
+            helper.assertTrue(completed.runStatus().nextChildSequence() == 65,
+                    "Child sequence advances to 65 without admitting child 65");
+            helper.assertTrue(completed.runStatus().activeChild().isEmpty(),
+                    "No nonterminal child remains after the bounded scenario");
+            helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "The 64-cycle scenario ends RUNNING_EMPTY");
             helper.succeed();
         });
     }
@@ -370,9 +563,11 @@ public final class GrinderExecutionGameTests {
                     false
             );
             helper.assertFalse(duplicateRemainder.isEmpty(), "Second Pork Trim insertion is rejected while slot is occupied");
-            requestPlayerOperation(helper, GRINDER_POS);
+            GrinderRunControlResult duplicateStart = active.startRun();
+            helper.assertTrue(duplicateStart.code() == GrinderRunControlCode.EXISTING_RESULT,
+                    "Repeated Pork START observes the existing Grinder Run");
             helper.assertTrue(newOperations(helper, before).size() == 1,
-                    "Repeated use while Pork Trim is processing does not create another Execution operation");
+                    "Repeated START while Pork Trim is processing does not create another Execution operation");
         });
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
@@ -391,22 +586,24 @@ public final class GrinderExecutionGameTests {
         insertBeefTrim(helper, grinder);
 
         helper.runAtTickTime(8, () -> {
-            requestPlayerOperation(helper, GRINDER_POS);
+            GrinderRunControlResult duplicateStart = grinder(helper).startRun();
+            helper.assertTrue(duplicateStart.code() == GrinderRunControlCode.EXISTING_RESULT,
+                    "Repeated START observes the existing Grinder Run");
             helper.assertTrue(newOperations(helper, before).size() == 1,
-                    "Repeated use while processing does not create another Execution operation");
+                    "Repeated START while processing does not create another Execution operation");
         });
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {
             GrinderBlockEntity completed = grinder(helper);
             helper.assertTrue(completed.workstationState() == WorkstationState.COMPLETE,
-                    "Repeated use leaves the Grinder COMPLETE after one operation");
+                    "Repeated START leaves the bounded Grinder child COMPLETE");
             helper.assertTrue(completed.inventory().input().isEmpty(),
                     "One operation consumes the single reserved Beef Trim input");
             helper.assertTrue(completed.inventory().output().is(ModItems.GROUND_BEEF.get())
                             && completed.inventory().output().getCount() == 1,
                     "One operation publishes exactly one Ground Beef");
             helper.assertTrue(newOperations(helper, before).size() == 1,
-                    "Only one Execution operation exists for the repeated initiation attempt");
+                    "Only one Execution operation exists for the repeated START attempt");
             helper.succeed();
         });
     }
@@ -692,9 +889,12 @@ public final class GrinderExecutionGameTests {
             );
             helper.assertFalse(duplicateRemainder.isEmpty(),
                     "Second " + recipe.label() + " Trim insertion is rejected while slot is occupied");
-            requestPlayerOperation(helper, GRINDER_POS);
+            GrinderRunControlResult duplicateStart = active.startRun();
+            helper.assertTrue(duplicateStart.code() == GrinderRunControlCode.EXISTING_RESULT,
+                    "Repeated " + recipe.label() + " START observes the existing Grinder Run");
             helper.assertTrue(newOperations(helper, before).size() == 1,
-                    "Repeated use while " + recipe.label() + " is processing does not create another Execution operation");
+                    "Repeated START while " + recipe.label()
+                            + " is processing does not create another Execution operation");
         });
 
         helper.runAtTickTime(COMPLETION_ASSERTION_TICK, () -> {

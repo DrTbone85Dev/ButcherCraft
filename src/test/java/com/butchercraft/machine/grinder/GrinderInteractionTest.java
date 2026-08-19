@@ -22,7 +22,7 @@ class GrinderInteractionTest {
     }
 
     @Test
-    void secondaryUseAloneRequestsAPlayerOperation() throws IOException {
+    void secondaryUseControlsPersistentRunWithoutOneCyclePlayerBypass() throws IOException {
         String source = source("src/main/java/com/butchercraft/machine/grinder/GrinderBlock.java");
         String emptyHand = source.substring(
                 source.indexOf("protected InteractionResult useWithoutItem("),
@@ -34,11 +34,13 @@ class GrinderInteractionTest {
         );
 
         assertTrue(emptyHand.contains("if (player.isSecondaryUseActive())"));
-        assertTrue(emptyHand.indexOf("requestExplicitOperation(level, pos)")
+        assertTrue(emptyHand.indexOf("requestRunControl(level, pos, player)")
                 < emptyHand.indexOf("openMenu(level, pos, player)"));
         assertTrue(heldItem.contains("if (player.isSecondaryUseActive())"));
-        assertTrue(heldItem.indexOf("requestExplicitOperation(level, pos)")
+        assertTrue(heldItem.indexOf("requestRunControl(level, pos, player)")
                 < heldItem.indexOf("openMenu(level, pos, player)"));
+        assertTrue(source.contains("GrinderContinuousRunService.INSTANCE.shiftControl"));
+        assertTrue(!source.contains("requestPlayerProcessing"));
     }
 
     @Test
@@ -73,6 +75,37 @@ class GrinderInteractionTest {
         assertTrue(client.contains("event.register(ModMenuTypes.GRINDER.get(), GrinderScreen::new)"));
         assertTrue(client.contains("ModClientRegistrationStatus.markGrinderScreenRegistered()"));
         assertTrue(screen.contains("extends AbstractProcessingWorkstationScreen<GrinderMenu>"));
+        assertTrue(screen.contains("screen.butchercraft.grinder.start"));
+        assertTrue(screen.contains("screen.butchercraft.grinder.stop"));
+        assertTrue(screen.contains("screen.butchercraft.grinder.resume"));
+        assertTrue(screen.contains("handleInventoryButtonClick(menu.containerId, id)"));
+    }
+
+    @Test
+    void grinderScreenSeparatesMachineStateFromBoundedCyclePresentation() throws IOException {
+        String menu = source("src/main/java/com/butchercraft/machine/grinder/GrinderMenu.java");
+        String screen = source("src/main/java/com/butchercraft/client/screen/GrinderScreen.java");
+
+        assertTrue(screen.contains("menu.machineStatusComponent()"));
+        assertTrue(screen.contains("menu.cycleStatusComponent()"));
+        assertTrue(screen.contains("menu.cycleProgressPercent()"));
+        assertTrue(!screen.contains("menu.statusComponent()"),
+                "The Grinder must not present a completed child as the Machine Run status");
+        assertTrue(!screen.contains("menu.progressPercent()"),
+                "The Grinder progress bar must not retain generic completed-workstation progress");
+        assertTrue(menu.contains("return displaysActiveCycle(state, activeChild)"));
+    }
+
+    @Test
+    void restartRequiredExposesSeparateResumeAndStopControlsWithoutStatusOverlap() throws IOException {
+        String screen = source("src/main/java/com/butchercraft/client/screen/GrinderScreen.java");
+
+        assertTrue(screen.contains("primaryButton.setMessage(Component.translatable(\"screen.butchercraft.grinder.resume\"))"));
+        assertTrue(screen.contains("stopAfterRestartButton.visible = state == MachineOperatingState.RESTART_REQUIRED"));
+        assertTrue(screen.contains("PRIMARY_CONTROL_Y = 32"));
+        assertTrue(screen.contains("SECONDARY_CONTROL_Y = 52"));
+        assertTrue(screen.contains("CYCLE_STATUS_Y = 62"));
+        assertTrue(screen.contains("CYCLE_STATUS_WIDTH = 128"));
     }
 
     @Test

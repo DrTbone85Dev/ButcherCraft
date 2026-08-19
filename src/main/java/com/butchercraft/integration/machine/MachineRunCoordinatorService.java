@@ -495,6 +495,20 @@ public final class MachineRunCoordinatorService {
             MachineRunRecord run = runService.find(server, loadedRun.runIdentity()).orElseThrow();
             MachineOperatingRecord operating = operatingService.find(server, run.workstationInstanceIdentity())
                     .orElse(null);
+            long latestOwnerTick = Math.max(
+                    run.lastUpdatedSimulationTick(),
+                    operating == null ? 0L : operating.lastObservedSimulationTick()
+            );
+            if (tick < latestOwnerTick) {
+                requireRecovery(
+                        server,
+                        run,
+                        operating,
+                        "Persisted Machine Run evidence is newer than the recovered Simulation Clock",
+                        latestOwnerTick
+                );
+                continue;
+            }
             if (operating == null || operating.currentRunIdentity().filter(run.runIdentity()::equals).isEmpty()) {
                 requireRecovery(server, run, operating,
                         "Execution Machine Run has no matching Workstation operating-state publication", tick);
@@ -628,7 +642,15 @@ public final class MachineRunCoordinatorService {
             String detail,
             long tick
     ) {
-        runService.recoveryRequired(server, run.runIdentity(), MachineRunResultCode.RECOVERY_REQUIRED, detail, tick);
+        long recoveryTick = Math.max(tick, run.lastUpdatedSimulationTick());
+        if (operating != null) recoveryTick = Math.max(recoveryTick, operating.lastObservedSimulationTick());
+        runService.recoveryRequired(
+                server,
+                run.runIdentity(),
+                MachineRunResultCode.RECOVERY_REQUIRED,
+                detail,
+                recoveryTick
+        );
         if (operating != null) {
             operatingService.recoveryRequired(
                     server,
@@ -636,7 +658,7 @@ public final class MachineRunCoordinatorService {
                     MachineOperatingResultCode.RECOVERY_REQUIRED,
                     detail,
                     operating.endpointAvailability(),
-                    tick
+                    recoveryTick
             );
         }
     }

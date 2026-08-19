@@ -228,11 +228,15 @@ not rewrite historical schema-1 metadata. General schema migration,
 handler-removal migration, and changed-contract migration remain gated.
 
 DG-005 and IM-031A add an Execution-owned persistent Machine Run above bounded
-child Execution operations. The Run owns identity, generation, START/STOP
-acceptance, active uniqueness, restart-required lifecycle, and child admission.
-Workstation remains the separate owner of machine operating policy and current
-operating state. The integration coordinator composes owner publications but
-owns no canonical runtime state. Continuous machine gameplay remains gated.
+child Execution operations. IM-031B activates that Run for the Grinder under
+`POWERED_CONTINUOUS_EXPLICIT_STOP`: repeated child cycles remain individually
+authorized, scheduled, and atomically committed, with at most one nonterminal
+child. The Run owns identity, generation, START/STOP acceptance, active
+uniqueness, restart-required lifecycle, and child admission. Workstation remains
+the separate owner of machine operating policy, current operating state, and
+inventory mutation. The integration coordinator composes owner publications
+but owns no canonical runtime state. Patty Former continuous behavior and
+employee Machine Run control remain gated.
 
 ### Transactions
 

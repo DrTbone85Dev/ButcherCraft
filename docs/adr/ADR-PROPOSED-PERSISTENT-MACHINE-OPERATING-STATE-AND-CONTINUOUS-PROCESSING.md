@@ -1224,3 +1224,13 @@ loading, condition or wear, maintenance, Production machine control,
 unattended operation, multi-machine supervision, IM-031A and all later
 implementation, and Architecture Manifest implementation claims remain gated
 until separately authorized and mechanically true.
+
+## Implementation Status
+
+- IM-031A implements the generic Machine Run, operating-state, persistence,
+  restart Policy B, endpoint, and START/STOP foundation.
+- IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for the Grinder only,
+  including GUI and Shift-use controls, repeated bounded children,
+  `RUNNING_EMPTY`, `OUTPUT_BLOCKED`, and explicit restart RESUME/STOP.
+- Patty Former continuous operation, employee Machine Run control, machine
+  condition/wear, and Production machine control remain separately gated.

@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractInventoryWorkstationBlockEntity {
     private static final String CONTROLLER_TAG = "Controller";
@@ -253,6 +254,14 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
 
     public final WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
         return controller.requestProductionProcessing(tickContext);
+    }
+
+    protected final WorkstationProductionRequestResult requestProductionProcessing(
+            WorkstationTickContext tickContext,
+            Function<com.butchercraft.workstation.WorkstationExecutionStartRequest,
+                    com.butchercraft.workstation.WorkstationExecutionStartResult> executionStart
+    ) {
+        return controller.requestProductionProcessing(tickContext, executionStart);
     }
 
     protected WorkstationExecutionEffectResult completeScheduledExecution(

@@ -19,6 +19,7 @@ import com.butchercraft.world.simulation.scheduler.SimulationWorkRequest;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkRuntime;
 import com.butchercraft.world.simulation.scheduler.WorkFailureCode;
 import com.butchercraft.world.simulation.scheduler.WorkSubmissionResult;
+import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.workstation.WorkstationExecutionCancelRequest;
 import com.butchercraft.workstation.WorkstationExecutionCancelResult;
 import com.butchercraft.workstation.WorkstationExecutionCoordinator;
@@ -50,7 +51,7 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
             return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                     WorkstationFailureCode.NO_COMPATIBLE_OPERATION,
                     request.operation().operationId(),
-                    "Grinder Execution authorizes only promoted player-facing grinder operations"
+                    "Grinder Execution authorizes only promoted player-facing Grinder operations"
             ));
         }
         if (request.operation().definition().operation().workstationCapability()
@@ -59,62 +60,108 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
             return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                     WorkstationFailureCode.NO_COMPATIBLE_OPERATION,
                     request.operation().operationId(),
-                    "Grinder Execution authorizes only operations that declare the grinder capability"
+                    "Grinder Execution authorizes only operations that declare the Grinder capability"
             ));
         }
         try {
+            GrinderExecutionPreparation preparation = prepareAuthorization(request, List.of());
             MinecraftServer server = request.tickContext().level().getServer();
             long tick = simulationTick(server);
-            String workstationIdentity = GrinderWorkstationReference.of(
-                    request.tickContext().level(),
-                    request.tickContext().blockPos()
-            ).identity();
-            String operationIdentity = GrinderExecutionIdentities.operationIdentity(request.operation());
-            String frozenInputIdentity = GrinderExecutionIdentities.inputIdentity(request.frozenInputs());
-            String expectedOutputIdentity = GrinderExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
-            String sourceFreshnessIdentity = GrinderExecutionIdentities.sourceFreshnessIdentity(
-                    workstationIdentity,
-                    request.operation(),
-                    operationIdentity,
-                    frozenInputIdentity,
-                    expectedOutputIdentity
-            );
-            ExecutionAuthorizationEvidence evidence = ExecutionAuthorizationEvidence.issued(
-                    GrinderExecutionConstants.OWNER_SUBSYSTEM_ID,
-                    GrinderExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
-                    workstationIdentity,
-                    GrinderExecutionConstants.OPERATION_TYPE,
-                    GrinderExecutionConstants.HANDLER_ID,
-                    frozenInputIdentity,
-                    sourceFreshnessIdentity,
-                    GrinderExecutionConstants.CONFIGURATION_IDENTITY,
-                    worldIdentity(server),
-                    tick,
-                    OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),
-                    List.of(workstationIdentity, operationIdentity, frozenInputIdentity, expectedOutputIdentity)
-            );
             ExecutionOperationResult<ExecutionOperationSnapshot> accepted = execution(server)
-                    .acceptAuthorization(ExecutionAuthorization.issue(evidence), tick);
+                    .acceptAuthorization(preparation.authorization(), tick);
             if (!accepted.accepted()) {
                 return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                         WorkstationFailureCode.EXECUTION_AUTHORIZATION_REJECTED,
-                        first(accepted.messages(), accepted.failureCode().orElse(ExecutionFailureCode.UNKNOWN).serializedName())
+                        first(accepted.messages(), accepted.failureCode()
+                                .orElse(ExecutionFailureCode.UNKNOWN).serializedName())
                 ));
             }
-            ExecutionOperationSnapshot operation = accepted.value().orElseThrow();
-            return WorkstationExecutionStartResult.accepted(
-                    operation.operationId(),
-                    operation.domainEffectIdentity(),
-                    frozenInputIdentity,
-                    expectedOutputIdentity,
-                    sourceFreshnessIdentity
-            );
+            return acceptedResult(preparation, accepted.value().orElseThrow());
         } catch (RuntimeException exception) {
             return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                     WorkstationFailureCode.EXECUTION_AUTHORIZATION_REJECTED,
                     exception.getMessage() == null ? "Grinder Execution authorization failed" : exception.getMessage()
             ));
         }
+    }
+
+    public GrinderExecutionPreparation prepareAuthorization(
+            WorkstationExecutionStartRequest request,
+            List<String> additionalExplicitInputIdentities
+    ) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(additionalExplicitInputIdentities, "additionalExplicitInputIdentities");
+        if (!GrinderExecutionConstants.PROMOTED_GRINDER_OPERATIONS.contains(request.operation().operationId())) {
+            throw new IllegalArgumentException("Grinder Execution authorizes only promoted Grinder operations");
+        }
+        if (request.operation().definition().operation().workstationCapability()
+                .filter(GrinderWorkstation.CAPABILITY_ID::equals)
+                .isEmpty()) {
+            throw new IllegalArgumentException("Grinder operation does not declare the Grinder capability");
+        }
+        MinecraftServer server = request.tickContext().level().getServer();
+        long tick = simulationTick(server);
+        String workstationIdentity = GrinderWorkstationReference.of(
+                request.tickContext().level(),
+                request.tickContext().blockPos()
+        ).identity();
+        String operationIdentity = GrinderExecutionIdentities.operationIdentity(request.operation());
+        String frozenInputIdentity = GrinderExecutionIdentities.inputIdentity(request.frozenInputs());
+        String expectedOutputIdentity = GrinderExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
+        String sourceFreshnessIdentity = GrinderExecutionIdentities.sourceFreshnessIdentity(
+                workstationIdentity,
+                request.operation(),
+                operationIdentity,
+                frozenInputIdentity,
+                expectedOutputIdentity
+        );
+        List<String> explicitInputs = new java.util.ArrayList<>(List.of(
+                workstationIdentity,
+                operationIdentity,
+                frozenInputIdentity,
+                expectedOutputIdentity
+        ));
+        additionalExplicitInputIdentities.forEach(identity -> {
+            if (!explicitInputs.contains(identity)) explicitInputs.add(identity);
+        });
+        ExecutionAuthorizationEvidence evidence = ExecutionAuthorizationEvidence.issued(
+                GrinderExecutionConstants.OWNER_SUBSYSTEM_ID,
+                GrinderExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
+                workstationIdentity,
+                GrinderExecutionConstants.OPERATION_TYPE,
+                GrinderExecutionConstants.HANDLER_ID,
+                frozenInputIdentity,
+                sourceFreshnessIdentity,
+                GrinderExecutionConstants.CONFIGURATION_IDENTITY,
+                worldIdentity(server),
+                tick,
+                OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),
+                explicitInputs
+        );
+        return new GrinderExecutionPreparation(
+                ExecutionAuthorization.issue(evidence),
+                frozenInputIdentity,
+                expectedOutputIdentity,
+                sourceFreshnessIdentity
+        );
+    }
+
+    public WorkstationExecutionStartResult acceptedResult(
+            GrinderExecutionPreparation preparation,
+            ExecutionOperationSnapshot operation
+    ) {
+        Objects.requireNonNull(preparation, "preparation");
+        Objects.requireNonNull(operation, "operation");
+        if (!operation.operationId().equals(preparation.authorization().operationId())) {
+            throw new IllegalArgumentException("Accepted Grinder operation does not match prepared authorization");
+        }
+        return WorkstationExecutionStartResult.accepted(
+                operation.operationId(),
+                operation.domainEffectIdentity(),
+                preparation.frozenInputIdentity(),
+                preparation.expectedOutputIdentity(),
+                preparation.sourceFreshnessIdentity()
+        );
     }
 
     @Override
@@ -230,7 +277,7 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
     }
 
     private static String worldIdentity(MinecraftServer server) {
-        return "butchercraft:world/" + WorldIdentityService.INSTANCE.getOrCreate(server).id();
+        return WorldIdentityRootIdentities.from(WorldIdentityService.INSTANCE.getOrCreate(server)).identity();
     }
 
     private static SimulationWorkId workIdFor(ExecutionOperationId operationId) {

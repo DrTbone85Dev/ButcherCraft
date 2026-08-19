@@ -23,18 +23,21 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class ExecutionMachineRunService {
     public static final ExecutionMachineRunService INSTANCE = new ExecutionMachineRunService(
             WorldIdentityService.INSTANCE,
             MachineRunConfiguration.standard(),
-            ExecutionMachineRunService::runFile
+            ExecutionMachineRunService::runFile,
+            com.butchercraft.world.simulation.SimulationClockService.INSTANCE::persistNow
     );
 
     private final WorldIdentityService worldIdentityService;
     private final MachineRunConfiguration configuration;
     private final Function<MinecraftServer, Path> pathFactory;
+    private final Consumer<MinecraftServer> clockPersistence;
     private final AtomicReference<ActiveState> activeState = new AtomicReference<>();
 
     public ExecutionMachineRunService(
@@ -42,9 +45,19 @@ public final class ExecutionMachineRunService {
             MachineRunConfiguration configuration,
             Function<MinecraftServer, Path> pathFactory
     ) {
+        this(worldIdentityService, configuration, pathFactory, server -> { });
+    }
+
+    public ExecutionMachineRunService(
+            WorldIdentityService worldIdentityService,
+            MachineRunConfiguration configuration,
+            Function<MinecraftServer, Path> pathFactory,
+            Consumer<MinecraftServer> clockPersistence
+    ) {
         this.worldIdentityService = Objects.requireNonNull(worldIdentityService, "worldIdentityService");
         this.configuration = Objects.requireNonNull(configuration, "configuration");
         this.pathFactory = Objects.requireNonNull(pathFactory, "pathFactory");
+        this.clockPersistence = Objects.requireNonNull(clockPersistence, "clockPersistence");
     }
 
     public void initialize(ServerStartedEvent event) {
@@ -186,6 +199,7 @@ public final class ExecutionMachineRunService {
         ActiveState active = load(server);
         MachineRunRegistryMutation mutation = mutationFactory.apply(active.registry());
         if (mutation.changed()) {
+            clockPersistence.accept(server);
             active.storage().save(mutation.registry());
             active = new ActiveState(active.server(), active.storage(), mutation.registry(), true);
             activeState.set(active);

@@ -198,8 +198,8 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/persistent_machine_operating_state_adr",
                 "docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md",
-                "RATIFIED_IM_031A_FOUNDATION_IMPLEMENTED_CONTINUOUS_GAMEPLAY_GATED",
-                "DG-005 IM-031A",
+                "RATIFIED_IM_031A_FOUNDATION_AND_IM_031B_GRINDER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-005 IM-031A IM-031B",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
     }
 
@@ -1154,11 +1154,16 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.OWNERSHIP, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "DG-002A, DG-005, and IM-031A",
                 "Chunk unavailability pauses child admission without force loading and replacement instances cannot inherit a Run");
-        platformContract(builder, "butchercraft:platform_contract/machine_run_live_activation_gate",
+        platformContract(builder, "butchercraft:platform_contract/grinder_continuous_run_activation",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-031B Grinder Continuous Policy Activation",
+                "Player-controlled Grinder operation uses one persistent continuous-explicit-stop Machine Run with repeated bounded children, RUNNING_EMPTY, OUTPUT_BLOCKED, exact-Run STOP, and explicit Policy B restart decisions");
+        platformContract(builder, "butchercraft:platform_contract/machine_run_remaining_activation_gates",
                 ValidationCategory.EXECUTION, EXECUTION,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-031A completion boundary",
-                "Continuous Grinder and Patty Former cycling, controls, employee START/STOP, and automatic restart remain unactivated");
+                "IM-031B completion boundary",
+                "Patty Former continuous cycling, employee Machine START/STOP, Production machine control, automatic restart, and machine wear remain unactivated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {

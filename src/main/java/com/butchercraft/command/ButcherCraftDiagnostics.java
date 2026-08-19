@@ -9,6 +9,8 @@ import com.butchercraft.integration.employee.EmployeeWorkstationOperationService
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
+import com.butchercraft.machine.grinder.GrinderBlockEntity;
+import com.butchercraft.integration.machine.grinder.GrinderRunStatus;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
 import com.butchercraft.machine.pattyformer.PattyFormerOperationDiagnostics;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
@@ -843,8 +845,32 @@ public final class ButcherCraftDiagnostics {
         } else {
             source.sendSuccess(() -> Component.literal("Reservation: unreserved"), false);
         }
+        sendGrinderRunStatus(source, position);
         sendPattyFormerOperationStatus(source, position);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static void sendGrinderRunStatus(CommandSourceStack source, BlockPos position) {
+        if (!(source.getLevel().getBlockEntity(position) instanceof GrinderBlockEntity grinder)) {
+            return;
+        }
+        GrinderRunStatus status = grinder.runStatus();
+        source.sendSuccess(() -> Component.literal("Grinder machine: state="
+                + status.operatingState().serializedName()
+                + " | policy=powered_continuous_explicit_stop"
+                + " | generation=" + status.generation()), false);
+        source.sendSuccess(() -> Component.literal("Grinder Run: identity="
+                + status.runIdentity().map(value -> value.value()).orElse("none")
+                + " | lifecycle=" + status.runLifecycle()
+                .map(value -> value.serializedName()).orElse("none")
+                + " | run_revision=" + status.runRevision()
+                + " | operating_revision=" + status.operatingRevision()), false);
+        source.sendSuccess(() -> Component.literal("Grinder child: active="
+                + status.activeChild().map(value -> value.value()).orElse("none")
+                + " | completed=" + status.completedChildren()
+                + " | next_sequence=" + status.nextChildSequence()), false);
+        status.detail().ifPresent(detail -> source.sendSuccess(
+                () -> Component.literal("Grinder recovery: " + detail), false));
     }
 
     private static void sendPattyFormerOperationStatus(CommandSourceStack source, BlockPos position) {

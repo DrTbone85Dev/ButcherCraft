@@ -1,14 +1,15 @@
 package com.butchercraft.machine.grinder;
 
 import com.butchercraft.registration.ModBlockEntityTypes;
+import com.butchercraft.integration.machine.grinder.GrinderContinuousRunService;
+import com.butchercraft.integration.machine.grinder.GrinderRunControlResult;
 import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.butchercraft.world.WorkstationReservationService;
-import com.butchercraft.workstation.WorkstationState;
-import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -76,7 +77,7 @@ public final class GrinderBlock extends BaseEntityBlock {
             BlockHitResult hitResult
     ) {
         if (player.isSecondaryUseActive()) {
-            requestExplicitOperation(level, pos);
+            requestRunControl(level, pos, player);
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return openMenu(level, pos, player)
@@ -95,7 +96,7 @@ public final class GrinderBlock extends BaseEntityBlock {
             BlockHitResult hitResult
     ) {
         if (player.isSecondaryUseActive()) {
-            requestExplicitOperation(level, pos);
+            requestRunControl(level, pos, player);
             return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
         if (stack.getItem() instanceof ProductionOrderItem orderItem) {
@@ -111,6 +112,9 @@ public final class GrinderBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock())) {
             try {
                 if (level instanceof ServerLevel serverLevel) {
+                    if (level.getBlockEntity(pos) instanceof GrinderBlockEntity grinder) {
+                        GrinderContinuousRunService.INSTANCE.replacementDetected(serverLevel, grinder);
+                    }
                     WorkstationReservationService.INSTANCE.invalidateGrinder(
                             serverLevel,
                             pos,
@@ -160,13 +164,11 @@ public final class GrinderBlock extends BaseEntityBlock {
         return false;
     }
 
-    private static boolean requestExplicitOperation(Level level, BlockPos pos) {
+    private static boolean requestRunControl(Level level, BlockPos pos, Player player) {
         if (level instanceof ServerLevel serverLevel
-                && level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity
-                && (blockEntity.workstationState() == WorkstationState.READY
-                || blockEntity.workstationState() == WorkstationState.COMPLETE
-                || blockEntity.workstationState() == WorkstationState.PROCESSING)) {
-            blockEntity.requestPlayerProcessing(new WorkstationTickContext(serverLevel, pos));
+                && level.getBlockEntity(pos) instanceof GrinderBlockEntity blockEntity) {
+            GrinderRunControlResult result = GrinderContinuousRunService.INSTANCE.shiftControl(serverLevel, blockEntity);
+            player.displayClientMessage(Component.literal(result.detail()), true);
             return true;
         }
         return false;

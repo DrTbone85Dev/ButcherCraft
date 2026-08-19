@@ -1,10 +1,10 @@
 # ButcherCraft Grinder
 
-Status: Milestone 2C/2D machine wrapper through IM-017 recipe expansion, IM-027 employee operation, and IM-030B selective stack-aware processing
+Status: Milestone 2C/2D machine wrapper through IM-017 recipe expansion, IM-027 employee operation, IM-030B stack-aware processing, and IM-031B continuous player Runs
 
 ## Purpose
 
-The Grinder is the first named machine built on the generic processing workstation framework. It proves a final-named machine can process products without owning species, product, yield, quality, or operation-selection logic. Version 0.6.1 proves the Grinder can execute through the pure Java transformation engine without hardcoding species or product behavior into the machine. Version 0.6.2 makes the transformation registry the source of the Grinder transformation definitions. Version 0.6.3 keeps those definitions on the canonical transformation schema. Version 0.6.4 adds canonical product definitions for the Grinder product ids and validates transformation references separately. Version 0.6.5 proves those registered Grinder transformations can round-trip through the pure Java serialization contract without changing runtime behavior. Version 0.6.6 proves the same one-output Grinder definitions remain compatible with atomic transformation transactions. Version 0.6.7 keeps Grinder behavior on the existing transformation strategy while the Bandsaw migrates to the separate atomic transformation strategy. Version 0.6.8 loads the Grinder transformation definitions from datapack JSON resources. Version 0.6.9 loads the Grinder product definitions from datapack JSON and activates them with transformations as one content snapshot. Version 0.7.0 preserves that Grinder behavior while adding Bandsaw-only beef fabrication content. IM-014 promotes the Grinder, Beef Trim, and Ground Beef presentation for normal gameplay while preserving the existing registry ids for compatibility. IM-015 promotes Pork Trim to Ground Pork as the second player-facing Grinder flow. IM-017 expands the same resolver, transformation, Execution, Scheduler, Production observation, and owner-result path to six promoted trim-to-ground flows.
+The Grinder is the first named machine built on the generic processing workstation framework. It proves a final-named machine can process products without owning species, product, yield, quality, or operation-selection logic. Versions 0.6.1 through 0.7.0 establish its transformation, registry, serialization, product-definition, transaction, datapack, and Bandsaw-compatibility foundations. IM-014 promotes the Grinder, Beef Trim, and Ground Beef presentation for normal gameplay while preserving existing registry ids. IM-015 promotes Pork Trim to Ground Pork, and IM-017 expands the same resolver, transformation, Execution, Scheduler, Production observation, and owner-result path to six promoted trim-to-ground flows. IM-031B places repeated player cycles under one persistent Execution-owned Machine Run without changing any recipe definition or bounded child operation.
 
 ## Boundaries
 
@@ -45,15 +45,30 @@ Each promoted operation runs for 60 server ticks. Chicken uses the `butchercraft
 
 IM-030B configures Grinder input and output capacity `64`. Beef Trim and Ground
 Beef stack to 64; the other promoted trim and ground products retain their
-existing item limits. One explicit player or employee operation consumes one
-recipe input and merges one compatible output. Remaining input never starts
-another operation automatically. A full or component-incompatible output
-blocks the operation before input mutation.
+existing item limits. Every bounded child consumes one recipe input and merges
+one compatible output. A full or component-incompatible output blocks before
+input mutation.
 
-Player controls are explicit: normal right-click opens the Grinder inventory,
-including while valid input is present. Shift + right-click requests exactly
-one operation through the existing Execution and Scheduler path. Opening the
-menu never grants operation authority.
+IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for player operation:
+
+- Normal right-click opens the Grinder inventory in all ordinary Run states.
+- GUI START, or Shift + right-click while `OFF`, creates or observes one exact
+  Workstation Instance-bound Machine Run.
+- While that Run remains authorized, each proven terminal child permits a new
+  eligibility check and at most one next bounded Execution/Scheduler cycle.
+- Empty input produces powered `RUNNING_EMPTY`; adding valid trim resumes the
+  same Run without another START.
+- Full or incompatible output produces powered `OUTPUT_BLOCKED`; removing
+  enough output resumes the same Run without consuming blocked input.
+- GUI STOP, or Shift + right-click while active, closes later child admission
+  and turns the Grinder `OFF` at the deterministic safe boundary.
+- After restart, Policy B preserves the exact Run as `RESTART_REQUIRED`; GUI
+  RESUME continues that Run and GUI STOP ends it. There is no automatic restart.
+
+The employee `/butchercraft employee operate <employee>` path remains one
+reservation-scoped bounded Beef operation and is rejected while a player Run
+is active. It does not grant employee START/STOP or persistent Run authority.
+Opening the menu and inserting material never grants START authority.
 
 The Grinder is obtainable through a generated shaped crafting recipe, appears in the ButcherCraft creative tab, drops itself through its block loot table, and drops stored contents on removal. All promoted trim and ground products are currently obtainable through the ButcherCraft creative tab as the development-stage acquisition bridge. This bridge is not final upstream butchering progression.
 
@@ -75,8 +90,23 @@ Automated tests cover:
 - Generated operation JSON using `butchercraft:grinding`.
 - Generated recipe JSON making the Grinder craftable.
 - GameTest coverage for promoted Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim-to-ground execution, process coexistence, deterministic lookup, unsupported input rejection, process isolation, visible menu-data progress, retained legacy item compatibility, save/load non-duplication, duplicate safety, blocked output, wrong-output prevention, and active block-break input preservation.
-- Stack-aware coverage for multi-count Beef Trim input, one-unit consumption,
-  compatible Ground Beef output merge, full-output atomic blocking, repeated
-  explicit operations, no automatic loop, and exact save/reload counts.
+- Stack-aware coverage for multi-count Beef Trim input, one-unit bounded child
+  consumption, compatible Ground Beef output merge, full-output atomic
+  blocking, and exact save/reload counts.
+- Machine Run coverage for duplicate/concurrent START and STOP, generation,
+  stale STOP, child admission, persistence, restart Policy B, chunk
+  availability, replacement identity, and malformed or unsupported schemas.
+- In-world coverage for multi-cycle processing, 64 bounded children under one
+  Run, `RUNNING_EMPTY`, same-Run input resumption, `OUTPUT_BLOCKED`, same-Run
+  capacity resumption, safe STOP, GUI access, and employee overlap rejection.
 
-Manual verification should craft or obtain the Grinder, place it, insert each promoted Trim product in separate runs, normal right-click to inspect the inventory, then Shift + right-click to operate. Observe 60-tick progress for each, confirm the matching Ground output, confirm wrong inputs and blocked output show visible status, and confirm breaking an idle or active Grinder does not duplicate output. For IM-030B, also place multiple Beef Trim, confirm normal right-click leaves the stack unchanged, operate once with Shift + right-click, confirm `N -> N-1`, confirm Ground Beef merges, wait to prove no automatic second operation, and explicitly operate again. Automated implementation does not claim a human acceptance pass unless a human tester completes it.
+Manual verification should craft or obtain the Grinder, place it, load multiple
+Beef Trim, open the GUI normally, and press START. Observe one item processed
+per 60-tick child until input is empty, then confirm `RUNNING_EMPTY` stays on
+without creating items or wear. Add more Beef Trim and confirm the same Run
+resumes. Fill output, confirm `OUTPUT_BLOCKED` preserves input, remove capacity,
+and confirm the same Run resumes. STOP during a child and confirm no later child
+starts. Save an active Run, reload, and verify explicit RESUME/STOP from
+`RESTART_REQUIRED`. Also verify Patty Former remains one-cycle. Automated
+implementation does not claim a human acceptance pass unless a human tester
+completes it.

@@ -6,22 +6,23 @@ Each milestone should remain small, testable, and rollback-friendly. Do not clai
 
 ## DG-005: Persistent Machine Operating State And Continuous Processing
 
-Status: RATIFIED - IM-031A FOUNDATION IMPLEMENTED; CONTINUOUS GAMEPLAY GATED
+Status: RATIFIED - IM-031A FOUNDATION AND IM-031B GRINDER ACTIVATION IMPLEMENTED
 
 The ratified
 [`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
 separates explicit START authorization, persistent Machine Run identity,
 bounded child processing cycles, Workstation-owned operating state, explicit
 STOP, and future machine condition. IM-031A now implements the generic
-persistent Run and machine operating-state foundation without activating
-continuous machine gameplay.
+persistent Run and machine operating-state foundation. IM-031B activates that
+foundation for the Grinder only.
 
-The ratified sequence is below. Every later implementation milestone remains
-separately gated:
+The ratified sequence is below. Each implementation milestone requires its own
+authorization; completed status is recorded explicitly:
 
 1. `IM-031A` - Machine Operating Run-State And START/STOP Foundation.
    Implemented as generic infrastructure.
 2. `IM-031B` - Grinder Continuous Operation And Empty-Running State.
+   Implemented for player-controlled Grinder Runs.
 3. `IM-031C` - Patty Former Continuous Operation under its explicitly
    ratified machine policy.
 4. `IM-032` - Employee Machine START/STOP Operation with the conservative
@@ -31,8 +32,48 @@ separately gated:
 
 The previously referenced but unimplemented `IM-031 - Employee Patty Former
 Operation` is replaced by this sequence. No completed milestone is renumbered.
-IM-030A and IM-030B gameplay behavior remains unchanged. IM-031A does not
-authorize IM-031B, IM-031C, DG-006, or any later runtime work.
+IM-030A and IM-030B gameplay behavior remains unchanged. IM-031A alone did not
+authorize later runtime work; IM-031B is the separately authorized Grinder
+activation. IM-031C, DG-006, and later work remain gated.
+
+## IM-031B: Grinder Continuous Policy Activation
+
+Goal: activate the ratified `POWERED_CONTINUOUS_EXPLICIT_STOP` policy for the
+Grinder only while preserving bounded recipe cycles and singular subsystem
+authority.
+
+Implemented work:
+
+- Normal right-click keeps the Grinder inventory inspectable. GUI START/STOP/
+  RESUME controls and state-aware Shift + right-click START/STOP target the
+  exact Grinder Workstation Instance and Machine Run.
+- One Execution-owned Machine Run admits repeated, separately identified
+  Grinder child operations through the existing Execution, Scheduler, and
+  Workstation owner-result path, with at most one nonterminal child.
+- Empty input publishes powered `RUNNING_EMPTY`; compatible input later resumes
+  the same Run without another START. Full or incompatible output publishes
+  `OUTPUT_BLOCKED` without input mutation and resumes when capacity returns.
+- STOP closes child admission immediately and reaches `OFF` at the deterministic
+  safe boundary. Duplicate START/STOP is idempotent and later START allocates a
+  higher instance-local Run generation.
+- Restart Policy B preserves the exact Run as `RESTART_REQUIRED`; explicit
+  RESUME or STOP is required. Unavailable chunks pause admission without force
+  loading, and replacement Workstation identity cannot inherit a Run.
+- Diagnostics and synchronized menu data expose operating state, Run identity,
+  lifecycle, generation, child identity/sequence, owner revisions, and recovery
+  detail.
+
+Preserved gates:
+
+- Patty Former remains explicit one-cycle and Cutting Table remains
+  `MANUAL_DISCRETE`.
+- Employee Grinder operation remains one bounded request and cannot overlap a
+  player Run; employee Machine START/STOP remains gated.
+- No wear, damage, maintenance, automatic restart, forced chunk loading,
+  Production machine control, automatic selection, or general Logistics.
+
+See [`Machine Run-State Foundation`](docs/MACHINE_RUN_STATE_FOUNDATION.md) and
+[`Grinder`](docs/GRINDER.md).
 
 ## IM-031A: Machine Run-State And START/STOP Foundation
 

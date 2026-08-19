@@ -1,10 +1,11 @@
 # Machine Run-State / START-STOP Foundation
 
-Status: IM-031A implemented foundation; continuous machine gameplay gated.
+Status: IM-031A implemented foundation; IM-031B Grinder policy activated.
 
-This note records the generic runtime authorized by DG-005. It does not activate
-continuous Grinder or Patty Former processing and does not change existing
-player or employee operation controls.
+This note records the generic runtime authorized by DG-005 and its first live
+policy activation. IM-031B activates continuous player control for the Grinder
+only. Patty Former continuous behavior and employee Machine Run control remain
+gated.
 
 ## Singular Owners
 
@@ -69,8 +70,31 @@ Workstation binds its active-child observation. A second nonterminal child is
 rejected deterministically. Terminal observation clears the child before a
 later sequence may be prepared.
 
-IM-031A never submits Scheduler Work for these generic children and never
-creates a follow-on child automatically.
+The generic IM-031A owners never invent follow-on work. IM-031B's Grinder
+integration re-evaluates the exact instance, Run, input, output capacity, and
+recovery state after each proven terminal child before asking Execution to
+admit the next bounded child. Scheduler still dispatches one child only; no
+inventory loop or stack-sized operation exists.
+
+## Live Grinder Policy
+
+The Grinder uses `POWERED_CONTINUOUS_EXPLICIT_STOP`.
+
+- Normal right-click opens the inventory in every ordinary operating state.
+- GUI START creates or observes one exact-instance Machine Run. Shift +
+  right-click while `OFF` is the same START shortcut.
+- GUI STOP targets the exact active Run and closes later child admission.
+  Shift + right-click while active is the same STOP shortcut.
+- Valid input permits repeated separately identified 60-tick recipe children,
+  with at most one nonterminal child.
+- Empty or ordinarily invalid input publishes powered `RUNNING_EMPTY`. Adding
+  compatible input later resumes the same Run; insertion grants no START.
+- Full or incompatible output publishes `OUTPUT_BLOCKED` without consuming
+  input or generating repeated failed Scheduler work. Restored capacity resumes
+  the same Run.
+- Restart Policy B exposes GUI RESUME/STOP. RESUME preserves the exact Run and
+  generation; no automatic restart occurs.
+- Identical empty/blocked observations are not durably republished each tick.
 
 ## Restart And Endpoints
 
@@ -94,10 +118,8 @@ mutation authority.
 
 ## Gated Behavior
 
-- Continuous Grinder and Patty Former cycling.
-- `RUNNING_EMPTY` or `OUTPUT_BLOCKED` live machine behavior.
-- Player GUI or shift-use START/STOP controls.
-- Employee machine START/STOP.
+- Continuous Patty Former cycling.
+- Employee machine START/STOP or employee-owned persistent Runs.
 - Automatic restart or forced chunk loading.
 - Wear, damage, jams, maintenance, or DG-006 behavior.
 - Production machine control or public extension API.
