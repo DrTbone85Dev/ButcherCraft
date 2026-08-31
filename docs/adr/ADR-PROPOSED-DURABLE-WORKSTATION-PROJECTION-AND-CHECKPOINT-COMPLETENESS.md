@@ -1,7 +1,7 @@
 # ADR-02A-P1: Durable Workstation Projection And Checkpoint Completeness
 
-Status: RATIFIED; IM-031C-R3A THROUGH IM-031C-R4 IMPLEMENTED; FINAL PRODUCT
-OWNER ACCEPTANCE PENDING
+Status: RATIFIED; IM-031C-R3A THROUGH IM-031C-R4 IMPLEMENTED; IM-031C PRODUCT
+OWNER ACCEPTED
 
 Decision identifier: AH-1-ADR-02A-P1
 
@@ -746,11 +746,11 @@ No completed historical milestone is renumbered. The ratified sequence is:
 5. **IM-031C-R4 - Startup Checkpoint Selection, Owner-Native Restoration, And
    Hard-Crash Recovery Validation.** Resume only after R3A and R3B are accepted
    and after R3C when the R2A target is included in acceptance.
-6. **IM-031C final Product Owner acceptance.** Retest continuous Patty Former
-   behavior, Policy B, complete checkpoint startup, lazy Workstation
-   reconciliation, and protected-world boundaries.
-7. **IM-032 - Employee Machine START/STOP Operation.** Remains gated until
-   IM-031C is complete and accepted.
+6. **IM-031C final Product Owner acceptance.** Completed after retesting
+   continuous Patty Former behavior, Policy B, complete checkpoint startup,
+   lazy Workstation reconciliation, and protected-world boundaries.
+7. **IM-032 - Employee Machine START/STOP Operation.** Its IM-031C sequencing
+   gate is satisfied; implementation remains separate and has not started.
 
 Each implementation item requires separate Product Owner authorization.
 Ratification of this amendment alone does not authorize any item.
@@ -818,7 +818,8 @@ classification, and the read-only candidate verifier. IM-031C-R3C publishes and
 validates the exact complete historical successor. IM-031C-R4 consumes only a
 verified `COMPLETE_RESTORABLE` generation, restores durable projections without
 force-loading, and reconciles matching loaded instances before activation.
-IM-032 remains gated.
+Final IM-031C Product Owner acceptance is complete. The IM-032 sequencing gate
+is satisfied, but this amendment does not implement IM-032.
 
 ## 28. Additional Ratified Invariants
 

@@ -1,7 +1,7 @@
 # Live Checkpoint Publication
 
-Status: IM-031C-R3 through IM-031C-R4 implemented; ADR-02A-P1 ratified; final
-Product Owner acceptance pending.
+Status: IM-031C-R3 through IM-031C-R4 implemented; ADR-02A-P1 ratified;
+IM-031C Product Owner accepted.
 
 ## Operator Commands
 

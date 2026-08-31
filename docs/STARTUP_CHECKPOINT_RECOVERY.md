@@ -1,6 +1,6 @@
 # Startup Checkpoint Recovery
 
-Status: IM-031C-R4 implemented; final Product Owner acceptance pending.
+Status: IM-031C-R4 implemented; IM-031C Product Owner accepted.
 
 This document records the mechanically implemented startup-selection and owner-
 native restoration boundary. ADR-02, ADR-02A, and ADR-02A-P1 remain controlling.

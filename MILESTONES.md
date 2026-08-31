@@ -7,7 +7,7 @@ Each milestone should remain small, testable, and rollback-friendly. Do not clai
 ## ADR-02A: Legacy Split-Snapshot Recovery And Coordinated Checkpoint Publication
 
 Status: RATIFIED; IM-031C-R1 THROUGH IM-031C-R4 IMPLEMENTED; ADR-02A-P1
-RATIFIED; FINAL PRODUCT OWNER ACCEPTANCE PENDING
+RATIFIED; IM-031C PRODUCT OWNER ACCEPTED
 
 The ratified
 [`ADR-02A recovery amendment`](docs/adr/ADR-PROPOSED-LEGACY-SPLIT-SNAPSHOT-RECOVERY-AND-COORDINATED-CHECKPOINT-PUBLICATION.md)
@@ -58,8 +58,11 @@ The ratified completed-and-next sequence is:
    schema-versioned Restoration Intent and Result, exact owner-native restore,
    startup mutation gates, durable Workstation projection restore and lazy
    reconciliation, and hard-crash recovery validation.
-10. IM-031C final Product Owner acceptance. Not started.
-11. `IM-032` - Employee Machine START/STOP Operation. Gated.
+10. IM-031C final Product Owner acceptance. Accepted at release baseline
+    `0.10.6-alpha.1`, commit
+    `7e7abb5b3edd3dfac5dba8590d1561f06e9bb540`.
+11. `IM-032` - Employee Machine START/STOP Operation. The IM-031C sequencing
+    gate is satisfied; implementation has not started.
 
 The ratified
 [`ADR-02A-P1 durable Workstation projection amendment`](docs/adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
@@ -72,11 +75,13 @@ Workstation-restorable only when every required projection is exact; failed
 candidates preserve the prior head. Coherent live state wins at startup, while
 incoherent state may select only a valid committed `COMPLETE_RESTORABLE`
 generation. Historical incomplete generations remain non-restorable. IM-031C
-remains open for final Product Owner acceptance, and IM-032 remains gated.
+is complete and Product Owner accepted. IM-032 is no longer blocked by
+IM-031C acceptance, but no IM-032 implementation is recorded here.
 
 ## DG-005: Persistent Machine Operating State And Continuous Processing
 
-Status: RATIFIED - IM-031A FOUNDATION, IM-031B GRINDER, AND IM-031C PATTY FORMER ACTIVATION IMPLEMENTED
+Status: RATIFIED - IM-031A THROUGH IM-031C IMPLEMENTED; IM-031C ACCEPTED;
+IM-032 SEQUENCING GATE CLEARED
 
 The ratified
 [`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
@@ -99,8 +104,8 @@ authorization; completed status is recorded explicitly:
    Runs.
 4. `IM-031C-R1` through `IM-031C-R4`, including copied-world validation
    `IM-031C-R2A` and historical successor validation `IM-031C-R3C`, are
-   implemented. ADR-02A-P1 is ratified. Final Product Owner acceptance remains
-   later.
+   implemented. ADR-02A-P1 is ratified. Final Product Owner acceptance is
+   complete.
 5. `IM-032` - Employee Machine START/STOP Operation with the conservative
    reservation-and-presence-through-STOP policy.
 6. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
@@ -111,9 +116,9 @@ Operation` is replaced by this sequence. No completed milestone is renumbered.
 IM-030A and IM-030B inventory behavior remains unchanged. IM-031A alone did
 not authorize later runtime work; IM-031B and IM-031C are the separately
 authorized Grinder and Patty Former activations. ADR-02A recovery
-submilestones and final IM-031C acceptance now precede IM-032. IM-031C remains
-open only for final Product Owner acceptance; IM-032, DG-006, and later work
-remain gated.
+submilestones and final IM-031C acceptance precede IM-032. IM-031C is accepted,
+so the IM-032 sequencing gate is cleared; IM-032 implementation has not started.
+DG-006 and later work remain gated.
 
 ## IM-031C: Patty Former Continuous Policy Activation
 
@@ -147,10 +152,11 @@ Implemented work:
   requested repeatedly during one child admission is suppressed without
   changing Clock authority or required durability.
 
-Preserved gates:
+Preserved boundaries:
 
-- Employee Patty Former operation and employee Machine START/STOP remain
-  unavailable. Employee Grinder operation remains one bounded request.
+- Employee Patty Former operation and employee Machine START/STOP are not
+  implemented by IM-031C. Employee Grinder operation remains one bounded
+  request. IM-032 is separate work.
 - Cutting Table remains `MANUAL_DISCRETE`.
 - No wear, damage, maintenance, automatic restart, forced chunk loading,
   Production machine control, automatic selection, or general Logistics.
@@ -158,9 +164,9 @@ Preserved gates:
 See [`Machine Run-State Foundation`](docs/MACHINE_RUN_STATE_FOUNDATION.md) and
 [`Patty Former`](docs/PATTY_FORMER.md).
 
-Product Owner manual acceptance remains required for the Patty Former
-continuous Run scenario after the Windows persistence correction. IM-031C is
-not closed by automated validation alone.
+Product Owner manual acceptance of the Patty Former continuous Run and the
+required recovery/checkpoint work is complete. IM-031C is accepted at release
+baseline `0.10.6-alpha.1`.
 
 ## IM-031B: Grinder Continuous Policy Activation
 

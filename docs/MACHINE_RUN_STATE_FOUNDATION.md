@@ -1,11 +1,13 @@
 # Machine Run-State / START-STOP Foundation
 
-Status: IM-031A implemented foundation; IM-031B Grinder and IM-031C Patty Former policies activated.
+Status: IM-031A implemented foundation; IM-031B Grinder and IM-031C Patty Former
+policies activated; IM-031C Product Owner accepted.
 
 This note records the generic runtime authorized by DG-005 and its two live
 policy activations. IM-031B activates continuous player control for the
 Grinder, and IM-031C activates the same machine-neutral coordination for the
-Patty Former. Employee Machine Run control remains gated.
+Patty Former. Employee Machine Run control remains unimplemented; its IM-031C
+sequencing gate is cleared for IM-032.
 
 ## Singular Owners
 

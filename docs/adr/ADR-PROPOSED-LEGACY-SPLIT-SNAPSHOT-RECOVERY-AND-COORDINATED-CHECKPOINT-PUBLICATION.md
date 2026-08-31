@@ -1,6 +1,6 @@
 # ADR-02A: Legacy Split-Snapshot Recovery And Coordinated Checkpoint Publication
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-031C-R1 THROUGH IM-031C-R4 IMPLEMENTED; ADR-02A-P1 RATIFIED; FINAL PRODUCT OWNER ACCEPTANCE PENDING
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-031C-R1 THROUGH IM-031C-R4 IMPLEMENTED; ADR-02A-P1 RATIFIED; IM-031C PRODUCT OWNER ACCEPTED
 
 Decision identifier: AH-1-ADR-02A
 
@@ -872,10 +872,11 @@ history:
 5. **IM-031C-R4 - Startup Selection And Hard-Crash Validation.** Implement live
    coherence evaluation, checkpoint fallback, explicit split analysis, crash
    injection at every commit phase, and repeated Windows hard-crash tests.
-6. **IM-031C final acceptance.** Retest the existing-world Patty Former Run,
-   restart Policy B, copied-world recovery, and coordinated checkpoint startup.
-7. **IM-032.** Remains gated until IM-031C and all recovery submilestones are
-   accepted.
+6. **IM-031C final acceptance.** Completed after retesting the existing-world
+   Patty Former Run, restart Policy B, copied-world recovery, and coordinated
+   checkpoint startup.
+7. **IM-032.** Its IM-031C and recovery-submilestone sequencing gate is
+   satisfied; implementation remains separate and has not started.
 
 Applying recovery to the original failing world is a separate Product Owner
 operation after architecture ratification, implementation validation, fixture
@@ -970,8 +971,8 @@ following controlling direction:
     generated, and copied-world validation. Applying recovery to it requires a
     later explicit Product Owner authorization.
 20. The `IM-031C-R1`, `IM-031C-R2`, `IM-031C-R2A`, `IM-031C-R3`, and
-    `IM-031C-R4` sequence is ratified. IM-031C remains open through final
-    Product Owner acceptance, and IM-032 remains gated.
+    `IM-031C-R4` sequence is ratified and implemented. Final IM-031C Product
+    Owner acceptance is complete, satisfying the IM-032 sequencing gate.
 21. ADR-02A is not a general repair escape hatch. It preserves no arbitrary
     owner-file merging, no inferred mutation, no unknown-effect replay, no
     synthetic Scheduler ticks, no latest-file-wins rule, no Clock rollback for

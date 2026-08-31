@@ -87,7 +87,7 @@ object graph.
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | IM-011 schema-1 runtime foundation and narrow DG-003 additive handler compatibility implemented; general migration and the full RFC-0023 Draft 2 surface remain separately gated |
 | Material Handling | DG-002, DG-002A, and DG-004 ratified; IM-028A through IM-029 routes implemented; IM-030A schema-2 foundation and IM-030B selective stack-aware activation implemented |
-| Checkpoint Recovery | ADR-02, ADR-02A, and ADR-02A-P1 ratified; IM-003 through IM-007 and IM-031C-R1 through IM-031C-R4 implemented, including copied-world validation, coordinated live 17-owner publication, durable Workstation projections, historical successor validation, deterministic startup selection, owner-native restoration, mutation gating, and hard-crash recovery; final Product Owner acceptance remains pending |
+| Checkpoint Recovery | ADR-02, ADR-02A, and ADR-02A-P1 ratified; IM-003 through IM-007 and IM-031C-R1 through IM-031C-R4 implemented, including copied-world validation, coordinated live 17-owner publication, durable Workstation projections, historical successor validation, deterministic startup selection, owner-native restoration, mutation gating, and hard-crash recovery; IM-031C Product Owner accepted |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
 
 The ratified
@@ -273,7 +273,8 @@ Workstation remains the separate owner of machine operating policy, current
 operating state, recipe validation, inventory mutation, and owner results. The
 shared integration coordinator composes owner publications but owns no
 canonical runtime state; machine-specific adapters retain machine semantics.
-Employee Machine Run control remains gated.
+IM-031C is Product Owner accepted. Employee Machine Run control remains
+unimplemented; its IM-031C sequencing gate is cleared for IM-032.
 
 ### Transactions
 

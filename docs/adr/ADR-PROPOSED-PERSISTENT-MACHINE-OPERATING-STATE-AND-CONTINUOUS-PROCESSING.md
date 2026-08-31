@@ -1,6 +1,7 @@
 # ADR-DG-005: Persistent Machine Operating State And Continuous Processing
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-031A THROUGH IM-031C IMPLEMENTED;
+IM-031C PRODUCT OWNER ACCEPTED; IM-032 SEQUENCING GATE CLEARED
 
 Decision identifier: DG-005
 
@@ -1235,5 +1236,7 @@ until separately authorized and mechanically true.
 - IM-031C activates the same policy for the Patty Former through shared
   machine-neutral coordination and presentation while retaining Patty Former
   recipe, inventory-effect, and owner-result authority.
-- Employee Machine Run control, machine condition/wear, and Production machine
-  control remain separately gated.
+- IM-031C is Product Owner accepted. Employee Machine Run control remains
+  unimplemented, but its IM-031C sequencing gate is cleared for IM-032.
+- Machine condition/wear and Production machine control remain separately
+  gated.
