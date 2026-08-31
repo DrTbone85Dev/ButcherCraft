@@ -45,6 +45,8 @@ import com.butchercraft.world.production.ProductionOutputDefinition;
 import com.butchercraft.world.production.ProductionOutputRole;
 import com.butchercraft.world.production.ProductionProcessDefinition;
 import com.butchercraft.world.production.ProductionProcessId;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
 import java.util.Optional;
@@ -72,6 +74,8 @@ public final class ManualProductionChainBootstrap {
     }
 
     public void ensureGoods(ServerStartedEvent event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.GOODS)) return;
         GoodManager manager = GoodService.INSTANCE.managerFor(event.getServer());
         ensureGood(manager, BEEF_TRIM, "Beef Trim", ProductStage.RAW);
         ensureGood(manager, GROUND_BEEF, "Ground Beef", ProductStage.INTERMEDIATE);
@@ -79,6 +83,8 @@ public final class ManualProductionChainBootstrap {
     }
 
     public void ensureActor(ServerStartedEvent event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.ECONOMIC_ACTORS)) return;
         EconomicActorManager manager = EconomicActorService.INSTANCE.managerFor(event.getServer());
         if (manager.find(PRODUCER_ACTOR).isEmpty()) {
             manager.register(EconomicActorDefinition.builder()
@@ -95,6 +101,8 @@ public final class ManualProductionChainBootstrap {
     }
 
     public void ensureInventory(ServerStartedEvent event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.INVENTORY)) return;
         InventoryManager manager = InventoryService.INSTANCE.managerFor(event.getServer());
         if (manager.findStorageNode(STORAGE_NODE).isEmpty()) {
             manager.registerStorageNode(StorageNode.builder()
@@ -127,6 +135,8 @@ public final class ManualProductionChainBootstrap {
     }
 
     public void ensureProduction(ServerStartedEvent event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.PRODUCTION)) return;
         ensureProductionProcess(ProductionService.INSTANCE.managerFor(event.getServer()));
     }
 

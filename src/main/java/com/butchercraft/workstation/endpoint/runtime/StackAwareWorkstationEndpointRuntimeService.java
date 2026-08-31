@@ -1,6 +1,8 @@
 package com.butchercraft.workstation.endpoint.runtime;
 
 import com.butchercraft.integration.materialhandling.ExactItemStackCodec;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointConfiguration;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointJournalRecordV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointJournalState;
@@ -9,6 +11,8 @@ import com.butchercraft.workstation.endpoint.WorkstationEndpointObservationV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointPreparationV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointResultCode;
 import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalV2Storage;
+import com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -59,6 +63,7 @@ public final class StackAwareWorkstationEndpointRuntimeService {
     }
 
     public synchronized void activate(MinecraftServer server, WorkstationEndpointJournalV2 candidate) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
         Objects.requireNonNull(server, "server");
         Objects.requireNonNull(candidate, "candidate");
         Optional<ActiveRuntime> existing = runtime(server);
@@ -202,6 +207,8 @@ public final class StackAwareWorkstationEndpointRuntimeService {
     }
 
     public synchronized void reconcileLoadedEndpoint(ServerLevel level, BlockPos position) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                level.getServer(), LegacySplitRecoveryParticipants.WORKSTATION)) return;
         Optional<ActiveRuntime> runtime = runtime(level.getServer());
         if (runtime.isEmpty()) return;
         Resolved resolved = resolve(level, position);
@@ -242,6 +249,30 @@ public final class StackAwareWorkstationEndpointRuntimeService {
                 .toList();
     }
 
+    public synchronized boolean provesCommittedProjection(
+            MinecraftServer server,
+            com.butchercraft.workstation.endpoint.WorkstationInstanceId instanceId,
+            long inventoryRevision,
+            long endpointEffectRevision,
+            long journalSequence,
+            String ownerResultIdentity
+    ) {
+        Objects.requireNonNull(server, "server");
+        Objects.requireNonNull(instanceId, "instanceId");
+        Objects.requireNonNull(ownerResultIdentity, "ownerResultIdentity");
+        return runtime(server).stream()
+                .flatMap(value -> value.service().journalSnapshot().records().stream())
+                .anyMatch(record -> record.preparation().observation().instanceId().equals(instanceId)
+                        && record.ownerResult().isPresent()
+                        && record.ownerResult().orElseThrow().evidenceIdentity().equals(ownerResultIdentity)
+                        && record.preparation().postInventoryRevision() == inventoryRevision
+                        && record.preparation().postEndpointEffectRevision() == endpointEffectRevision
+                        && record.preparation().journalSequence() == journalSequence
+                        && (record.state() == WorkstationEndpointJournalState.EFFECT_COMMITTED
+                        || record.state() == WorkstationEndpointJournalState.RESULT_PUBLISHED
+                        || record.state() == WorkstationEndpointJournalState.RECONCILED));
+    }
+
     private Resolved resolve(ServerLevel level, BlockPos position) {
         if (!level.hasChunkAt(position)) {
             return Resolved.failed(WorkstationEndpointResultCode.ENDPOINT_UNAVAILABLE,
@@ -252,9 +283,18 @@ public final class StackAwareWorkstationEndpointRuntimeService {
             return Resolved.failed(WorkstationEndpointResultCode.ENDPOINT_UNAVAILABLE, referenceResult.detail());
         }
         BlockEntity blockEntity = level.getBlockEntity(position);
-        if (!(blockEntity instanceof StackAwareWorkstationTransferEndpoint endpoint)) {
+        if (!(blockEntity instanceof StackAwareWorkstationTransferEndpoint endpoint)
+                || !(blockEntity instanceof AbstractInventoryWorkstationBlockEntity workstation)) {
             return Resolved.failed(WorkstationEndpointResultCode.UNSUPPORTED_EFFECT,
                     "Workstation does not implement the schema-2 endpoint contract");
+        }
+        var projection = DurableWorkstationProjectionService.INSTANCE.reconcileLoaded(level, workstation);
+        if (!projection.succeeded()) {
+            return Resolved.failed(
+                    WorkstationEndpointResultCode.RECOVERY_REQUIRED,
+                    "Workstation durable projection is unavailable: "
+                            + projection.code() + ": " + projection.detail()
+            );
         }
         endpoint.activateStackAwareEndpoint();
         WorkstationEndpointReference reference = referenceResult.reference().orElseThrow();

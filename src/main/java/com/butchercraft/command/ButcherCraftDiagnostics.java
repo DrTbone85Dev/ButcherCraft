@@ -11,6 +11,8 @@ import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.integration.machine.grinder.GrinderRunStatus;
+import com.butchercraft.integration.machine.PoweredMachineRunStatus;
+import com.butchercraft.integration.machine.pattyformer.PattyFormerContinuousRunService;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
 import com.butchercraft.machine.pattyformer.PattyFormerOperationDiagnostics;
 import com.butchercraft.processing.definition.BuiltInDefinitionIds;
@@ -897,6 +899,26 @@ public final class ButcherCraftDiagnostics {
         source.sendSuccess(() -> Component.literal("Patty Former recovery: state="
                 + diagnostics.workstationState()
                 + " | failure=" + diagnostics.failureOrRecoveryState()), false);
+        PoweredMachineRunStatus run = PattyFormerContinuousRunService.INSTANCE.status(
+                source.getLevel(), pattyFormer);
+        source.sendSuccess(() -> Component.literal("Patty Former machine: state="
+                + run.operatingState().serializedName()
+                + " | policy=powered_continuous_explicit_stop"
+                + " | generation=" + run.generation()), false);
+        source.sendSuccess(() -> Component.literal("Patty Former Run: identity="
+                + run.runIdentity().map(value -> value.value()).orElse("none")
+                + " | lifecycle=" + run.runLifecycle()
+                .map(value -> value.serializedName()).orElse("none")
+                + " | run_revision=" + run.runRevision()
+                + " | operating_revision=" + run.operatingRevision()), false);
+        source.sendSuccess(() -> Component.literal("Patty Former child: active="
+                + run.activeChild().map(value -> value.value()).orElse("none")
+                + " | completed=" + run.completedChildren()
+                + " | next_sequence=" + run.nextChildSequence()
+                + " | input_eligible=" + diagnostics.ready()
+                + " | output_blocked=" + diagnostics.outputBlocked()), false);
+        run.detail().ifPresent(detail -> source.sendSuccess(
+                () -> Component.literal("Patty Former Run recovery: " + detail), false));
     }
 
     private static int runCuttingTableOutputPreload(CommandSourceStack source, BlockPos position) {

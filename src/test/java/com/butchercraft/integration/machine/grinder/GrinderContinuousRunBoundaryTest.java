@@ -20,18 +20,20 @@ class GrinderContinuousRunBoundaryTest {
 
     @Test
     void grinderIntegrationDelegatesRunAuthorityToGenericCoordinator() throws IOException {
-        String source = source("src/main/java/com/butchercraft/integration/machine/grinder/GrinderContinuousRunService.java");
+        String facade = source("src/main/java/com/butchercraft/integration/machine/grinder/GrinderContinuousRunService.java");
+        String shared = source("src/main/java/com/butchercraft/integration/machine/PoweredProcessingMachineRunService.java");
 
-        assertTrue(source.contains("MachineRunCoordinatorService.INSTANCE"));
-        assertTrue(source.contains("coordinator.start("));
-        assertTrue(source.contains("coordinator.stop("));
-        assertTrue(source.contains("coordinator.resume("));
-        assertTrue(source.contains("coordinator.admitChild("));
+        assertTrue(facade.contains("PoweredProcessingMachineRunService<GrinderBlockEntity>"));
+        assertTrue(shared.contains("MachineRunCoordinatorService.INSTANCE"));
+        assertTrue(shared.contains("coordinator.start("));
+        assertTrue(shared.contains("coordinator.stop("));
+        assertTrue(shared.contains("coordinator.resume("));
+        assertTrue(shared.contains("coordinator.admitChild("));
     }
 
     @Test
     void childAuthorizationBindsExactRunInstanceSequenceAndPolicy() throws IOException {
-        String source = source("src/main/java/com/butchercraft/integration/machine/grinder/GrinderContinuousRunService.java");
+        String source = source("src/main/java/com/butchercraft/integration/machine/PoweredProcessingMachineRunService.java");
 
         assertTrue(source.contains("run.runIdentity().value()"));
         assertTrue(source.contains("run.workstationInstanceIdentity()"));
@@ -41,12 +43,13 @@ class GrinderContinuousRunBoundaryTest {
 
     @Test
     void eligibilityCreatesNoInventoryLoopOrSchedulerAuthority() throws IOException {
-        String source = source("src/main/java/com/butchercraft/integration/machine/grinder/GrinderContinuousRunService.java");
+        String source = source("src/main/java/com/butchercraft/integration/machine/PoweredProcessingMachineRunService.java");
 
         assertFalse(source.contains("while ("));
         assertFalse(source.contains("SimulationSchedulerService"));
         assertFalse(source.contains("setInputInternal"));
         assertFalse(source.contains("setOutputInternal"));
+        assertFalse(source.contains("MaterialHandlingService"));
     }
 
     @Test
@@ -61,21 +64,23 @@ class GrinderContinuousRunBoundaryTest {
     }
 
     @Test
-    void pattyFormerAndCuttingTableRemainOutsideContinuousService() throws IOException {
-        String source = source("src/main/java/com/butchercraft/integration/machine/grinder/GrinderContinuousRunService.java");
-        String patty = source("src/main/java/com/butchercraft/machine/pattyformer/PattyFormerBlockEntity.java");
+    void onlyGrinderAndPattyFormerUseSharedContinuousService() throws IOException {
+        String shared = source("src/main/java/com/butchercraft/integration/machine/PoweredProcessingMachineRunService.java");
+        String patty = source("src/main/java/com/butchercraft/integration/machine/pattyformer/PattyFormerContinuousRunService.java");
         String cutting = source("src/main/java/com/butchercraft/machine/cuttingtable/CuttingTableBlockEntity.java");
 
-        assertFalse(source.contains("PattyFormer"));
-        assertFalse(source.contains("CuttingTable"));
-        assertTrue(patty.contains("requestPlayerProcessing"));
+        assertFalse(shared.contains("GrinderBlockEntity"));
+        assertFalse(shared.contains("PattyFormerBlockEntity"));
+        assertFalse(shared.contains("CuttingTable"));
+        assertTrue(patty.contains("PoweredProcessingMachineRunService<PattyFormerBlockEntity>"));
         assertFalse(cutting.contains("MachineRunCoordinatorService"));
+        assertFalse(cutting.contains("PoweredProcessingMachineRunService"));
     }
 
     @Test
     void menuUsesBuiltInContainerButtonSynchronization() throws IOException {
         String menu = source("src/main/java/com/butchercraft/machine/grinder/GrinderMenu.java");
-        String screen = source("src/main/java/com/butchercraft/client/screen/GrinderScreen.java");
+        String screen = source("src/main/java/com/butchercraft/client/screen/AbstractMachineRunScreen.java");
 
         assertTrue(menu.contains("public boolean clickMenuButton(Player player, int id)"));
         assertTrue(screen.contains("handleInventoryButtonClick(menu.containerId, id)"));
@@ -94,12 +99,12 @@ class GrinderContinuousRunBoundaryTest {
 
     @Test
     void unchangedEmptyOrBlockedObservationDoesNotRepublishEveryTick() throws IOException {
-        String source = source("src/main/java/com/butchercraft/integration/machine/grinder/GrinderContinuousRunService.java");
+        String source = source("src/main/java/com/butchercraft/integration/machine/PoweredProcessingMachineRunService.java");
 
         assertTrue(source.contains("record.state() == state"));
         assertTrue(source.contains("record.eligibilityIdentity().equals(eligibility)"));
         assertTrue(source.contains("record.blockageReason().equals(blockage)"));
-        assertTrue(source.contains("grinder.workstationState() == WorkstationState.BLOCKED"));
+        assertTrue(source.contains("machine.workstationState() == WorkstationState.BLOCKED"));
         assertTrue(source.indexOf("record.blockageReason().equals(blockage)")
                 < source.indexOf("operatingService.publishOperationalState("));
     }
@@ -123,12 +128,27 @@ class GrinderContinuousRunBoundaryTest {
     }
 
     @Test
+    void authorityBlockedWorldKeepsContinuousMachineLifecycleReadOnly() throws IOException {
+        String source = source("src/main/java/com/butchercraft/integration/machine/PoweredProcessingMachineRunService.java");
+
+        assertTrue(source.contains("if (!runtimeMutationPermitted(level)) return;"));
+        assertTrue(source.contains("LegacySplitRecoveryParticipants.EXECUTION"));
+        assertTrue(source.contains("LegacySplitRecoveryParticipants.WORKSTATION"));
+        int endpointLoaded = source.indexOf("public void endpointLoaded");
+        int mutationGate = source.indexOf("if (!runtimeMutationPermitted(level)) return;", endpointLoaded);
+        int endpointReference = source.indexOf(
+                "endpointService.referenceFor(level, machine.getBlockPos())", endpointLoaded);
+        assertTrue(endpointLoaded >= 0 && mutationGate > endpointLoaded && endpointReference > mutationGate);
+    }
+
+    @Test
     void manifestKeepsFutureMachineScopeGated() throws IOException {
         String manifest = source("src/main/java/com/butchercraft/architecture/ButcherCraftArchitectureManifest.java");
 
         assertTrue(manifest.contains("grinder_continuous_run_activation"));
+        assertTrue(manifest.contains("patty_former_continuous_run_activation"));
+        assertTrue(manifest.contains("powered_processing_shared_run_coordination"));
         assertTrue(manifest.contains("machine_run_remaining_activation_gates"));
-        assertTrue(manifest.contains("Patty Former continuous cycling"));
         assertTrue(manifest.contains("machine wear remain unactivated"));
     }
 

@@ -35,6 +35,8 @@ import com.butchercraft.world.materialhandling.MaterialTransferRecordV2;
 import com.butchercraft.world.materialhandling.MaterialTransferView;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorage;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorageV2;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.workforce.materialhandling.persistence.EmployeeMaterialHandlingAssignmentStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -94,6 +96,12 @@ public final class MaterialHandlingService {
     }
 
     public void initialize(ServerStartedEvent event) {
+        boolean mutationPermitted = StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.MATERIAL_HANDLING);
+        if (!mutationPermitted) {
+            if (!stackAware.activeFor(event.getServer())) load(event.getServer());
+            return;
+        }
         if (activateStackAwareIfEligible(event.getServer())) {
             stackAware.reconcile(event.getServer());
             return;
@@ -132,6 +140,7 @@ public final class MaterialHandlingService {
             BlockPos sourcePosition,
             BlockPos destinationPosition
     ) {
+        requireMutation(level);
         MaterialHandlingTransferResult requested = requestTransfer(
                 level,
                 sourcePosition,
@@ -151,6 +160,7 @@ public final class MaterialHandlingService {
             BlockPos destinationPosition,
             String employeeReference
     ) {
+        requireMutation(level);
         return requestTransfer(
                 level,
                 sourcePosition,
@@ -262,6 +272,7 @@ public final class MaterialHandlingService {
     }
 
     public synchronized MaterialHandlingTransferResult resume(ServerLevel level, MaterialTransferId transferId) {
+        requireMutation(level);
         if (stackAware.activeFor(level.getServer())) return stackAware.resume(level, transferId);
         return advance(level, transferId, false);
     }
@@ -270,6 +281,7 @@ public final class MaterialHandlingService {
             ServerLevel level,
             MaterialTransferId transferId
     ) {
+        requireMutation(level);
         if (stackAware.activeFor(level.getServer())) return stackAware.withdrawToCustody(level, transferId);
         MaterialTransferRecord transfer = load(level.getServer()).runtime().find(transferId).orElse(null);
         if (transfer == null) {
@@ -294,6 +306,7 @@ public final class MaterialHandlingService {
             ServerLevel level,
             MaterialTransferId transferId
     ) {
+        requireMutation(level);
         if (stackAware.activeFor(level.getServer())) return stackAware.depositFromCustody(level, transferId);
         MaterialTransferRecord transfer = load(level.getServer()).runtime().find(transferId).orElse(null);
         if (transfer == null) {
@@ -563,6 +576,7 @@ public final class MaterialHandlingService {
             MaterialTransferId transferId,
             String reason
     ) {
+        requireMutation(level);
         if (stackAware.activeFor(level.getServer())) return stackAware.cancel(level, transferId, reason);
         Objects.requireNonNull(level, "level");
         reason = Objects.requireNonNull(reason, "reason").trim();
@@ -1368,6 +1382,13 @@ public final class MaterialHandlingService {
 
     private static boolean endpointsLoaded(ServerLevel level, MaterialTransferRecord transfer) {
         return level.hasChunkAt(position(transfer.source())) && level.hasChunkAt(position(transfer.destination()));
+    }
+
+    private static void requireMutation(ServerLevel level) {
+        StartupMutationGateService.INSTANCE.require(
+                Objects.requireNonNull(level, "level").getServer(),
+                LegacySplitRecoveryParticipants.MATERIAL_HANDLING
+        );
     }
 
     private static BlockPos position(WorkstationEndpointReference reference) {

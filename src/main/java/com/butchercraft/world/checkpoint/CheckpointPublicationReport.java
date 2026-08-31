@@ -44,10 +44,17 @@ public record CheckpointPublicationReport(
     }
 
     public static CheckpointPublicationReport duplicate(CheckpointGenerationManifest manifest) {
+        return duplicate(manifest, Optional.empty());
+    }
+
+    public static CheckpointPublicationReport duplicate(
+            CheckpointGenerationManifest manifest,
+            Optional<CheckpointHeadRecord> head
+    ) {
         return new CheckpointPublicationReport(
                 CheckpointPublicationOutcome.DUPLICATE_OBSERVATION,
                 Optional.of(manifest),
-                Optional.empty(),
+                Objects.requireNonNull(head, "head"),
                 List.of(),
                 List.of()
         );

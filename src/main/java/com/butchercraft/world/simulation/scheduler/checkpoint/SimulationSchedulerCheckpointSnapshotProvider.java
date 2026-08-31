@@ -14,16 +14,27 @@ import com.butchercraft.world.checkpoint.CheckpointSnapshotDigest;
 import com.butchercraft.world.checkpoint.CheckpointSnapshotParticipation;
 import com.butchercraft.world.checkpoint.OwnerSnapshotDescriptor;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
+import com.butchercraft.world.simulation.scheduler.SchedulerRecoveryState;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class SimulationSchedulerCheckpointSnapshotProvider implements CheckpointOwnerSnapshotProvider {
     private final SimulationSchedulerManager manager;
+    private final Optional<SchedulerRecoveryState> recoveryState;
 
     public SimulationSchedulerCheckpointSnapshotProvider(SimulationSchedulerManager manager) {
+        this(manager, Optional.empty());
+    }
+
+    public SimulationSchedulerCheckpointSnapshotProvider(
+            SimulationSchedulerManager manager,
+            Optional<SchedulerRecoveryState> recoveryState
+    ) {
         this.manager = Objects.requireNonNull(manager, "manager");
+        this.recoveryState = Objects.requireNonNull(recoveryState, "recoveryState");
     }
 
     @Override
@@ -43,7 +54,7 @@ public final class SimulationSchedulerCheckpointSnapshotProvider implements Chec
                 )));
             }
             manager.validateForPersistence();
-            byte[] payload = SimulationSchedulerCheckpointSnapshotCodec.serialize(manager);
+            byte[] payload = SimulationSchedulerCheckpointSnapshotCodec.serialize(manager, recoveryState);
             String digest = CheckpointSnapshotDigest.sha256(payload);
             String snapshotIdentity = "butchercraft:simulation_scheduler/snapshot/%020d/%s".formatted(
                     manager.lastFinalizedSimulationTick(),

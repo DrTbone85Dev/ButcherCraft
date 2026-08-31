@@ -4,6 +4,8 @@ import com.butchercraft.integration.employee.EmployeeWorkstationOperationService
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.WorkstationReservationService;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.workforce.employee.EmployeeAnchor;
 import com.butchercraft.world.workforce.employee.EmployeeId;
 import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
@@ -170,6 +172,12 @@ public final class EmployeeEntity extends PathfinderMob {
 
     @Override
     protected void customServerAiStep() {
+        if (!level().isClientSide && level() instanceof ServerLevel serverLevel
+                && !StartupMutationGateService.INSTANCE.permits(
+                serverLevel.getServer(), LegacySplitRecoveryParticipants.WORKFORCE)) {
+            getNavigation().stop();
+            return;
+        }
         super.customServerAiStep();
         if (level().isClientSide) {
             return;
@@ -190,7 +198,9 @@ public final class EmployeeEntity extends PathfinderMob {
 
     @Override
     public void remove(RemovalReason reason) {
-        if (!level().isClientSide && level() instanceof ServerLevel serverLevel) {
+        if (!level().isClientSide && level() instanceof ServerLevel serverLevel
+                && StartupMutationGateService.INSTANCE.permits(
+                serverLevel.getServer(), LegacySplitRecoveryParticipants.WORKFORCE)) {
             EmployeeMaterialHandlingService.INSTANCE.handleEmployeeRemoval(this);
             try {
                 EmployeeId employeeId = new EmployeeId(employeeIdValue());

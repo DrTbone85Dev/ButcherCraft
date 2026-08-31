@@ -1,6 +1,8 @@
 package com.butchercraft.world.player.runtime;
 
 import com.butchercraft.world.WorldIdentityService;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.identity.WorldIdentity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,6 +35,8 @@ public final class PlayerJoinInitializer {
         if (server == null) {
             return;
         }
+        if (!StartupMutationGateService.INSTANCE.permits(
+                server, LegacySplitRecoveryParticipants.PLAYER_IDENTITY)) return;
         WorldIdentity worldIdentity = worldIdentityService.getOrCreate(server);
         managerFor(server).getOrCreate(player.getUUID(), worldIdentity);
     }

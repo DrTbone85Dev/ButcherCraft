@@ -8,8 +8,20 @@ public record CheckpointRecoverySelectionRequest(
         List<CheckpointHeadRecord> headRecords,
         List<CheckpointOwnerId> requiredOwners,
         WorldIdentityRootReference expectedWorldIdentityRoot,
-        PlatformDeterminismManifestReference expectedPlatformDeterminismManifest
+        PlatformDeterminismManifestReference expectedPlatformDeterminismManifest,
+        List<PlatformDeterminismManifestReference> acceptedPlatformDeterminismManifests
 ) {
+    public CheckpointRecoverySelectionRequest(
+            List<CheckpointGenerationRecord> generations,
+            List<CheckpointHeadRecord> headRecords,
+            List<CheckpointOwnerId> requiredOwners,
+            WorldIdentityRootReference expectedWorldIdentityRoot,
+            PlatformDeterminismManifestReference expectedPlatformDeterminismManifest
+    ) {
+        this(generations, headRecords, requiredOwners, expectedWorldIdentityRoot,
+                expectedPlatformDeterminismManifest, List.of(expectedPlatformDeterminismManifest));
+    }
+
     public CheckpointRecoverySelectionRequest {
         generations = List.copyOf(Objects.requireNonNull(generations, "generations"));
         generations.forEach(generation -> Objects.requireNonNull(generation, "generation"));
@@ -27,5 +39,13 @@ public record CheckpointRecoverySelectionRequest(
                 expectedPlatformDeterminismManifest,
                 "expectedPlatformDeterminismManifest"
         );
+        acceptedPlatformDeterminismManifests = Objects.requireNonNull(
+                acceptedPlatformDeterminismManifests,
+                "acceptedPlatformDeterminismManifests"
+        ).stream().map(value -> Objects.requireNonNull(value, "acceptedPlatformDeterminismManifest"))
+                .distinct().toList();
+        if (!acceptedPlatformDeterminismManifests.contains(expectedPlatformDeterminismManifest)) {
+            throw new IllegalArgumentException("Accepted platform manifests must include the current manifest");
+        }
     }
 }

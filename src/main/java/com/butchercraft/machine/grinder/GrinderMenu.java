@@ -1,7 +1,9 @@
 package com.butchercraft.machine.grinder;
 
+import com.butchercraft.integration.machine.MachineRunPresentation;
 import com.butchercraft.registration.ModBlocks;
 import com.butchercraft.registration.ModMenuTypes;
+import com.butchercraft.workstation.menu.MachineRunMenuView;
 import com.butchercraft.workstation.menu.ProcessingWorkstationMenu;
 import com.butchercraft.workstation.operation.MachineOperatingState;
 import com.butchercraft.world.execution.MachineRunLifecycle;
@@ -12,7 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 
-public final class GrinderMenu extends ProcessingWorkstationMenu {
+public final class GrinderMenu extends ProcessingWorkstationMenu implements MachineRunMenuView {
     private static final int GRINDER_SLOT_VERTICAL_OFFSET = 5;
 
     public static final int START_BUTTON = 0;
@@ -79,6 +81,25 @@ public final class GrinderMenu extends ProcessingWorkstationMenu {
     }
 
     @Override
+    public Component startControlLabel() {
+        return Component.translatable("screen.butchercraft.grinder.start");
+    }
+
+    @Override
+    public Component stopControlLabel() {
+        return Component.translatable("screen.butchercraft.grinder.stop");
+    }
+
+    @Override
+    public Component resumeControlLabel() {
+        return Component.translatable("screen.butchercraft.grinder.resume");
+    }
+
+    @Override public int startButtonId() { return START_BUTTON; }
+    @Override public int stopButtonId() { return STOP_BUTTON; }
+    @Override public int resumeButtonId() { return RESUME_BUTTON; }
+
+    @Override
     public int workstationSlotY(int slot) {
         return super.workstationSlotY(slot) + GRINDER_SLOT_VERTICAL_OFFSET;
     }
@@ -98,31 +119,14 @@ public final class GrinderMenu extends ProcessingWorkstationMenu {
     }
 
     static String machineStatusKey(MachineOperatingState state) {
-        return "screen.butchercraft.grinder.machine_state." + state.serializedName();
+        return MachineRunPresentation.machineStatusKey("grinder", state);
     }
 
     static String cycleStatusKey(MachineOperatingState state, boolean activeChild) {
-        if (displaysActiveCycle(state, activeChild)) {
-            return "screen.butchercraft.grinder.cycle_state.processing";
-        }
-        return switch (state) {
-            case OFF -> "screen.butchercraft.grinder.cycle_state.idle";
-            case STARTING -> "screen.butchercraft.grinder.cycle_state.starting";
-            case RUNNING -> "screen.butchercraft.grinder.cycle_state.waiting_next_cycle";
-            case RUNNING_EMPTY -> "screen.butchercraft.grinder.cycle_state.waiting_input";
-            case OUTPUT_BLOCKED -> "screen.butchercraft.grinder.cycle_state.waiting_output_space";
-            case STOPPING -> "screen.butchercraft.grinder.cycle_state.stopping";
-            case RESTART_REQUIRED -> "screen.butchercraft.grinder.cycle_state.waiting_operator";
-            case FAULTED -> "screen.butchercraft.grinder.cycle_state.faulted";
-            case RECOVERY_REQUIRED -> "screen.butchercraft.grinder.cycle_state.recovery_required";
-        };
+        return MachineRunPresentation.cycleStatusKey("grinder", state, activeChild);
     }
 
     static int cycleProgressPercent(MachineOperatingState state, boolean activeChild, int controllerProgressPercent) {
-        return displaysActiveCycle(state, activeChild) ? Math.max(0, Math.min(100, controllerProgressPercent)) : 0;
-    }
-
-    private static boolean displaysActiveCycle(MachineOperatingState state, boolean activeChild) {
-        return activeChild && (state == MachineOperatingState.RUNNING || state == MachineOperatingState.STOPPING);
+        return MachineRunPresentation.cycleProgressPercent(state, activeChild, controllerProgressPercent);
     }
 }

@@ -1,6 +1,7 @@
 # ADR-02: Coordinated Checkpoint And Crash Recovery
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION NOT AUTHORIZED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTED THROUGH IM-031C-R4;
+FINAL PRODUCT OWNER ACCEPTANCE PENDING
 
 Decision identifier: AH-1-ADR-02
 
@@ -16,6 +17,20 @@ Platform-wide vocabulary, identity classes, invariant ownership, recovery,
 replay, failure-state, cancellation, operator-authority, World Identity, and
 Platform Determinism Manifest definitions are canonical there and are not
 redefined here.
+
+Ratified amendment:
+[`ADR-02A Legacy Split-Snapshot Recovery And Coordinated Checkpoint Publication`](ADR-PROPOSED-LEGACY-SPLIT-SNAPSHOT-RECOVERY-AND-COORDINATED-CHECKPOINT-PUBLICATION.md)
+adds only proof-complete historical acknowledgement, explicit Scheduler
+recovery discontinuity, and current-owner coordinated checkpoint rules. Its
+anti-inference and separate implementation gates remain controlling.
+
+Ratified projection amendment:
+[`ADR-02A-P1 Durable Workstation Projection And Checkpoint Completeness`](ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
+adopts Workstation-owned durable per-instance projection to resolve the proven
+unloaded-Workstation restoration gap. It changes no runtime capability by
+ratification alone. Subsequent separately authorized R3A through R4 milestones
+implement the durable projection, exact historical successor, startup selection,
+and owner-native restoration boundaries.
 
 ## Context
 
@@ -740,6 +755,18 @@ incorporated above:
 6. Operator selection of an older valid generation is permitted only through
    explicit operator authority and audit evidence.
 
-Implementation, migration, checkpoint services, Java APIs, schema files,
-RFC-0023 reconciliation, Allocation integration, Execution integration, and
-gameplay remain separately gated.
+Implementation status: IM-003 through IM-007 implement the checkpoint metadata,
+filesystem, owner-coordination, and development invocation foundations.
+IM-031C-R3 implements coordinated live publication for the exact 17-owner set,
+including canonical empty snapshots, immutable server-boundary capture,
+asynchronous generation publication, alternating dual heads, privileged manual
+creation and status, a 6,000-tick periodic cadence, and bounded graceful-
+shutdown behavior. These implementation notes do not alter the ratified
+decision.
+
+IM-031C-R4 implements startup live-state analysis, deterministic source
+selection, owner-native restoration, interruption recovery, hard-crash
+validation, and persisted authority gating. General schema migration,
+checkpoint retention, recovery-selection gameplay UI, application to the
+protected original legacy world, and broader gameplay recovery remain gated to
+later owner-authorized milestones.

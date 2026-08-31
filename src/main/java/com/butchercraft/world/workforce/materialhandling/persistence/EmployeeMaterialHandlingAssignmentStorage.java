@@ -1,5 +1,6 @@
 package com.butchercraft.world.workforce.materialhandling.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReference;
@@ -21,13 +22,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -47,51 +43,21 @@ public final class EmployeeMaterialHandlingAssignmentStorage {
     }
 
     public EmployeeMaterialHandlingAssignmentDirectory load() {
-        Path temporary = temporaryFile();
+        AtomicFilePublication.requireNoInterruptedPublication(filePath, "Workforce assignment state");
         if (!Files.exists(filePath)) {
-            if (Files.exists(temporary)) {
-                throw new IllegalStateException("Interrupted Workforce assignment publication requires recovery: "
-                        + temporary);
-            }
             return EmployeeMaterialHandlingAssignmentDirectory.empty();
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load employee Material Handling assignments from " + filePath,
-                    exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "Workforce assignment state"));
     }
 
     public void save(EmployeeMaterialHandlingAssignmentDirectory directory) {
         String json = serialize(directory);
-        Path temporary = temporaryFile();
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Files.writeString(temporary, json, StandardCharsets.UTF_8);
-            try {
-                Files.move(temporary, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException exception) {
-                throw new IOException("Atomic replacement is required for " + filePath, exception);
-            }
-            EmployeeMaterialHandlingAssignmentDirectory verified = deserialize(
-                    Files.readString(filePath, StandardCharsets.UTF_8)
-            );
-            if (!verified.equals(directory)) {
-                throw new IOException("Employee Material Handling assignment read-back verification failed");
-            }
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save employee Material Handling assignments to " + filePath,
-                    exception);
-        } finally {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException ignored) {
-                // An orphaned temporary file never outranks the authoritative candidate.
-            }
+        AtomicFilePublication.publishUtf8(filePath, json, "Workforce assignment state");
+        EmployeeMaterialHandlingAssignmentDirectory verified = deserialize(
+                AtomicFilePublication.readUtf8(filePath, "Workforce assignment state")
+        );
+        if (!verified.equals(directory)) {
+            throw new IllegalStateException("Employee Material Handling assignment read-back verification failed");
         }
     }
 
@@ -215,10 +181,6 @@ public final class EmployeeMaterialHandlingAssignmentStorage {
                 integer(object, "schema_version"),
                 string(object, "root_digest")
         );
-    }
-
-    private Path temporaryFile() {
-        return filePath.resolveSibling(filePath.getFileName() + ".tmp");
     }
 
     private static JsonObject object(JsonElement element, String label) {

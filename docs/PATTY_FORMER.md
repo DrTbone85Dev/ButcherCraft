@@ -1,6 +1,6 @@
 # ButcherCraft Patty Former
 
-Status: IM-030B stack-aware processing and delivery with IM-028C explicit operation gate
+Status: IM-031C persistent player-controlled continuous Run implemented
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The Patty Former is a promoted gameplay workstation for one process:
 Ground Beef -> Beef Patties
 ```
 
-It reuses the existing Workstation -> Execution -> Scheduler -> owner-result path proven by the Grinder. IM-028C separates material deposit from operation authority: valid Ground Beef makes the workstation `READY`, but does not itself create an Execution operation or Scheduler work. IM-029 allows an employee to deliver one exact Ground Beef from an explicit Grinder. IM-030B gives the input and output capacity `64`, permits delivery into a compatible stack, and keeps employee Patty Former operation, worker AI, Allocation, packaging, cooking, refrigeration, and public workstation APIs gated.
+It reuses the existing Workstation -> Execution -> Scheduler -> owner-result path proven by the Grinder. IM-028C separates material deposit from operation authority: valid Ground Beef makes processing `READY`, but does not itself create an Execution operation, Machine Run, or Scheduler work. IM-029 allows an employee to deliver one exact Ground Beef from an explicit Grinder. IM-030B gives the input and output capacity `64` and permits delivery into a compatible stack. IM-031C activates DG-005's `POWERED_CONTINUOUS_EXPLICIT_STOP` policy through the shared machine-neutral Run coordinator while Patty Former recipe authorization, inventory effects, and owner results remain Patty Former-owned. Employee Patty Former operation, worker AI, Allocation, packaging, cooking, refrigeration, and public workstation APIs remain gated.
 
 ## Gameplay Content
 
@@ -33,37 +33,43 @@ Standalone flow:
 2. Insert Ground Beef.
 3. Observe `READY`; waiting or reloading does not process the input.
 4. Normal right-click to inspect the inventory without starting work.
-5. Shift + right-click to explicitly request one operation.
-6. Wait for server-authoritative progress to complete.
-7. Retrieve the Beef Patties output, which may have merged with compatible existing output.
+5. Use GUI START, or Shift + right-click while OFF, to create one persistent Run.
+6. Observe separately bounded server-authoritative cycles until input becomes empty, output becomes blocked, or STOP is requested.
+7. Retrieve the Beef Patties output, which may have merged with compatible existing output. Compatible input or output capacity resumes the same active Run.
+8. Use GUI STOP, or Shift + right-click while active, to close child admission and stop at the safe cycle boundary.
 
 Employee-assisted two-workstation flow:
 
 1. Process Beef Trim in the Grinder.
 2. Explicitly assign an employee to transfer Ground Beef from the Grinder to the Patty Former.
 3. Observe exact Material Handling custody and visible employee carrying.
-4. Explicitly request one Patty Former operation.
-5. Process it into Beef Patties.
+4. Explicitly START a Patty Former Run if the machine is OFF.
+5. Observe one or more bounded cycles produce Beef Patties until the machine is empty, blocked, or explicitly stopped.
 
-The employee transfer ends at `READY`; only the player can authorize the Patty Former operation in IM-029.
+The employee transfer ends with processing `READY` and a destination reservation. If the machine is OFF, only the player can authorize START. If the exact destination already owns a `RUNNING_EMPTY` Run, delivery merely restores that existing Run's eligibility; it does not grant new authority.
 
-## Explicit Operation Gate
+## Continuous Run Controls
 
 `VALID INPUT != AUTHORIZED OPERATION` is an enforced workstation contract.
 
 - Normal right-click opens the Patty Former inventory and never requests an
-  operation.
-- Shift + right-click requests exactly one player operation and does not open
-  the inventory.
+  operation or Run.
+- GUI START creates or observes one exact-instance persistent Run. Shift +
+  right-click while OFF is the same START shortcut.
+- GUI STOP targets the exact Run and closes later child admission. Shift +
+  right-click while active is the same STOP shortcut.
+- GUI RESUME continues the same restart-suspended Run under restart Policy B;
+  load never resumes it automatically.
 
 - `EMPTY` is represented by `IDLE` with no input.
 - `READY` means Ground Beef is present and the canonical operation resolves, but no operation has been requested.
-- An explicit request synchronously asks the Patty Former coordinator to issue one Execution authorization and enters `PROCESSING` only when accepted.
-- `BLOCKED` plus `OUTPUT_OCCUPIED` represents output blockage. Input and existing output remain unchanged; removing the blockage restores `READY` and requires another explicit request.
+- `RUNNING_EMPTY` means an active Run has no currently eligible input. Compatible input resumes the same Run without another START.
+- An active eligible Run asks the Patty Former coordinator to issue one bounded Execution authorization and enters `PROCESSING` only when accepted.
+- `OUTPUT_BLOCKED` represents output blockage while powered. Input and existing output remain unchanged; removing the blockage restores eligibility within the same Run.
 - `COMPLETE` retains the canonical output merged within capacity until extraction.
 - `ERROR` and typed failures remain visible through workstation diagnostics.
 
-Repeated requests while `PROCESSING` observe the existing controller state and create no second Execution operation. One operation consumes exactly one Ground Beef and produces exactly one Beef Patties item. Remaining Ground Beef waits for another explicit request; there is no permanent latch and no automatic loop.
+Repeated START requests observe the existing Run and create no second Run. At most one child is nonterminal. Each child consumes exactly one Ground Beef and produces exactly one Beef Patties item. Follow-on children are separately identified and admitted only after proven terminal observation; stack presence never becomes one unbounded inventory mutation.
 
 ## Ownership
 
@@ -92,7 +98,7 @@ Changing workstation, input, transformation, output, world, or configuration cha
 
 ## Persistence And Block Breaking
 
-Patty Former block entity NBT stores workstation identity, inventory, state, selected operation, progress, reserved input, committed flag, Execution references, domain Effect Identity, owner-result reference, failure state, and schema version through the same processing workstation persistence path used by the promoted Grinder slice. A saved READY Patty Former restores READY and remains idle; valid input never starts work as a load side effect. Existing active pre-effect and completed recovery behavior is unchanged.
+Patty Former block entity NBT stores workstation identity, inventory, processing state, selected operation, progress, reserved input, committed flag, Execution references, domain Effect Identity, owner-result reference, failure state, and schema version through the same processing workstation persistence path used by the promoted Grinder slice. Execution persists the exact Machine Run separately at `<world>/butchercraft/execution_machine_runs.json`, and Workstation persists operating state at `<world>/butchercraft/machine_operating_states.json`. A saved READY Patty Former without a Run restores READY and remains OFF. An active saved Run enters `RESTART_REQUIRED` under Policy B; valid input never starts or resumes work as a load side effect.
 
 Serialization coverage is currently NBT and block-entity round trip coverage, including active pre-effect state, completed state, malformed restored state, and uncertain consequential state. IM-018 does not add startup checkpoint recovery or operator reconciliation.
 
@@ -100,7 +106,7 @@ Breaking an idle Patty Former drops contained items. Breaking an active pre-effe
 
 ## Material Handling Destination Readiness
 
-The Patty Former now implements the existing DG-002A Workstation endpoint contract for one exact Ground Beef destination deposit. Workstation owns validation, instance identity, freshness, slot mutation, endpoint journal publication, and owner result. A committed deposit ends with `READY`; it does not call Execution and does not schedule work.
+The Patty Former implements the existing DG-002A Workstation endpoint contract for one exact Ground Beef destination deposit. Workstation owns validation, instance identity, freshness, slot mutation, endpoint journal publication, and owner result. A committed deposit ends with processing `READY`; it does not create a Machine Run, call Execution, or schedule work. The existing continuous coordinator may later observe that READY state only when an already-authoritative exact-instance Run is active.
 
 IM-029 uses the existing Workforce assignment, generic employee transfer command, carry presentation, and Grinder source endpoint to deliver exactly one Ground Beef. IM-030B permits that unit to be split from a larger Grinder output and merged into a compatible Patty Former input. It adds no automatic endpoint selection and does not make deposit an operation authorization.
 
@@ -128,13 +134,15 @@ Automated coverage includes:
 - Execution identity, Scheduler dispatch, owner-result requirement, duplicate safety, blocked output, wrong-result rejection, serialization, and active break behavior.
 - Production chain assignment, manual-transfer waiting state, product-flow mismatch rejection, duplicate observation safety, terminal failure handling, persistence round trip, and legacy single-workstation save compatibility.
 - GameTests for the real server block entities and the manual Grinder to Patty Former chain.
-- Normal-use menu access with valid multi-count input and secondary-use-only
-  operation authorization.
-- READY-without-authority, wrong-input rejection, READY serialization, explicit player start, duplicate active request, blocked-output recovery, a separately authorized second batch, and destination-endpoint validation.
+- Normal-use menu access with valid multi-count input, GUI START/STOP/RESUME,
+  and state-aware secondary-use controls.
+- READY-without-authority, empty START, repeated bounded cycles, same-Run empty
+  and blocked recovery, duplicate START safety, exact Run/instance binding,
+  safe STOP, Policy B presentation, long bounded stacks, and destination-endpoint validation.
 - Employee Grinder-to-Patty Former delivery, exact Ground Beef custody and carrying, reservation handoff, cancellation return, reload, endpoint replacement, and no-auto-start regressions.
 
 Manual client verification remains required before claiming human acceptance.
 
 ## Explicit Exclusions
 
-IM-030B does not add employee Patty Former operation, Production-driven transfer, automatic workstation selection, autonomous logistics, general Logistics, carried quantities above one, batch transport, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, startup checkpoint recovery, compensation, final art, or UI polish.
+IM-031C does not add employee Patty Former operation, employee Machine START/STOP, Production-driven machine control or transfer, automatic workstation selection, autonomous logistics, general Logistics, carried quantities above one, batch transport, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, automatic restart, forced chunk loading, wear, damage, maintenance, compensation, final art, or final UI polish.

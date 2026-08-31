@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, and IM-031A machine operating-state foundation
+Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A run-state foundation, IM-031B/IM-031C powered processing activation, and IM-031C-R3A/R3B durable projection and checkpoint completeness
 
 ## Purpose
 
@@ -25,6 +25,9 @@ This is not final artwork, not a player recipe-selection system, not a label sys
 - Material Handling may request and observe endpoint effects but never mutate a
   workstation slot. Workforce may reserve and navigate to endpoints but never
   gains endpoint mutation authority.
+- Workstation also owns one exact durable recovery projection per Workstation
+  Instance Identity. Checkpoint Recovery consumes defensive frozen bytes for
+  complete snapshots but may not publish, advance, or reinterpret this state.
 
 ## State Machine
 
@@ -87,6 +90,45 @@ these live policies:
 
 Beef Trim, Ground Beef, and Beef Patties have item maximum `64`; no other
 product maximum changes by implication.
+
+## Durable Per-Instance Projection
+
+IM-031C-R3A persists one schema-1 record per exact Workstation Instance Identity
+under a deterministic two-level SHA-256 shard. Projection records contain exact
+ordered slot state, complete ItemStack components, configured and effective
+capacity, the complete Workstation-owned block-entity state needed for
+reconciliation, endpoint and processing owner-evidence references, and only a
+non-authoritative reference to separately owned Machine Operating State.
+
+Every Workstation-authorized mutation publishes a frozen candidate through
+`AtomicFilePublication`. Projection revisions are monotonic per instance;
+storage rejects regression and same-revision divergence. Consequential endpoint
+and processing boundaries batch their in-memory changes so the durable candidate
+represents one completed owner consequence. If publication is interrupted after
+an owner result, immutable endpoint-journal or Execution evidence permits repair
+without replaying the inventory effect or recipe.
+
+Loaded block entities reconcile against the durable projection by exact identity
+and evidence. A durable newer state may restore the loaded projection; a later
+loaded state advances durable state only when immutable owner evidence proves it;
+an ambiguous difference becomes `RECOVERY_REQUIRED`. Coherent loaded legacy
+instances bootstrap exactly, while unloaded legacy instances remain
+`LEGACY_UNAVAILABLE`. Retirement publishes a tombstone before registry retirement
+becomes visible, and replacement at the same coordinates receives an independent
+identity and revision history.
+
+The projection remains readable and deterministically enumerable without chunk
+loading. IM-031C-R3B computes the canonical required set from active instance
+state and recovery-relevant Execution, Machine Run, Material Handling, and
+endpoint dependencies. It embeds exact frozen payloads in the Workstation owner
+snapshot. Loaded state must match; an unloaded exact projection is complete
+without chunk loading. Missing or invalid required evidence rejects the
+checkpoint candidate before head commit. `/butchercraft diagnostic checkpoint
+workstation-projections` reports durable storage plus required, available,
+loaded, unloaded, blocked, byte, timing, and restorable status. Historical
+generations remain immutable. R3C supplies the complete historical successor,
+and R4 restores exact durable projections before matching loaded instances may
+activate; no chunk force-loading is required.
 
 ## Material Handling Endpoints
 
@@ -157,7 +199,7 @@ Workstations advertise capabilities through `WorkstationCapability`. Operation r
 
 - The default legacy strategy preserves the existing processing transaction path.
 - The Grinder opts into the transformation strategy, which looks up the resolved operation id in the active immutable `TransformationRegistry`, evaluates and executes the registered definition through the pure Java transformation engine, then delegates product commit to the existing transaction path. The IM-012 grinder slice also issues workstation-owned Execution authorization and applies its consequential ItemStack effect only through Scheduler-dispatched generic Execution.
-- The Patty Former uses the same transformation and generic Execution path for `butchercraft:form_beef_patties`, applying its consequential ItemStack effect only through Scheduler-dispatched generic Execution and Patty Former owner-result publication. IM-028C requires a server-authoritative empty-hand player interaction or existing typed Production request before that path may create one operation. Repeated requests while active are idempotent and no automatic loop exists.
+- The Patty Former uses the same transformation and generic Execution path for `butchercraft:form_beef_patties`, applying its consequential ItemStack effect only through Scheduler-dispatched generic Execution and Patty Former owner-result publication. IM-031C requires one server-authoritative exact-instance Machine Run before bounded Patty Former children may be admitted. START is idempotent, at most one child is nonterminal, and follow-on children remain separately authorized and observed.
 - IM-016 adds a read-only Production observation surface over the existing controller state. It can request normal workstation validation for the promoted Grinder path and expose selected operation, active Execution Operation Identity, owner result evidence, and local failure state. It does not let Production mutate slots, bypass workstation validation, or consume Execution authority.
 - The Bandsaw opts into the atomic transformation strategy, which additionally adapts the workstation ItemStack inventory into pure material stores and validates transactional input extraction plus ordered output insertion before the existing controller commits Minecraft ItemStacks.
 - `ContentSnapshotService` swaps the active product, packaging, and transformation registries together only after datapack content validation succeeds, including validation of packaging supply references.
@@ -315,21 +357,24 @@ Permanent block:
 butchercraft:patty_former
 ```
 
-The block appears in the ButcherCraft creative tab, opens a processing menu and client screen on normal right-click, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. Shift + right-click requests exactly one player operation through Execution and Scheduler; menu opening never requests work. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, over 60 server ticks. Cutting Table remains menu-only because it has no player explicit-operation gate.
+The block appears in the ButcherCraft creative tab, opens a processing menu and client screen on normal right-click, persists one input and one output slot, exposes item-handler inventory capability, and drops stored items on removal. GUI START/STOP/RESUME and state-aware Shift + right-click START/STOP control one exact-instance persistent Run; menu opening never requests work. It advertises `butchercraft:patty_forming` and executes the single IM-018 process `butchercraft:form_beef_patties`, Ground Beef to Beef Patties, as separately authorized 60-tick children. Cutting Table remains menu-only because it is `MANUAL_DISCRETE`.
 
 The Patty Former is documented in `docs/PATTY_FORMER.md`.
 
-## Grinder Run Activation
+## Powered Run Activation
 
-IM-031B activates the Grinder only as
-`POWERED_CONTINUOUS_EXPLICIT_STOP`. Normal right-click opens the inventory.
+IM-031B activates the Grinder and IM-031C activates the Patty Former as
+`POWERED_CONTINUOUS_EXPLICIT_STOP`. Normal right-click opens either inventory.
 GUI START/STOP/RESUME and state-aware Shift + right-click START/STOP compose the
 generic Execution-owned Machine Run and Workstation-owned operating-state
-services. The controller still consumes and produces one recipe quantity per
-bounded child, and Scheduler still dispatches each child independently.
-`RUNNING_EMPTY` and `OUTPUT_BLOCKED` keep the Run powered without creating
-failing work or mutating inventory. The Patty Former does not share this live
-activation.
+services. A shared machine-neutral coordinator handles Run sequencing,
+endpoint availability, terminal-child observation, powered empty/block states,
+and safe STOP. Machine-specific adapters retain recipe authorization,
+processing semantics, inventory effects, and owner results. Each controller
+still consumes and produces one recipe quantity per bounded child, and
+Scheduler still dispatches each child independently. `RUNNING_EMPTY` and
+`OUTPUT_BLOCKED` keep a Run powered without creating failing work or mutating
+inventory.
 
 ## Future Extension Points
 
@@ -338,8 +383,8 @@ activation.
 - Future poultry-specific restrictions should be capability/profile data, not Java species switches.
 - Cleanliness, maintenance, equipment condition, and employee operation currently use centralized prototype context values and can be replaced by real snapshots later.
 - Operation selection UI is deferred until multiple compatible operations are real gameplay.
-- IM-031C may activate the already-defined continuous-explicit-stop policy for
-  Patty Former only through separately authorized work.
+- Additional powered machines require separately authorized policy activation;
+  the shared coordinator is not a general public machine framework.
 
 ## Explicit Exclusions
 

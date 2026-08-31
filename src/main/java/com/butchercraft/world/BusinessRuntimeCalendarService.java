@@ -75,6 +75,14 @@ public final class BusinessRuntimeCalendarService {
                 .map(snapshot -> configurationFromConfig(snapshot.configurationIdentity()));
     }
 
+    public synchronized String checkpointSnapshotJson(MinecraftServer server) {
+        currentSnapshot(Objects.requireNonNull(server, "server"));
+        ActiveBusinessCalendarRuntime current = load(server);
+        BusinessRuntimeCalendarState state = current.lastState().orElseThrow(() ->
+                new IllegalStateException("Business Runtime calendar has no authoritative observation"));
+        return current.storage().serialize(state);
+    }
+
     public static BusinessRuntimeCalendarConfiguration configurationFromConfig(
             com.butchercraft.world.simulation.time.WorldTimeConfigurationIdentity worldTimeIdentity
     ) {

@@ -15,6 +15,8 @@ import com.butchercraft.world.execution.ExecutionRuntimeConfiguration;
 import com.butchercraft.world.execution.ExecutionSchema;
 import com.butchercraft.world.execution.GenericExecutionWorkHandler;
 import com.butchercraft.world.execution.persistence.ExecutionStorage;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -81,6 +83,7 @@ public final class ExecutionService {
             ExecutionAuthorization authorization,
             long tick
     ) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.EXECUTION);
         ActiveExecution active = load(server);
         ExecutionOperationResult<ExecutionOperationSnapshot> result = active.manager()
                 .acceptAuthorization(authorization, tick);
@@ -94,6 +97,7 @@ public final class ExecutionService {
             long tick,
             String reason
     ) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.EXECUTION);
         ActiveExecution active = load(server);
         ExecutionOperationResult<ExecutionOperationSnapshot> result = active.manager()
                 .cancelBeforeStart(operationId, tick, reason);
@@ -120,6 +124,14 @@ public final class ExecutionService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Execution compatibility classification was not published during load"
                 ));
+    }
+
+    public ExecutionHandlerRegistry configuredHandlerRegistry(MinecraftServer server) {
+        return handlerRegistryFactory.apply(Objects.requireNonNull(server, "server"));
+    }
+
+    public ExecutionRuntimeConfiguration configuration() {
+        return configuration;
     }
 
     private ActiveExecution load(MinecraftServer server) {

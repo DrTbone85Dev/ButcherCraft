@@ -6,8 +6,18 @@ import java.util.Objects;
 public record CheckpointFilesystemRecoveryRequest(
         List<CheckpointOwnerId> requiredOwners,
         WorldIdentityRootReference expectedWorldIdentityRoot,
-        PlatformDeterminismManifestReference expectedPlatformDeterminismManifest
+        PlatformDeterminismManifestReference expectedPlatformDeterminismManifest,
+        List<PlatformDeterminismManifestReference> acceptedPlatformDeterminismManifests
 ) {
+    public CheckpointFilesystemRecoveryRequest(
+            List<CheckpointOwnerId> requiredOwners,
+            WorldIdentityRootReference expectedWorldIdentityRoot,
+            PlatformDeterminismManifestReference expectedPlatformDeterminismManifest
+    ) {
+        this(requiredOwners, expectedWorldIdentityRoot, expectedPlatformDeterminismManifest,
+                List.of(expectedPlatformDeterminismManifest));
+    }
+
     public CheckpointFilesystemRecoveryRequest {
         requiredOwners = Objects.requireNonNull(requiredOwners, "requiredOwners").stream()
                 .map(owner -> Objects.requireNonNull(owner, "requiredOwner"))
@@ -18,5 +28,16 @@ public record CheckpointFilesystemRecoveryRequest(
                 expectedPlatformDeterminismManifest,
                 "expectedPlatformDeterminismManifest"
         );
+        acceptedPlatformDeterminismManifests = Objects.requireNonNull(
+                acceptedPlatformDeterminismManifests,
+                "acceptedPlatformDeterminismManifests"
+        ).stream().map(value -> Objects.requireNonNull(value, "acceptedPlatformDeterminismManifest"))
+                .distinct().sorted(java.util.Comparator.comparing(PlatformDeterminismManifestReference::identity)
+                        .thenComparingInt(PlatformDeterminismManifestReference::schemaVersion)
+                        .thenComparing(PlatformDeterminismManifestReference::manifestDigest))
+                .toList();
+        if (!acceptedPlatformDeterminismManifests.contains(expectedPlatformDeterminismManifest)) {
+            throw new IllegalArgumentException("Accepted platform manifests must include the current manifest");
+        }
     }
 }

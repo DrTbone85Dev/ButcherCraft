@@ -1,5 +1,6 @@
 package com.butchercraft.world.planning;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
@@ -14,11 +15,8 @@ import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -132,7 +130,7 @@ public final class PlanningStorage {
                             dependencies, policy, budget, cycles, PlanningCadenceState.loaded(cadenceSnapshot));
             manager.validate();
             return manager;
-        } catch (IOException | RuntimeException exception) {
+        } catch (RuntimeException exception) {
             throw new IllegalArgumentException("Unable to load Planning persistence", exception);
         }
     }
@@ -175,6 +173,29 @@ public final class PlanningStorage {
         return GSON.toJson(manager.cadenceSnapshot());
     }
 
+    public Map<String, String> serializeCheckpointFiles(PlanningManager manager) {
+        Objects.requireNonNull(manager, "manager").validate();
+        List<PlanningCycleSnapshot> cycles = manager.cycles();
+        Map<String, String> files = new java.util.TreeMap<>();
+        files.put(OBSERVATIONS_FILE, json(new PlanningFile<>(PlanningValidation.SCHEMA_VERSION,
+                cycles.stream().map(value -> new CycleObservations(value.id(), value.observations())).toList())));
+        files.put(NEEDS_FILE, json(new PlanningFile<>(PlanningValidation.SCHEMA_VERSION,
+                cycles.stream().map(value -> new CycleNeeds(value.id(), value.needs())).toList())));
+        files.put(OPPORTUNITIES_FILE, json(new PlanningFile<>(PlanningValidation.SCHEMA_VERSION,
+                cycles.stream().map(value -> new CycleOpportunities(value.id(), value.opportunities())).toList())));
+        files.put(CANDIDATES_FILE, json(new PlanningFile<>(PlanningValidation.SCHEMA_VERSION,
+                cycles.stream().map(value -> new CycleCandidates(value.id(), value.candidates())).toList())));
+        files.put(APPROVED_PLANS_FILE, json(new PlanningFile<>(PlanningValidation.SCHEMA_VERSION,
+                cycles.stream().map(value -> new CycleApproved(value.id(), value.approvedPlans())).toList())));
+        files.put(RUNTIME_FILE, serializeRuntime(manager));
+        files.put(CADENCE_FILE, serializeCadence(manager));
+        return Map.copyOf(files);
+    }
+
+    private static String json(Object value) {
+        return GSON.toJson(value) + "\n";
+    }
+
     private List<Path> legacyFiles() {
         return List.of(path(OBSERVATIONS_FILE), path(NEEDS_FILE), path(OPPORTUNITIES_FILE),
                 path(CANDIDATES_FILE), path(APPROVED_PLANS_FILE), path(RUNTIME_FILE));
@@ -184,17 +205,17 @@ public final class PlanningStorage {
         return directory.resolve(name).toAbsolutePath().normalize();
     }
 
-    private <T> T read(String name, Type type) throws IOException {
-        T value = GSON.fromJson(Files.readString(path(name), StandardCharsets.UTF_8), type);
+    private <T> T read(String name, Type type) {
+        T value = GSON.fromJson(AtomicFilePublication.readUtf8(path(name), "Planning " + name), type);
         if (value == null) throw new JsonParseException("Planning file is empty: " + name);
         PlanningFile<?> root = (PlanningFile<?>) value;
         PlanningValidation.schema(root.schemaVersion());
         return value;
     }
 
-    private PlanningCadenceSnapshot readCadence() throws IOException {
+    private PlanningCadenceSnapshot readCadence() {
         PlanningCadenceSnapshot value = GSON.fromJson(
-                Files.readString(path(CADENCE_FILE), StandardCharsets.UTF_8),
+                AtomicFilePublication.readUtf8(path(CADENCE_FILE), "Planning cadence"),
                 PlanningCadenceSnapshot.class
         );
         if (value == null) throw new JsonParseException("Planning cadence file is empty");
@@ -202,15 +223,13 @@ public final class PlanningStorage {
         return value;
     }
 
-    private void write(String name, Object value) throws IOException {
+    private void write(String name, Object value) {
         Path target = path(name);
-        Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
-        Files.writeString(temporary, GSON.toJson(value) + System.lineSeparator(), StandardCharsets.UTF_8);
-        try {
-            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
-        }
+        AtomicFilePublication.publishUtf8(
+                target,
+                GSON.toJson(value) + System.lineSeparator(),
+                "Planning " + name
+        );
     }
 
     private static <T extends CycleRecord> Map<PlanningCycleId, T> index(List<T> values) {

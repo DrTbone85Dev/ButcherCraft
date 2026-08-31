@@ -1,5 +1,6 @@
 package com.butchercraft.world.materialhandling.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectId;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectKind;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointFreshnessIdentity;
@@ -28,16 +29,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -56,20 +49,11 @@ public final class MaterialHandlingStorage {
     }
 
     public Optional<MaterialHandlingRuntime> loadExisting() {
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
+        AtomicFilePublication.requireNoInterruptedPublication(filePath, "Material Handling state");
         if (!Files.exists(filePath)) {
-            if (Files.exists(temporaryFile)) {
-                throw new IllegalStateException(
-                        "Interrupted Material Handling publication requires recovery: " + temporaryFile
-                );
-            }
             return Optional.empty();
         }
-        try {
-            return Optional.of(deserialize(Files.readString(filePath, StandardCharsets.UTF_8)));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Material Handling state from " + filePath, exception);
-        }
+        return Optional.of(deserialize(AtomicFilePublication.readUtf8(filePath, "Material Handling state")));
     }
 
     public void save(MaterialHandlingRuntime runtime) {
@@ -447,51 +431,11 @@ public final class MaterialHandlingStorage {
     }
 
     private void publishStrict(String canonicalJson) {
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            byte[] bytes = canonicalJson.getBytes(StandardCharsets.UTF_8);
-            try (FileChannel channel = FileChannel.open(
-                    temporaryFile,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE
-            )) {
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                while (buffer.hasRemaining()) channel.write(buffer);
-                channel.force(true);
-            }
-            try {
-                Files.move(
-                        temporaryFile,
-                        filePath,
-                        StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE
-                );
-            } catch (AtomicMoveNotSupportedException exception) {
-                throw new IOException("Atomic replacement is required for " + filePath, exception);
-            }
-            if (!Files.readString(filePath, StandardCharsets.UTF_8).equals(canonicalJson)) {
-                throw new IOException("Material Handling read-back verification failed: " + filePath);
-            }
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed strict Material Handling publication to " + filePath, exception);
-        } finally {
-            try {
-                Files.deleteIfExists(temporaryFile);
-            } catch (IOException ignored) {
-                // Orphaned temporary files never outrank the authoritative candidate.
-            }
-        }
+        AtomicFilePublication.publishUtf8(filePath, canonicalJson, "Material Handling state");
     }
 
     private String readPublished() {
-        try {
-            return Files.readString(filePath, StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to verify Material Handling state " + filePath, exception);
-        }
+        return AtomicFilePublication.readUtf8(filePath, "Material Handling state");
     }
 
     private static JsonObject object(JsonElement element, String label) {

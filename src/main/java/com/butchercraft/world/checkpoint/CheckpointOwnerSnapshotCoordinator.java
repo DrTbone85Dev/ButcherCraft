@@ -273,6 +273,13 @@ public final class CheckpointOwnerSnapshotCoordinator {
                         "Owner snapshot World Identity root does not match the capture context"
                 ));
             }
+            if (descriptor.representedSimulationTick() != context.authoritativeSimulationTick()) {
+                failures.add(failure(
+                        CheckpointFailureCode.MIXED_GENERATION_IDENTITY,
+                        descriptor.ownerId().value(),
+                        "Owner snapshot does not represent the checkpoint boundary tick"
+                ));
+            }
             if (!descriptor.configurationIdentity()
                     .equals(snapshot.validationMetadata().value(CONFIGURATION_IDENTITY_KEY).orElse(""))) {
                 failures.add(failure(

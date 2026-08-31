@@ -26,6 +26,8 @@ import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeePresenceState;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -66,7 +68,9 @@ public final class WorkstationReservationService {
 
     public void initialize(ServerStartedEvent event) {
         ActiveWorkstationReservations runtime = load(event.getServer());
-        reconcileLoadedReservations(event.getServer(), runtime);
+        if (mutationPermitted(event.getServer())) {
+            reconcileLoadedReservations(event.getServer(), runtime);
+        }
     }
 
     public void save(ServerStoppingEvent event) {
@@ -94,6 +98,7 @@ public final class WorkstationReservationService {
         Objects.requireNonNull(employeeId, "employeeId");
         Objects.requireNonNull(workstationPos, "workstationPos");
         MinecraftServer server = level.getServer();
+        requireMutation(server);
         EmployeeRecord employee = employeeService.managerFor(server).find(employeeId).orElse(null);
         if (employee == null) {
             return WorkstationReservationResult.failed(
@@ -158,6 +163,7 @@ public final class WorkstationReservationService {
             EmployeeId employeeId,
             String reason
     ) {
+        requireMutation(server);
         ActiveWorkstationReservations runtime = load(server);
         WorkstationReservationResult<WorkstationReservationRecord> result =
                 runtime.manager().releaseByEmployee(employeeId.value(), reason);
@@ -172,6 +178,7 @@ public final class WorkstationReservationService {
             EmployeeId employeeId,
             String reason
     ) {
+        requireMutation(server);
         ActiveWorkstationReservations runtime = load(server);
         Optional<WorkstationReservationRecord> invalidated =
                 runtime.manager().invalidateByEmployee(employeeId.value(), reason);
@@ -184,6 +191,7 @@ public final class WorkstationReservationService {
             BlockPos workstationPos,
             String reason
     ) {
+        requireMutation(level.getServer());
         WorkstationReservationResult<ResolvedWorkstationTarget> target = resolveSupportedWorkstation(level, workstationPos);
         if (!target.succeeded()) {
             return Optional.empty();
@@ -244,6 +252,7 @@ public final class WorkstationReservationService {
             EmployeePresenceObservation observation,
             Vec3 entityPosition
     ) {
+        requireMutation(level.getServer());
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(employee, "employee");
         Objects.requireNonNull(observation, "observation");
@@ -402,6 +411,7 @@ public final class WorkstationReservationService {
 
     public void resetGameTestReservations(MinecraftServer server) {
         requireGameTestServer(server);
+        requireMutation(server);
         ActiveWorkstationReservations runtime = load(server);
         ActiveWorkstationReservations reset = new ActiveWorkstationReservations(
                 server,
@@ -577,6 +587,7 @@ public final class WorkstationReservationService {
             String workstationIdentity,
             String reason
     ) {
+        requireMutation(level.getServer());
         ActiveWorkstationReservations runtime = load(level.getServer());
         Optional<WorkstationReservationRecord> invalidated =
                 runtime.manager().invalidateByWorkstation(workstationIdentity, reason);
@@ -673,6 +684,14 @@ public final class WorkstationReservationService {
         if (!className.contains("GameTestServer")) {
             throw new IllegalStateException("Workstation reservation GameTest helpers may only run on the GameTest server");
         }
+    }
+
+    private static boolean mutationPermitted(MinecraftServer server) {
+        return StartupMutationGateService.INSTANCE.permits(server, LegacySplitRecoveryParticipants.WORKSTATION);
+    }
+
+    private static void requireMutation(MinecraftServer server) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
     }
 
     private static Optional<ServerLevel> loadedLevel(MinecraftServer server, String dimensionIdentity) {

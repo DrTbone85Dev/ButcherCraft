@@ -39,6 +39,8 @@ import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.player.runtime.PlayerJoinInitializer;
 import com.butchercraft.world.simulation.SimulationClockService;
 import com.butchercraft.world.simulation.time.WorldTimeService;
+import com.butchercraft.world.checkpoint.LiveCheckpointService;
+import com.butchercraft.world.checkpoint.StartupRecoveryService;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -72,7 +74,14 @@ public final class ButcherCraft {
         modEventBus.addListener(ModEntityTypes::registerAttributes);
         NeoForge.EVENT_BUS.addListener(ButcherCraftDiagnostics::registerCommands);
         NeoForge.EVENT_BUS.addListener(ContentDatapackReloadListener::register);
+        NeoForge.EVENT_BUS.addListener(StartupRecoveryService.INSTANCE::begin);
         NeoForge.EVENT_BUS.addListener(WorldIdentityService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::prepareHandler);
+        NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::prepareHandler);
+        NeoForge.EVENT_BUS.addListener(ExecutionService.INSTANCE::prepareHandler);
+        NeoForge.EVENT_BUS.addListener(StartupRecoveryService.INSTANCE::initialize);
+        NeoForge.EVENT_BUS.addListener(StartupRecoveryService.INSTANCE::stop);
+        NeoForge.EVENT_BUS.addListener(LiveCheckpointService.INSTANCE::stop);
         NeoForge.EVENT_BUS.addListener(WorkstationEndpointService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(WorkstationEndpointService.INSTANCE::stop);
         NeoForge.EVENT_BUS.addListener(MachineOperatingStateService.INSTANCE::initialize);
@@ -116,8 +125,6 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(OrderContractService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ManualProductionChainBootstrap.INSTANCE::ensureProduction);
-        NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::prepareHandler);
-        NeoForge.EVENT_BUS.addListener(ExecutionService.INSTANCE::prepareHandler);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ExecutionService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ExecutionMachineRunService.INSTANCE::initialize);
@@ -127,9 +134,11 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::advance);
+        NeoForge.EVENT_BUS.addListener(LiveCheckpointService.INSTANCE::advance);
         NeoForge.EVENT_BUS.addListener(ExecutionService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::save);
+        NeoForge.EVENT_BUS.addListener(LiveCheckpointService.INSTANCE::initialize);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
     }

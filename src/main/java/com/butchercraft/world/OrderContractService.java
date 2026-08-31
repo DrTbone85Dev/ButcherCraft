@@ -16,6 +16,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class OrderContractService {
@@ -64,6 +65,16 @@ public final class OrderContractService {
 
     public Optional<ContractManager> currentContractManager() {
         return Optional.ofNullable(activeState.get()).map(ActiveOrderContracts::contractManager);
+    }
+
+    public synchronized Map<String, String> checkpointSnapshotFiles(MinecraftServer server) {
+        ActiveOrderContracts current = load(Objects.requireNonNull(server, "server"));
+        return Map.of(
+                OrderContractSchema.ORDERS_FILE_NAME,
+                current.orderStorage().serialize(current.orderManager()),
+                OrderContractSchema.CONTRACTS_FILE_NAME,
+                current.contractStorage().serialize(current.contractManager())
+        );
     }
 
     private ActiveOrderContracts load(MinecraftServer server) {

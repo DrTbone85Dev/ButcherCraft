@@ -81,16 +81,18 @@ class PlanningIntegrationTest {
     void modLifecycleLoadsAndSavesPlanningAroundSchedulerAuthorities() throws Exception {
         String source = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/ButcherCraft.java"));
-        int productionInitialize = source.indexOf("ProductionService.INSTANCE::initialize");
         int planningHandler = source.indexOf("EconomicPlanningService.INSTANCE::prepareHandler");
+        int startupRecovery = source.indexOf("StartupRecoveryService.INSTANCE::initialize");
+        int productionInitialize = source.indexOf("ProductionService.INSTANCE::initialize");
         int schedulerInitialize = source.indexOf("SimulationSchedulerService.INSTANCE::initialize");
         int productionBind = source.indexOf("ProductionService.INSTANCE::bindScheduler");
         int planningInitialize = source.indexOf("EconomicPlanningService.INSTANCE::initialize");
         int schedulerSave = source.indexOf("SimulationSchedulerService.INSTANCE::save");
         int planningSave = source.indexOf("EconomicPlanningService.INSTANCE::save");
 
-        assertTrue(productionInitialize < planningHandler);
-        assertTrue(planningHandler < schedulerInitialize);
+        assertTrue(planningHandler < startupRecovery);
+        assertTrue(startupRecovery < productionInitialize);
+        assertTrue(productionInitialize < schedulerInitialize);
         assertTrue(schedulerInitialize < productionBind);
         assertTrue(productionBind < planningInitialize);
         assertTrue(schedulerSave < planningSave);

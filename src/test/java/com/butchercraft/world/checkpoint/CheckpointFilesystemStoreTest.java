@@ -154,6 +154,80 @@ class CheckpointFilesystemStoreTest {
     }
 
     @Test
+    void exactRetryResumesPartialStagingAndFinishesMissingHead() {
+        List<CheckpointPublicationPhase> resumablePhases = List.of(
+                CheckpointPublicationPhase.BEFORE_PAYLOAD_WRITE,
+                CheckpointPublicationPhase.DURING_PAYLOAD_SET,
+                CheckpointPublicationPhase.BEFORE_MANIFEST,
+                CheckpointPublicationPhase.AFTER_MANIFEST,
+                CheckpointPublicationPhase.BEFORE_FINAL_MOVE,
+                CheckpointPublicationPhase.AFTER_FINAL_MOVE,
+                CheckpointPublicationPhase.DURING_HEAD_WRITE
+        );
+        for (CheckpointPublicationPhase phase : resumablePhases) {
+            Path root = temporaryDirectory.resolve("resume_" + phase.name().toLowerCase());
+            CheckpointPublicationRequest request = request(1L, 25L, Optional.empty());
+            CheckpointFilesystemStore interrupted = new CheckpointFilesystemStore(root, reached -> {
+                if (reached == phase) throw new IOException("simulated " + phase);
+            });
+            assertEquals(CheckpointPublicationOutcome.FAILED, interrupted.publish(request).outcome(), phase.name());
+
+            CheckpointPublicationReport retry = new CheckpointFilesystemStore(root).publish(request);
+            CheckpointFilesystemRecoveryReport recovery = new CheckpointFilesystemStore(root)
+                    .recover(recoveryRequest());
+
+            assertTrue(retry.successful(), phase.name());
+            assertEquals(Optional.of(CheckpointGenerationId.of(1L, 25L)),
+                    recovery.selection().selectedGenerationId(), phase.name());
+            assertFalse(Files.exists(new CheckpointFilesystemStore(root).layout()
+                    .stagingGenerationDirectory(CheckpointGenerationId.of(1L, 25L))), phase.name());
+        }
+    }
+
+    @Test
+    void conflictingPartialStagingRemainsFailVisible() throws IOException {
+        CheckpointFilesystemStore store = store("conflicting_partial_staging");
+        CheckpointPublicationRequest request = request(1L, 25L, Optional.empty());
+        Path staging = store.layout().stagingGenerationDirectory(request.generationId());
+        CheckpointOwnerId firstOwner = request.ownerSnapshots().getFirst().descriptor().ownerId();
+        Path payload = store.layout().ownerPayload(staging, firstOwner);
+        Files.createDirectories(payload.getParent());
+        Files.writeString(payload, "different", StandardCharsets.UTF_8);
+
+        CheckpointPublicationReport report = store.publish(request);
+
+        assertEquals(CheckpointPublicationOutcome.CONFLICT, report.outcome());
+        assertTrue(Files.exists(staging));
+        assertFalse(Files.exists(store.layout().headA()));
+    }
+
+    @Test
+    void retryOfOlderGenerationNeverReplacesNewerHead() {
+        CheckpointFilesystemStore store = store("old_retry");
+        CheckpointPublicationRequest firstRequest = request(1L, 25L, Optional.empty());
+        CheckpointGenerationManifest first = publish(store, firstRequest);
+        CheckpointGenerationManifest second = publish(store, request(2L, 40L, Optional.of(first)));
+        CheckpointGenerationManifest third = publish(store, request(3L, 55L, Optional.of(second)));
+
+        CheckpointPublicationReport oldRetry = store.publish(firstRequest);
+        CheckpointFilesystemRecoveryReport recovery = store.recover(recoveryRequest());
+
+        assertEquals(CheckpointPublicationOutcome.DUPLICATE_OBSERVATION, oldRetry.outcome());
+        assertEquals(Optional.of(third.generationId()), recovery.selection().selectedGenerationId());
+    }
+
+    @Test
+    void readOnlyInspectionDoesNotCreateMissingStoreRoot() {
+        Path root = temporaryDirectory.resolve("read_only_missing");
+        CheckpointFilesystemStore store = new CheckpointFilesystemStore(root);
+
+        CheckpointFilesystemRecoveryReport report = store.inspectReadOnly(recoveryRequest());
+
+        assertEquals(CheckpointRecoveryOutcome.RECOVERY_BLOCKED, report.selection().outcome());
+        assertFalse(Files.exists(root));
+    }
+
+    @Test
     void incompleteStagingIsIgnoredAsAuthorityAndReported() throws IOException {
         CheckpointFilesystemStore store = store("staging");
         Files.createDirectories(store.layout().stagingGenerationDirectory(CheckpointGenerationId.of(1L, 25L)));
@@ -255,6 +329,8 @@ class CheckpointFilesystemStoreTest {
         assertEquals(Optional.of(first.generationId()), recovery.selection().selectedGenerationId());
         assertTrue(recovery.selection().diagnostics().stream()
                 .anyMatch(failure -> failure.code() == CheckpointFailureCode.PREDECESSOR_MISMATCH));
+        assertFalse(store.loadCommittedGenerationReadOnly(
+                recoveryRequest(), second.generationId(), second.manifestDigest()).successful());
     }
 
     @Test
@@ -310,6 +386,34 @@ class CheckpointFilesystemStoreTest {
         assertTrue(platformRecovery.artifacts().stream()
                 .anyMatch(artifact -> artifact.failure().code()
                         == CheckpointFailureCode.PLATFORM_DETERMINISM_MANIFEST_MISMATCH));
+    }
+
+    @Test
+    void explicitlyAcceptedHistoricalPlatformManifestIsSelectableButUnknownManifestIsNot() {
+        CheckpointFilesystemStore acceptedStore = store("accepted_historical_platform");
+        publish(acceptedStore, requestWithPlatform(1L, 25L, OTHER_PLATFORM_MANIFEST));
+        CheckpointFilesystemRecoveryRequest acceptedRequest = new CheckpointFilesystemRecoveryRequest(
+                REQUIRED_OWNERS,
+                WORLD_ROOT,
+                PLATFORM_MANIFEST,
+                List.of(PLATFORM_MANIFEST, OTHER_PLATFORM_MANIFEST)
+        );
+
+        CheckpointFilesystemRecoveryReport accepted = acceptedStore.recover(acceptedRequest);
+
+        assertEquals(CheckpointRecoveryOutcome.LATEST_VALID_GENERATION_SELECTED,
+                accepted.selection().outcome());
+
+        CheckpointFilesystemStore rejectedStore = store("unknown_historical_platform");
+        PlatformDeterminismManifestReference unknown = new PlatformDeterminismManifestReference(
+                "butchercraft:platform/unknown", 1, digest("unknown-platform"));
+        publish(rejectedStore, requestWithPlatform(1L, 25L, unknown));
+
+        CheckpointFilesystemRecoveryReport rejected = rejectedStore.recover(acceptedRequest);
+
+        assertEquals(CheckpointRecoveryOutcome.RECOVERY_BLOCKED, rejected.selection().outcome());
+        assertTrue(rejected.artifacts().stream().anyMatch(artifact -> artifact.failure().code()
+                == CheckpointFailureCode.PLATFORM_DETERMINISM_MANIFEST_MISMATCH));
     }
 
     @Test
@@ -440,6 +544,26 @@ class CheckpointFilesystemStoreTest {
                         .toList(),
                 REQUIRED_OWNERS,
                 PLATFORM_MANIFEST,
+                WORLD_ROOT
+        );
+    }
+
+    private static CheckpointPublicationRequest requestWithPlatform(
+            long sequence,
+            long tick,
+            PlatformDeterminismManifestReference platform
+    ) {
+        CheckpointGenerationId generationId = CheckpointGenerationId.of(sequence, tick);
+        return new CheckpointPublicationRequest(
+                generationId,
+                Optional.empty(),
+                Optional.empty(),
+                tick,
+                REQUIRED_OWNERS.stream()
+                        .map(owner -> snapshot(generationId, tick, owner, "platform"))
+                        .toList(),
+                REQUIRED_OWNERS,
+                platform,
                 WORLD_ROOT
         );
     }

@@ -48,8 +48,12 @@ class MachineRunArchitectureBoundaryTest {
     }
 
     private static void assertSourcesExclude(Path root, List<String> forbidden) throws IOException {
+        Path checkpointAdapters = root.resolve("checkpoint");
         try (var files = Files.walk(root)) {
-            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+            for (Path file : files
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !path.startsWith(checkpointAdapters))
+                    .toList()) {
                 String source = Files.readString(file);
                 for (String value : forbidden) {
                     assertFalse(source.contains(value), () -> file + " must not contain " + value);

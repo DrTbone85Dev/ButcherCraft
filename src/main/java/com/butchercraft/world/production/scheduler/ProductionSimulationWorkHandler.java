@@ -15,12 +15,17 @@ import com.butchercraft.world.simulation.scheduler.WorkPayloadValueType;
 import com.butchercraft.world.simulation.scheduler.WorkValidationResult;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public final class ProductionSimulationWorkHandler implements SimulationWorkHandler {
-    private final ProductionManager manager;
+    private final Supplier<ProductionManager> managerSupplier;
 
     public ProductionSimulationWorkHandler(ProductionManager manager) {
-        this.manager = Objects.requireNonNull(manager, "manager");
+        this(() -> Objects.requireNonNull(manager, "manager"));
+    }
+
+    public ProductionSimulationWorkHandler(Supplier<ProductionManager> managerSupplier) {
+        this.managerSupplier = Objects.requireNonNull(managerSupplier, "managerSupplier");
     }
 
     @Override
@@ -63,7 +68,7 @@ public final class ProductionSimulationWorkHandler implements SimulationWorkHand
             return WorkValidationResult.rejected(WorkFailureCode.INVALID_PAYLOAD,
                     "Production Work payload run id is invalid");
         }
-        if (manager.findRun(runId).isEmpty()) {
+        if (managerSupplier.get().findRun(runId).isEmpty()) {
             return WorkValidationResult.rejected(WorkFailureCode.UNKNOWN_WORK,
                     "Production Work references an unknown run");
         }
@@ -74,7 +79,7 @@ public final class ProductionSimulationWorkHandler implements SimulationWorkHand
     public SimulationWorkResult execute(SimulationExecutionContext context) {
         WorkPayloadEntry entry = context.work().payload().find(ProductionWorkTypes.RUN_ID_PAYLOAD_KEY)
                 .orElseThrow();
-        return manager.executeScheduledRun(
+        return managerSupplier.get().executeScheduledRun(
                 ProductionRunId.of(entry.canonicalValue()),
                 context
         );

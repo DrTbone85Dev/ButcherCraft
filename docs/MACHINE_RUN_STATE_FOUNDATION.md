@@ -1,11 +1,11 @@
 # Machine Run-State / START-STOP Foundation
 
-Status: IM-031A implemented foundation; IM-031B Grinder policy activated.
+Status: IM-031A implemented foundation; IM-031B Grinder and IM-031C Patty Former policies activated.
 
-This note records the generic runtime authorized by DG-005 and its first live
-policy activation. IM-031B activates continuous player control for the Grinder
-only. Patty Former continuous behavior and employee Machine Run control remain
-gated.
+This note records the generic runtime authorized by DG-005 and its two live
+policy activations. IM-031B activates continuous player control for the
+Grinder, and IM-031C activates the same machine-neutral coordination for the
+Patty Former. Employee Machine Run control remains gated.
 
 ## Singular Owners
 
@@ -36,6 +36,14 @@ Workstation persists schema-1 machine operating state at:
 Both files use strict durable replacement and semantic read-back. Legacy
 absence creates an empty owner registry. Malformed, interrupted, unsupported,
 or identity/configuration-mismatched state fails visibly.
+
+The shared internal publisher uses a unique same-directory attempt file,
+forces the frozen bytes before replacement, closes its channel before move,
+serializes access per target, retries only bounded Windows access/sharing
+denials, and verifies exact bytes after publication. Filesystem retry never
+repeats a Run, operating-state, Execution, Scheduler, or workstation mutation.
+The Clock skips only byte-identical state requested repeatedly during the same
+logical child admission; changed Clock state still publishes.
 
 ## Publication
 
@@ -70,11 +78,13 @@ Workstation binds its active-child observation. A second nonterminal child is
 rejected deterministically. Terminal observation clears the child before a
 later sequence may be prepared.
 
-The generic IM-031A owners never invent follow-on work. IM-031B's Grinder
-integration re-evaluates the exact instance, Run, input, output capacity, and
-recovery state after each proven terminal child before asking Execution to
-admit the next bounded child. Scheduler still dispatches one child only; no
-inventory loop or stack-sized operation exists.
+The generic IM-031A owners never invent follow-on work. IM-031B/IM-031C's
+shared machine-neutral integration re-evaluates the exact instance, Run,
+endpoint availability, and recovery state after each proven terminal child.
+It delegates recipe and capacity eligibility plus child preparation to the
+Grinder or Patty Former adapter before asking Execution to admit the next
+bounded child. Scheduler still dispatches one child only; no inventory loop or
+stack-sized operation exists.
 
 ## Live Grinder Policy
 
@@ -95,6 +105,25 @@ The Grinder uses `POWERED_CONTINUOUS_EXPLICIT_STOP`.
 - Restart Policy B exposes GUI RESUME/STOP. RESUME preserves the exact Run and
   generation; no automatic restart occurs.
 - Identical empty/blocked observations are not durably republished each tick.
+
+## Live Patty Former Policy
+
+The Patty Former also uses `POWERED_CONTINUOUS_EXPLICIT_STOP`.
+
+- Normal right-click opens the inventory in every ordinary operating state.
+- GUI START/STOP/RESUME and state-aware Shift + right-click target the exact
+  Patty Former Workstation Instance and Machine Run.
+- Each Ground Beef to Beef Patties cycle remains a separately identified,
+  bounded 60-tick operation through the existing Patty Former coordinator,
+  Execution handler, Scheduler dispatch, and owner-result publication.
+- Empty input publishes `RUNNING_EMPTY`; compatible Ground Beef added later
+  resumes the same Run without granting new START authority.
+- Full or incompatible output publishes `OUTPUT_BLOCKED` without consuming
+  input. Restored capacity resumes the same Run.
+- Material Handling deposit to an OFF Patty Former leaves processing READY but
+  operating state OFF. Deposit into an existing exact-instance
+  `RUNNING_EMPTY` Run restores eligibility only; it does not create a Run.
+- Employee Patty Former operation is not implemented.
 
 ## Restart And Endpoints
 
@@ -118,7 +147,6 @@ mutation authority.
 
 ## Gated Behavior
 
-- Continuous Patty Former cycling.
 - Employee machine START/STOP or employee-owned persistent Runs.
 - Automatic restart or forced chunk loading.
 - Wear, damage, jams, maintenance, or DG-006 behavior.

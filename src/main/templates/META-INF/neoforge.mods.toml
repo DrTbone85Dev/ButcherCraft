@@ -10,9 +10,9 @@ authors="To Be Determined"
 description='''
 ButcherCraft is a Minecraft industrial and regional simulation project with playable production workflows, workforce foundations, and deterministic material handling.
 
-This alpha is the Continuous Processing Update. Beef Trim, Ground Beef, and Beef Patties stack to 64 in practical Workstation-owned slots; bounded processing consumes recipe quantities and merges compatible output safely. Employees can visibly carry one Beef Trim from a Cutting Table to a Grinder or one Ground Beef from a Grinder to a Patty Former while preserving source remainders and exact in-transit ItemStack custody.
+This alpha is the Checkpoint Recovery & Continuous Processing Update. Beef Trim, Ground Beef, and Beef Patties stack to 64 in practical Workstation-owned slots; bounded processing consumes recipe quantities and merges compatible output safely. Employees can visibly carry one Beef Trim from a Cutting Table to a Grinder or one Ground Beef from a Grinder to a Patty Former while preserving source remainders and exact in-transit ItemStack custody.
 
-The Grinder now supports an explicit persistent Machine Run with START, STOP, restart-gated RESUME, RUNNING EMPTY, and OUTPUT BLOCKED states. The Patty Former remains an explicit one-cycle machine. Employees do not control Grinder Runs, operate the Patty Former, select workstations automatically, claim Production Orders, run Production-driven transfers, transport batches, or own inventory. Broader economy, autonomous production, machine wear, general Logistics, and expansion APIs remain in development.
+The Grinder and Patty Former now support explicit persistent Machine Runs with START, STOP, restart-gated RESUME, RUNNING EMPTY, and OUTPUT BLOCKED states. Coordinated checkpoints, durable Workstation projections, and evidence-based owner-native restoration improve hard-crash recovery without replaying completed work. Employees do not control Machine Runs, operate the Patty Former, select workstations automatically, claim Production Orders, run Production-driven transfers, transport batches, or own inventory. Broader economy, autonomous production, machine wear, general Logistics, and expansion APIs remain in development.
 '''
 
 [[dependencies.${mod_id}]]

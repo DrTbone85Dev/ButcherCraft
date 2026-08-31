@@ -21,7 +21,11 @@ import com.butchercraft.workstation.endpoint.WorkstationInstanceRegistry;
 import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalStorage;
 import com.butchercraft.workstation.endpoint.persistence.WorkstationEndpointJournalV2Storage;
 import com.butchercraft.workstation.endpoint.persistence.WorkstationInstanceStorage;
+import com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import com.butchercraft.world.WorldIdentityService;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 import net.minecraft.core.BlockPos;
@@ -67,6 +71,9 @@ public final class WorkstationEndpointService {
 
     public void initialize(ServerStartedEvent event) {
         ActiveEndpoints runtime = load(event.getServer());
+        if (!StartupMutationGateService.INSTANCE.startupDecisionComplete(event.getServer())) return;
+        boolean consequentialMutationPermitted = StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.WORKSTATION);
         int reconciled = 0;
         for (WorkstationInstanceRecord instance : runtime.registry().records()) {
             if (reconciled >= configuration.maximumReconciliationsPerAction()) break;
@@ -81,7 +88,17 @@ public final class WorkstationEndpointService {
                     instance.endpointKey().z()
             );
             if (level != null && level.hasChunkAt(position)) {
-                reconcileLoadedEndpoint(level, position);
+                if (consequentialMutationPermitted) reconcileLoadedEndpoint(level, position);
+                BlockEntity blockEntity = level.getBlockEntity(position);
+                if (blockEntity instanceof AbstractInventoryWorkstationBlockEntity workstation) {
+                    var projection = com.butchercraft.workstation.projection.DurableWorkstationProjectionService
+                            .INSTANCE.reconcileLoaded(level, workstation);
+                    if (!projection.succeeded()) {
+                        throw new IllegalStateException(
+                                "Loaded Workstation projection reconciliation failed after startup selection: "
+                                        + projection.code() + ": " + projection.detail());
+                    }
+                }
                 reconciled++;
             }
         }
@@ -106,6 +123,42 @@ public final class WorkstationEndpointService {
     ) {
         return load(Objects.requireNonNull(server, "server")).registry()
                 .find(Objects.requireNonNull(instanceId, "instanceId"));
+    }
+
+    public synchronized boolean hasUnresolvedEffects(MinecraftServer server, WorkstationInstanceId instanceId) {
+        return !unresolvedReferences(
+                load(Objects.requireNonNull(server, "server")).journal(),
+                Objects.requireNonNull(instanceId, "instanceId")
+        ).isEmpty() || StackAwareWorkstationEndpointRuntimeService.INSTANCE
+                .hasUnresolvedEffects(server, instanceId);
+    }
+
+    public synchronized boolean provesCommittedProjection(
+            MinecraftServer server,
+            WorkstationInstanceId instanceId,
+            long inventoryRevision,
+            long endpointEffectRevision,
+            long journalSequence,
+            Optional<String> ownerResultIdentity
+    ) {
+        Objects.requireNonNull(server, "server");
+        Objects.requireNonNull(instanceId, "instanceId");
+        Objects.requireNonNull(ownerResultIdentity, "ownerResultIdentity");
+        if (ownerResultIdentity.isEmpty()) return false;
+        boolean legacyProof = load(server).journal().records().stream().anyMatch(record ->
+                record.instanceId().equals(instanceId)
+                        && record.ownerResult().isPresent()
+                        && record.ownerResult().orElseThrow().evidenceIdentity()
+                        .equals(ownerResultIdentity.orElseThrow())
+                        && record.postInventoryRevision() == inventoryRevision
+                        && record.endpointEffectRevision() == endpointEffectRevision
+                        && record.journalSequence() == journalSequence
+                        && (record.state() == WorkstationEndpointJournalState.EFFECT_COMMITTED
+                        || record.state() == WorkstationEndpointJournalState.RESULT_PUBLISHED
+                        || record.state() == WorkstationEndpointJournalState.RECONCILED));
+        return legacyProof || StackAwareWorkstationEndpointRuntimeService.INSTANCE.provesCommittedProjection(
+                server, instanceId, inventoryRevision, endpointEffectRevision, journalSequence,
+                ownerResultIdentity.orElseThrow());
     }
 
     public synchronized void makeLegacyJournalReadOnly(MinecraftServer server) {
@@ -245,6 +298,7 @@ public final class WorkstationEndpointService {
     }
 
     public synchronized WorkstationEndpointReferenceResult referenceFor(ServerLevel level, BlockPos position) {
+        requireMutation(level.getServer());
         ResolvedEndpoint resolved = resolveAndEnroll(level, position);
         if (resolved.failure().isPresent()) {
             WorkstationEndpointEffectResult failure = resolved.failure().orElseThrow();
@@ -256,6 +310,41 @@ public final class WorkstationEndpointService {
                 instance.endpointKey(),
                 instance.generation()
         ));
+    }
+
+    public synchronized WorkstationEndpointReferenceResult existingReferenceForRecoveryReconciliation(
+            ServerLevel level,
+            BlockPos position
+    ) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(position, "position");
+        BlockEntity blockEntity = level.getBlockEntity(position);
+        if (!(blockEntity instanceof WorkstationTransferEndpoint endpoint)) {
+            return WorkstationEndpointReferenceResult.failed(
+                    WorkstationEndpointResultCode.ENDPOINT_UNAVAILABLE,
+                    "Loaded block is not a Workstation transfer endpoint");
+        }
+        WorkstationEndpointProjection projection = endpoint.endpointProjection();
+        if (projection.instanceId().isEmpty()) {
+            return WorkstationEndpointReferenceResult.failed(
+                    WorkstationEndpointResultCode.ENDPOINT_IDENTITY_CONFLICT,
+                    "Loaded Workstation has no persisted Instance Identity");
+        }
+        WorkstationInstanceRecord instance = load(level.getServer()).registry()
+                .find(projection.instanceId().orElseThrow()).orElse(null);
+        WorkstationEndpointKey actual = new WorkstationEndpointKey(
+                endpoint.endpointTypeIdentity(),
+                level.dimension().location().toString(),
+                position.getX(), position.getY(), position.getZ());
+        if (instance == null
+                || !instance.endpointKey().equals(actual)
+                || instance.generation() != projection.instanceGeneration()) {
+            return WorkstationEndpointReferenceResult.failed(
+                    WorkstationEndpointResultCode.ENDPOINT_IDENTITY_CONFLICT,
+                    "Loaded Workstation differs from persisted Instance Identity authority");
+        }
+        return WorkstationEndpointReferenceResult.resolved(new WorkstationEndpointReference(
+                instance.instanceId(), instance.endpointKey(), instance.generation()));
     }
 
     public synchronized WorkstationEndpointEffectResult commitPrepared(
@@ -516,6 +605,8 @@ public final class WorkstationEndpointService {
     }
 
     public synchronized void reconcileLoadedEndpoint(ServerLevel level, BlockPos position) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                level.getServer(), LegacySplitRecoveryParticipants.WORKSTATION)) return;
         BlockEntity blockEntity = level.getBlockEntity(position);
         if (!(blockEntity instanceof WorkstationTransferEndpoint endpoint)
                 || endpoint.endpointProjection().instanceId().isEmpty()) {
@@ -561,6 +652,7 @@ public final class WorkstationEndpointService {
     }
 
     public synchronized boolean retireEndpoint(ServerLevel level, BlockPos position) {
+        requireMutation(level.getServer());
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(position, "position");
         BlockEntity blockEntity = level.getBlockEntity(position);
@@ -632,6 +724,12 @@ public final class WorkstationEndpointService {
                         finalUnresolved
                 )
         );
+        WorkstationInstanceRecord terminalRecord = candidate.find(record.instanceId()).orElseThrow();
+        if (target == WorkstationInstanceLifecycle.RETIRED
+                && blockEntity instanceof AbstractInventoryWorkstationBlockEntity workstation) {
+            DurableWorkstationProjectionService.INSTANCE.retire(
+                    level, workstation, terminalRecord, "workstation endpoint removed");
+        }
         publishRegistry(runtime, candidate);
         return unresolved.isEmpty();
     }
@@ -1293,6 +1391,10 @@ public final class WorkstationEndpointService {
         );
         active.set(loaded);
         return loaded;
+    }
+
+    private static void requireMutation(MinecraftServer server) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
     }
 
     private void publishRegistry(ActiveEndpoints runtime, WorkstationInstanceRegistry candidate) {

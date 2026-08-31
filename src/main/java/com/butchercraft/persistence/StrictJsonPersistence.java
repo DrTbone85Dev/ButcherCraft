@@ -10,17 +10,9 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -39,63 +31,21 @@ public final class StrictJsonPersistence {
     }
 
     public static String read(Path path, String label) {
-        try {
-            return Files.readString(Objects.requireNonNull(path, "path"), StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to read " + label + " from " + path, exception);
-        }
+        return AtomicFilePublication.readUtf8(Objects.requireNonNull(path, "path"), label);
     }
 
     public static void requireNoInterruptedPublication(Path path, String label) {
-        Path temporary = temporaryPath(path);
-        if (!Files.exists(path) && Files.exists(temporary)) {
-            throw new IllegalStateException("Interrupted " + label + " publication requires recovery: " + temporary);
-        }
+        AtomicFilePublication.requireNoInterruptedPublication(path, label);
     }
 
     public static void publish(Path path, String json, String label) {
         Objects.requireNonNull(path, "path");
         Objects.requireNonNull(json, "json");
-        Path temporary = temporaryPath(path);
-        try {
-            Path parent = path.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-            try (FileChannel channel = FileChannel.open(
-                    temporary,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE
-            )) {
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                while (buffer.hasRemaining()) channel.write(buffer);
-                channel.force(true);
-            }
-            try {
-                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException exception) {
-                throw new IOException("Atomic replacement is required for " + path, exception);
-            }
-            if (!Files.readString(path, StandardCharsets.UTF_8).equals(json)) {
-                throw new IOException("Published " + label + " failed byte-for-byte read-back verification");
-            }
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed strict publication of " + label + " to " + path, exception);
-        } finally {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException ignored) {
-                // A retained temporary file is visible recovery evidence.
-            }
-        }
+        AtomicFilePublication.publishUtf8(path, json, label);
     }
 
     public static IllegalArgumentException corrupt(String label, RuntimeException cause) {
         return new IllegalArgumentException("Corrupt " + label, Objects.requireNonNull(cause, "cause"));
-    }
-
-    private static Path temporaryPath(Path path) {
-        return path.resolveSibling(path.getFileName() + ".tmp");
     }
 
     private static final class OptionalTypeAdapterFactory implements TypeAdapterFactory {

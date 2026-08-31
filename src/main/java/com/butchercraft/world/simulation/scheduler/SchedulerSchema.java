@@ -5,6 +5,7 @@ public final class SchedulerSchema {
     public static final int CURRENT_VERSION = 2;
     public static final String DIRECTORY_NAME = "butchercraft";
     public static final String FILE_NAME = "simulation_scheduler.json";
+    public static final String RECOVERY_FILE_NAME = "simulation_scheduler_recovery.json";
 
     private SchedulerSchema() { }
 }

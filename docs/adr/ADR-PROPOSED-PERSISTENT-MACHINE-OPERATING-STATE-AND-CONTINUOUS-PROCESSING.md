@@ -1232,5 +1232,8 @@ until separately authorized and mechanically true.
 - IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for the Grinder only,
   including GUI and Shift-use controls, repeated bounded children,
   `RUNNING_EMPTY`, `OUTPUT_BLOCKED`, and explicit restart RESUME/STOP.
-- Patty Former continuous operation, employee Machine Run control, machine
-  condition/wear, and Production machine control remain separately gated.
+- IM-031C activates the same policy for the Patty Former through shared
+  machine-neutral coordination and presentation while retaining Patty Former
+  recipe, inventory-effect, and owner-result authority.
+- Employee Machine Run control, machine condition/wear, and Production machine
+  control remain separately gated.

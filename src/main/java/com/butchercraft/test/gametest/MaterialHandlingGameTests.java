@@ -11,6 +11,8 @@ import com.butchercraft.world.materialhandling.MaterialTransferRecordV2;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.materialhandling.runtime.MaterialHandlingTransferResult;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectKind;
+import com.butchercraft.workstation.projection.DurableWorkstationProjection;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
@@ -94,6 +96,13 @@ public final class MaterialHandlingGameTests {
         helper.assertTrue(duplicate.succeeded(), "Duplicate observation returns the completed authoritative result");
         helper.assertTrue(grinder.inventory().input().getCount() == 21,
                 "Duplicate observation does not repeat destination insertion");
+        DurableWorkstationProjection sourceProjection = projection(helper, cuttingTable);
+        DurableWorkstationProjection destinationProjection = projection(helper, grinder);
+        helper.assertTrue(sourceProjection.slots().get(cuttingTable.trimOutputSlot())
+                        .exactStack().orElseThrow().count() == 63,
+                "Source durable projection records the exact partial-withdrawal remainder");
+        helper.assertTrue(destinationProjection.slots().getFirst().exactStack().orElseThrow().count() == 21,
+                "Destination durable projection records the exact merged deposit");
         helper.succeed();
     }
 
@@ -138,6 +147,9 @@ public final class MaterialHandlingGameTests {
                 "Endpoint freshness binds the dedicated Beef Trim output slot");
         helper.assertTrue(grinder.inventory().input().getCount() == 64,
                 "Blocked Grinder input is not overwritten");
+        helper.assertTrue(projection(helper, cuttingTable).slots().get(cuttingTable.trimOutputSlot())
+                        .exactStack().orElseThrow().count() == 63,
+                "Source projection and Material Handling custody remain distinct while in transit");
 
         MaterialHandlingTransferResult cancelled = MaterialHandlingService.INSTANCE.cancel(
                 helper.getLevel(),
@@ -174,6 +186,9 @@ public final class MaterialHandlingGameTests {
                 "Duplicate cancellation does not repeat the source return");
         helper.assertTrue(grinder.inventory().input().getCount() == 64,
                 "Cancellation never mutates the blocked destination");
+        helper.assertTrue(projection(helper, cuttingTable).slots().get(cuttingTable.trimOutputSlot())
+                        .exactStack().orElseThrow().count() == 64,
+                "Source-return owner result restores the exact durable source projection once");
         helper.succeed();
     }
 
@@ -187,5 +202,14 @@ public final class MaterialHandlingGameTests {
 
     private static GrinderBlockEntity requireGrinder(GameTestHelper helper) {
         return (GrinderBlockEntity) helper.getBlockEntity(GRINDER_POS);
+    }
+
+    private static DurableWorkstationProjection projection(
+            GameTestHelper helper,
+            com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity workstation
+    ) {
+        return DurableWorkstationProjectionService.INSTANCE.read(
+                helper.getLevel().getServer(), workstation.checkpointInstanceIdentity().orElseThrow())
+                .projection().orElseThrow();
     }
 }

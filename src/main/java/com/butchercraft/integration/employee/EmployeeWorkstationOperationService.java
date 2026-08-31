@@ -15,6 +15,8 @@ import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.WorkstationReservationService;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.execution.ExecutionOperationId;
 import com.butchercraft.world.execution.ExecutionOperationSnapshot;
 import com.butchercraft.world.execution.ExecutionStatus;
@@ -49,6 +51,10 @@ public final class EmployeeWorkstationOperationService {
         if (!(employee.level() instanceof ServerLevel level)) {
             return RequestResult.rejected(RequestStatus.RESERVATION_MISSING_OR_INVALID,
                     "employee is not in an authoritative server world");
+        }
+        if (!mutationPermitted(level)) {
+            return RequestResult.rejected(RequestStatus.EXECUTION_REJECTED,
+                    "operation is blocked by startup recovery authority");
         }
         EmployeeId employeeId;
         try {
@@ -135,6 +141,7 @@ public final class EmployeeWorkstationOperationService {
         if (!(employee.level() instanceof ServerLevel level)) {
             return;
         }
+        if (!mutationPermitted(level)) return;
         EmployeeId employeeId;
         try {
             employeeId = new EmployeeId(employee.employeeIdValue());
@@ -403,6 +410,13 @@ public final class EmployeeWorkstationOperationService {
 
     private static String reservationKey(WorkstationReservationRecord reservation) {
         return reservation.employeeIdentity() + "|" + reservation.workstationIdentity() + "|" + reservation.createdTick();
+    }
+
+    private static boolean mutationPermitted(ServerLevel level) {
+        return StartupMutationGateService.INSTANCE.permits(
+                level.getServer(), LegacySplitRecoveryParticipants.WORKFORCE)
+                && StartupMutationGateService.INSTANCE.permits(
+                level.getServer(), LegacySplitRecoveryParticipants.EXECUTION);
     }
 
     public enum RequestStatus {

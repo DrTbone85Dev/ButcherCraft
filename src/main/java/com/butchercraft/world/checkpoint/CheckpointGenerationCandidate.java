@@ -10,6 +10,7 @@ public record CheckpointGenerationCandidate(
         Optional<String> predecessorManifestDigest,
         long authoritativeSimulationTick,
         List<OwnerSnapshotDescriptor> ownerSnapshots,
+        List<String> triggerCauses,
         PlatformDeterminismManifestReference platformDeterminismManifest,
         WorldIdentityRootReference worldIdentityRoot,
         CheckpointPublicationState candidateState
@@ -29,12 +30,40 @@ public record CheckpointGenerationCandidate(
                 .map(snapshot -> Objects.requireNonNull(snapshot, "ownerSnapshot"))
                 .sorted()
                 .toList();
+        triggerCauses = Objects.requireNonNull(triggerCauses, "triggerCauses").stream()
+                .map(cause -> CheckpointValidation.id(cause, "triggerCause"))
+                .distinct()
+                .sorted()
+                .toList();
         platformDeterminismManifest = Objects.requireNonNull(
                 platformDeterminismManifest,
                 "platformDeterminismManifest"
         );
         worldIdentityRoot = Objects.requireNonNull(worldIdentityRoot, "worldIdentityRoot");
         candidateState = Objects.requireNonNull(candidateState, "candidateState");
+    }
+
+    public CheckpointGenerationCandidate(
+            CheckpointGenerationId generationId,
+            Optional<CheckpointGenerationId> predecessorGenerationId,
+            Optional<String> predecessorManifestDigest,
+            long authoritativeSimulationTick,
+            List<OwnerSnapshotDescriptor> ownerSnapshots,
+            PlatformDeterminismManifestReference platformDeterminismManifest,
+            WorldIdentityRootReference worldIdentityRoot,
+            CheckpointPublicationState candidateState
+    ) {
+        this(
+                generationId,
+                predecessorGenerationId,
+                predecessorManifestDigest,
+                authoritativeSimulationTick,
+                ownerSnapshots,
+                List.of(),
+                platformDeterminismManifest,
+                worldIdentityRoot,
+                candidateState
+        );
     }
 
     public CheckpointGenerationManifest toManifest() {
@@ -45,6 +74,7 @@ public record CheckpointGenerationCandidate(
                 predecessorManifestDigest,
                 authoritativeSimulationTick,
                 ownerSnapshots,
+                triggerCauses,
                 platformDeterminismManifest,
                 worldIdentityRoot,
                 CheckpointValidation.zeroDigest()

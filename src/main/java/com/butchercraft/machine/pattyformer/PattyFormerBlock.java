@@ -1,14 +1,15 @@
 package com.butchercraft.machine.pattyformer;
 
+import com.butchercraft.integration.machine.PoweredMachineRunControlResult;
+import com.butchercraft.integration.machine.pattyformer.PattyFormerContinuousRunService;
 import com.butchercraft.registration.ModBlockEntityTypes;
 import com.butchercraft.productioncontrol.ProductionOrderItem;
 import com.butchercraft.world.WorkstationReservationService;
-import com.butchercraft.workstation.WorkstationState;
-import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -84,7 +85,7 @@ public final class PattyFormerBlock extends BaseEntityBlock {
             BlockHitResult hitResult
     ) {
         if (player.isSecondaryUseActive()) {
-            requestExplicitOperation(level, pos);
+            requestRunControl(level, pos, player);
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return openMenu(level, pos, player)
@@ -103,7 +104,7 @@ public final class PattyFormerBlock extends BaseEntityBlock {
             BlockHitResult hitResult
     ) {
         if (player.isSecondaryUseActive()) {
-            requestExplicitOperation(level, pos);
+            requestRunControl(level, pos, player);
             return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
         if (stack.getItem() instanceof ProductionOrderItem orderItem) {
@@ -119,6 +120,9 @@ public final class PattyFormerBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock())) {
             try {
                 if (level instanceof ServerLevel serverLevel) {
+                    if (level.getBlockEntity(pos) instanceof PattyFormerBlockEntity pattyFormer) {
+                        PattyFormerContinuousRunService.INSTANCE.replacementDetected(serverLevel, pattyFormer);
+                    }
                     WorkstationReservationService.INSTANCE.invalidatePattyFormer(
                             serverLevel,
                             pos,
@@ -168,13 +172,12 @@ public final class PattyFormerBlock extends BaseEntityBlock {
         return false;
     }
 
-    private static boolean requestExplicitOperation(Level level, BlockPos pos) {
+    private static boolean requestRunControl(Level level, BlockPos pos, Player player) {
         if (level instanceof ServerLevel serverLevel
-                && level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity
-                && (blockEntity.workstationState() == WorkstationState.READY
-                || blockEntity.workstationState() == WorkstationState.COMPLETE
-                || blockEntity.workstationState() == WorkstationState.PROCESSING)) {
-            blockEntity.requestPlayerProcessing(new WorkstationTickContext(serverLevel, pos));
+                && level.getBlockEntity(pos) instanceof PattyFormerBlockEntity blockEntity) {
+            PoweredMachineRunControlResult result = PattyFormerContinuousRunService.INSTANCE
+                    .shiftControl(serverLevel, blockEntity);
+            player.displayClientMessage(Component.literal(result.detail()), true);
             return true;
         }
         return false;

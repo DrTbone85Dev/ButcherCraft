@@ -2,7 +2,7 @@
 
 Status: IM-011 implemented foundation.
 
-This note records the first generic Execution runtime implementation slice. It does not change RFC-0023, ADR status, Allocation integration, or public extension contracts. IM-012 later connects the first Grinder workstation operation to this runtime, IM-015 extends that same handler to Pork Trim, IM-016 lets Production observe terminal Grinder Execution evidence without acquiring Execution authority, IM-018 adds the Patty Former handler on the same generic path, IM-031A adds a distinct persistent Machine Run ledger above bounded child operations, and IM-031B activates repeated bounded child admission for one player-controlled Grinder Run. General public workstation invocation remains gated.
+This note records the first generic Execution runtime implementation slice. It does not change RFC-0023, ADR status, Allocation integration, or public extension contracts. IM-012 later connects the first Grinder workstation operation to this runtime, IM-015 extends that same handler to Pork Trim, IM-016 lets Production observe terminal Grinder Execution evidence without acquiring Execution authority, IM-018 adds the Patty Former handler on the same generic path, IM-031A adds a distinct persistent Machine Run ledger above bounded child operations, IM-031B activates repeated bounded child admission for one player-controlled Grinder Run, and IM-031C activates the same machine-neutral coordination for one player-controlled Patty Former Run. General public workstation invocation remains gated.
 
 ## Implemented Scope
 
@@ -30,9 +30,11 @@ IM-031A additionally persists Execution-owned Machine Runs at:
 Machine Run identity, generation, START/STOP evidence, lifecycle, child
 sequence and bindings, recovery evidence, and revisions remain distinct from
 generic child operation persistence. One active Run may authorize at most one
-nonterminal child operation. IM-031B's Grinder-only integration prepares the
-next bounded child only after the preceding child has a proven terminal result;
-the generic Machine Run owner still does not invent child work itself.
+nonterminal child operation. IM-031B/IM-031C's shared machine-neutral
+integration prepares the next Grinder or Patty Former child only after the
+preceding child has a proven terminal result; machine-specific adapters retain
+recipe authorization and owner-result handling, and the generic Machine Run
+owner still does not invent child work itself.
 
 Schema 1 now classifies exact aggregate identity as `IDENTICAL` and permits a
 strict additive handler set only through exact historical contract proof. The
@@ -55,8 +57,8 @@ remains gated.
 - Startup recovery orchestration beyond the implemented IM-031A Machine Run /
   Workstation operating-state boundary and existing local unresolved-outcome
   classification.
-- Continuous Patty Former child creation and employee Machine START/STOP
-  controls. Player Grinder START/STOP/RESUME is the sole live activation.
+- Employee Machine START/STOP controls and employee-owned persistent Runs.
+  Player Grinder and Patty Former START/STOP/RESUME are the live activations.
 - Checkpoint-owned live Execution snapshot publication.
 - Evidence archival, retention, or compaction.
 - Public handler API or mod/plugin registration surface.

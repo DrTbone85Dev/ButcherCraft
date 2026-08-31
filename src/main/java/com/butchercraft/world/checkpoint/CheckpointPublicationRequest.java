@@ -11,6 +11,7 @@ public record CheckpointPublicationRequest(
         long authoritativeSimulationTick,
         List<CheckpointOwnerSnapshotPayload> ownerSnapshots,
         List<CheckpointOwnerId> requiredOwners,
+        List<String> triggerCauses,
         PlatformDeterminismManifestReference platformDeterminismManifest,
         WorldIdentityRootReference worldIdentityRoot
 ) {
@@ -33,11 +34,53 @@ public record CheckpointPublicationRequest(
                 .map(owner -> Objects.requireNonNull(owner, "requiredOwner"))
                 .sorted()
                 .toList();
+        triggerCauses = Objects.requireNonNull(triggerCauses, "triggerCauses").stream()
+                .map(cause -> CheckpointValidation.id(cause, "triggerCause"))
+                .distinct()
+                .sorted()
+                .toList();
         platformDeterminismManifest = Objects.requireNonNull(
                 platformDeterminismManifest,
                 "platformDeterminismManifest"
         );
         worldIdentityRoot = Objects.requireNonNull(worldIdentityRoot, "worldIdentityRoot");
+    }
+
+    public CheckpointPublicationRequest(
+            CheckpointGenerationId generationId,
+            Optional<CheckpointGenerationId> predecessorGenerationId,
+            Optional<String> predecessorManifestDigest,
+            long authoritativeSimulationTick,
+            List<CheckpointOwnerSnapshotPayload> ownerSnapshots,
+            List<CheckpointOwnerId> requiredOwners,
+            PlatformDeterminismManifestReference platformDeterminismManifest,
+            WorldIdentityRootReference worldIdentityRoot
+    ) {
+        this(
+                generationId,
+                predecessorGenerationId,
+                predecessorManifestDigest,
+                authoritativeSimulationTick,
+                ownerSnapshots,
+                requiredOwners,
+                List.of(),
+                platformDeterminismManifest,
+                worldIdentityRoot
+        );
+    }
+
+    public CheckpointPublicationRequest withTriggerCauses(List<String> causes) {
+        return new CheckpointPublicationRequest(
+                generationId,
+                predecessorGenerationId,
+                predecessorManifestDigest,
+                authoritativeSimulationTick,
+                ownerSnapshots,
+                requiredOwners,
+                causes,
+                platformDeterminismManifest,
+                worldIdentityRoot
+        );
     }
 
     CheckpointGenerationCandidate toCandidate() {
@@ -49,6 +92,7 @@ public record CheckpointPublicationRequest(
                 ownerSnapshots.stream()
                         .map(CheckpointOwnerSnapshotPayload::descriptor)
                         .toList(),
+                triggerCauses,
                 platformDeterminismManifest,
                 worldIdentityRoot,
                 CheckpointPublicationState.COMPLETE_CANDIDATE

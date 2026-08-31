@@ -144,7 +144,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.player` | Pure player legacy template domain, career profiles, starting scenarios, and scenario registry. |
 | `com.butchercraft.world.player.runtime` | Runtime player identity creation, immutable player identity registry, independent player identity persistence, and server-login initialization. |
 | `com.butchercraft.world.simulation` | Simulation clock, configurable calendar, event scheduler, event bus, independent simulation-state persistence, Clock-owned checkpoint snapshot provider/restorer foundation, and server tick lifecycle integration. |
-| `com.butchercraft.world.simulation.scheduler` | Pure immutable simulation Work definitions, separate runtime lifecycle, stable stages, live handler effect-policy enforcement, deterministic Invocation and Effect Identity support, deterministic indexes, bounded pipeline, reports, schema-versioned persistence, and Scheduler-owned checkpoint snapshot provider/restorer foundation. |
+| `com.butchercraft.world.simulation.scheduler` | Pure immutable simulation Work definitions, separate runtime lifecycle, stable stages, live handler effect-policy enforcement, deterministic Invocation and Effect Identity support, deterministic indexes, bounded pipeline, reports, schema-versioned persistence, Scheduler-owned checkpoint snapshot provider/restorer foundation, and nonexecuting historical acknowledgement/discontinuity evidence. |
 | `com.butchercraft.world.business.runtime` | Pure business runtime state, hours, shifts, operational status, runtime registry, manager transitions, event listener, validation, and JSON persistence. |
 | `com.butchercraft.world.workforce` | Pure workforce definitions, positions, staffing rules, shift assignments, skill levels, certifications, registry, manager lookup, validation, and JSON persistence. |
 | `com.butchercraft.world.workforce.employee` | Pure Employee Identity, Employment Records, lifecycle, shift references, presence observation, entity linkage records, employee record persistence, and the transient IM-027 employee workstation-operation state machine. Runtime employee entities consume these records for movement, one bounded Grinder interaction request, and the non-authoritative IM-028B carry display. |
@@ -161,7 +161,7 @@ Packages that already exist describe current ownership. Entries for packages not
 | `com.butchercraft.world.execution` | Pure generic Execution runtime foundation for operation identity, immutable authorization evidence consumption, lifecycle, attempts, handler boundary, owner result evidence, Unknown Outcome state, Scheduler handler integration, and versioned operation persistence. IM-012 registers the first Grinder workstation handler, IM-018 registers the Patty Former handler, IM-027 lets one employee observe one bounded Beef Grinder operation, and IM-031A/IM-031B add Execution-owned persistent Machine Runs and live Grinder child admission without transferring authority to Workstation or Scheduler. It has no Allocation integration, Planning handoff, public handler API, checkpoint owner snapshots, broad workstation framework, or general worker automation. |
 | `com.butchercraft.world.allocation` | Pure Resource Allocation definitions, deterministic AllocationSet lifecycle and Cycle execution, detached Capacity accounting, atomic Commitment publication, immutable registries, views, history, queries, reports, traces, and typed validation. |
 | `com.butchercraft.world.evidence` | Pure Evidence Lifecycle foundation for owner metadata, evidence identity validation, classification, retention-policy inputs, deterministic retention decisions, and typed lifecycle failures. It owns no subsystem facts, persistence, archive movement, checkpoint recovery, or gameplay behavior. |
-| `com.butchercraft.world.checkpoint` | Pure Checkpoint Recovery foundation for generation identity, owner snapshot metadata, generation manifests, head records, integrity validation, explicit-root filesystem publication, dual-head recovery selection, rollback selection, owner snapshot coordination, all-or-nothing restoration coordination, storage artifact classification, and typed checkpoint failures. It owns no owner snapshot content, live save hooks, startup recovery, migration, automatic runtime activation, or gameplay behavior. |
+| `com.butchercraft.world.checkpoint` | Checkpoint Recovery foundation and live coordinator for generation identity, the exact required-participant registry, owner snapshot metadata, immutable generation manifests, integrity validation, dual-head publication, split-snapshot analysis, operator-authorized recovery publication evidence, live manual/periodic/shutdown triggers, startup live-coherence analysis, deterministic startup-source selection, schema-versioned Restoration Intent/Result, owner-native restoration coordination, mutation gating, and diagnostics. Owners freeze, serialize, parse, and validate their own state; Checkpoint Recovery owns no domain snapshot content or mutation authority. Migration, checkpoint retention, application to the protected original world, and gameplay recovery controls remain unimplemented. |
 | `com.butchercraft.multiblock` | Room/facility validation, controller membership, cached shape data. |
 | `com.butchercraft.refrigeration` | Storage, thermal simulation, cooling equipment, overload/wear model. |
 | `com.butchercraft.cleanliness` | Cleanliness data, dirty events, cleaning actions, facility summaries. |
@@ -194,7 +194,7 @@ The current package layout already aligns with the platform direction and requir
 - `com.butchercraft.world.execution` owns generic Execution operation identity, live authorization consumption, lifecycle, attempts, handler registry, domain Effect Identity, owner result evidence, terminal result evidence, Unknown Outcome state, and schema-1 operation persistence. It depends on Scheduler only for bounded invocation and Scheduler-owned effect observation. It imports no Allocation, Planning, Production, Inventory, Transactions, Evidence Lifecycle, Checkpoint Recovery, Minecraft, or NeoForge implementation packages.
 - `com.butchercraft.world.allocation` owns immutable Requests, AllocationSets, and Commitments; AllocationSet lifecycle; the explicit deterministic Allocation Cycle; detached cycle-local Capacity accounting; atomic Commitment publication; and immutable registries, reports, traces, history, and queries. Authoritative providers retain Resource and Capacity ownership. Allocation references other subsystems only by stable external identity and has no persistence, Scheduler stage, live provider, Planning handoff, or Production execution gate.
 - `com.butchercraft.world.evidence` owns evidence classification, owner metadata, identity validation, retention-policy input, retention-decision, and lifecycle-failure primitives only. Source subsystems retain ownership of their facts and runtime state. The package has no persistence, archive, checkpoint, migration, subsystem pruning, or runtime integration.
-- `com.butchercraft.world.checkpoint` owns checkpoint generation identity, owner snapshot metadata, generation manifests, head records, metadata integrity validation, explicit-root filesystem checkpoint publication, deterministic recovery selection, rollback selection, storage artifact classification, explicit owner snapshot coordination, Clock/Scheduler relationship validation, all-or-nothing restoration coordination including owner-supplied rollback on attempted publication failure, and checkpoint diagnostics only. Source subsystems retain authority over snapshot content and runtime state. The package has no live save hook, startup recovery, archive, migration, owner payload parser, Evidence Lifecycle integration, or gameplay behavior.
+- `com.butchercraft.world.checkpoint` owns checkpoint generation identity, owner snapshot metadata, generation manifests, head records, metadata integrity validation, explicit-root filesystem checkpoint publication, deterministic recovery selection, rollback selection, storage artifact classification, explicit owner snapshot coordination, Clock/Scheduler relationship validation, all-or-nothing restoration coordination including owner-supplied rollback on attempted publication failure, split-snapshot Recovery Identity and analysis, exact recovery authorization validation, immutable recovery publication intent and result evidence, and recovery mutation restrictions. Source subsystems retain authority over snapshot content and runtime state. R1 and R2 consume only immutable Scheduler/Planning recovery evidence types and exact owner-provided metadata or snapshots. The package has no live save hook, startup recovery, selected-state installation, archive, migration, mutable owner dependency, owner runtime payload parser, Evidence Lifecycle integration, or gameplay behavior.
 - `com.butchercraft.world.simulation.checkpoint` owns the Clock checkpoint payload schema, Clock snapshot validation, and restored Clock publication candidate. It reuses Clock-owned `SimulationState` serialization and is not registered into server lifecycle events.
 - `com.butchercraft.world.simulation.scheduler.checkpoint` owns the Scheduler checkpoint payload schema, Scheduler snapshot validation, and restored Scheduler publication candidate. It reuses Scheduler-owned schema-2 persistence serialization and is not registered into server lifecycle events.
 - `com.butchercraft.development.checkpoint` owns only the development invocation adapter for explicit checkpoint capture, list, validate, inspect, and controlled harness restoration proof. It is gated behind the existing development diagnostic config and does not register startup recovery, automatic cadence, save-hook replacement, live-world restoration, or gameplay behavior.
@@ -450,6 +450,130 @@ files. The command surface rejects live loaded-world restoration; a controlled
 Java harness proves coordinated Clock/Scheduler restoration without changing
 server lifecycle behavior.
 
+IM-031C-R1 adds deterministic split-snapshot analysis without changing that
+runtime boundary. Exact source bytes are read and content-digested without
+owner startup loaders or migration. Scheduler owns immutable Historical
+Coordination Acknowledgements and a nonexecuting Recovery Discontinuity;
+Planning owns unresolved non-repeatable outcome blocks; Checkpoint Recovery
+derives the canonical Recovery Identity, analysis digest, eligibility, generic
+authority-block references, future operator-authorization target, and readable
+report. Analysis artifacts are not persisted in R1 because the same immutable
+inputs regenerate them deterministically; existence of an analysis grants no
+authority. No command, startup hook, Scheduler insertion, Clock mutation,
+checkpoint generation, or recovery publication is implemented by R1.
+
+IM-031C-R2 adds a separate explicit publication boundary. It reloads and
+reanalyzes immutable source evidence, validates operator authority against the
+exact Recovery Identity, analysis digest, World Identity, disposition,
+authority blocks, and source snapshots, then asks every required owner to
+prepare one immutable source-bound snapshot. Checkpoint Recovery freezes that
+set as a schema-versioned intent and publishes one immutable successor
+generation through the existing alternating dual-head store. The durable
+Recovery Result records the committed head, exact owner references, Scheduler
+acknowledgements and discontinuity, preserved child and Policy B state,
+remaining authority restrictions, and publication diagnostics. Repeated or
+interrupted publication observes the same generation and result. This path
+does not rewrite live owner files, invoke historical work, install recovered
+state during startup, or authorize consequential mutation hidden by a
+remaining whole-world block.
+
+IM-031C-R3 activates coordinated publication for healthy live worlds. The
+server requests capture only after Scheduler has finalized the authoritative
+Clock tick. On that server-thread boundary, every one of the 17 required owners
+freezes a complete schema-versioned snapshot, including canonical empty state;
+Clock and Scheduler must both represent the exact checkpoint tick. Workstation
+also freezes its durable instance, endpoint, reservation, operating-state, and
+loaded block-entity projection without force-loading chunks. The coordinator
+then publishes only immutable bytes on one asynchronous publisher, verifies
+the complete participant set and all digests, commits the inactive dual-head
+slot, and preserves all older generations because cleanup policy is not yet
+authorized.
+
+Manual requests use `/butchercraft diagnostic checkpoint create`; status is
+available through `/butchercraft diagnostic checkpoint status`. Automatic
+capture is eligible every 6,000 authoritative simulation ticks. Graceful
+shutdown waits no longer than ten seconds for an in-flight or final safe
+checkpoint; if the bound expires, shutdown continues while an already-frozen
+generation may still complete atomically. The previous committed head remains
+valid unless that complete generation advances the dual head. R3 publication itself performs no startup selection,
+owner-native restoration, consequence replay, synthetic Scheduler ticks, or Clock rollback. IM-031C-R4 implements those
+startup decisions through a separate read-only analysis and owner-native restoration coordinator; consequence replay,
+synthetic Scheduler ticks, and Clock alignment rollback remain prohibited.
+
+IM-031C-R3A adds a Workstation-owned durable projection independent of block-
+entity and chunk availability. Each exact Workstation Instance Identity maps to
+one schema-1 record under
+`<world>/butchercraft/workstations/projections/v1/<aa>/<bb>/<identity-sha256>.json`.
+The record binds World Identity, workstation type, dimension, position,
+instance generation, allocation and projection configuration, monotonic
+projection revision, exact ordered slots and ItemStacks, complete block-entity
+projection state, endpoint evidence references, processing references, and a
+non-authoritative Machine Operating State reference. Records are bounded to 2
+MiB and publish as frozen bytes through `AtomicFilePublication` with conditional
+per-target replacement and semantic read-back verification.
+
+New Workstations publish revision 1 after exact instance binding. A coherent
+loaded legacy Workstation may bootstrap revision 1 only when no endpoint effect
+is unresolved. Missing unloaded legacy state remains explicitly unavailable.
+Loaded reconciliation uses exact identity, revisions, endpoint-journal evidence,
+and Execution owner results; it never uses timestamps or an unconditional
+"chunk wins" rule. Retirement preserves the last exact state in an identity-
+bound tombstone, and same-position replacements begin independent histories.
+The frozen projection read API is available to future checkpoint integration,
+IM-031C-R3B now consumes those Workstation-owned records at the coordinated R3
+barrier. Checkpoint Recovery deterministically closes active and recovery-
+relevant Workstation dependencies across Execution, Machine Runs, Material
+Handling, and endpoint journals. The Workstation participant embeds the exact
+frozen projection bytes, revision, state digest, and payload digest in canonical
+instance order. Loaded instances must match their durable projection; unloaded
+instances are complete from that projection without chunk loading. Missing,
+legacy-unavailable, corrupt, unsupported, conflicting, or recovery-required
+projections reject the candidate before head commit. A read-only verifier
+classifies old `chunk_unloaded` generations as incomplete and accepts complete
+R3B snapshots. R3C preserves those incomplete generations while publishing a
+self-contained successor for the historical target.
+
+IM-031C-R4 establishes World Identity, reads checkpoint and owner-native state,
+and performs cross-owner coherence analysis before consequential services may
+mutate. Coherent live state is selected first. Otherwise Checkpoint Recovery
+enumerates only verified committed generations and selects the latest valid
+`COMPLETE_RESTORABLE` candidate without timestamps or owner-file mixing.
+Restoration freezes every owner-native payload before publication, persists one
+content-addressed Restoration Intent, publishes each file through
+`AtomicFilePublication`, re-reads and logically verifies all 17 owners, and only
+then commits the immutable Restoration Result. Interrupted restoration resumes
+the same identity and generation. Owner adapters preserve each subsystem's
+native semantics, and restoration invokes no consequential domain API.
+
+Workstation restoration publishes the six exact durable per-instance projection
+records independently of chunk load. A matching loaded instance reconciles from
+that Workstation-owned state before activation; a replacement instance fails
+visibly. After projection restore, only an immutable Restoration Result-bound,
+single-revision Policy B operating-state successor may repair the projection.
+Persisted authority blocks are installed before mutable startup, so a coherent
+world may load for observation and diagnostics while consequential mutation
+remains prohibited. See `docs/STARTUP_CHECKPOINT_RECOVERY.md` for startup order,
+the 17 owner adapters, restoration transaction semantics, diagnostics, and
+remaining gates.
+
+### Atomic Persistence Publication
+
+Live owner JSON stores share one internal publication mechanism while retaining
+their existing schemas and singular persistence authority. Each publication
+freezes canonical UTF-8 bytes, writes and forces a unique same-directory
+attempt file, closes the channel, serializes reads and writes per normalized
+target, performs atomic replacement, and verifies the exact published bytes.
+Only Windows access/sharing denials are retried with a small bounded backoff;
+arbitrary I/O failure and retry exhaustion remain fail-visible. Unrelated
+targets are not globally serialized. The dual-head Checkpoint protocol retains
+its ratified, explicitly reported reduced-guarantee fallback only when atomic
+head replacement is unsupported.
+
+`SimulationStateStorage` compares the frozen canonical Clock document under
+that same target lock. Repeated requests to persist an unchanged Clock state
+during one bounded child admission do not rewrite the file, while any changed
+tick or pending-event state still publishes durably.
+
 ## Machine Run-State Architecture
 
 IM-031A implements the DG-005 generic persistent machine Run foundation.
@@ -459,15 +583,17 @@ and `<world>/butchercraft/execution_machine_runs.json`. Workstation owns the
 operating policy, current operating state, state-duration evidence, endpoint
 availability, and `<world>/butchercraft/machine_operating_states.json`.
 
-IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for the Grinder only.
-Player START creates or observes one exact-instance Run. The Grinder
-integration coordinator admits at most one bounded child at a time through the
-existing Execution/Scheduler/Workstation path, observes its proven terminal
-result, then re-evaluates eligibility before admitting another child. Empty
-input publishes `RUNNING_EMPTY`; full or incompatible output publishes
-`OUTPUT_BLOCKED` without admitting known-failing work. Identical empty or
-blocked observations do not rewrite persistence every tick. Material arrival
-never creates a Run.
+IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for the Grinder, and
+IM-031C activates it for the Patty Former. A shared machine-neutral integration
+coordinator admits at most one bounded child at a time through the existing
+Execution/Scheduler/Workstation path, observes its proven terminal result,
+then asks the workstation-specific adapter to re-evaluate eligibility before
+admitting another child. Recipe authorization, processing semantics, slot
+mutation, and owner-result publication remain in each workstation's existing
+authority. Empty input publishes `RUNNING_EMPTY`; full or incompatible output
+publishes `OUTPUT_BLOCKED` without admitting known-failing work. Identical
+empty or blocked observations do not rewrite persistence every tick. Material
+arrival never creates a Run.
 
 `MachineRunCoordinatorService` composes those owners but stores no canonical
 state. START persists Workstation `STARTING`, then Execution acceptance, then
@@ -482,8 +608,8 @@ An active Run retains its exact identity but becomes
 `SUSPENDED_RESTART_REQUIRED`/`RESTART_REQUIRED`; no child or resume is inferred.
 Unavailable chunks block admission without force loading. A retired, replaced,
 or identity-conflicting endpoint enters explicit recovery and cannot inherit
-the prior Run. The Patty Former remains one-cycle and the Cutting Table remains
-discrete. See `docs/MACHINE_RUN_STATE_FOUNDATION.md`.
+the prior Run. The Cutting Table remains discrete. See
+`docs/MACHINE_RUN_STATE_FOUNDATION.md`.
 
 ## Industry-Neutral Production Architecture
 

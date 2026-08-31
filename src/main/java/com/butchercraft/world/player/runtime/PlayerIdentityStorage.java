@@ -1,5 +1,6 @@
 package com.butchercraft.world.player.runtime;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.ownership.FamilyId;
 import com.butchercraft.world.ownership.OwnershipEntityId;
@@ -17,13 +18,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -66,26 +62,12 @@ public final class PlayerIdentityStorage {
         if (!Files.exists(filePath)) {
             return PlayerIdentityRegistry.empty();
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load player identities from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "player identities"));
     }
 
     public void save(PlayerIdentityRegistry registry) {
         Objects.requireNonNull(registry, "registry");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(registry), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save player identities to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(registry), "player identities");
     }
 
     public String serialize(PlayerIdentityRegistry registry) {
@@ -154,14 +136,6 @@ public final class PlayerIdentityStorage {
                 parseInstant(requireString(object, CREATION_TIMESTAMP)),
                 schemaVersion
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static void addNullable(JsonObject object, String fieldName, Optional<String> value) {

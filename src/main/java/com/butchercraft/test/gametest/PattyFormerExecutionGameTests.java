@@ -1,6 +1,7 @@
 package com.butchercraft.test.gametest;
 
 import com.butchercraft.ButcherCraft;
+import com.butchercraft.integration.machine.PoweredMachineRunControlCode;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.machine.grinder.execution.GrinderWorkstationReference;
 import com.butchercraft.machine.grinder.production.GrinderProductionAdapter;
@@ -18,7 +19,11 @@ import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointEffectKind;
+import com.butchercraft.workstation.operation.MachineOperatingState;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
+import com.butchercraft.world.ExecutionMachineRunService;
 import com.butchercraft.world.ExecutionService;
+import com.butchercraft.world.MachineOperatingStateService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.business.runtime.BusinessRuntimeManager;
 import com.butchercraft.world.business.runtime.BusinessRuntimeRegistry;
@@ -92,6 +97,7 @@ import com.butchercraft.world.production.ProductionWorkstationChain;
 import com.butchercraft.world.production.ProductionWorkstationChainStatus;
 import com.butchercraft.world.production.ProductionWorkstationChainStep;
 import com.butchercraft.world.simulation.SimulationConfiguration;
+import com.butchercraft.world.simulation.SimulationClockService;
 import com.butchercraft.world.simulation.scheduler.SimulationSchedulerManager;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkId;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkRuntime;
@@ -188,6 +194,280 @@ public final class PattyFormerExecutionGameTests {
         });
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void pattyFormerEmptyStartCreatesPoweredRunningEmptyRunWithoutWork(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+
+        var started = pattyFormer.startRun();
+
+        helper.assertTrue(started.accepted(), "Empty Patty Former START is accepted");
+        helper.assertTrue(pattyFormer.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                "Empty Patty Former publishes RUNNING_EMPTY");
+        helper.assertTrue(pattyFormer.runStatus().runIdentity().isPresent(),
+                "Empty Patty Former retains one active Machine Run");
+        helper.runAtTickTime(40, () -> {
+            helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
+                    "RUNNING_EMPTY creates no bounded child operations");
+            helper.assertTrue(pattyFormer(helper).runStatus().operatingState()
+                            == MachineOperatingState.RUNNING_EMPTY,
+                    "Empty Patty Former remains powered without busy work");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 320)
+    public static void pattyFormerOneRunProcessesThreeBoundedCyclesThenRemainsRunningEmpty(GameTestHelper helper) {
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.inventory().setInputInternal(count(groundBeef(), 3));
+        var started = pattyFormer.startRun();
+        var runIdentity = started.runIdentity().orElseThrow();
+
+        helper.assertTrue(started.accepted(), "Three-cycle Patty Former START is accepted");
+        helper.assertTrue(pattyFormer.workstationState() == WorkstationState.PROCESSING,
+                "Patty Former admits the first bounded child");
+        helper.runAtTickTime(240, () -> {
+            PattyFormerBlockEntity completed = pattyFormer(helper);
+            helper.assertTrue(completed.inventory().input().isEmpty(),
+                    "Three bounded children consume three Ground Beef");
+            helper.assertTrue(completed.inventory().output().getCount() == 3,
+                    "Three bounded children produce three Beef Patties");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "All Patty Former children retain the exact Machine Run identity");
+            helper.assertTrue(completed.runStatus().completedChildren() == 3,
+                    "Run records exactly three terminal children");
+            helper.assertTrue(completed.runStatus().activeChild().isEmpty(),
+                    "No fourth child is admitted after input exhaustion");
+            helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "Input exhaustion leaves the Patty Former powered RUNNING_EMPTY");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 360)
+    public static void pattyFormerNewInputResumesTheSameRunningEmptyRun(GameTestHelper helper) {
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.startRun();
+        var runIdentity = pattyFormer.runStatus().runIdentity().orElseThrow();
+
+        helper.runAtTickTime(30, () -> pattyFormer(helper).inventory()
+                .setInputInternal(count(groundBeef(), 2)));
+        helper.runAtTickTime(220, () -> {
+            PattyFormerBlockEntity completed = pattyFormer(helper);
+            helper.assertTrue(completed.inventory().output().getCount() == 2,
+                    "Ground Beef added while powered completes two bounded cycles");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "Input arrival does not allocate a replacement Run");
+            helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "Same Patty Former Run returns to RUNNING_EMPTY");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 260)
+    public static void pattyFormerStopDuringProcessingPreventsAnyLaterChild(GameTestHelper helper) {
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.inventory().setInputInternal(count(groundBeef(), 3));
+        pattyFormer.startRun();
+        int[] stoppedCounts = new int[2];
+
+        helper.runAtTickTime(35, () -> {
+            PattyFormerBlockEntity active = pattyFormer(helper);
+            active.stopRun();
+            stoppedCounts[0] = active.inventory().input().getCount();
+            stoppedCounts[1] = active.inventory().output().getCount();
+        });
+        helper.runAtTickTime(180, () -> {
+            PattyFormerBlockEntity stopped = pattyFormer(helper);
+            helper.assertTrue(stopped.runStatus().operatingState() == MachineOperatingState.OFF,
+                    "STOP reaches OFF at a deterministic safe child boundary");
+            int consumedAfterStop = stoppedCounts[0] - stopped.inventory().input().getCount();
+            int producedAfterStop = stopped.inventory().output().getCount() - stoppedCounts[1];
+            helper.assertTrue(consumedAfterStop == producedAfterStop
+                            && (consumedAfterStop == 0 || consumedAfterStop == 1),
+                    "STOP safely cancels a pre-invocation child or finishes only the invoked child; consumed="
+                            + consumedAfterStop + ", produced=" + producedAfterStop);
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void runningPattyFormerMenuSynchronizesMachineAndCycleState(GameTestHelper helper) {
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.startRun();
+        var player = new MenuTrackingTestPlayer(helper.getLevel(), helper.absolutePos(PATTY_FORMER_POS));
+
+        helper.useBlock(PATTY_FORMER_POS, player);
+
+        helper.assertTrue(player.containerMenu instanceof PattyFormerMenu,
+                "Normal right-click opens the Patty Former GUI while its Run is active");
+        PattyFormerMenu menu = (PattyFormerMenu) player.containerMenu;
+        helper.assertTrue(menu.machineOperatingState() == MachineOperatingState.RUNNING_EMPTY,
+                "Menu synchronizes RUNNING_EMPTY from server-owned data");
+        helper.assertTrue(menu.runGeneration() == 1,
+                "Menu synchronizes the active Patty Former Run generation");
+        helper.assertTrue(menu.cycleProgressPercent() == 0,
+                "RUNNING_EMPTY synchronizes zero bounded-child progress");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void processingPattyFormerMenuShowsOnlyCurrentChildProgress(GameTestHelper helper) {
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.inventory().setInputInternal(count(groundBeef(), 2));
+        pattyFormer.startRun();
+
+        helper.runAtTickTime(12, () -> {
+            PattyFormerBlockEntity active = pattyFormer(helper);
+            var player = new MenuTrackingTestPlayer(helper.getLevel(), helper.absolutePos(PATTY_FORMER_POS));
+            helper.useBlock(PATTY_FORMER_POS, player);
+
+            helper.assertTrue(player.containerMenu instanceof PattyFormerMenu,
+                    "Normal right-click opens the Patty Former GUI during an active child");
+            PattyFormerMenu menu = (PattyFormerMenu) player.containerMenu;
+            helper.assertTrue(menu.machineOperatingState() == MachineOperatingState.RUNNING,
+                    "Menu synchronizes the powered RUNNING machine state");
+            helper.assertTrue(menu.activeChild(),
+                    "Menu synchronizes the one active bounded child");
+            helper.assertTrue(menu.cycleProgressPercent() > 0 && menu.cycleProgressPercent() < 100,
+                    "Menu progress represents only the current bounded child");
+            helper.assertTrue(active.runStatus().completedChildren() == 0,
+                    "No previous completion is represented as current progress");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 260)
+    public static void restartPolicyBRequiresExplicitResumeOfTheSamePattyFormerRun(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        var started = pattyFormer.startRun();
+        var runIdentity = started.runIdentity().orElseThrow();
+        long tick = SimulationClockService.INSTANCE.clock(helper.getLevel().getServer()).simulationTick();
+
+        ExecutionMachineRunService.INSTANCE.suspendForRestart(
+                helper.getLevel().getServer(), runIdentity, tick);
+        MachineOperatingStateService.INSTANCE.suspendForRestart(
+                helper.getLevel().getServer(), runIdentity, tick);
+        insertGroundBeef(helper, pattyFormer);
+
+        helper.assertTrue(pattyFormer.runStatus().operatingState() == MachineOperatingState.RESTART_REQUIRED,
+                "Policy B projects the Patty Former as RESTART_REQUIRED");
+        helper.runAtTickTime(40, () -> {
+            PattyFormerBlockEntity suspended = pattyFormer(helper);
+            helper.assertTrue(suspended.inventory().input().getCount() == 1
+                            && suspended.inventory().output().isEmpty(),
+                    "A restart-suspended Patty Former performs no automatic processing");
+            helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
+                    "Policy B admits no child before explicit RESUME");
+            var resumed = suspended.resumeRun();
+            helper.assertTrue(resumed.accepted()
+                            && resumed.runIdentity().orElseThrow().equals(runIdentity),
+                    "Explicit RESUME preserves the exact Patty Former Run identity");
+        });
+        helper.runAtTickTime(160, () -> {
+            PattyFormerBlockEntity completed = pattyFormer(helper);
+            helper.assertTrue(completed.inventory().input().isEmpty()
+                            && completed.inventory().output().getCount() == 1,
+                    "The resumed Run completes exactly one bounded child");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "The resumed child remains bound to the preserved Run");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void restartRequiredPattyFormerCanStopWithoutResuming(GameTestHelper helper) {
+        Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        var started = pattyFormer.startRun();
+        var runIdentity = started.runIdentity().orElseThrow();
+
+        helper.runAtTickTime(4, () -> {
+            PattyFormerBlockEntity active = pattyFormer(helper);
+            long tick = SimulationClockService.INSTANCE.clock(helper.getLevel().getServer()).simulationTick();
+            ExecutionMachineRunService.INSTANCE.suspendForRestart(
+                    helper.getLevel().getServer(), runIdentity, tick);
+            MachineOperatingStateService.INSTANCE.suspendForRestart(
+                    helper.getLevel().getServer(), runIdentity, tick);
+            insertGroundBeef(helper, active);
+            var stopped = active.stopRun();
+
+            helper.assertTrue(stopped.accepted(),
+                    "STOP is accepted from RESTART_REQUIRED without RESUME");
+            helper.assertTrue(active.runStatus().operatingState() == MachineOperatingState.OFF,
+                    "STOP from RESTART_REQUIRED publishes OFF");
+            helper.assertTrue(active.inventory().input().getCount() == 1
+                            && active.inventory().output().isEmpty(),
+                    "STOP from RESTART_REQUIRED preserves authoritative inventory");
+            helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
+                    "STOP from restart does not create a replacement child");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void replacementPattyFormerCannotInheritHistoricalRunAuthority(GameTestHelper helper) {
+        PattyFormerBlockEntity original = placePattyFormer(helper);
+        var started = original.startRun();
+        var historicalRun = started.runIdentity().orElseThrow();
+        String historicalInstance = original.endpointProjection().instanceId().orElseThrow().value();
+
+        helper.destroyBlock(PATTY_FORMER_POS);
+        PattyFormerBlockEntity replacement = placePattyFormer(helper);
+
+        helper.runAtTickTime(20, () -> {
+            helper.assertFalse(replacement.endpointProjection().instanceId().orElseThrow().value()
+                            .equals(historicalInstance),
+                    "Same-position replacement receives a new Workstation Instance Identity");
+            helper.assertTrue(replacement.runStatus().operatingState() == MachineOperatingState.OFF
+                            && replacement.runStatus().runIdentity().isEmpty(),
+                    "Replacement Patty Former remains OFF without inherited Run authority");
+            helper.assertTrue(ExecutionMachineRunService.INSTANCE
+                            .find(helper.getLevel().getServer(), historicalRun)
+                            .orElseThrow().lifecycle()
+                            == com.butchercraft.world.execution.MachineRunLifecycle.RECOVERY_REQUIRED,
+                    "Historical Run enters explicit recovery instead of targeting the replacement");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 4300)
+    public static void pattyFormerOneRunProcessesSixtyFourBoundedCyclesWithoutAChildSixtyFive(GameTestHelper helper) {
+        PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
+        pattyFormer.inventory().setInputInternal(count(groundBeef(), 64));
+        pattyFormer.startRun();
+        var runIdentity = pattyFormer.runStatus().runIdentity().orElseThrow();
+
+        helper.runAtTickTime(4100, () -> {
+            PattyFormerBlockEntity completed = pattyFormer(helper);
+            helper.assertTrue(completed.inventory().input().isEmpty(),
+                    "64 cycles exhaust exactly 64 Ground Beef");
+            helper.assertTrue(completed.inventory().output().getCount() == 64,
+                    "64 cycles produce exactly 64 Beef Patties");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "The 64-cycle Patty Former scenario uses exactly one Run");
+            helper.assertTrue(completed.runStatus().completedChildren() == 64,
+                    "The Patty Former Run records exactly 64 terminal children");
+            helper.assertTrue(completed.runStatus().nextChildSequence() == 65,
+                    "Child sequence advances to 65 without admitting child 65");
+            helper.assertTrue(completed.runStatus().activeChild().isEmpty(),
+                    "No nonterminal child remains after the bounded scenario");
+            helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                    "The 64-cycle Patty Former scenario ends RUNNING_EMPTY");
+            var projection = DurableWorkstationProjectionService.INSTANCE.read(
+                    helper.getLevel().getServer(), completed.checkpointInstanceIdentity().orElseThrow())
+                    .projection().orElseThrow();
+            helper.assertTrue(projection.slots().getFirst().exactStack().isEmpty()
+                            && projection.slots().get(1).exactStack().orElseThrow().count() == 64,
+                    "The durable Patty Former projection exactly records the 64-cycle terminal inventory");
+            helper.assertTrue(projection.operatingStateReference().orElseThrow().state()
+                            .equals(MachineOperatingState.RUNNING_EMPTY.name()),
+                    "The Patty Former projection references the separately owned terminal operating state");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = TEMPLATE, timeoutTicks = 180)
     public static void depositedGroundBeefRemainsReadyWithoutExecutionOrSchedulerWork(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
@@ -271,7 +551,7 @@ public final class PattyFormerExecutionGameTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 260)
-    public static void blockedOutputPreservesInputAndAllowsLaterExplicitRequest(GameTestHelper helper) {
+    public static void blockedOutputPreservesInputAndResumesTheSameRun(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
         insertGroundBeef(helper, pattyFormer);
@@ -279,12 +559,24 @@ public final class PattyFormerExecutionGameTests {
 
         requestPlayerOperation(helper, PATTY_FORMER_POS);
         assertBlockedWith(helper, pattyFormer, WorkstationFailureCode.OUTPUT_OCCUPIED);
+        var runIdentity = pattyFormer.runStatus().runIdentity().orElseThrow();
+        helper.assertTrue(pattyFormer.runStatus().operatingState() == MachineOperatingState.OUTPUT_BLOCKED,
+                "Full output leaves one powered Patty Former Run OUTPUT_BLOCKED");
+        PattyFormerMenu blockedMenu = new PattyFormerMenu(
+                0,
+                helper.makeMockPlayer(GameType.CREATIVE).getInventory(),
+                pattyFormer
+        );
+        helper.assertTrue(blockedMenu.machineOperatingState() == MachineOperatingState.OUTPUT_BLOCKED,
+                "Blocked Patty Former menu synchronizes OUTPUT_BLOCKED");
+        helper.assertTrue(blockedMenu.cycleProgressPercent() == 0,
+                "OUTPUT_BLOCKED menu presentation resets bounded-child progress");
         helper.assertFalse(pattyFormer.inventory().input().isEmpty(),
                 "Blocked explicit request does not consume Ground Beef");
         helper.assertTrue(pattyFormer.inventory().output().getCount() == 64,
                 "Blocked explicit request does not duplicate occupied output");
         helper.assertTrue(newPattyFormerOperations(helper, before).isEmpty(),
-                "Output blockage is rejected before an Execution operation is created");
+                "Known output blockage admits no failing Execution child");
 
         CompoundTag saved = pattyFormer.saveWithFullMetadata(helper.getLevel().registryAccess());
         PattyFormerBlockEntity restored = replacePattyFormerBlockEntity(helper, saved);
@@ -302,7 +594,6 @@ public final class PattyFormerExecutionGameTests {
         helper.assertFalse(cleared.isEmpty(), "Blocked output remains extractable for recovery");
         helper.assertTrue(restored.workstationState() == WorkstationState.READY,
                 "Clearing output blockage restores READY state");
-        requestPattyFormerOperation(helper);
 
         helper.runAtTickTime(120, () -> {
             PattyFormerBlockEntity completed = pattyFormer(helper);
@@ -314,16 +605,19 @@ public final class PattyFormerExecutionGameTests {
                             && completed.inventory().output().getCount() == 64,
                     "Recovered operation merges one Beef Patties item into the available output space");
             helper.assertTrue(newPattyFormerOperations(helper, before).size() == 1,
-                    "A later explicit request creates exactly one operation after blockage clears");
+                    "Restored capacity admits exactly one bounded child without another START");
+            helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "Output capacity restoration preserves the exact Run");
             helper.succeed();
         });
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 300)
-    public static void secondGroundBeefBatchRequiresAndAcceptsSecondExplicitRequest(GameTestHelper helper) {
+    public static void secondGroundBeefBatchResumesUnderTheSameRun(GameTestHelper helper) {
         Set<ExecutionOperationId> before = operationIdsForPattyFormer(helper);
         PattyFormerBlockEntity pattyFormer = placePattyFormer(helper);
         insertAndStartGroundBeef(helper, pattyFormer);
+        var runIdentity = pattyFormer.runStatus().runIdentity().orElseThrow();
 
         helper.runAtTickTime(100, () -> {
             PattyFormerBlockEntity completed = pattyFormer(helper);
@@ -337,19 +631,12 @@ public final class PattyFormerExecutionGameTests {
             insertGroundBeef(helper, completed);
         });
 
-        helper.runAtTickTime(140, () -> {
-            PattyFormerBlockEntity ready = pattyFormer(helper);
-            helper.assertTrue(ready.workstationState() == WorkstationState.READY,
-                    "Second Ground Beef batch waits for another explicit request");
-            helper.assertTrue(newPattyFormerOperations(helper, before).size() == 1,
-                    "Waiting second batch has not created another Execution operation");
-            requestPattyFormerOperation(helper);
-        });
-
         helper.runAtTickTime(240, () -> {
             assertCompletedBeefPatties(helper, pattyFormer(helper));
             helper.assertTrue(newPattyFormerOperations(helper, before).size() == 2,
-                    "Two separately authorized batches create exactly two operations");
+                    "The same Run authorizes exactly two bounded operations");
+            helper.assertTrue(pattyFormer(helper).runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "The second Ground Beef batch retains the original Run");
             helper.succeed();
         });
     }
@@ -420,7 +707,9 @@ public final class PattyFormerExecutionGameTests {
         insertAndStartGroundBeef(helper, pattyFormer);
 
         helper.runAtTickTime(8, () -> {
-            requestPlayerOperation(helper, PATTY_FORMER_POS);
+            var duplicate = pattyFormer(helper).startRun();
+            helper.assertTrue(duplicate.code() == PoweredMachineRunControlCode.EXISTING_RESULT,
+                    "Repeated START observes the existing Patty Former Run");
             helper.assertTrue(newPattyFormerOperations(helper, before).size() == 1,
                     "Repeated use while processing does not create another Patty Former Execution operation");
         });
@@ -611,11 +900,20 @@ public final class PattyFormerExecutionGameTests {
         insertAndStartGroundBeef(helper, pattyFormer);
 
         helper.runAtTickTime(8, () -> {
+            var stopped = pattyFormer(helper).stopRun();
+            helper.assertTrue(stopped.accepted(),
+                    "Malformed restore fixture closes independent Machine Run authority");
             CompoundTag saved = pattyFormer(helper).saveWithFullMetadata(helper.getLevel().registryAccess());
             CompoundTag controller = saved.getCompound("Controller");
             controller.putBoolean("CompletionCommitted", true);
             saved.put("Controller", controller);
-            PattyFormerBlockEntity restored = replacePattyFormerBlockEntity(helper, saved);
+            pattyFormer(helper).restoreCheckpointProjection(saved, helper.getLevel().registryAccess());
+            DurableWorkstationProjectionService.INSTANCE.publishAuthorizedMutation(
+                    helper.getLevel(), pattyFormer(helper));
+            PattyFormerBlockEntity restored = replacePattyFormerBlockEntity(
+                    helper,
+                    pattyFormer(helper).saveWithFullMetadata(helper.getLevel().registryAccess())
+            );
             helper.assertTrue(restored.workstationState() == WorkstationState.ERROR,
                     "Unresolved committed Patty Former effect restores as ERROR");
             helper.assertTrue(restored.lastFailure().orElseThrow().code()

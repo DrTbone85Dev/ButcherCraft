@@ -1,5 +1,8 @@
 package com.butchercraft.machine.pattyformer;
 
+import com.butchercraft.integration.machine.PoweredMachineRunControlResult;
+import com.butchercraft.integration.machine.PoweredMachineRunStatus;
+import com.butchercraft.integration.machine.pattyformer.PattyFormerContinuousRunService;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionCoordinator;
 import com.butchercraft.product.integration.DevelopmentProductItemMappings;
 import com.butchercraft.registration.ModBlockEntityTypes;
@@ -25,9 +28,11 @@ import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
 import com.butchercraft.world.execution.ExecutionOperationId;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,6 +40,32 @@ import org.jetbrains.annotations.Nullable;
 
 public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationBlockEntity
         implements WorkstationTransferEndpoint, StackAwareWorkstationTransferEndpoint {
+    private final ContainerData runMenuData = new ContainerData() {
+        @Override
+        public int get(int index) {
+            PoweredMachineRunStatus status = runStatus();
+            return switch (index) {
+                case 0 -> status.operatingState().ordinal();
+                case 1 -> status.runLifecycle().map(Enum::ordinal).orElse(-1);
+                case 2 -> status.activeChild().isPresent() ? 1 : 0;
+                case 3 -> boundedInt(status.generation());
+                case 4 -> boundedInt(status.completedChildren());
+                case 5 -> boundedInt(status.nextChildSequence());
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            // Server-owned view data; client writes are ignored.
+        }
+
+        @Override
+        public int getCount() {
+            return PattyFormerMenu.RUN_DATA_COUNT;
+        }
+    };
+
     public PattyFormerBlockEntity(BlockPos pos, BlockState blockState) {
         super(
                 ModBlockEntityTypes.PATTY_FORMER.get(),
@@ -51,7 +82,20 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, PattyFormerBlockEntity blockEntity) {
+        if (level instanceof ServerLevel serverLevel) {
+            AbstractProcessingWorkstationBlockEntity.serverTick(level, pos, state, blockEntity);
+            PattyFormerContinuousRunService.INSTANCE.tick(serverLevel, blockEntity);
+            return;
+        }
         AbstractProcessingWorkstationBlockEntity.serverTick(level, pos, state, blockEntity);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level instanceof ServerLevel serverLevel) {
+            PattyFormerContinuousRunService.INSTANCE.endpointLoaded(serverLevel, this);
+        }
     }
 
     @Override
@@ -67,8 +111,50 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
         return super.completeScheduledExecution(operationId, domainEffectIdentity, authoritativeTick);
     }
 
-    public WorkstationProductionRequestResult requestPlayerProcessing(WorkstationTickContext tickContext) {
-        return requestProductionProcessing(tickContext);
+    public WorkstationProductionRequestResult requestRunProcessing(
+            WorkstationTickContext tickContext,
+            java.util.function.Function<com.butchercraft.workstation.WorkstationExecutionStartRequest,
+                    com.butchercraft.workstation.WorkstationExecutionStartResult> executionStart
+    ) {
+        return requestProductionProcessing(tickContext, executionStart);
+    }
+
+    public PoweredMachineRunControlResult startRun() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Patty Former START requires an authoritative server level");
+        }
+        return PattyFormerContinuousRunService.INSTANCE.start(serverLevel, this);
+    }
+
+    public PoweredMachineRunControlResult stopRun() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Patty Former STOP requires an authoritative server level");
+        }
+        return PattyFormerContinuousRunService.INSTANCE.stop(serverLevel, this);
+    }
+
+    public PoweredMachineRunControlResult resumeRun() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Patty Former RESUME requires an authoritative server level");
+        }
+        return PattyFormerContinuousRunService.INSTANCE.resume(serverLevel, this);
+    }
+
+    public PoweredMachineRunControlResult shiftControl() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Patty Former control requires an authoritative server level");
+        }
+        return PattyFormerContinuousRunService.INSTANCE.shiftControl(serverLevel, this);
+    }
+
+    public PoweredMachineRunStatus runStatus() {
+        return level instanceof ServerLevel serverLevel
+                ? PattyFormerContinuousRunService.INSTANCE.status(serverLevel, this)
+                : PoweredMachineRunStatus.off();
+    }
+
+    public ContainerData runMenuData() {
+        return runMenuData;
     }
 
     @Override
@@ -109,7 +195,7 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
     @Override
     public boolean endpointAccepts(WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactStack) {
         return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
-                && workstationState() == com.butchercraft.workstation.WorkstationState.IDLE
+                && acceptsDestinationDepositState()
                 && exactStack.is(ModItems.GROUND_BEEF.get())
                 && exactStack.getCount() == 1
                 && endpointAcceptsView(kind, slotIndex, exactStack);
@@ -142,8 +228,7 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
     @Override public boolean endpointAcceptsCandidate(
             WorkstationEndpointEffectKind kind, int slotIndex, ItemStack exactPreStack, ItemStack exactPostStack) {
         return kind == WorkstationEndpointEffectKind.DESTINATION_DEPOSIT
-                && (workstationState() == com.butchercraft.workstation.WorkstationState.IDLE
-                || workstationState() == com.butchercraft.workstation.WorkstationState.READY)
+                && acceptsDestinationDepositState()
                 && slotIndex == inventory().firstInputSlot()
                 && exactPostStack.is(ModItems.GROUND_BEEF.get())
                 && exactPostStack.getCount() - exactPreStack.getCount() == 1
@@ -220,5 +305,19 @@ public final class PattyFormerBlockEntity extends AbstractProcessingWorkstationB
     @Override
     protected AbstractContainerMenu createWorkstationMenu(int containerId, Inventory playerInventory, Player player) {
         return new PattyFormerMenu(containerId, playerInventory, this);
+    }
+
+    private boolean acceptsDestinationDepositState() {
+        if (workstationState() == com.butchercraft.workstation.WorkstationState.IDLE
+                || workstationState() == com.butchercraft.workstation.WorkstationState.READY) {
+            return true;
+        }
+        return level instanceof ServerLevel serverLevel
+                && PattyFormerContinuousRunService.INSTANCE.status(serverLevel, this).operatingState()
+                == com.butchercraft.workstation.operation.MachineOperatingState.RUNNING_EMPTY;
+    }
+
+    private static int boundedInt(long value) {
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, value));
     }
 }

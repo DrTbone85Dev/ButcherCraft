@@ -7,9 +7,13 @@ public record WorkstationEndpointEffectIdV2(String value) {
 
     public WorkstationEndpointEffectIdV2 {
         value = WorkstationEndpointValidation.id(value, "schema-2 endpoint effect identity");
-        if (!value.startsWith(PREFIX)) {
+        if (!hasCanonicalPrefix(value)) {
             throw new IllegalArgumentException("Unsupported schema-2 endpoint Effect Identity prefix");
         }
+    }
+
+    public static boolean hasCanonicalPrefix(String value) {
+        return value != null && value.startsWith(PREFIX);
     }
 
     public static WorkstationEndpointEffectIdV2 create(

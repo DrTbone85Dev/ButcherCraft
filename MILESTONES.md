@@ -4,17 +4,88 @@ Status: proposed planning document
 
 Each milestone should remain small, testable, and rollback-friendly. Do not claim verification unless the command or manual test was actually run.
 
+## ADR-02A: Legacy Split-Snapshot Recovery And Coordinated Checkpoint Publication
+
+Status: RATIFIED; IM-031C-R1 THROUGH IM-031C-R4 IMPLEMENTED; ADR-02A-P1
+RATIFIED; FINAL PRODUCT OWNER ACCEPTANCE PENDING
+
+The ratified
+[`ADR-02A recovery amendment`](docs/adr/ADR-PROPOSED-LEGACY-SPLIT-SNAPSHOT-RECOVERY-AND-COORDINATED-CHECKPOINT-PUBLICATION.md)
+preserves ADR-02's anti-inference guarantees while authorizing architecture for
+proof-complete Historical Coordination Acknowledgements, a nonexecuting
+Scheduler Recovery Discontinuity, typed Planning authority blocking, explicit
+operator-authorized recovery publication, and complete coordinated live
+checkpoints.
+
+The ratified completed-and-next sequence is:
+
+1. `IM-031C-R1` - Split-Snapshot Recovery Analysis Foundation. Implemented as
+   immutable read-only analysis only; no recovery publication.
+2. `IM-031C-R2` - Operator-Authorized Legacy Recovery Publication. Implemented
+   as an explicit admin/service path over disposable fixtures with exact
+   authorization, immutable owner preparation, recovery generation and result
+   publication, mutation restrictions, and idempotent crash-boundary retry.
+3. `IM-031C-R2A` - Actual-World Offline Recovery Validation. Implemented with
+   a read-only actual-world evidence adapter, deterministic R1 analysis, exact
+   operator authorization, immutable R2 publication into a disposable copy,
+   fresh-service reload, idempotent re-publication, and publication-fault
+   validation. Native owner files and protected evidence remain unchanged.
+4. `IM-031C-R3` - Coordinated Live Checkpoint Publication. Implemented with an
+   exact 17-owner registry, post-Scheduler safe-boundary capture, canonical
+   empty snapshots, immutable frozen bytes, asynchronous generation
+   publication, dual heads, manual/periodic/shutdown triggers, diagnostics,
+   and retained generation history.
+5. `ADR-02A-P1` - Durable Workstation Projection And Checkpoint Completeness.
+   Ratified architecture direction; R3A through R3C and R4 projection recovery
+   are implemented.
+6. `IM-031C-R3A` - Durable Workstation Projection Foundation. Implemented with
+   exact Workstation-owned per-instance state, atomic sharded persistence,
+   monotonic projection freshness, loaded reconciliation, legacy classification,
+   retirement tombstones, deterministic enumeration, and frozen read candidates.
+7. `IM-031C-R3B` - Checkpoint Workstation Projection Completeness Activation.
+   Implemented with deterministic owner-dependency closure, exact embedded
+   durable projections, fail-closed candidate publication, no-force-load
+   capture, historical incompleteness classification, diagnostics, and a
+   read-only future R4 candidate verifier.
+8. `IM-031C-R3C` - Legacy Workstation Projection Successor Validation, only if
+   the R2A world remains a recovery target. Implemented by publishing and
+   validating immutable successor generation `2/39872` with all six exact
+   durable Workstation projections; generation `1/39872` remains immutable and
+   non-restorable.
+9. `IM-031C-R4` - Startup Checkpoint Selection, Owner-Native Restoration, And
+   Hard-Crash Recovery Validation. Implemented with read-only live coherence
+   analysis, deterministic LIVE/checkpoint/recovery-generation selection,
+   schema-versioned Restoration Intent and Result, exact owner-native restore,
+   startup mutation gates, durable Workstation projection restore and lazy
+   reconciliation, and hard-crash recovery validation.
+10. IM-031C final Product Owner acceptance. Not started.
+11. `IM-032` - Employee Machine START/STOP Operation. Gated.
+
+The ratified
+[`ADR-02A-P1 durable Workstation projection amendment`](docs/adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
+controls the implemented R3A projection runtime and R3B checkpoint completeness
+integration.
+
+The original failing world remains read-only. Live checkpoint publication and
+R4 startup recovery are mechanically implemented. New generations are
+Workstation-restorable only when every required projection is exact; failed
+candidates preserve the prior head. Coherent live state wins at startup, while
+incoherent state may select only a valid committed `COMPLETE_RESTORABLE`
+generation. Historical incomplete generations remain non-restorable. IM-031C
+remains open for final Product Owner acceptance, and IM-032 remains gated.
+
 ## DG-005: Persistent Machine Operating State And Continuous Processing
 
-Status: RATIFIED - IM-031A FOUNDATION AND IM-031B GRINDER ACTIVATION IMPLEMENTED
+Status: RATIFIED - IM-031A FOUNDATION, IM-031B GRINDER, AND IM-031C PATTY FORMER ACTIVATION IMPLEMENTED
 
 The ratified
 [`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
 separates explicit START authorization, persistent Machine Run identity,
 bounded child processing cycles, Workstation-owned operating state, explicit
-STOP, and future machine condition. IM-031A now implements the generic
-persistent Run and machine operating-state foundation. IM-031B activates that
-foundation for the Grinder only.
+STOP, and future machine condition. IM-031A implements the generic persistent
+Run and machine operating-state foundation. IM-031B activates that foundation
+for the Grinder, and IM-031C activates the same machine-neutral coordination
+for the Patty Former while retaining each workstation's own processing rules.
 
 The ratified sequence is below. Each implementation milestone requires its own
 authorization; completed status is recorded explicitly:
@@ -24,17 +95,72 @@ authorization; completed status is recorded explicitly:
 2. `IM-031B` - Grinder Continuous Operation And Empty-Running State.
    Implemented for player-controlled Grinder Runs.
 3. `IM-031C` - Patty Former Continuous Operation under its explicitly
-   ratified machine policy.
-4. `IM-032` - Employee Machine START/STOP Operation with the conservative
+   ratified machine policy. Implemented for player-controlled Patty Former
+   Runs.
+4. `IM-031C-R1` through `IM-031C-R4`, including copied-world validation
+   `IM-031C-R2A` and historical successor validation `IM-031C-R3C`, are
+   implemented. ADR-02A-P1 is ratified. Final Product Owner acceptance remains
+   later.
+5. `IM-032` - Employee Machine START/STOP Operation with the conservative
    reservation-and-presence-through-STOP policy.
-5. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
+6. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
    followed only later by a separately authorized implementation milestone.
 
 The previously referenced but unimplemented `IM-031 - Employee Patty Former
 Operation` is replaced by this sequence. No completed milestone is renumbered.
-IM-030A and IM-030B gameplay behavior remains unchanged. IM-031A alone did not
-authorize later runtime work; IM-031B is the separately authorized Grinder
-activation. IM-031C, DG-006, and later work remain gated.
+IM-030A and IM-030B inventory behavior remains unchanged. IM-031A alone did
+not authorize later runtime work; IM-031B and IM-031C are the separately
+authorized Grinder and Patty Former activations. ADR-02A recovery
+submilestones and final IM-031C acceptance now precede IM-032. IM-031C remains
+open only for final Product Owner acceptance; IM-032, DG-006, and later work
+remain gated.
+
+## IM-031C: Patty Former Continuous Policy Activation
+
+Goal: activate the ratified `POWERED_CONTINUOUS_EXPLICIT_STOP` policy for the
+Patty Former while sharing only machine-neutral Run coordination and
+presentation with the Grinder.
+
+Implemented work:
+
+- Normal right-click keeps the Patty Former inventory inspectable. GUI START/
+  STOP/RESUME and state-aware Shift + right-click START/STOP target the exact
+  Patty Former Workstation Instance and Machine Run.
+- One Execution-owned Run admits repeated, separately identified Patty Former
+  children through the existing Execution, Scheduler, and Patty Former
+  owner-result path, with at most one nonterminal child.
+- Empty input publishes `RUNNING_EMPTY`; compatible Ground Beef later resumes
+  the same Run. Full or incompatible output publishes `OUTPUT_BLOCKED`
+  without consuming input and resumes when capacity returns.
+- Material Handling deposit never creates START authority. An OFF destination
+  remains OFF/READY, while deposit into the exact endpoint of an existing
+  `RUNNING_EMPTY` Run only restores that Run's eligibility.
+- The Grinder and Patty Former share machine-neutral coordination and menu
+  presentation. Recipe authorization, processing semantics, inventory effects,
+  and owner results remain workstation-owned and machine-specific.
+- Restart Policy B, exact instance identity, replacement protection,
+  diagnostics, bounded child dispatch, duplicate controls, and persistence
+  behavior remain the same as the accepted Grinder activation.
+- The Windows persistence correction centralizes strict per-target atomic
+  publication, bounded access-denial retry, unique forced attempt files, and
+  exact read-back across live owner stores. Byte-identical Clock persistence
+  requested repeatedly during one child admission is suppressed without
+  changing Clock authority or required durability.
+
+Preserved gates:
+
+- Employee Patty Former operation and employee Machine START/STOP remain
+  unavailable. Employee Grinder operation remains one bounded request.
+- Cutting Table remains `MANUAL_DISCRETE`.
+- No wear, damage, maintenance, automatic restart, forced chunk loading,
+  Production machine control, automatic selection, or general Logistics.
+
+See [`Machine Run-State Foundation`](docs/MACHINE_RUN_STATE_FOUNDATION.md) and
+[`Patty Former`](docs/PATTY_FORMER.md).
+
+Product Owner manual acceptance remains required for the Patty Former
+continuous Run scenario after the Windows persistence correction. IM-031C is
+not closed by automated validation alone.
 
 ## IM-031B: Grinder Continuous Policy Activation
 
@@ -63,10 +189,10 @@ Implemented work:
   lifecycle, generation, child identity/sequence, owner revisions, and recovery
   detail.
 
-Preserved gates:
+Preserved gates at IM-031B completion:
 
-- Patty Former remains explicit one-cycle and Cutting Table remains
-  `MANUAL_DISCRETE`.
+- Patty Former continuous activation remained gated until IM-031C; Cutting
+  Table remains `MANUAL_DISCRETE`.
 - Employee Grinder operation remains one bounded request and cannot overlap a
   player Run; employee Machine START/STOP remains gated.
 - No wear, damage, maintenance, automatic restart, forced chunk loading,

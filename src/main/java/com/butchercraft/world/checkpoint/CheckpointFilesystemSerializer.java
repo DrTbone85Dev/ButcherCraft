@@ -32,6 +32,8 @@ final class CheckpointFilesystemSerializer {
         worldIdentity(builder, manifest.worldIdentityRoot()).append(',');
         quotedField(builder, "platform_determinism_manifest").append(':');
         platformManifest(builder, manifest.platformDeterminismManifest()).append(',');
+        quotedField(builder, "trigger_causes").append(':');
+        stringArray(builder, manifest.triggerCauses()).append(',');
         quotedField(builder, "owner_snapshots").append(':').append('[');
         for (int index = 0; index < manifest.ownerSnapshots().size(); index++) {
             if (index > 0) {
@@ -84,6 +86,7 @@ final class CheckpointFilesystemSerializer {
                 optionalString(root, "predecessor_manifest_digest"),
                 longValue(root, "authoritative_simulation_tick"),
                 parseOwnerSnapshots(array(field(root, "owner_snapshots"), "owner_snapshots")),
+                optionalStringArray(root, "trigger_causes"),
                 parsePlatformManifest(object(field(root, "platform_determinism_manifest"),
                         "platform_determinism_manifest")),
                 parseWorldIdentity(object(field(root, "world_identity_root"), "world_identity_root")),
@@ -129,6 +132,22 @@ final class CheckpointFilesystemSerializer {
             snapshots.add(parseOwnerSnapshot(object(element, "owner snapshot")));
         }
         return snapshots;
+    }
+
+    private static List<String> optionalStringArray(JsonObject object, String name) {
+        JsonElement element = object.get(name);
+        if (element == null) {
+            return List.of();
+        }
+        JsonArray values = array(element, name);
+        List<String> result = new ArrayList<>();
+        for (JsonElement value : values) {
+            if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
+                throw new IllegalArgumentException("Checkpoint array must contain strings: " + name);
+            }
+            result.add(value.getAsString());
+        }
+        return result;
     }
 
     private static OwnerSnapshotDescriptor parseOwnerSnapshot(JsonObject object) {
@@ -237,6 +256,17 @@ final class CheckpointFilesystemSerializer {
         stringField(builder, "manifest_digest", reference.manifestDigest());
         builder.append('}');
         return builder;
+    }
+
+    private static StringBuilder stringArray(StringBuilder builder, List<String> values) {
+        builder.append('[');
+        for (int index = 0; index < values.size(); index++) {
+            if (index > 0) {
+                builder.append(',');
+            }
+            builder.append(quote(values.get(index)));
+        }
+        return builder.append(']');
     }
 
     private static StringBuilder field(StringBuilder builder, String name, long value) {

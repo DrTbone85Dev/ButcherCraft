@@ -20,9 +20,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -43,20 +40,11 @@ public final class WorkstationEndpointJournalStorage {
     }
 
     public Optional<WorkstationEndpointJournal> loadExisting() {
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
         if (!Files.exists(filePath)) {
-            if (Files.exists(temporaryFile)) {
-                throw new IllegalStateException(
-                        "Interrupted Workstation endpoint publication requires recovery: " + temporaryFile
-                );
-            }
+            StrictAtomicJsonFile.requireNoInterruptedPublication(filePath);
             return Optional.empty();
         }
-        try {
-            return Optional.of(deserialize(Files.readString(filePath, StandardCharsets.UTF_8)));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Workstation endpoint journal from " + filePath, exception);
-        }
+        return Optional.of(deserialize(StrictAtomicJsonFile.read(filePath)));
     }
 
     public void save(WorkstationEndpointJournal journal) {
@@ -260,10 +248,6 @@ public final class WorkstationEndpointJournalStorage {
     }
 
     private String readPublished() {
-        try {
-            return Files.readString(filePath, StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to verify Workstation endpoint journal " + filePath, exception);
-        }
+        return StrictAtomicJsonFile.read(filePath);
     }
 }

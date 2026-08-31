@@ -16,6 +16,8 @@ import com.butchercraft.world.simulation.scheduler.SimulationWorkStatus;
 import com.butchercraft.world.simulation.scheduler.WorkOrigin;
 import com.butchercraft.world.simulation.scheduler.WorkPayload;
 import com.butchercraft.world.simulation.scheduler.WorkPayloadEntry;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.simulation.scheduler.WorkPriority;
 import com.butchercraft.world.simulation.scheduler.WorkReference;
 import net.minecraft.server.MinecraftServer;
@@ -25,6 +27,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -83,7 +86,9 @@ public final class EconomicPlanningService {
         PlanningManager manager = storage.load();
         ActivePlanning created = new ActivePlanning(server, storage, manager);
         active.set(created);
-        ensureContinuationWork(dependencies, manager);
+        if (StartupMutationGateService.INSTANCE.permits(server, LegacySplitRecoveryParticipants.PLANNING)) {
+            ensureContinuationWork(dependencies, manager);
+        }
     }
 
     public void save(ServerStoppingEvent event) {
@@ -106,10 +111,19 @@ public final class EconomicPlanningService {
         return Optional.ofNullable(active.get()).map(ActivePlanning::manager);
     }
 
+    public synchronized Map<String, String> checkpointSnapshotFiles(MinecraftServer server) {
+        ActivePlanning current = active.get();
+        if (current == null || current.server() != Objects.requireNonNull(server, "server")) {
+            throw new IllegalStateException("Economic Planning is not initialized for this server");
+        }
+        return current.storage().serializeCheckpointFiles(current.manager());
+    }
+
     public PlanningTriggerPublicationResult publishTrigger(
             MinecraftServer server,
             PlanningTriggerRecord trigger
     ) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.PLANNING);
         PlanningManager manager = managerFor(server);
         PlanningDependencies dependencies = dependencies(server);
         long currentTick = dependencies.schedulerManager().lastFinalizedSimulationTick();

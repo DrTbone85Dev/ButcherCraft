@@ -1,5 +1,6 @@
 package com.butchercraft.world.economy.actor;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.goods.GoodId;
 import com.butchercraft.world.goods.GoodRegistry;
 import com.butchercraft.world.goods.IndustryId;
@@ -11,13 +12,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -68,26 +64,12 @@ public final class EconomicActorStorage {
         if (!Files.exists(filePath)) {
             return EconomicActorRegistry.empty(goodRegistry, knownIndustries);
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load economic actors from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "economic actors"));
     }
 
     public void save(EconomicActorRegistry registry) {
         Objects.requireNonNull(registry, "registry");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(registry), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save economic actors to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(registry), "economic actors");
     }
 
     public String serialize(EconomicActorRegistry registry) {
@@ -214,14 +196,6 @@ public final class EconomicActorStorage {
                 dependency,
                 schemaVersion
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static JsonObject requireObject(JsonElement element, String label) {

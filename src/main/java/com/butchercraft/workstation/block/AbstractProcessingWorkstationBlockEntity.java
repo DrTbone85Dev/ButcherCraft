@@ -199,11 +199,16 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
 
     @Override
     protected void beforeDropContents() {
-        WorkstationTickContext context = currentTickContext();
-        if (context == null) {
-            controller.cancelPreservingInput();
-        } else {
-            controller.cancelPreservingInput(context);
+        beginDurableProjectionMutation();
+        try {
+            WorkstationTickContext context = currentTickContext();
+            if (context == null) {
+                controller.cancelPreservingInput();
+            } else {
+                controller.cancelPreservingInput(context);
+            }
+        } finally {
+            endDurableProjectionMutation();
         }
     }
 
@@ -241,11 +246,23 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
     }
 
     protected final void tickController(RegistryAccess registryAccess) {
-        controller.serverTick(registryAccess);
+        ensureDurableProjectionReady();
+        beginDurableProjectionMutation();
+        try {
+            controller.serverTick(registryAccess);
+        } finally {
+            endDurableProjectionMutation();
+        }
     }
 
     protected final void tickController(WorkstationTickContext tickContext) {
-        controller.serverTickWithContext(tickContext);
+        ensureDurableProjectionReady();
+        beginDurableProjectionMutation();
+        try {
+            controller.serverTickWithContext(tickContext);
+        } finally {
+            endDurableProjectionMutation();
+        }
     }
 
     public final WorkstationProductionSnapshot productionSnapshot() {
@@ -253,7 +270,12 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
     }
 
     public final WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
-        return controller.requestProductionProcessing(tickContext);
+        beginDurableProjectionMutation();
+        try {
+            return controller.requestProductionProcessing(tickContext);
+        } finally {
+            endDurableProjectionMutation();
+        }
     }
 
     protected final WorkstationProductionRequestResult requestProductionProcessing(
@@ -261,7 +283,12 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
             Function<com.butchercraft.workstation.WorkstationExecutionStartRequest,
                     com.butchercraft.workstation.WorkstationExecutionStartResult> executionStart
     ) {
-        return controller.requestProductionProcessing(tickContext, executionStart);
+        beginDurableProjectionMutation();
+        try {
+            return controller.requestProductionProcessing(tickContext, executionStart);
+        } finally {
+            endDurableProjectionMutation();
+        }
     }
 
     protected WorkstationExecutionEffectResult completeScheduledExecution(
@@ -275,17 +302,34 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
                     "Workstation level is unavailable during scheduled Execution effect"
             ));
         }
-        return controller.completeScheduledExecution(
-                level.registryAccess(),
-                operationId,
-                domainEffectIdentity,
-                authoritativeTick
-        );
+        beginDurableProjectionMutation();
+        try {
+            return controller.completeScheduledExecution(
+                    level.registryAccess(),
+                    operationId,
+                    domainEffectIdentity,
+                    authoritativeTick
+            );
+        } finally {
+            endDurableProjectionMutation();
+        }
     }
 
     @Override
     protected void onInventoryChanged() {
         controller.onInventoryChanged();
+    }
+
+    @Override
+    protected Optional<String> durableProcessingOperationIdentityView() {
+        return controller.productionSnapshot().activeExecutionOperationId()
+                .map(com.butchercraft.world.execution.ExecutionOperationId::value);
+    }
+
+    @Override
+    protected Optional<String> durableProcessingOwnerResultIdentityView() {
+        return controller.productionSnapshot().ownerResultEvidence()
+                .map(com.butchercraft.world.execution.ExecutionOwnerResultEvidence::ownerResultIdentity);
     }
 
     private void markChanged() {

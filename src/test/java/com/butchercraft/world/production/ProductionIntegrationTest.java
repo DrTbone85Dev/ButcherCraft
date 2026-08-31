@@ -34,7 +34,8 @@ class ProductionIntegrationTest {
         assertTrue(service.contains("ProductionSchema.PROCESSES_FILE_NAME"));
         assertTrue(service.contains("ProductionSchema.PLANS_FILE_NAME"));
         assertTrue(service.contains("ProductionSchema.RUNS_FILE_NAME"));
-        assertTrue(service.contains("new ProductionSimulationWorkHandler(manager)"));
+        assertTrue(service.contains("new ProductionSimulationWorkHandler("));
+        assertTrue(service.contains("() -> managerFor(event.getServer())"));
         assertTrue(scheduler.contains("installHandler(SimulationWorkHandler handler)"));
     }
 }

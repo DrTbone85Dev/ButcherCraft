@@ -11,6 +11,7 @@ public record CheckpointGenerationManifest(
         Optional<String> predecessorManifestDigest,
         long authoritativeSimulationTick,
         List<OwnerSnapshotDescriptor> ownerSnapshots,
+        List<String> triggerCauses,
         PlatformDeterminismManifestReference platformDeterminismManifest,
         WorldIdentityRootReference worldIdentityRoot,
         String manifestDigest
@@ -31,12 +32,42 @@ public record CheckpointGenerationManifest(
                 .map(snapshot -> Objects.requireNonNull(snapshot, "ownerSnapshot"))
                 .sorted()
                 .toList();
+        triggerCauses = Objects.requireNonNull(triggerCauses, "triggerCauses").stream()
+                .map(cause -> CheckpointValidation.id(cause, "triggerCause"))
+                .distinct()
+                .sorted()
+                .toList();
         platformDeterminismManifest = Objects.requireNonNull(
                 platformDeterminismManifest,
                 "platformDeterminismManifest"
         );
         worldIdentityRoot = Objects.requireNonNull(worldIdentityRoot, "worldIdentityRoot");
         manifestDigest = CheckpointValidation.digest(manifestDigest, "manifestDigest");
+    }
+
+    public CheckpointGenerationManifest(
+            int schemaVersion,
+            CheckpointGenerationId generationId,
+            Optional<CheckpointGenerationId> predecessorGenerationId,
+            Optional<String> predecessorManifestDigest,
+            long authoritativeSimulationTick,
+            List<OwnerSnapshotDescriptor> ownerSnapshots,
+            PlatformDeterminismManifestReference platformDeterminismManifest,
+            WorldIdentityRootReference worldIdentityRoot,
+            String manifestDigest
+    ) {
+        this(
+                schemaVersion,
+                generationId,
+                predecessorGenerationId,
+                predecessorManifestDigest,
+                authoritativeSimulationTick,
+                ownerSnapshots,
+                List.of(),
+                platformDeterminismManifest,
+                worldIdentityRoot,
+                manifestDigest
+        );
     }
 
     public CheckpointGenerationManifest withCalculatedDigest() {
@@ -47,6 +78,7 @@ public record CheckpointGenerationManifest(
                 predecessorManifestDigest,
                 authoritativeSimulationTick,
                 ownerSnapshots,
+                triggerCauses,
                 platformDeterminismManifest,
                 worldIdentityRoot,
                 calculateDigest()
@@ -75,6 +107,10 @@ public record CheckpointGenerationManifest(
                 .add(worldIdentityRoot.schemaVersion())
                 .add(worldIdentityRoot.rootDigest())
                 .add(ownerSnapshots.size());
+        if (!triggerCauses.isEmpty()) {
+            digest.add("trigger_causes").add(triggerCauses.size());
+            triggerCauses.forEach(digest::add);
+        }
         for (OwnerSnapshotDescriptor snapshot : ownerSnapshots) {
             digest.add(snapshot.ownerId().value())
                     .add(snapshot.snapshotSchemaVersion())

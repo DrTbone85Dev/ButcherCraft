@@ -11,9 +11,12 @@ import com.butchercraft.workstation.operation.MachineOperatingSchema;
 import com.butchercraft.workstation.operation.MachineOperatingState;
 import com.butchercraft.workstation.operation.MachineWorkstationReference;
 import com.butchercraft.workstation.operation.persistence.MachineOperatingStorage;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import com.butchercraft.world.execution.ExecutionOperationId;
 import com.butchercraft.world.execution.MachineRunIdentity;
 import com.butchercraft.world.execution.MachineStopAuthorizationEvidence;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -265,6 +268,7 @@ public final class MachineOperatingStateService {
             MinecraftServer server,
             Function<MachineOperatingRegistry, MachineOperatingMutation> mutationFactory
     ) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
         ActiveState active = load(server);
         MachineOperatingMutation mutation = mutationFactory.apply(active.registry());
         if (mutation.changed()) {
@@ -272,6 +276,8 @@ public final class MachineOperatingStateService {
             active.storage().save(mutation.registry());
             active = new ActiveState(active.server(), active.storage(), mutation.registry(), true);
             activeState.set(active);
+            mutation.record().ifPresent(record -> DurableWorkstationProjectionService.INSTANCE
+                    .refreshOperatingStateReference(server, record.workstation().instanceId().value()));
         }
         return mutation;
     }

@@ -1,5 +1,7 @@
 package com.butchercraft.world.simulation;
 
+import com.butchercraft.world.checkpoint.CheckpointOwnerSnapshotCoordinator;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -29,6 +31,8 @@ public final class SimulationClockService {
     }
 
     public void advance(ServerTickEvent.Post event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), CheckpointOwnerSnapshotCoordinator.CLOCK_OWNER)) return;
         ActiveSimulation active = activeSimulation.get();
         if (active == null || active.server() != event.getServer()) {
             active = load(event.getServer());
@@ -60,6 +64,10 @@ public final class SimulationClockService {
 
     public SimulationEventBus eventBus() {
         return eventBus;
+    }
+
+    public SimulationConfiguration configuration() {
+        return configuration;
     }
 
     private ActiveSimulation load(MinecraftServer server) {

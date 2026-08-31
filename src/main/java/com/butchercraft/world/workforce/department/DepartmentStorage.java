@@ -1,5 +1,6 @@
 package com.butchercraft.world.workforce.department;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -9,13 +10,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -55,26 +51,12 @@ public final class DepartmentStorage {
         if (!Files.exists(filePath)) {
             return BuiltInDepartmentDefinitions.defaults(worldIdentity);
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load departments from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "departments"));
     }
 
     public void save(DepartmentDirectory directory) {
         Objects.requireNonNull(directory, "directory");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(directory), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save departments to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(directory), "departments");
     }
 
     public String serialize(DepartmentDirectory directory) {
@@ -157,14 +139,6 @@ public final class DepartmentStorage {
                 requireInt(object, Z),
                 requireInt(object, RADIUS)
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static Optional<JsonObject> optionalObject(JsonObject object, String fieldName) {

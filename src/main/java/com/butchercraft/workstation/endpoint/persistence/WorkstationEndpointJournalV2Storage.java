@@ -25,9 +25,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,16 +42,12 @@ public final class WorkstationEndpointJournalV2Storage {
     }
 
     public Optional<LoadedJournal> loadVersioned() {
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
         if (!Files.exists(filePath)) {
-            if (Files.exists(temporaryFile)) {
-                throw new IllegalStateException("Interrupted Workstation endpoint publication requires recovery: "
-                        + temporaryFile);
-            }
+            StrictAtomicJsonFile.requireNoInterruptedPublication(filePath);
             return Optional.empty();
         }
         try {
-            String json = Files.readString(filePath, StandardCharsets.UTF_8);
+            String json = StrictAtomicJsonFile.read(filePath);
             JsonObject root = WorkstationEndpointJson.object(JsonParser.parseString(json), "Workstation endpoint root");
             int schema = WorkstationEndpointJson.integer(root, "schema_version");
             if (schema == WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION) {
@@ -65,8 +58,6 @@ public final class WorkstationEndpointJournalV2Storage {
                 return Optional.of(new StackAwareJournal(deserialize(json)));
             }
             throw new IllegalArgumentException("Unsupported Workstation endpoint schema version: " + schema);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Workstation endpoint journal from " + filePath, exception);
         } catch (JsonParseException exception) {
             throw new IllegalArgumentException("Corrupt Workstation endpoint journal", exception);
         }
@@ -345,11 +336,7 @@ public final class WorkstationEndpointJournalV2Storage {
     }
 
     private String readPublished() {
-        try {
-            return Files.readString(filePath, StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to read published endpoint journal", exception);
-        }
+        return StrictAtomicJsonFile.read(filePath);
     }
 
     public sealed interface LoadedJournal permits LegacyJournal, StackAwareJournal {

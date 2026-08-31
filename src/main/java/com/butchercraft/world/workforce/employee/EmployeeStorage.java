@@ -1,5 +1,6 @@
 package com.butchercraft.world.workforce.employee;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.simulation.time.BusinessTimeOfDay;
 import com.butchercraft.world.workforce.PositionId;
@@ -12,13 +13,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -81,26 +77,12 @@ public final class EmployeeStorage {
         if (!Files.exists(filePath)) {
             return EmployeeDirectory.empty();
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load employee records from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "employee records"));
     }
 
     public void save(EmployeeDirectory directory) {
         Objects.requireNonNull(directory, "directory");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(directory), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save employee records to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(directory), "employee records");
     }
 
     public String serialize(EmployeeDirectory directory) {
@@ -245,14 +227,6 @@ public final class EmployeeStorage {
                 requireInt(object, Z),
                 requireInt(object, RADIUS)
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static BusinessTimeOfDay parseTime(String value) {

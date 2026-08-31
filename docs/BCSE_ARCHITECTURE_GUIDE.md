@@ -87,7 +87,42 @@ object graph.
 | Allocation | RFC-0022 M22A-M22D implemented as a pure explicit-input domain and Cycle |
 | Generic Execution | IM-011 schema-1 runtime foundation and narrow DG-003 additive handler compatibility implemented; general migration and the full RFC-0023 Draft 2 surface remain separately gated |
 | Material Handling | DG-002, DG-002A, and DG-004 ratified; IM-028A through IM-029 routes implemented; IM-030A schema-2 foundation and IM-030B selective stack-aware activation implemented |
+| Checkpoint Recovery | ADR-02, ADR-02A, and ADR-02A-P1 ratified; IM-003 through IM-007 and IM-031C-R1 through IM-031C-R4 implemented, including copied-world validation, coordinated live 17-owner publication, durable Workstation projections, historical successor validation, deterministic startup selection, owner-native restoration, mutation gating, and hard-crash recovery; final Product Owner acceptance remains pending |
 | Architecture Validation | Phase 1 implemented for explicit immutable manifests |
+
+The ratified
+[`ADR-02A recovery amendment`](adr/ADR-PROPOSED-LEGACY-SPLIT-SNAPSHOT-RECOVERY-AND-COORDINATED-CHECKPOINT-PUBLICATION.md)
+permits only proof-complete historical coordination acknowledgements and an
+explicit nonexecuting Scheduler recovery discontinuity. IM-031C-R1 now models
+those immutable owner facts, canonical Recovery Identity, deterministic
+analysis, typed authority blocks, and read-only artifact classification.
+IM-031C-R2 adds exact operator authorization, mandatory reanalysis, immutable
+owner preparation, nonexecuting recovery snapshots, generation/head commit,
+durable result evidence, and idempotent retry. Unknown consequences remain
+authority-blocked. R2A validates that publication against a byte-identical
+disposable copy of the actual failed-world evidence. R3 adds safe-boundary live
+capture for the exact 17-owner set, canonical empty snapshots, asynchronous
+immutable publication, alternating dual heads, manual and 6,000-tick triggers,
+bounded shutdown behavior, and diagnostics. R3 publication itself does not
+install recovered state into a live world. Historical R3 Workstation participants captured exact loaded
+block-entity projections but represented active unloaded Workstations only with
+availability evidence. A required `chunk_unloaded` entry cannot prove complete
+Workstation restoration. The ratified
+[`ADR-02A-P1 durable Workstation projection amendment`](adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
+closes the architecture gap under singular Workstation authority. R3A persists
+exact, revisioned, identity-bound projections independently of chunk
+availability. R3B now embeds exact required durable payloads, validates loaded
+instances, includes unloaded projected instances without chunk loading, rejects
+incomplete candidates before head commit, and exposes a read-only generation
+restorability verifier. Historical generations remain immutable. R3C publishes
+the immutable complete successor for the historical target. R4 now performs
+read-only live coherence analysis, deterministic LIVE/checkpoint/recovery-
+generation selection, exact 17-owner native restoration, durable Workstation
+projection restoration and lazy reconciliation, persisted authority gating, and
+hard-crash recovery without replaying consequences. The protected original world
+remains untouched pending explicit Product Owner authorization. See
+[`Startup Checkpoint Recovery`](STARTUP_CHECKPOINT_RECOVERY.md) for the owner-
+adapter and restoration transaction details.
 
 DG-002 establishes Material Handling as the singular transfer-lifecycle and
 in-transit custody authority. DG-002A establishes Workstation-owned instance
@@ -228,15 +263,17 @@ not rewrite historical schema-1 metadata. General schema migration,
 handler-removal migration, and changed-contract migration remain gated.
 
 DG-005 and IM-031A add an Execution-owned persistent Machine Run above bounded
-child Execution operations. IM-031B activates that Run for the Grinder under
+child Execution operations. IM-031B activates that Run for the Grinder and
+IM-031C activates it for the Patty Former under
 `POWERED_CONTINUOUS_EXPLICIT_STOP`: repeated child cycles remain individually
 authorized, scheduled, and atomically committed, with at most one nonterminal
-child. The Run owns identity, generation, START/STOP acceptance, active
-uniqueness, restart-required lifecycle, and child admission. Workstation remains
-the separate owner of machine operating policy, current operating state, and
-inventory mutation. The integration coordinator composes owner publications
-but owns no canonical runtime state. Patty Former continuous behavior and
-employee Machine Run control remain gated.
+child per Run. The Run owns identity, generation, START/STOP acceptance,
+active uniqueness, restart-required lifecycle, and child admission.
+Workstation remains the separate owner of machine operating policy, current
+operating state, recipe validation, inventory mutation, and owner results. The
+shared integration coordinator composes owner publications but owns no
+canonical runtime state; machine-specific adapters retain machine semantics.
+Employee Machine Run control remains gated.
 
 ### Transactions
 
@@ -714,6 +751,7 @@ nothing.
 - [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
 - [`Ratified Stack-Aware Workstation Inventory And Partial Transfer ADR`](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
 - [`Ratified Persistent Machine Operating State And Continuous Processing ADR`](adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
+- [`Ratified ADR-02A-P1 Durable Workstation Projection Amendment`](adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
 - [`IM-031A Machine Run-State Foundation`](MACHINE_RUN_STATE_FOUNDATION.md)
 - [`Material Handling Implementation`](MATERIAL_HANDLING.md)
 - [`Cutting Table`](CUTTING_TABLE.md)

@@ -39,6 +39,20 @@ public final class CheckpointRecoveryEvaluator {
             WorldIdentityRootReference expectedWorldIdentityRoot,
             PlatformDeterminismManifestReference expectedPlatformDeterminismManifest
     ) {
+        return validateManifest(
+                manifest,
+                requiredOwners,
+                expectedWorldIdentityRoot,
+                List.of(expectedPlatformDeterminismManifest)
+        );
+    }
+
+    public CheckpointIntegrityResult validateManifest(
+            CheckpointGenerationManifest manifest,
+            List<CheckpointOwnerId> requiredOwners,
+            WorldIdentityRootReference expectedWorldIdentityRoot,
+            List<PlatformDeterminismManifestReference> acceptedPlatformDeterminismManifests
+    ) {
         Objects.requireNonNull(manifest, "manifest");
         List<CheckpointFailure> failures = new ArrayList<>(validateGenerationId(manifest.generationId()).failures());
         if (manifest.schemaVersion() != CheckpointSchema.CURRENT_VERSION) {
@@ -77,7 +91,10 @@ public final class CheckpointRecoveryEvaluator {
                     "Checkpoint generation belongs to a different World Identity root"
             ));
         }
-        if (!manifest.platformDeterminismManifest().equals(expectedPlatformDeterminismManifest)) {
+        if (!Objects.requireNonNull(
+                acceptedPlatformDeterminismManifests,
+                "acceptedPlatformDeterminismManifests"
+        ).contains(manifest.platformDeterminismManifest())) {
             failures.add(failure(
                     CheckpointFailureCode.PLATFORM_DETERMINISM_MANIFEST_MISMATCH,
                     "platformDeterminismManifest",
@@ -179,7 +196,7 @@ public final class CheckpointRecoveryEvaluator {
                     generationMap,
                     request.requiredOwners(),
                     request.expectedWorldIdentityRoot(),
-                    request.expectedPlatformDeterminismManifest()
+                    request.acceptedPlatformDeterminismManifests()
             ).failures();
             if (!chainFailures.isEmpty()) {
                 diagnostics.addAll(chainFailures);
@@ -241,7 +258,7 @@ public final class CheckpointRecoveryEvaluator {
                     generationMap,
                     recoveryContext.requiredOwners(),
                     recoveryContext.expectedWorldIdentityRoot(),
-                    recoveryContext.expectedPlatformDeterminismManifest()
+                    recoveryContext.acceptedPlatformDeterminismManifests()
             ).failures());
         }
 
@@ -273,6 +290,22 @@ public final class CheckpointRecoveryEvaluator {
             WorldIdentityRootReference expectedWorldIdentityRoot,
             PlatformDeterminismManifestReference expectedPlatformDeterminismManifest
     ) {
+        return validateGenerationChain(
+                selected,
+                generations,
+                requiredOwners,
+                expectedWorldIdentityRoot,
+                List.of(expectedPlatformDeterminismManifest)
+        );
+    }
+
+    public CheckpointIntegrityResult validateGenerationChain(
+            CheckpointGenerationRecord selected,
+            Map<CheckpointGenerationId, CheckpointGenerationRecord> generations,
+            List<CheckpointOwnerId> requiredOwners,
+            WorldIdentityRootReference expectedWorldIdentityRoot,
+            List<PlatformDeterminismManifestReference> acceptedPlatformDeterminismManifests
+    ) {
         Objects.requireNonNull(selected, "selected");
         Objects.requireNonNull(generations, "generations");
         List<CheckpointFailure> failures = new ArrayList<>();
@@ -291,7 +324,7 @@ public final class CheckpointRecoveryEvaluator {
                     current.manifest(),
                     requiredOwners,
                     expectedWorldIdentityRoot,
-                    expectedPlatformDeterminismManifest
+                    acceptedPlatformDeterminismManifests
             ).failures());
             Optional<CheckpointGenerationId> predecessorId = current.manifest().predecessorGenerationId();
             if (predecessorId.isEmpty()) {

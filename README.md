@@ -4,22 +4,24 @@ ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic reg
 
 Registered content includes the Cutting Table, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, six promoted Grinder recipes for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the Beef Patties production chain from Beef Trim to Ground Beef to Beef Patties. The player-facing Production Order item guides and observes the manual multi-workstation chain.
 
-The v0.10.5 Continuous Processing Update adds practical stack-aware processing, one-item employee transport between both current production stages, and a persistent player-controlled Grinder Run. The Cutting Table retains its first player-operated fabrication recipe, `Beef Short Loin -> T-Bone Steak + Beef Trim`, with separate input, primary-output, and trim-output slots.
+The v0.10.6 Checkpoint Recovery & Continuous Processing Update adds persistent player-controlled Grinder and Patty Former Runs, explicit START/STOP controls, clearer machine-state presentation, and coordinated checkpoint recovery. The Cutting Table retains its first player-operated fabrication recipe, `Beef Short Loin -> T-Bone Steak + Beef Trim`, with separate input, primary-output, and trim-output slots.
 
 The Grinder now uses the persistent `POWERED_CONTINUOUS_EXPLICIT_STOP` policy. Normal right-click opens its inventory; GUI START creates one Machine Run that admits separately identified, bounded Execution/Scheduler cycles until stopped, empty, blocked, or recovery-gated. GUI STOP closes that exact Run at a safe cycle boundary, GUI RESUME continues the same restart-suspended Run, and Shift + right-click is the state-aware START/STOP shortcut. An empty Grinder remains powered as `RUNNING_EMPTY`; compatible input added later resumes the same Run. Full or incompatible output publishes `OUTPUT_BLOCKED` without consuming input.
 
-The Patty Former still separates deposit from operation. Inserting Ground Beef leaves it `READY` indefinitely, including across save/reload, and creates no Execution operation or Scheduler work. Normal right-click opens its inventory; Shift + right-click starts exactly one operation. Remaining input requires another shifted request.
+The Patty Former still separates deposit from START authority. Normal right-click opens its inventory; GUI START creates one persistent Machine Run, GUI STOP closes that exact Run at a safe cycle boundary, GUI RESUME continues the same restart-suspended Run, and Shift + right-click is the state-aware START/STOP shortcut. Each cycle remains one separately identified, bounded Execution/Scheduler operation. Empty input publishes `RUNNING_EMPTY`, compatible material added later resumes the same Run, and blocked output publishes `OUTPUT_BLOCKED` without consuming input. Merely inserting or delivering Ground Beef never creates a Run.
 
 IM-030B activates practical product stacks without turning capacity into
 throughput. Beef Trim, Ground Beef, and Beef Patties stack to 64. The relevant
 Cutting Table, Grinder, and Patty Former slots use Workstation-owned capacities;
 each bounded operation still consumes and produces only its recipe quantity,
-and compatible outputs merge. One active Grinder Run may authorize repeated
-bounded cycles; the Patty Former remains explicit one-cycle.
+and compatible outputs merge. One active Grinder or Patty Former Run may
+authorize repeated bounded cycles; the Cutting Table remains discrete.
 
 Employees can now physically move two fixed products through the plant. A player can explicitly assign an employee to carry one Beef Trim from a Cutting Table to a Grinder, operate that Grinder through the existing deterministic Execution and Scheduler path, then assign the employee to carry the resulting one Ground Beef from the Grinder output to a selected Patty Former. Both routes use explicit coordinates and the same `/butchercraft employee transfer` command.
 
 Under the hood, the Material Handling Runtime owns exact in-transit `ItemStack` custody while Workstation owns durable endpoint instance identity, prepare/effect/result publication, source and destination reservations, and inventory effects. Transfer recovery and cancellation preserve exact-stack custody, and the DG-003 additive Execution-handler compatibility policy allows new handlers to be registered without invalidating compatible existing saves. These foundations preserve subsystem ownership rather than introducing a second inventory or execution path.
+
+Coordinated checkpoints now capture every required durable owner at one coherent simulation boundary. Startup prefers coherent live state and otherwise may select the latest valid restorable checkpoint, publish exact owner-native state, and resume interrupted restoration without replaying completed work. Durable Workstation projections cover unloaded machines without mass chunk loading and reconcile lazily when their chunks load.
 
 This alpha remains deliberately bounded. Employee Grinder operation remains one reservation-scoped bounded request and is rejected while a player Machine Run is active; employees do not own Grinder START/STOP. Employees do not operate the Patty Former, select workstations automatically, claim Production Orders, run Production-driven or autonomous production chains, transport batches or arbitrary products, participate in general Logistics, or own an inventory. Machine wear, dry-running damage, automatic restart, and Production-controlled machine operation are not implemented.
 
@@ -34,7 +36,7 @@ The platform foundation also includes immutable regional identity, manufacturers
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.10.5-alpha.1`
+- Version: `0.10.6-alpha.1`
 
 ## Commands
 
@@ -127,12 +129,14 @@ The world-time diagnostic is `/butchercraft time status`; there is no separate `
 - Employee Material Handling moves exactly one Beef Trim or one Ground Beef per assignment on two fixed routes.
 - The transfer command requires explicit source and destination coordinates.
 - Either route may withdraw one item from a larger compatible source stack and merge it into a compatible destination stack.
-- Ground Beef delivery leaves the Patty Former `READY` and destination-reserved; employees still cannot operate it.
+- Ground Beef delivery to an OFF Patty Former leaves it `READY` and destination-reserved; delivery to the exact destination of an existing `RUNNING_EMPTY` Run makes that same Run eligible again. Delivery never grants START authority, and employees still cannot operate it.
 - Employee carrying remains exactly one item; quantity selection, batch hauling, and automatic repeated transfers are not implemented.
 - Production does not assign transfers.
 - Employees do not select workstations automatically.
 - General Logistics and autonomous production are not implemented.
 - Employees do not own inventory; the visible held item derives from proven Material Handling custody.
+- Checkpoint generations are retained indefinitely in this alpha, so save-disk usage can grow over time.
+- Recovery remains evidence-based and fail-closed; ambiguous outcomes remain authority-blocked rather than guessed.
 
 ## Development Item
 
@@ -144,7 +148,7 @@ The trim, ground, Beef Patties, forequarter, and beef fabrication products are d
 
 `butchercraft:grinder` is the current Grinder proof block. It uses `butchercraft:grinding` and the same processing graph/resolver/controller path to process Beef, Pork, Chicken, Buffalo, Lamb, and Venison Trim products without species-specific Grinder behavior. Buffalo presentation retains the existing `butchercraft:bison_*` registry identities for compatibility.
 
-`butchercraft:patty_former` is the current Patty Former proof block. It uses `butchercraft:patty_forming` and the same Workstation, Execution, Scheduler, and owner-result path to process Ground Beef into Beef Patties. Ground Beef may be moved from an explicit Grinder to an explicit Patty Former by an employee, but transport grants no operation authority. Valid Ground Beef means READY, not authorized: Shift + right-click starts one operation, and the machine never auto-loops from input presence.
+`butchercraft:patty_former` is the current Patty Former proof block. It uses `butchercraft:patty_forming` and the same Workstation, Execution, Scheduler, and owner-result path to process Ground Beef into Beef Patties. Ground Beef may be moved from an explicit Grinder to an explicit Patty Former by an employee, but transport grants no START authority. GUI START or state-aware Shift + right-click creates one persistent Run; every patty cycle remains bounded and separately authorized, and input presence alone never creates or restarts a Run.
 
 `butchercraft:production_order` is the current narrow player-facing control item for the fixed Beef Patties chain. It creates or inspects one Beef Trim to Grinder to Ground Beef to Patty Former to Beef Patties Production Run, assigns the two workstations through server-validated block interaction, and displays manual-transfer guidance without moving items automatically.
 

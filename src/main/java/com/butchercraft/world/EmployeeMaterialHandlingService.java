@@ -11,6 +11,8 @@ import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
 import com.butchercraft.workstation.reservation.WorkstationReservationResult;
 import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.materialhandling.MaterialCustodyLocation;
 import com.butchercraft.world.materialhandling.MaterialTransferLifecycle;
 import com.butchercraft.world.materialhandling.MaterialTransferView;
@@ -82,7 +84,9 @@ public final class EmployeeMaterialHandlingService {
 
     public void initialize(ServerStartedEvent event) {
         ActiveAssignments runtime = load(event.getServer());
-        reconcileLoadedAssignments(event.getServer(), runtime);
+        if (mutationPermitted(event.getServer())) {
+            reconcileLoadedAssignments(event.getServer(), runtime);
+        }
     }
 
     public void save(ServerStoppingEvent event) {
@@ -100,6 +104,7 @@ public final class EmployeeMaterialHandlingService {
             BlockPos destinationPosition
     ) {
         Objects.requireNonNull(level, "level");
+        requireMutation(level.getServer());
         Objects.requireNonNull(employeeId, "employeeId");
         sourcePosition = Objects.requireNonNull(sourcePosition, "sourcePosition").immutable();
         destinationPosition = Objects.requireNonNull(destinationPosition, "destinationPosition").immutable();
@@ -301,6 +306,7 @@ public final class EmployeeMaterialHandlingService {
     }
 
     public AssignmentResult cancel(ServerLevel level, EmployeeId employeeId, String reason) {
+        requireMutation(level.getServer());
         ActiveAssignments runtime = load(level.getServer());
         EmployeeMaterialHandlingAssignment assignment = runtime.manager().activeFor(employeeId).orElse(null);
         if (assignment == null) {
@@ -365,6 +371,7 @@ public final class EmployeeMaterialHandlingService {
         if (!(employee.level() instanceof ServerLevel level)) {
             return;
         }
+        if (!mutationPermitted(level.getServer())) return;
         EmployeeId employeeId;
         try {
             employeeId = new EmployeeId(employee.employeeIdValue());
@@ -439,6 +446,7 @@ public final class EmployeeMaterialHandlingService {
         if (!(employee.level() instanceof ServerLevel level)) {
             return;
         }
+        if (!mutationPermitted(level.getServer())) return;
         EmployeeId employeeId;
         try {
             employeeId = new EmployeeId(employee.employeeIdValue());
@@ -472,6 +480,7 @@ public final class EmployeeMaterialHandlingService {
         if (!(employee.level() instanceof ServerLevel level)) {
             return;
         }
+        if (!mutationPermitted(level.getServer())) return;
         EmployeeId employeeId;
         try {
             employeeId = new EmployeeId(employee.employeeIdValue());
@@ -548,6 +557,7 @@ public final class EmployeeMaterialHandlingService {
 
     public void resetGameTestAssignments(MinecraftServer server) {
         requireGameTestServer(server);
+        requireMutation(server);
         ActiveAssignments existing = load(server);
         ActiveAssignments reset = new ActiveAssignments(
                 server,
@@ -561,6 +571,7 @@ public final class EmployeeMaterialHandlingService {
 
     public void reloadGameTestAssignments(MinecraftServer server) {
         requireGameTestServer(server);
+        requireMutation(server);
         ActiveAssignments existing = load(server);
         existing.storage().save(existing.manager().directory());
         ActiveAssignments reloaded = new ActiveAssignments(
@@ -1228,6 +1239,14 @@ public final class EmployeeMaterialHandlingService {
         if (!className.contains("GameTestServer")) {
             throw new IllegalStateException("Employee Material Handling GameTest helper requires GameTestServer");
         }
+    }
+
+    private static boolean mutationPermitted(MinecraftServer server) {
+        return StartupMutationGateService.INSTANCE.permits(server, LegacySplitRecoveryParticipants.WORKFORCE);
+    }
+
+    private static void requireMutation(MinecraftServer server) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKFORCE);
     }
 
     private ActiveAssignments load(MinecraftServer server) {

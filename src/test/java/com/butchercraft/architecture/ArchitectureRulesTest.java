@@ -163,11 +163,11 @@ class ArchitectureRulesTest {
                 .anyMatch(contract -> contract.id().value()
                         .equals("butchercraft:platform_contract/checkpoint_publication")
                         && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                        == ArchitectureValidationDisposition.ENFORCED_NOW));
     }
 
     @Test
-    void currentManifestRegistersCheckpointRecoveryFoundationAsPartialImplementation() {
+    void currentManifestRegistersCheckpointRecoveryThroughStartupRestoration() {
         ValidationContext context = ArchitectureValidationTestFixtures.validContext();
 
         List<String> implementedFoundationContracts = List.of(
@@ -195,7 +195,41 @@ class ArchitectureRulesTest {
                 "butchercraft:platform_contract/checkpoint_development_integrity_validation_foundation",
                 "butchercraft:platform_contract/checkpoint_development_root_world_scoping_foundation",
                 "butchercraft:platform_contract/checkpoint_development_controlled_restoration_harness_foundation",
-                "butchercraft:platform_contract/checkpoint_development_live_restore_safety_gate"
+                "butchercraft:platform_contract/checkpoint_development_live_restore_safety_gate",
+                "butchercraft:platform_contract/split_snapshot_read_only_analysis_foundation",
+                "butchercraft:platform_contract/split_snapshot_recovery_identity_foundation",
+                "butchercraft:platform_contract/historical_coordination_acknowledgement_evidence",
+                "butchercraft:platform_contract/scheduler_recovery_discontinuity_evidence",
+                "butchercraft:platform_contract/planning_recovery_authority_block_foundation",
+                "butchercraft:platform_contract/recovery_operator_authorization_model",
+                "butchercraft:platform_contract/legacy_recovery_reanalysis_gate",
+                "butchercraft:platform_contract/legacy_recovery_owner_preparation",
+                "butchercraft:platform_contract/legacy_recovery_scheduler_publication",
+                "butchercraft:platform_contract/legacy_recovery_policy_b_publication",
+                "butchercraft:platform_contract/legacy_recovery_immutable_publication",
+                "butchercraft:platform_contract/legacy_recovery_result_evidence",
+                "butchercraft:platform_contract/legacy_recovery_idempotent_retry",
+                "butchercraft:platform_contract/legacy_recovery_mutation_gate",
+                "butchercraft:platform_contract/live_checkpoint_safe_boundary",
+                "butchercraft:platform_contract/live_checkpoint_required_participants",
+                "butchercraft:platform_contract/live_checkpoint_immutable_freeze",
+                "butchercraft:platform_contract/live_checkpoint_trigger_policy",
+                "butchercraft:platform_contract/live_checkpoint_no_startup_restore_gate",
+                "butchercraft:platform_contract/startup_live_coherence_analysis",
+                "butchercraft:platform_contract/startup_source_selection",
+                "butchercraft:platform_contract/owner_native_restoration_transaction",
+                "butchercraft:platform_contract/restoration_intent_result_evidence",
+                "butchercraft:platform_contract/startup_consequential_mutation_gate",
+                "butchercraft:platform_contract/restoration_no_consequence_replay",
+                "butchercraft:platform_contract/workstation_durable_projection_authority",
+                "butchercraft:platform_contract/workstation_projection_exact_itemstack",
+                "butchercraft:platform_contract/workstation_projection_monotonic_revision",
+                "butchercraft:platform_contract/workstation_projection_atomic_publication",
+                "butchercraft:platform_contract/workstation_projection_unloaded_read",
+                "butchercraft:platform_contract/workstation_projection_loaded_reconciliation",
+                "butchercraft:platform_contract/workstation_projection_legacy_classification",
+                "butchercraft:platform_contract/workstation_projection_retirement",
+                "butchercraft:platform_contract/workstation_projection_checkpoint_read_candidate"
         );
 
         for (String contractId : implementedFoundationContracts) {
@@ -207,17 +241,17 @@ class ArchitectureRulesTest {
                 .anyMatch(contract -> contract.id().value()
                         .equals("butchercraft:platform_contract/checkpoint_publication")
                         && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                        == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.platformContracts().stream()
                 .anyMatch(contract -> contract.id().value()
                         .equals("butchercraft:platform_contract/checkpoint_owner_snapshots")
                         && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                        == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.platformContracts().stream()
                 .anyMatch(contract -> contract.id().value()
                         .equals("butchercraft:platform_contract/platform_determinism_manifest")
                         && contract.disposition()
-                        == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                        == ArchitectureValidationDisposition.ENFORCED_NOW));
     }
 
     @Test
@@ -924,7 +958,7 @@ class ArchitectureRulesTest {
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
                 .equals("butchercraft:platform_contract/checkpoint_owner_snapshots")
                 && contract.ownerId().value().equals("butchercraft:checkpoint_recovery")
-                && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.ownershipAssignments().stream().noneMatch(assignment ->
                 assignment.ownerId().value().equals("butchercraft:evidence_lifecycle")
                         && assignment.responsibilityId().value().equals(
@@ -991,6 +1025,36 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/checkpoint_development_root_world_scoping_foundation",
                         "butchercraft:platform_contract/checkpoint_development_controlled_restoration_harness_foundation",
                         "butchercraft:platform_contract/checkpoint_development_live_restore_safety_gate",
+                        "butchercraft:platform_contract/checkpoint_publication",
+                        "butchercraft:platform_contract/checkpoint_owner_snapshots",
+                        "butchercraft:platform_contract/platform_determinism_manifest",
+                        "butchercraft:platform_contract/live_checkpoint_safe_boundary",
+                        "butchercraft:platform_contract/live_checkpoint_required_participants",
+                        "butchercraft:platform_contract/live_checkpoint_immutable_freeze",
+                        "butchercraft:platform_contract/live_checkpoint_trigger_policy",
+                        "butchercraft:platform_contract/live_checkpoint_no_startup_restore_gate",
+                        "butchercraft:platform_contract/startup_live_coherence_analysis",
+                        "butchercraft:platform_contract/startup_source_selection",
+                        "butchercraft:platform_contract/owner_native_restoration_transaction",
+                        "butchercraft:platform_contract/restoration_intent_result_evidence",
+                        "butchercraft:platform_contract/startup_consequential_mutation_gate",
+                        "butchercraft:platform_contract/restoration_no_consequence_replay",
+                        "butchercraft:platform_contract/workstation_projection_native_restoration",
+                        "butchercraft:platform_contract/workstation_projection_policy_b_successor_reconciliation",
+                        "butchercraft:platform_contract/split_snapshot_read_only_analysis_foundation",
+                        "butchercraft:platform_contract/split_snapshot_recovery_identity_foundation",
+                        "butchercraft:platform_contract/historical_coordination_acknowledgement_evidence",
+                        "butchercraft:platform_contract/scheduler_recovery_discontinuity_evidence",
+                        "butchercraft:platform_contract/planning_recovery_authority_block_foundation",
+                        "butchercraft:platform_contract/recovery_operator_authorization_model",
+                        "butchercraft:platform_contract/legacy_recovery_reanalysis_gate",
+                        "butchercraft:platform_contract/legacy_recovery_owner_preparation",
+                        "butchercraft:platform_contract/legacy_recovery_scheduler_publication",
+                        "butchercraft:platform_contract/legacy_recovery_policy_b_publication",
+                        "butchercraft:platform_contract/legacy_recovery_immutable_publication",
+                        "butchercraft:platform_contract/legacy_recovery_result_evidence",
+                        "butchercraft:platform_contract/legacy_recovery_idempotent_retry",
+                        "butchercraft:platform_contract/legacy_recovery_mutation_gate",
                         "butchercraft:platform_contract/transaction_proposal_identity_foundation",
                         "butchercraft:platform_contract/inventory_freshness_identity_foundation",
                         "butchercraft:platform_contract/transaction_validation_plan_identity_foundation",
@@ -1123,7 +1187,24 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/machine_run_bounded_child_admission",
                         "butchercraft:platform_contract/machine_run_restart_policy_b",
                         "butchercraft:platform_contract/machine_run_endpoint_protection",
-                        "butchercraft:platform_contract/grinder_continuous_run_activation"
+                        "butchercraft:platform_contract/grinder_continuous_run_activation",
+                        "butchercraft:platform_contract/powered_processing_shared_run_coordination",
+                        "butchercraft:platform_contract/patty_former_continuous_run_activation",
+                        "butchercraft:platform_contract/workstation_durable_projection_authority",
+                        "butchercraft:platform_contract/workstation_projection_exact_itemstack",
+                        "butchercraft:platform_contract/workstation_projection_monotonic_revision",
+                        "butchercraft:platform_contract/workstation_projection_atomic_publication",
+                        "butchercraft:platform_contract/workstation_projection_unloaded_read",
+                        "butchercraft:platform_contract/workstation_projection_loaded_reconciliation",
+                        "butchercraft:platform_contract/workstation_projection_legacy_classification",
+                        "butchercraft:platform_contract/workstation_projection_retirement",
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_read_candidate",
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_completeness_gate",
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_embedding",
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_no_force_load",
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_fail_closed",
+                        "butchercraft:platform_contract/workstation_projection_historical_classification",
+                        "butchercraft:platform_contract/workstation_projection_r4_candidate_verifier"
                 ).contains(contract.id().value()))
                 .allMatch(contract ->
                         contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
@@ -1139,13 +1220,55 @@ class ArchitectureRulesTest {
     }
 
     @Test
-    void currentManifestRegistersMachineRunFoundationAndGrinderOnlyActivation() {
+    void currentManifestRegistersR4StartupAndWorkstationRestoration() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.architectureDocuments().stream().anyMatch(document ->
+                document.id().value().equals("butchercraft:document/durable_workstation_projection_adr")
+                        && document.status().contains("R3A_R3B_R3C")
+                        && document.status().contains("R4_PROJECTION_RECOVERY_IMPLEMENTED")));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment ->
+                assignment.responsibilityId().value()
+                        .equals("butchercraft:responsibility/workstation_durable_projection")
+                        && assignment.ownerId().value().equals("butchercraft:workstation")));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence ->
+                persistence.id().equals("butchercraft:workstation_durable_projections")
+                        && persistence.path().startsWith("butchercraft/workstations/projections/v1/")
+                        && persistence.ownerId().value().equals("butchercraft:workstation")
+                        && persistence.schemaVersion() == 1));
+        assertTrue(context.platformContracts().stream().anyMatch(contract ->
+                contract.id().value().equals(
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_completeness_gate")
+                        && contract.disposition()
+                        == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract ->
+                contract.id().value().equals(
+                        "butchercraft:platform_contract/workstation_projection_checkpoint_no_force_load")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract ->
+                contract.id().value().equals(
+                        "butchercraft:platform_contract/workstation_projection_r4_candidate_verifier")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract ->
+                contract.id().value().equals(
+                        "butchercraft:platform_contract/workstation_projection_native_restoration")
+                        && contract.ownerId().value().equals("butchercraft:workstation")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract ->
+                contract.id().value().equals(
+                        "butchercraft:platform_contract/workstation_projection_policy_b_successor_reconciliation")
+                        && contract.ownerId().value().equals("butchercraft:workstation")
+                        && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+    }
+
+    @Test
+    void currentManifestRegistersMachineRunFoundationAndTwoMachineActivation() {
         ValidationContext context = ArchitectureValidationTestFixtures.validContext();
 
         assertTrue(context.architectureDocuments().stream().anyMatch(document -> document.id().value()
                 .equals("butchercraft:document/persistent_machine_operating_state_adr")
                 && document.status().equals(
-                        "RATIFIED_IM_031A_FOUNDATION_AND_IM_031B_GRINDER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED")));
+                        "RATIFIED_IM_031A_FOUNDATION_IM_031B_GRINDER_AND_IM_031C_PATTY_FORMER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED")));
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
                 .equals("butchercraft:platform_contract/machine_run_execution_authority")
                 && contract.ownerId().value().equals("butchercraft:execution")
@@ -1158,6 +1281,12 @@ class ArchitectureRulesTest {
                 .equals("butchercraft:platform_contract/grinder_continuous_run_activation")
                 && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/powered_processing_shared_run_coordination")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/patty_former_continuous_run_activation")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
                 .equals("butchercraft:platform_contract/machine_run_remaining_activation_gates")
                 && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
         assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
@@ -1166,6 +1295,51 @@ class ArchitectureRulesTest {
         assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
                 .equals("butchercraft:machine_operating_states")
                 && persistence.ownerId().value().equals("butchercraft:workstation")));
+    }
+
+    @Test
+    void currentManifestRegistersImplementedRecoverySequenceThroughR4() {
+        ValidationContext context = ArchitectureValidationTestFixtures.validContext();
+
+        assertTrue(context.architectureDocuments().stream().anyMatch(document -> document.id().value()
+                .equals("butchercraft:document/legacy_split_snapshot_recovery_adr")
+                && document.status().equals(
+                "RATIFIED_IM_031C_R1_THROUGH_R4_IMPLEMENTED_FINAL_OWNER_ACCEPTANCE_PENDING")));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/split_snapshot_read_only_analysis_foundation")
+                && contract.ownerId().value().equals("butchercraft:checkpoint_recovery")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/historical_coordination_acknowledgement_evidence")
+                && contract.ownerId().value().equals("butchercraft:simulation_scheduler")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/planning_recovery_authority_block_foundation")
+                && contract.ownerId().value().equals("butchercraft:planning")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/legacy_recovery_immutable_publication")
+                && contract.ownerId().value().equals("butchercraft:checkpoint_recovery")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/legacy_recovery_scheduler_publication")
+                && contract.ownerId().value().equals("butchercraft:simulation_scheduler")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/legacy_recovery_policy_b_publication")
+                && contract.ownerId().value().equals("butchercraft:execution")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/checkpoint_publication")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/startup_source_selection")
+                && contract.ownerId().value().equals("butchercraft:checkpoint_recovery")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/owner_native_restoration_transaction")
+                && contract.ownerId().value().equals("butchercraft:checkpoint_recovery")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
     }
 
     private static ValidationResult validate(ValidationRule rule, ValidationContext context) {

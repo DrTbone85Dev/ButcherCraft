@@ -11,6 +11,7 @@ import com.butchercraft.registration.ModItems;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationTickContext;
+import com.butchercraft.workstation.operation.MachineOperatingState;
 import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
 import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.EmployeeMaterialHandlingService;
@@ -116,6 +117,9 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
                     "Patty Former merges exactly one delivered Ground Beef");
             helper.assertTrue(fixture.pattyFormer().workstationState() == WorkstationState.READY,
                     "Ground Beef deposit leaves Patty Former READY");
+            helper.assertTrue(fixture.pattyFormer().runStatus().operatingState() == MachineOperatingState.OFF
+                            && fixture.pattyFormer().runStatus().runIdentity().isEmpty(),
+                    "Material Handling delivery to an OFF Patty Former creates no Machine Run");
             helper.assertTrue(fixture.employee().getMainHandItem().isEmpty(),
                     "Carry projection clears immediately after proven deposit");
             helper.assertTrue(reservation(helper, fixture.record()).workstationType().equals("patty_former"),
@@ -126,9 +130,59 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
             helper.runAtTickTime(180, () -> {
                 helper.assertTrue(fixture.pattyFormer().workstationState() == WorkstationState.READY,
                         "Patty Former remains READY without automatic operation");
+                helper.assertTrue(fixture.pattyFormer().runStatus().operatingState() == MachineOperatingState.OFF,
+                        "Patty Former remains operating-state OFF after passive delivery");
                 helper.assertTrue(fixture.pattyFormer().inventory().output().isEmpty(),
                         "Transport alone produces no Beef Patties");
                 assertCounts(helper, beforeTransfer);
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 260, batch = BATCH + "01b_running_empty_delivery")
+    public static void employeeDeliveryResumesExistingRunningEmptyPattyFormerRun(GameTestHelper helper) {
+        Fixture fixture = setup(helper, "Powered Patty Courier");
+
+        helper.runAtTickTime(100, () -> {
+            assertLegitimateGroundBeefOutput(helper, fixture.grinder());
+            var started = fixture.pattyFormer().startRun();
+            var runIdentity = started.runIdentity().orElseThrow();
+            helper.assertTrue(started.accepted()
+                            && fixture.pattyFormer().runStatus().operatingState()
+                            == MachineOperatingState.RUNNING_EMPTY,
+                    "Player START creates one empty powered Patty Former Run before delivery");
+
+            WorkstationReservationService.INSTANCE.assign(
+                    helper.getLevel(), fixture.record().employeeId(), helper.absolutePos(GRINDER_POS)
+            ).orThrow();
+            moveAndSynchronize(helper, fixture.employee(), GRINDER_OPERATING_POS);
+            helper.assertTrue(executeTransferCommand(helper, fixture.record()) == 1,
+                    "Existing employee transfer command accepts the powered-empty destination");
+            EmployeeMaterialHandlingService.INSTANCE.tick(fixture.employee());
+            moveAndSynchronize(helper, fixture.employee(), PATTY_FORMER_OPERATING_POS);
+            EmployeeMaterialHandlingService.INSTANCE.tick(fixture.employee());
+
+            helper.assertTrue(assignment(helper, fixture.record()).state()
+                            == EmployeeMaterialHandlingAssignmentState.COMPLETED,
+                    "Employee delivery completes through Material Handling");
+            helper.assertTrue(fixture.pattyFormer().runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                    "Delivery does not replace the existing Patty Former Run");
+            helper.assertTrue(fixture.pattyFormer().runStatus().operatingState()
+                            == MachineOperatingState.RUNNING_EMPTY,
+                    "Delivery itself grants no replacement START authority");
+
+            helper.runAtTickTime(210, () -> {
+                PattyFormerBlockEntity completed = fixture.pattyFormer();
+                helper.assertTrue(completed.inventory().input().isEmpty()
+                                && completed.inventory().output().is(ModItems.BEEF_PATTIES.get())
+                                && completed.inventory().output().getCount() == 1,
+                        "The existing Run admits exactly one bounded child after delivery");
+                helper.assertTrue(completed.runStatus().runIdentity().orElseThrow().equals(runIdentity),
+                        "Post-delivery processing preserves the exact Run identity");
+                helper.assertTrue(completed.runStatus().completedChildren() == 1
+                                && completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
+                        "The same Run returns to RUNNING_EMPTY after one delivered item");
                 helper.succeed();
             });
         });

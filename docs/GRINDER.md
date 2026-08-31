@@ -107,6 +107,7 @@ without creating items or wear. Add more Beef Trim and confirm the same Run
 resumes. Fill output, confirm `OUTPUT_BLOCKED` preserves input, remove capacity,
 and confirm the same Run resumes. STOP during a child and confirm no later child
 starts. Save an active Run, reload, and verify explicit RESUME/STOP from
-`RESTART_REQUIRED`. Also verify Patty Former remains one-cycle. Automated
+`RESTART_REQUIRED`. Also verify the Patty Former now follows the same player
+control model while retaining its own recipe and inventory authority. Automated
 implementation does not claim a human acceptance pass unless a human tester
 completes it.

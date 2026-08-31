@@ -3,6 +3,8 @@ package com.butchercraft.world.simulation.time;
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.config.CommonConfig;
 import com.butchercraft.network.WorldTimeClientSnapshotPayload;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -39,6 +41,8 @@ public final class WorldTimeService {
     }
 
     public void advance(ServerTickEvent.Post event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.BUSINESS_RUNTIME)) return;
         ActiveWorldTime activeWorldTime = load(event.getServer());
         WorldTimeConfiguration configuration = configurationFromConfig();
         ServerLevel sourceLevel = sourceLevel(event.getServer());
@@ -112,6 +116,11 @@ public final class WorldTimeService {
                 sourceLevel.getGameTime(),
                 sourceLevel.getDayTime()
         ));
+    }
+
+    public synchronized String checkpointSnapshotJson(MinecraftServer server) {
+        ActiveWorldTime current = load(Objects.requireNonNull(server, "server"));
+        return current.storage().serialize(current.state());
     }
 
     public static Path worldTimeStateFile(MinecraftServer server) {

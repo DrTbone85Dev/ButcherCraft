@@ -521,7 +521,7 @@ class CheckpointLiveOwnerSnapshotIntegrationTest {
     }
 
     @Test
-    void noAutomaticSaveHookOrStartupIntegrationExists() throws IOException {
+    void liveCheckpointIntegrationInstallsAuthorizedStartupRestorationWithoutLegacyRestorePath() throws IOException {
         String entryPoint = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/ButcherCraft.java"
         ));
@@ -531,11 +531,32 @@ class CheckpointLiveOwnerSnapshotIntegrationTest {
         String schedulerService = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/world/SimulationSchedulerService.java"
         ));
+        String reservationService = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/world/WorkstationReservationService.java"
+        ));
+        String employeeTransferService = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/world/EmployeeMaterialHandlingService.java"
+        ));
+        String employeeEntity = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/entity/employee/EmployeeEntity.java"
+        ));
+        String playerJoin = Files.readString(TestProjectPaths.projectPath(
+                "src/main/java/com/butchercraft/world/player/runtime/PlayerJoinInitializer.java"
+        ));
 
         assertFalse(entryPoint.contains("CheckpointOwnerSnapshotCoordinator"));
         assertFalse(entryPoint.contains("CheckpointFilesystemStore"));
-        assertFalse(clockService.contains("CheckpointOwnerSnapshotCoordinator"));
-        assertFalse(schedulerService.contains("CheckpointOwnerSnapshotCoordinator"));
+        assertTrue(entryPoint.contains("LiveCheckpointService.INSTANCE::advance"));
+        assertTrue(entryPoint.contains("LiveCheckpointService.INSTANCE::stop"));
+        assertTrue(entryPoint.contains("StartupRecoveryService.INSTANCE::begin"));
+        assertTrue(entryPoint.contains("StartupRecoveryService.INSTANCE::initialize"));
+        assertFalse(entryPoint.contains("restoreSelectedControlled"));
+        assertTrue(clockService.contains("StartupMutationGateService"));
+        assertTrue(schedulerService.contains("StartupMutationGateService"));
+        assertTrue(reservationService.contains("StartupMutationGateService"));
+        assertTrue(employeeTransferService.contains("StartupMutationGateService"));
+        assertTrue(employeeEntity.contains("StartupMutationGateService"));
+        assertTrue(playerJoin.contains("StartupMutationGateService"));
     }
 
     private CheckpointPublicationReport publishClockScheduler(

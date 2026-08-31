@@ -24,17 +24,23 @@ class DevelopmentCheckpointCommandTest {
         assertTrue(checkpointCommands.contains("Commands.literal(\"checkpoint\")"));
         assertTrue(checkpointCommands.contains("ENABLE_DEVELOPMENT_DIAGNOSTIC"));
         assertTrue(checkpointCommands.contains("Commands.literal(\"capture\")"));
+        assertTrue(checkpointCommands.contains("Commands.literal(\"create\")"));
+        assertTrue(checkpointCommands.contains("Commands.literal(\"status\")"));
+        assertTrue(checkpointCommands.contains("source.hasPermission(2)"));
         assertTrue(checkpointCommands.contains("Commands.literal(\"list\")"));
         assertTrue(checkpointCommands.contains("Commands.literal(\"validate\")"));
         assertTrue(checkpointCommands.contains("Commands.literal(\"inspect-selected\")"));
         assertTrue(checkpointCommands.contains("Commands.literal(\"restore-selected\")"));
+        assertTrue(checkpointCommands.contains("Commands.literal(\"workstation-projections\")"));
+        assertTrue(checkpointCommands.contains("var service = DurableWorkstationProjectionService.INSTANCE"));
+        assertTrue(checkpointCommands.contains("service.diagnostics(source.getServer())"));
         assertTrue(checkpointCommands.contains("rejectUnsafeLiveRestore"));
         assertFalse(checkpointCommands.contains("restoreSelectedControlled("),
                 "Live command surface must not perform controlled harness restoration");
     }
 
     @Test
-    void checkpointInvocationIsNotRegisteredAsStartupRecoveryOrCadence() throws IOException {
+    void liveCheckpointHooksDoNotInstallStartupRestoration() throws IOException {
         String modEntry = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/ButcherCraft.java"
         ));
@@ -47,6 +53,9 @@ class DevelopmentCheckpointCommandTest {
 
         assertFalse(modEntry.contains("DevelopmentCheckpointHarness"));
         assertFalse(modEntry.contains("CheckpointFilesystemStore"));
+        assertTrue(modEntry.contains("LiveCheckpointService.INSTANCE::advance"));
+        assertTrue(modEntry.contains("LiveCheckpointService.INSTANCE::stop"));
+        assertTrue(modEntry.contains("LiveCheckpointService.INSTANCE::initialize"));
         assertFalse(clockService.contains("DevelopmentCheckpointHarness"));
         assertFalse(clockService.contains("CheckpointFilesystemStore"));
         assertFalse(schedulerService.contains("DevelopmentCheckpointHarness"));

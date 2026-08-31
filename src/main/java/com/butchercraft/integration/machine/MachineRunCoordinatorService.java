@@ -12,6 +12,8 @@ import com.butchercraft.workstation.operation.MachineOperatingState;
 import com.butchercraft.workstation.operation.MachineWorkstationReference;
 import com.butchercraft.world.ExecutionMachineRunService;
 import com.butchercraft.world.ExecutionService;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.MachineOperatingStateService;
 import com.butchercraft.world.execution.ExecutionAuthorization;
 import com.butchercraft.world.execution.ExecutionOperationId;
@@ -61,6 +63,8 @@ public final class MachineRunCoordinatorService {
     }
 
     public void initialize(ServerStartedEvent event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), LegacySplitRecoveryParticipants.EXECUTION)) return;
         reconcileForRestart(event.getServer(), clockService.clock(event.getServer()).simulationTick());
     }
 
@@ -73,6 +77,7 @@ public final class MachineRunCoordinatorService {
             String sourceRequestIdentity,
             long tick
     ) {
+        requireMutation(server);
         Optional<MachineRunRecord> prior = runService.snapshot(server)
                 .startForRequest(sourceOwner, sourceRequestIdentity);
         if (prior.isPresent()) {
@@ -167,6 +172,7 @@ public final class MachineRunCoordinatorService {
             String sourceRequestIdentity,
             long tick
     ) {
+        requireMutation(server);
         Optional<MachineRunRecord> prior = runService.snapshot(server)
                 .stopForRequest(sourceOwner, sourceRequestIdentity);
         if (prior.isPresent()) {
@@ -229,6 +235,7 @@ public final class MachineRunCoordinatorService {
             ExecutionAuthorization authorization,
             long tick
     ) {
+        requireMutation(server);
         Objects.requireNonNull(authorization, "authorization");
         MachineRunRecord run = runService.find(server, runIdentity).orElse(null);
         if (run == null) return result(MachineRunCoordinationCode.STALE_RUN, server, Optional.empty(), Optional.empty(),
@@ -315,6 +322,7 @@ public final class MachineRunCoordinatorService {
             ExecutionOperationId operationId,
             long tick
     ) {
+        requireMutation(server);
         ExecutionOperationSnapshot operation = executionService.managerFor(server).find(operationId).orElse(null);
         if (operation == null) {
             MachineRunRecord run = runService.find(server, runIdentity).orElse(null);
@@ -354,6 +362,7 @@ public final class MachineRunCoordinatorService {
             long expectedOperatingRevision,
             long tick
     ) {
+        requireMutation(server);
         MachineRunRecord run = runService.find(server, runIdentity).orElse(null);
         if (run == null) return result(MachineRunCoordinationCode.STALE_RUN, server, Optional.empty(), Optional.empty(),
                 "Unknown Machine Run");
@@ -389,6 +398,7 @@ public final class MachineRunCoordinatorService {
             String workstationInstanceIdentity,
             long tick
     ) {
+        requireMutation(server);
         MachineOperatingMutation mutation = operatingService.availability(
                 server,
                 workstationInstanceIdentity,
@@ -404,6 +414,7 @@ public final class MachineRunCoordinatorService {
             MachineWorkstationReference workstation,
             long tick
     ) {
+        requireMutation(server);
         MachineRunCoordinationCode code = validateExactEndpoint(server, workstation);
         if (code != MachineRunCoordinationCode.ACCEPTED) {
             return result(code, server, runService.snapshot(server).activeFor(workstation.instanceId().value()),
@@ -424,6 +435,7 @@ public final class MachineRunCoordinatorService {
             String workstationInstanceIdentity,
             long tick
     ) {
+        requireMutation(server);
         MachineRunRecord run = runService.snapshot(server).activeFor(workstationInstanceIdentity).orElse(null);
         MachineOperatingMutation operating = operatingService.recoveryRequired(
                 server,
@@ -563,6 +575,10 @@ public final class MachineRunCoordinatorService {
                 );
             }
         }
+    }
+
+    private static void requireMutation(MinecraftServer server) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.EXECUTION);
     }
 
     private void resolveChildAtStopBoundary(MinecraftServer server, MachineRunRecord run, long tick) {

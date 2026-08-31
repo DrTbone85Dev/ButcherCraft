@@ -13,6 +13,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class ProductionService {
@@ -61,6 +62,11 @@ public final class ProductionService {
         load(event.getServer());
     }
 
+    public void prepareHandler(ServerStartedEvent event) {
+        schedulerService.installHandler(new ProductionSimulationWorkHandler(
+                () -> managerFor(event.getServer())));
+    }
+
     public void bindScheduler(ServerStartedEvent event) {
         ActiveProduction active = load(event.getServer());
         active.manager().validateSchedulerReferences(schedulerService.managerFor(event.getServer()));
@@ -80,6 +86,21 @@ public final class ProductionService {
 
     public Optional<ProductionManager> currentManager() {
         return Optional.ofNullable(activeState.get()).map(ActiveProduction::manager);
+    }
+
+    public synchronized Map<String, String> checkpointSnapshotFiles(MinecraftServer server) {
+        ActiveProduction current = activeState.get();
+        if (current == null || current.server() != Objects.requireNonNull(server, "server")) {
+            throw new IllegalStateException("Production is not initialized for this server");
+        }
+        return Map.of(
+                ProductionSchema.PROCESSES_FILE_NAME,
+                current.storage().serializeProcesses(current.manager().processRegistry()),
+                ProductionSchema.PLANS_FILE_NAME,
+                current.storage().serializePlans(current.manager().planRegistry()),
+                ProductionSchema.RUNS_FILE_NAME,
+                current.storage().serializeRuns(current.manager().runs())
+        );
     }
 
     private ActiveProduction load(MinecraftServer server) {
@@ -102,7 +123,6 @@ public final class ProductionService {
                 processFile(server), planFile(server), runFile(server), dependencies
         );
         ProductionManager manager = storage.load();
-        schedulerService.installHandler(new ProductionSimulationWorkHandler(manager));
         ActiveProduction created = new ActiveProduction(server, storage, manager);
         activeState.set(created);
         return created;

@@ -1,5 +1,6 @@
 package com.butchercraft.world.simulation.time;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -7,13 +8,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -46,28 +42,14 @@ public final class WorldTimeStateStorage {
         if (!Files.exists(filePath)) {
             return Optional.empty();
         }
-        try {
-            WorldTimeState state = deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-            state.validate(configuration);
-            return Optional.of(state.restored());
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load world time state from " + filePath, exception);
-        }
+        WorldTimeState state = deserialize(AtomicFilePublication.readUtf8(filePath, "World time state"));
+        state.validate(configuration);
+        return Optional.of(state.restored());
     }
 
     public void save(WorldTimeState state) {
         Objects.requireNonNull(state, "state").validate(configuration);
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(state), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save world time state to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(state), "World time state");
     }
 
     public String serialize(WorldTimeState state) {
@@ -110,14 +92,6 @@ public final class WorldTimeStateStorage {
             return state;
         } catch (JsonParseException | IllegalStateException exception) {
             throw new IllegalArgumentException("Corrupt world time state persistence", exception);
-        }
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

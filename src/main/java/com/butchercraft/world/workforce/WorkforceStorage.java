@@ -1,5 +1,6 @@
 package com.butchercraft.world.workforce;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.business.BusinessId;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -9,13 +10,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -62,26 +58,12 @@ public final class WorkforceStorage {
         if (!Files.exists(filePath)) {
             return WorkforceRegistry.empty();
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load workforce definitions from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "Workforce definitions"));
     }
 
     public void save(WorkforceRegistry registry) {
         Objects.requireNonNull(registry, "registry");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(registry), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save workforce definitions to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(registry), "Workforce definitions");
     }
 
     public String serialize(WorkforceRegistry registry) {
@@ -253,14 +235,6 @@ public final class WorkforceStorage {
             positionIds.add(new PositionId(element.getAsString()));
         }
         return positionIds;
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static JsonObject requireObject(JsonElement element, String label) {

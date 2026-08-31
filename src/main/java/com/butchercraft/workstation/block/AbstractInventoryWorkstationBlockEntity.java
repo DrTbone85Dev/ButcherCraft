@@ -14,8 +14,10 @@ import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationEndpointRuntimeService;
 import com.butchercraft.workstation.endpoint.runtime.StackAwareWorkstationTransferEndpoint;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationTransferEndpoint;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -36,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Shared block-entity foundation for workstation blocks that own a bounded inventory and menu.
@@ -43,6 +46,7 @@ import java.util.Optional;
 public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntity implements MenuProvider {
     private static final String INVENTORY_TAG = "Inventory";
     private static final String ENDPOINT_PROJECTION_TAG = "TransferEndpointProjection";
+    private static final String DURABLE_PROJECTION_REFERENCE_TAG = "DurableProjectionReference";
 
     private final WorkstationInventory inventory;
     private final WorkstationCapability capability;
@@ -52,6 +56,14 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
     private Optional<WorkstationEndpointEffectIdV2> stackAwarePreparedEffectId = Optional.empty();
     private Optional<WorkstationEndpointEffectIdV2> stackAwareLastEffectId = Optional.empty();
     private Optional<String> stackAwareLastOwnerResultIdentity = Optional.empty();
+    private Optional<WorkstationEndpointEffectId> recoveredLegacyLastEffectId = Optional.empty();
+    private Optional<String> recoveredLegacyLastOwnerResultIdentity = Optional.empty();
+    private long durableProjectionRevision;
+    private Optional<String> durableProjectionDigest = Optional.empty();
+    private boolean durableProjectionReady;
+    private boolean durableProjectionPublicationSuppressed;
+    private int durableProjectionMutationDepth;
+    private boolean durableProjectionMutationChanged;
 
     protected AbstractInventoryWorkstationBlockEntity(
             BlockEntityType<?> type,
@@ -138,13 +150,25 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         endpointProjection.preparedEffectId().ifPresent(value -> endpointTag.putString("PreparedEffectIdentity", value.value()));
         stackAwarePreparedEffectId.ifPresent(value ->
                 endpointTag.putString("StackAwarePreparedEffectIdentity", value.value()));
-        stackAwareLastEffectId.ifPresent(value -> endpointTag.putString("StackAwareLastEffectIdentity", value.value()));
-        stackAwareLastOwnerResultIdentity.ifPresent(
-                value -> endpointTag.putString("StackAwareLastOwnerResultIdentity", value)
-        );
+        if (stackAwareLastEffectId.isPresent()) {
+            endpointTag.putString("StackAwareLastEffectIdentity", stackAwareLastEffectId.orElseThrow().value());
+            endpointTag.putString("StackAwareLastOwnerResultIdentity",
+                    stackAwareLastOwnerResultIdentity.orElseThrow());
+        } else if (recoveredLegacyLastEffectId.isPresent()) {
+            endpointTag.putString("StackAwareLastEffectIdentity", recoveredLegacyLastEffectId.orElseThrow().value());
+            endpointTag.putString("StackAwareLastOwnerResultIdentity",
+                    recoveredLegacyLastOwnerResultIdentity.orElseThrow());
+        }
         endpointTag.putInt("PreparedSlotIndex", endpointProjection.preparedSlotIndex());
         endpointTag.putLong("PreparedInventoryRevision", endpointProjection.preparedInventoryRevision());
         tag.put(ENDPOINT_PROJECTION_TAG, endpointTag);
+        if (durableProjectionRevision > 0L) {
+            CompoundTag durableReference = new CompoundTag();
+            durableReference.putInt("SchemaVersion", 1);
+            durableReference.putLong("ProjectionRevision", durableProjectionRevision);
+            durableReference.putString("StateDigest", durableProjectionDigest.orElseThrow());
+            tag.put(DURABLE_PROJECTION_REFERENCE_TAG, durableReference);
+        }
     }
 
     @Override
@@ -184,35 +208,25 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
             ) ? Optional.of(new WorkstationEndpointEffectIdV2(
                     endpointTag.getString("StackAwarePreparedEffectIdentity")
             )) : Optional.empty();
-            Optional<WorkstationEndpointEffectIdV2> stackAwareLast = endpointTag.contains(
-                    "StackAwareLastEffectIdentity",
-                    Tag.TAG_STRING
-            ) ? Optional.of(new WorkstationEndpointEffectIdV2(
-                    endpointTag.getString("StackAwareLastEffectIdentity")
-            )) : Optional.empty();
-            Optional<String> stackAwareLastResult = endpointTag.contains(
-                    "StackAwareLastOwnerResultIdentity",
-                    Tag.TAG_STRING
-            ) ? Optional.of(endpointTag.getString("StackAwareLastOwnerResultIdentity")) : Optional.empty();
+            StackAwareEffectMarkers stackAwareMarkers = readStackAwareEffectMarkers(endpointTag);
             if (schemaVersion == WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION
-                    && (stackAwarePrepared.isPresent() || stackAwareLast.isPresent()
-                    || stackAwareLastResult.isPresent())) {
+                    && (stackAwarePrepared.isPresent() || stackAwareMarkers.hasAnyMarker())) {
                 throw new IllegalStateException("Schema-1 endpoint projection contains schema-2 effect identity");
             }
             if (schemaVersion == WorkstationEndpointSchema.STACK_AWARE_ENDPOINT_PROTOCOL_VERSION
                     && (preparedEffect.isPresent() || lastEffect.isPresent() || lastResult.isPresent())) {
                 throw new IllegalStateException("Schema-2 endpoint projection contains schema-1 effect markers");
             }
-            if (stackAwareLast.isEmpty() != stackAwareLastResult.isEmpty()) {
-                throw new IllegalStateException("Schema-2 endpoint result markers must be published together");
-            }
-            if (stackAwareLast.isPresent() && endpointTag.getLong("LastAppliedJournalSequence") <= 0L) {
+            if (stackAwareMarkers.hasAnyMarker()
+                    && endpointTag.getLong("LastAppliedJournalSequence") <= 0L) {
                 throw new IllegalStateException("Schema-2 endpoint result marker requires a journal sequence");
             }
             endpointProtocolVersion = schemaVersion;
             stackAwarePreparedEffectId = stackAwarePrepared;
-            stackAwareLastEffectId = stackAwareLast;
-            stackAwareLastOwnerResultIdentity = stackAwareLastResult;
+            stackAwareLastEffectId = stackAwareMarkers.activeEffectId();
+            stackAwareLastOwnerResultIdentity = stackAwareMarkers.activeOwnerResultIdentity();
+            recoveredLegacyLastEffectId = stackAwareMarkers.recoveredLegacyEffectId();
+            recoveredLegacyLastOwnerResultIdentity = stackAwareMarkers.recoveredLegacyOwnerResultIdentity();
             endpointProjection = new WorkstationEndpointProjection(
                     instanceId,
                     endpointTag.getLong("InstanceGeneration"),
@@ -227,6 +241,23 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
                     preparedEffect.isPresent() || stackAwarePrepared.isPresent()
                             ? endpointTag.getLong("PreparedInventoryRevision") : 0L
             );
+        }
+        durableProjectionRevision = 0L;
+        durableProjectionDigest = Optional.empty();
+        durableProjectionReady = false;
+        if (tag.contains(DURABLE_PROJECTION_REFERENCE_TAG, Tag.TAG_COMPOUND)) {
+            CompoundTag durableReference = tag.getCompound(DURABLE_PROJECTION_REFERENCE_TAG);
+            int schema = durableReference.getInt("SchemaVersion");
+            if (schema != 1) {
+                throw new IllegalStateException("Unsupported durable Workstation projection reference schema: " + schema);
+            }
+            long revision = durableReference.getLong("ProjectionRevision");
+            String digest = durableReference.getString("StateDigest");
+            if (revision <= 0L || digest.isBlank()) {
+                throw new IllegalStateException("Invalid durable Workstation projection reference");
+            }
+            durableProjectionRevision = revision;
+            durableProjectionDigest = Optional.of(digest);
         }
     }
 
@@ -257,10 +288,208 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         if (level instanceof ServerLevel serverLevel && this instanceof StackAwareWorkstationTransferEndpoint) {
             StackAwareWorkstationEndpointRuntimeService.INSTANCE.reconcileLoadedEndpoint(serverLevel, worldPosition);
         }
+        if (level instanceof ServerLevel serverLevel && this instanceof WorkstationTransferEndpoint) {
+            var reconciliation = DurableWorkstationProjectionService.INSTANCE.reconcileLoaded(serverLevel, this);
+            if (!reconciliation.succeeded()) {
+                throw new IllegalStateException("Durable Workstation projection reconciliation failed: "
+                        + reconciliation.code() + ": " + reconciliation.detail());
+            }
+        }
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (durableProjectionMutationDepth > 0) {
+            durableProjectionMutationChanged = true;
+            return;
+        }
+        if (!durableProjectionPublicationSuppressed && durableProjectionReady
+                && level instanceof ServerLevel serverLevel) {
+            DurableWorkstationProjectionService.INSTANCE.publishAuthorizedMutation(serverLevel, this);
+        }
+    }
+
+    protected final void beginDurableProjectionMutation() {
+        durableProjectionMutationDepth = Math.addExact(durableProjectionMutationDepth, 1);
+    }
+
+    protected final void endDurableProjectionMutation() {
+        if (durableProjectionMutationDepth <= 0) {
+            throw new IllegalStateException("Durable Workstation projection mutation boundary is unbalanced");
+        }
+        durableProjectionMutationDepth--;
+        if (durableProjectionMutationDepth == 0 && durableProjectionMutationChanged) {
+            durableProjectionMutationChanged = false;
+            setChanged();
+        }
     }
 
     protected final WorkstationEndpointProjection endpointProjectionView() {
         return endpointProjection;
+    }
+
+    public final Optional<WorkstationInstanceId> checkpointInstanceIdentity() {
+        return endpointProjection.instanceId();
+    }
+
+    public final long checkpointInstanceGeneration() {
+        return endpointProjection.instanceGeneration();
+    }
+
+    public final CompoundTag checkpointProjectionSnapshot(HolderLookup.Provider registries) {
+        return saveWithoutMetadata(Objects.requireNonNull(registries, "registries")).copy();
+    }
+
+    public final CompoundTag durableProjectionStateSnapshot(HolderLookup.Provider registries) {
+        CompoundTag projection = saveWithoutMetadata(Objects.requireNonNull(registries, "registries")).copy();
+        projection.remove(DURABLE_PROJECTION_REFERENCE_TAG);
+        return projection;
+    }
+
+    public final void restoreDurableProjectionState(
+            CompoundTag projection,
+            HolderLookup.Provider registries
+    ) {
+        durableProjectionPublicationSuppressed = true;
+        try {
+            loadAdditional(
+                    Objects.requireNonNull(projection, "projection").copy(),
+                    Objects.requireNonNull(registries, "registries")
+            );
+            super.setChanged();
+        } finally {
+            durableProjectionPublicationSuppressed = false;
+        }
+    }
+
+    public final void acceptDurableProjectionReference(long revision, String stateDigest) {
+        if (revision <= 0L) throw new IllegalArgumentException("Durable projection revision must be positive");
+        Objects.requireNonNull(stateDigest, "stateDigest");
+        if (revision < durableProjectionRevision) {
+            throw new IllegalStateException("Durable Workstation projection revision cannot regress");
+        }
+        durableProjectionPublicationSuppressed = true;
+        try {
+            durableProjectionRevision = revision;
+            durableProjectionDigest = Optional.of(stateDigest);
+            durableProjectionReady = true;
+            super.setChanged();
+        } finally {
+            durableProjectionPublicationSuppressed = false;
+        }
+    }
+
+    public final void markDurableProjectionReady() {
+        durableProjectionReady = true;
+    }
+
+    protected final void ensureDurableProjectionReady() {
+        if (durableProjectionReady || !(level instanceof ServerLevel serverLevel)
+                || !(this instanceof WorkstationTransferEndpoint)) {
+            return;
+        }
+        var reconciliation = DurableWorkstationProjectionService.INSTANCE.reconcileLoaded(serverLevel, this);
+        if (!reconciliation.succeeded()) {
+            throw new IllegalStateException("Durable Workstation projection initialization failed: "
+                    + reconciliation.code() + ": " + reconciliation.detail());
+        }
+    }
+
+    public final long durableProjectionRevision() {
+        return durableProjectionRevision;
+    }
+
+    public final Optional<String> durableProjectionDigest() {
+        return durableProjectionDigest;
+    }
+
+    public final String durableBlockEntityTypeIdentity() {
+        return Objects.requireNonNull(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(getType()), "blockEntityType").toString();
+    }
+
+    public final List<ItemStack> durableInventorySnapshot() {
+        java.util.ArrayList<ItemStack> slots = new java.util.ArrayList<>(inventory.totalSlotCount());
+        for (int slot = 0; slot < inventory.totalSlotCount(); slot++) {
+            slots.add(inventory.getStackInSlot(slot).copy());
+        }
+        return List.copyOf(slots);
+    }
+
+    public final int durableConfiguredSlotCapacity(int slot) {
+        return inventory.slotCapacityPolicy().capacity(slot);
+    }
+
+    public final int durableEffectiveSlotCapacity(int slot, ItemStack stack) {
+        return stack.isEmpty()
+                ? inventory.slotCapacityPolicy().capacity(slot)
+                : inventory.effectiveSlotCapacity(slot, stack);
+    }
+
+    public final String durableSlotCapacityConfigurationIdentity() {
+        return inventory.slotCapacityPolicy().configurationIdentity();
+    }
+
+    public final long durableInventoryRevision() {
+        return endpointProjection.inventoryRevision();
+    }
+
+    public final long durableEndpointEffectRevision() {
+        return endpointProjection.endpointEffectRevision();
+    }
+
+    public final long durableLastAppliedJournalSequence() {
+        return endpointProjection.lastAppliedJournalSequence();
+    }
+
+    public final Optional<String> durablePreparedEndpointEffectIdentity() {
+        if (stackAwarePreparedEffectId.isPresent()) {
+            return stackAwarePreparedEffectId.map(WorkstationEndpointEffectIdV2::value);
+        }
+        return endpointProjection.preparedEffectId().map(WorkstationEndpointEffectId::value);
+    }
+
+    public final Optional<String> durableLastEndpointEffectIdentity() {
+        if (stackAwareLastEffectId.isPresent()) {
+            return stackAwareLastEffectId.map(WorkstationEndpointEffectIdV2::value);
+        }
+        if (recoveredLegacyLastEffectId.isPresent()) {
+            return recoveredLegacyLastEffectId.map(WorkstationEndpointEffectId::value);
+        }
+        return endpointProjection.lastEffectId().map(WorkstationEndpointEffectId::value);
+    }
+
+    public final Optional<String> durableLastEndpointOwnerResultIdentity() {
+        if (stackAwareLastOwnerResultIdentity.isPresent()) return stackAwareLastOwnerResultIdentity;
+        if (recoveredLegacyLastOwnerResultIdentity.isPresent()) return recoveredLegacyLastOwnerResultIdentity;
+        return endpointProjection.lastOwnerResultIdentity();
+    }
+
+    public final Optional<String> durableProcessingOperationIdentity() {
+        return durableProcessingOperationIdentityView();
+    }
+
+    public final Optional<String> durableProcessingOwnerResultIdentity() {
+        return durableProcessingOwnerResultIdentityView();
+    }
+
+    protected Optional<String> durableProcessingOperationIdentityView() {
+        return Optional.empty();
+    }
+
+    protected Optional<String> durableProcessingOwnerResultIdentityView() {
+        return Optional.empty();
+    }
+
+    public final void restoreCheckpointProjection(
+            CompoundTag projection,
+            HolderLookup.Provider registries
+    ) {
+        loadAdditional(
+                Objects.requireNonNull(projection, "projection").copy(),
+                Objects.requireNonNull(registries, "registries")
+        );
+        setChanged();
     }
 
     protected final ItemStack endpointStackSnapshotView(int slotIndex) {
@@ -349,40 +578,45 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         if (!endpointAcceptsView(kind, slotIndex, exactStack)) {
             throw new IllegalStateException("Live Workstation projection no longer accepts committed endpoint effect");
         }
-        switch (kind) {
-            case SOURCE_WITHDRAWAL -> {
-                if (inventory.isInputSlot(slotIndex)) {
-                    inventory.clearInputSlotsInternal(java.util.List.of(slotIndex));
-                } else {
-                    inventory.clearOutputSlotsInternal(java.util.List.of(slotIndex));
+        beginDurableProjectionMutation();
+        try {
+            switch (kind) {
+                case SOURCE_WITHDRAWAL -> {
+                    if (inventory.isInputSlot(slotIndex)) {
+                        inventory.clearInputSlotsInternal(java.util.List.of(slotIndex));
+                    } else {
+                        inventory.clearOutputSlotsInternal(java.util.List.of(slotIndex));
+                    }
+                }
+                case DESTINATION_DEPOSIT ->
+                        inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactStack.copy());
+                case SOURCE_RETURN -> {
+                    if (inventory.isInputSlot(slotIndex)) {
+                        inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactStack.copy());
+                    } else {
+                        inventory.setOutputInternal(slotIndex - inventory.firstOutputSlot(), exactStack.copy());
+                    }
                 }
             }
-            case DESTINATION_DEPOSIT ->
-                    inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactStack.copy());
-            case SOURCE_RETURN -> {
-                if (inventory.isInputSlot(slotIndex)) {
-                    inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactStack.copy());
-                } else {
-                    inventory.setOutputInternal(slotIndex - inventory.firstOutputSlot(), exactStack.copy());
-                }
+            if (endpointProjection.inventoryRevision() != postInventoryRevision) {
+                throw new IllegalStateException("Workstation inventory mutation did not publish the committed revision");
             }
+            endpointProjection = new WorkstationEndpointProjection(
+                    endpointProjection.instanceId(),
+                    endpointProjection.instanceGeneration(),
+                    endpointProjection.inventoryRevision(),
+                    endpointEffectRevision,
+                    journalSequence,
+                    Optional.of(effectId),
+                    Optional.of(ownerResultIdentity),
+                    Optional.empty(),
+                    -1,
+                    0L
+            );
+            setChanged();
+        } finally {
+            endDurableProjectionMutation();
         }
-        if (endpointProjection.inventoryRevision() != postInventoryRevision) {
-            throw new IllegalStateException("Workstation inventory mutation did not publish the committed revision");
-        }
-        endpointProjection = new WorkstationEndpointProjection(
-                endpointProjection.instanceId(),
-                endpointProjection.instanceGeneration(),
-                endpointProjection.inventoryRevision(),
-                endpointEffectRevision,
-                journalSequence,
-                Optional.of(effectId),
-                Optional.of(ownerResultIdentity),
-                Optional.empty(),
-                -1,
-                0L
-        );
-        setChanged();
     }
 
     private void handleInventoryChanged() {
@@ -459,6 +693,8 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         stackAwarePreparedEffectId = Optional.empty();
         stackAwareLastEffectId = Optional.empty();
         stackAwareLastOwnerResultIdentity = Optional.empty();
+        recoveredLegacyLastEffectId = Optional.empty();
+        recoveredLegacyLastOwnerResultIdentity = Optional.empty();
         endpointProjection = new WorkstationEndpointProjection(
                 endpointProjection.instanceId(), endpointProjection.instanceGeneration(),
                 endpointProjection.inventoryRevision(), endpointProjection.endpointEffectRevision(),
@@ -606,23 +842,92 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
                 || journalSequence <= endpointProjection.lastAppliedJournalSequence()) {
             throw new IllegalArgumentException("Schema-2 endpoint revisions are not monotonic");
         }
-        if (inventory.isInputSlot(slotIndex)) {
-            inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactPostStack.copy());
-        } else {
-            inventory.setOutputInternal(slotIndex - inventory.firstOutputSlot(), exactPostStack.copy());
+        beginDurableProjectionMutation();
+        try {
+            if (inventory.isInputSlot(slotIndex)) {
+                inventory.setInputInternal(slotIndex - inventory.firstInputSlot(), exactPostStack.copy());
+            } else {
+                inventory.setOutputInternal(slotIndex - inventory.firstOutputSlot(), exactPostStack.copy());
+            }
+            if (endpointProjection.inventoryRevision() != postInventoryRevision) {
+                throw new IllegalStateException("Schema-2 endpoint projection did not publish the expected revision");
+            }
+            stackAwarePreparedEffectId = Optional.empty();
+            stackAwareLastEffectId = Optional.of(effectId);
+            stackAwareLastOwnerResultIdentity = Optional.of(ownerResultIdentity);
+            recoveredLegacyLastEffectId = Optional.empty();
+            recoveredLegacyLastOwnerResultIdentity = Optional.empty();
+            endpointProjection = new WorkstationEndpointProjection(
+                    endpointProjection.instanceId(), endpointProjection.instanceGeneration(),
+                    endpointProjection.inventoryRevision(), endpointEffectRevision, journalSequence,
+                    Optional.empty(), Optional.empty(), Optional.empty(), -1, 0L
+            );
+            setChanged();
+        } finally {
+            endDurableProjectionMutation();
         }
-        if (endpointProjection.inventoryRevision() != postInventoryRevision) {
-            throw new IllegalStateException("Schema-2 endpoint projection did not publish the expected revision");
+    }
+
+    static StackAwareEffectMarkers readStackAwareEffectMarkers(CompoundTag endpointTag) {
+        boolean hasEffect = endpointTag.contains("StackAwareLastEffectIdentity", Tag.TAG_STRING);
+        boolean hasResult = endpointTag.contains("StackAwareLastOwnerResultIdentity", Tag.TAG_STRING);
+        if (hasEffect != hasResult) {
+            throw new IllegalStateException("Schema-2 endpoint result markers must be published together");
         }
-        stackAwarePreparedEffectId = Optional.empty();
-        stackAwareLastEffectId = Optional.of(effectId);
-        stackAwareLastOwnerResultIdentity = Optional.of(ownerResultIdentity);
-        endpointProjection = new WorkstationEndpointProjection(
-                endpointProjection.instanceId(), endpointProjection.instanceGeneration(),
-                endpointProjection.inventoryRevision(), endpointEffectRevision, journalSequence,
-                Optional.empty(), Optional.empty(), Optional.empty(), -1, 0L
-        );
-        setChanged();
+        if (!hasEffect) return StackAwareEffectMarkers.empty();
+
+        String effectIdentity = endpointTag.getString("StackAwareLastEffectIdentity");
+        String ownerResultIdentity = endpointTag.getString("StackAwareLastOwnerResultIdentity");
+        if (WorkstationEndpointEffectIdV2.hasCanonicalPrefix(effectIdentity)) {
+            return StackAwareEffectMarkers.active(
+                    new WorkstationEndpointEffectIdV2(effectIdentity), ownerResultIdentity);
+        }
+        return StackAwareEffectMarkers.recoveredLegacy(
+                new WorkstationEndpointEffectId(effectIdentity), ownerResultIdentity);
+    }
+
+    record StackAwareEffectMarkers(
+            Optional<WorkstationEndpointEffectIdV2> activeEffectId,
+            Optional<String> activeOwnerResultIdentity,
+            Optional<WorkstationEndpointEffectId> recoveredLegacyEffectId,
+            Optional<String> recoveredLegacyOwnerResultIdentity
+    ) {
+        StackAwareEffectMarkers {
+            activeEffectId = Objects.requireNonNull(activeEffectId, "activeEffectId");
+            activeOwnerResultIdentity = Objects.requireNonNull(
+                    activeOwnerResultIdentity, "activeOwnerResultIdentity");
+            recoveredLegacyEffectId = Objects.requireNonNull(
+                    recoveredLegacyEffectId, "recoveredLegacyEffectId");
+            recoveredLegacyOwnerResultIdentity = Objects.requireNonNull(
+                    recoveredLegacyOwnerResultIdentity, "recoveredLegacyOwnerResultIdentity");
+            if (activeEffectId.isEmpty() != activeOwnerResultIdentity.isEmpty()
+                    || recoveredLegacyEffectId.isEmpty() != recoveredLegacyOwnerResultIdentity.isEmpty()
+                    || (activeEffectId.isPresent() && recoveredLegacyEffectId.isPresent())) {
+                throw new IllegalArgumentException("Stack-aware endpoint effect markers are inconsistent");
+            }
+        }
+
+        static StackAwareEffectMarkers empty() {
+            return new StackAwareEffectMarkers(
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        }
+
+        static StackAwareEffectMarkers active(WorkstationEndpointEffectIdV2 effectId, String ownerResultIdentity) {
+            return new StackAwareEffectMarkers(
+                    Optional.of(effectId), Optional.of(ownerResultIdentity), Optional.empty(), Optional.empty());
+        }
+
+        static StackAwareEffectMarkers recoveredLegacy(
+                WorkstationEndpointEffectId effectId,
+                String ownerResultIdentity
+        ) {
+            return new StackAwareEffectMarkers(
+                    Optional.empty(), Optional.empty(), Optional.of(effectId), Optional.of(ownerResultIdentity));
+        }
+
+        boolean hasAnyMarker() {
+            return activeEffectId.isPresent() || recoveredLegacyEffectId.isPresent();
+        }
     }
 
     private static boolean exactStack(ItemStack left, ItemStack right) {

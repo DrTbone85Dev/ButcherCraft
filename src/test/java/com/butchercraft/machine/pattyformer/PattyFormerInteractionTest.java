@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PattyFormerInteractionTest {
     @Test
-    void normalUseOpensMenuAndSecondaryUseRequestsOneOperation() throws IOException {
+    void normalUseOpensMenuAndSecondaryUseControlsPersistentRun() throws IOException {
         String source = source("src/main/java/com/butchercraft/machine/pattyformer/PattyFormerBlock.java");
         String emptyHand = source.substring(
                 source.indexOf("protected InteractionResult useWithoutItem("),
@@ -22,12 +22,15 @@ class PattyFormerInteractionTest {
         );
 
         assertTrue(emptyHand.contains("if (player.isSecondaryUseActive())"));
-        assertTrue(emptyHand.contains("requestExplicitOperation(level, pos)"));
+        assertTrue(emptyHand.contains("requestRunControl(level, pos, player)"));
         assertTrue(emptyHand.contains("openMenu(level, pos, player)"));
         assertTrue(heldItem.contains("if (player.isSecondaryUseActive())"));
-        assertTrue(heldItem.contains("requestExplicitOperation(level, pos)"));
+        assertTrue(heldItem.contains("requestRunControl(level, pos, player)"));
         assertTrue(heldItem.contains("openMenu(level, pos, player)"));
         assertTrue(source.contains("player.openMenu(blockEntity, pos)"));
+        assertTrue(source.contains("PattyFormerContinuousRunService.INSTANCE"));
+        assertTrue(source.contains(".shiftControl(serverLevel, blockEntity)"));
+        assertTrue(!source.contains("requestExplicitOperation"));
     }
 
     private static String source(String relativePath) throws IOException {

@@ -1,5 +1,6 @@
 package com.butchercraft.world.inventory;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.economy.actor.ActorId;
 import com.butchercraft.world.economy.actor.EconomicActorRegistry;
 import com.butchercraft.world.goods.GoodId;
@@ -15,13 +16,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -89,26 +85,12 @@ public final class InventoryStorage {
         if (!Files.exists(filePath)) {
             return new InventoryManager(InventoryRegistry.empty(goodRegistry, actorRegistry));
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load inventory from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "inventory"));
     }
 
     public void save(InventoryManager manager) {
         Objects.requireNonNull(manager, "manager");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(manager), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save inventory to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(manager), "inventory");
     }
 
     public String serialize(InventoryManager manager) {
@@ -327,14 +309,6 @@ public final class InventoryStorage {
         }
         if (!registry.actorRegistry().definitions().equals(actorRegistry.definitions())) {
             throw new IllegalArgumentException("Inventory manager actor registry does not match storage actor registry");
-        }
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.butchercraft.world.materialhandling.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointObservationV2;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointOwnerResultV2;
@@ -23,16 +24,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -48,27 +41,19 @@ public final class MaterialHandlingStorageV2 {
     }
 
     public Optional<LoadedRuntime> loadVersioned() {
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
+        AtomicFilePublication.requireNoInterruptedPublication(filePath, "Material Handling state");
         if (!Files.exists(filePath)) {
-            if (Files.exists(temporaryFile)) {
-                throw new IllegalStateException("Interrupted Material Handling publication requires recovery: "
-                        + temporaryFile);
-            }
             return Optional.empty();
         }
-        try {
-            String json = Files.readString(filePath, StandardCharsets.UTF_8);
-            int schema = integer(object(JsonParser.parseString(json), "Material Handling root"), "schema_version");
-            if (schema == MaterialHandlingSchema.LEGACY_SCHEMA_VERSION) {
-                return Optional.of(new LegacyRuntime(new MaterialHandlingStorage(filePath).deserialize(json), json));
-            }
-            if (schema == MaterialHandlingSchema.STACK_AWARE_SCHEMA_VERSION) {
-                return Optional.of(new StackAwareRuntime(deserialize(json)));
-            }
-            throw new IllegalArgumentException("Unsupported Material Handling schema version: " + schema);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Material Handling state from " + filePath, exception);
+        String json = AtomicFilePublication.readUtf8(filePath, "Material Handling state");
+        int schema = integer(object(JsonParser.parseString(json), "Material Handling root"), "schema_version");
+        if (schema == MaterialHandlingSchema.LEGACY_SCHEMA_VERSION) {
+            return Optional.of(new LegacyRuntime(new MaterialHandlingStorage(filePath).deserialize(json), json));
         }
+        if (schema == MaterialHandlingSchema.STACK_AWARE_SCHEMA_VERSION) {
+            return Optional.of(new StackAwareRuntime(deserialize(json)));
+        }
+        throw new IllegalArgumentException("Unsupported Material Handling schema version: " + schema);
     }
 
     public void save(MaterialHandlingRuntimeV2 runtime) {
@@ -248,43 +233,11 @@ public final class MaterialHandlingStorageV2 {
     }
 
     private void publishStrict(String serialized) {
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            byte[] bytes = serialized.getBytes(StandardCharsets.UTF_8);
-            try (FileChannel channel = FileChannel.open(temporaryFile, StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                while (buffer.hasRemaining()) channel.write(buffer);
-                channel.force(true);
-            }
-            try {
-                Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException exception) {
-                throw new IOException("Atomic replacement is required for " + filePath, exception);
-            }
-            if (!Files.readString(filePath, StandardCharsets.UTF_8).equals(serialized)) {
-                throw new IOException("Published Material Handling file failed read-back verification");
-            }
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed strict Material Handling publication", exception);
-        } finally {
-            try {
-                Files.deleteIfExists(temporaryFile);
-            } catch (IOException ignored) {
-                // Retained temporary artifact is visible interruption evidence.
-            }
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialized, "Material Handling state");
     }
 
     private String readPublished() {
-        try {
-            return Files.readString(filePath, StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to read published Material Handling state", exception);
-        }
+        return AtomicFilePublication.readUtf8(filePath, "Material Handling state");
     }
 
     private static JsonObject object(JsonElement element, String label) {

@@ -88,7 +88,7 @@ public final class StackAwareWorkstationGameTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 280)
-    public static void pattyFormerConsumesAndMergesOneOnlyAfterExplicitUse(GameTestHelper helper) {
+    public static void pattyFormerContinuousRunRemainsStackAwareAcrossSafeStop(GameTestHelper helper) {
         helper.setBlock(PATTY_FORMER_POS, ModBlocks.PATTY_FORMER.get().defaultBlockState());
         PattyFormerBlockEntity pattyFormer = require(helper, PATTY_FORMER_POS, PattyFormerBlockEntity.class);
         pattyFormer.inventory().setInputInternal(count(ModItems.GROUND_BEEF.get().getDefaultInstance(), 10));
@@ -101,7 +101,7 @@ public final class StackAwareWorkstationGameTests {
         helper.runAtTickTime(130, () -> {
             helper.assertTrue(pattyFormer.inventory().input().getCount() == 9
                             && pattyFormer.inventory().output().getCount() == 1,
-                    "One explicit Patty Former operation consumes and produces one");
+                    "The first bounded Patty Former child consumes and produces one");
             var player = new MenuTrackingTestPlayer(helper.getLevel(), helper.absolutePos(PATTY_FORMER_POS));
             helper.useBlock(PATTY_FORMER_POS, player);
             helper.assertTrue(player.containerMenu instanceof PattyFormerMenu,
@@ -113,9 +113,13 @@ public final class StackAwareWorkstationGameTests {
             requestPlayerOperation(helper, PATTY_FORMER_POS);
         });
         helper.runAtTickTime(240, () -> {
-            helper.assertTrue(pattyFormer.inventory().input().getCount() == 8
-                            && pattyFormer.inventory().output().getCount() == 2,
-                    "Second explicit operation merges one patty and does not batch-process input");
+            int remaining = pattyFormer.inventory().input().getCount();
+            int produced = pattyFormer.inventory().output().getCount();
+            helper.assertTrue(remaining + produced == 10 && produced >= 1 && produced <= 2,
+                    "STOP preserves exact stacks and permits at most the admitted safe child; input="
+                            + remaining + ", output=" + produced);
+            helper.assertTrue(pattyFormer.runStatus().operatingState() == MachineOperatingState.OFF,
+                    "Shift-use STOP leaves the stack-aware Patty Former OFF");
             helper.succeed();
         });
     }

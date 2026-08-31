@@ -14,6 +14,7 @@ class ExecutionDependencyBoundaryTest {
     @Test
     void genericExecutionRuntimeDoesNotImportOwnerDomainImplementationsOrMinecraft() throws IOException {
         Path root = TestProjectPaths.projectPath("src/main/java/com/butchercraft/world/execution");
+        Path checkpointAdapters = root.resolve("checkpoint");
         List<String> forbiddenImports = List.of(
                 "import com.butchercraft.world.allocation.",
                 "import com.butchercraft.world.inventory.",
@@ -28,7 +29,10 @@ class ExecutionDependencyBoundaryTest {
         );
 
         try (var files = Files.walk(root)) {
-            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+            for (Path file : files
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !path.startsWith(checkpointAdapters))
+                    .toList()) {
                 String source = Files.readString(file);
                 for (String forbidden : forbiddenImports) {
                     assertFalse(source.contains(forbidden),

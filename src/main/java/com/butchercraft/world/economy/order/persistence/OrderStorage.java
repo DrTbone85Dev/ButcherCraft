@@ -1,5 +1,6 @@
 package com.butchercraft.world.economy.order.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.economy.actor.ActorId;
 import com.butchercraft.world.economy.actor.EconomicActorRegistry;
 import com.butchercraft.world.economy.order.ContractId;
@@ -35,13 +36,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -79,24 +75,12 @@ public final class OrderStorage {
         if (!Files.exists(filePath)) {
             return new OrderManager(actorRegistry, inventoryRegistry, transactionManager, contractManager);
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load orders from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "orders"));
     }
 
     public void save(OrderManager manager) {
         Objects.requireNonNull(manager, "manager");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path temporary = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporary, serialize(manager), StandardCharsets.UTF_8);
-            moveIntoPlace(temporary);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save orders to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(manager), "orders");
     }
 
     public String serialize(OrderManager manager) {
@@ -272,14 +256,6 @@ public final class OrderStorage {
                 Optional.ofNullable(requireNullableString(record.sourceModule())),
                 Optional.ofNullable(requireNullableString(record.creationReason()))
         );
-    }
-
-    private void moveIntoPlace(Path temporary) throws IOException {
-        try {
-            Files.move(temporary, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporary, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static Long optionalLong(OptionalLong value) { return value.isPresent() ? value.orElseThrow() : null; }

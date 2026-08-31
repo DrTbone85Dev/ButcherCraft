@@ -2,6 +2,8 @@ package com.butchercraft.world;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.world.simulation.SimulationClock;
+import com.butchercraft.world.checkpoint.CheckpointOwnerSnapshotCoordinator;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.simulation.SimulationClockService;
 import com.butchercraft.world.simulation.scheduler.PipelineStatus;
 import com.butchercraft.world.simulation.scheduler.SchedulerSchema;
@@ -12,6 +14,8 @@ import com.butchercraft.world.simulation.scheduler.SimulationTickReport;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandlerRegistry;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkHandler;
 import com.butchercraft.world.simulation.scheduler.persistence.SimulationSchedulerStorage;
+import com.butchercraft.world.simulation.scheduler.SchedulerRecoveryState;
+import com.butchercraft.world.simulation.scheduler.persistence.SchedulerRecoveryStorage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -54,6 +58,8 @@ public final class SimulationSchedulerService {
     }
 
     public void advance(ServerTickEvent.Post event) {
+        if (!StartupMutationGateService.INSTANCE.permits(
+                event.getServer(), CheckpointOwnerSnapshotCoordinator.SCHEDULER_OWNER)) return;
         ActiveScheduler active = activeState.get();
         if (active == null || active.server() != event.getServer()) {
             active = load(event.getServer());
@@ -92,6 +98,10 @@ public final class SimulationSchedulerService {
         return active == null ? Optional.empty() : Optional.ofNullable(active.lastReport().get());
     }
 
+    public Optional<SchedulerRecoveryState> currentRecoveryState(MinecraftServer server) {
+        return new SchedulerRecoveryStorage(recoveryFile(server)).loadExisting();
+    }
+
     public synchronized void installHandler(SimulationWorkHandler handler) {
         Objects.requireNonNull(handler, "handler");
         if (activeState.get() != null) {
@@ -104,6 +114,10 @@ public final class SimulationSchedulerService {
         );
         handlers.add(handler);
         handlerRegistry = new SimulationWorkHandlerRegistry(handlers);
+    }
+
+    public SimulationWorkHandlerRegistry configuredHandlerRegistry() {
+        return handlerRegistry;
     }
 
     private ActiveScheduler load(MinecraftServer server) {
@@ -134,6 +148,13 @@ public final class SimulationSchedulerService {
         return Objects.requireNonNull(server, "server").getWorldPath(LevelResource.ROOT)
                 .resolve(SchedulerSchema.DIRECTORY_NAME)
                 .resolve(SchedulerSchema.FILE_NAME)
+                .toAbsolutePath().normalize();
+    }
+
+    public static Path recoveryFile(MinecraftServer server) {
+        return Objects.requireNonNull(server, "server").getWorldPath(LevelResource.ROOT)
+                .resolve(SchedulerSchema.DIRECTORY_NAME)
+                .resolve(SchedulerSchema.RECOVERY_FILE_NAME)
                 .toAbsolutePath().normalize();
     }
 

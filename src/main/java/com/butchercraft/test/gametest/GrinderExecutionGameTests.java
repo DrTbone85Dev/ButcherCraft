@@ -18,6 +18,7 @@ import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationOperationResolver;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.operation.MachineOperatingState;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.execution.ExecutionManager;
@@ -326,6 +327,15 @@ public final class GrinderExecutionGameTests {
                     "No nonterminal child remains after the bounded scenario");
             helper.assertTrue(completed.runStatus().operatingState() == MachineOperatingState.RUNNING_EMPTY,
                     "The 64-cycle scenario ends RUNNING_EMPTY");
+            var projection = DurableWorkstationProjectionService.INSTANCE.read(
+                    helper.getLevel().getServer(), completed.checkpointInstanceIdentity().orElseThrow())
+                    .projection().orElseThrow();
+            helper.assertTrue(projection.slots().getFirst().exactStack().isEmpty()
+                            && projection.slots().get(1).exactStack().orElseThrow().count() == 64,
+                    "The durable Grinder projection exactly records the 64-cycle terminal inventory");
+            helper.assertTrue(projection.operatingStateReference().orElseThrow().state()
+                            .equals(MachineOperatingState.RUNNING_EMPTY.name()),
+                    "The Grinder projection references the separately owned terminal operating state");
             helper.succeed();
         });
     }
@@ -826,11 +836,20 @@ public final class GrinderExecutionGameTests {
         insertBeefTrim(helper, grinder);
 
         helper.runAtTickTime(8, () -> {
+            GrinderRunControlResult stopped = grinder(helper).stopRun();
+            helper.assertTrue(stopped.accepted(),
+                    "Malformed restore fixture closes independent Machine Run authority");
             CompoundTag saved = grinder(helper).saveWithFullMetadata(helper.getLevel().registryAccess());
             CompoundTag controller = saved.getCompound("Controller");
             controller.putBoolean("CompletionCommitted", true);
             saved.put("Controller", controller);
-            GrinderBlockEntity restored = replaceBlockEntity(helper, saved);
+            grinder(helper).restoreCheckpointProjection(saved, helper.getLevel().registryAccess());
+            DurableWorkstationProjectionService.INSTANCE.publishAuthorizedMutation(
+                    helper.getLevel(), grinder(helper));
+            GrinderBlockEntity restored = replaceBlockEntity(
+                    helper,
+                    grinder(helper).saveWithFullMetadata(helper.getLevel().registryAccess())
+            );
             helper.assertTrue(restored.workstationState() == WorkstationState.ERROR,
                     "Unresolved committed effect restores as ERROR");
             helper.assertTrue(restored.lastFailure().orElseThrow().code()

@@ -1,5 +1,6 @@
 package com.butchercraft.world.production.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.business.BusinessId;
 import com.butchercraft.world.business.runtime.BusinessOperationalStatus;
 import com.butchercraft.world.economy.actor.ActorCapability;
@@ -77,13 +78,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -128,41 +124,32 @@ public final class ProductionStorage {
         if (!(processesExist && plansExist && runsExist)) {
             throw new IllegalStateException("Production persistence set is incomplete");
         }
-        try {
-            ProductionPersistenceSnapshot snapshot = deserialize(
-                    Files.readString(processFile, StandardCharsets.UTF_8),
-                    Files.readString(planFile, StandardCharsets.UTF_8),
-                    Files.readString(runFile, StandardCharsets.UTF_8)
-            );
-            return new ProductionManager(
-                    dependencies,
-                    snapshot.processRegistry(),
-                    snapshot.planRegistry(),
-                    snapshot.runs()
-            );
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Production persistence", exception);
-        }
+        ProductionPersistenceSnapshot snapshot = deserialize(
+                AtomicFilePublication.readUtf8(processFile, "Production processes"),
+                AtomicFilePublication.readUtf8(planFile, "Production plans"),
+                AtomicFilePublication.readUtf8(runFile, "Production runs")
+        );
+        return new ProductionManager(
+                dependencies,
+                snapshot.processRegistry(),
+                snapshot.planRegistry(),
+                snapshot.runs()
+        );
     }
 
     public void save(ProductionManager manager) {
         Objects.requireNonNull(manager, "manager").validateForPersistence();
-        try {
-            createParent(processFile);
-            createParent(planFile);
-            createParent(runFile);
-            Path processTemporary = temporary(processFile);
-            Path planTemporary = temporary(planFile);
-            Path runTemporary = temporary(runFile);
-            Files.writeString(processTemporary, serializeProcesses(manager.processRegistry()), StandardCharsets.UTF_8);
-            Files.writeString(planTemporary, serializePlans(manager.planRegistry()), StandardCharsets.UTF_8);
-            Files.writeString(runTemporary, serializeRuns(manager.runs()), StandardCharsets.UTF_8);
-            moveIntoPlace(processTemporary, processFile);
-            moveIntoPlace(planTemporary, planFile);
-            moveIntoPlace(runTemporary, runFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save Production persistence", exception);
-        }
+        AtomicFilePublication.publishUtf8(
+                processFile,
+                serializeProcesses(manager.processRegistry()),
+                "Production processes"
+        );
+        AtomicFilePublication.publishUtf8(
+                planFile,
+                serializePlans(manager.planRegistry()),
+                "Production plans"
+        );
+        AtomicFilePublication.publishUtf8(runFile, serializeRuns(manager.runs()), "Production runs");
     }
 
     public ProductionPersistenceSnapshot deserialize(String processes, String plans, String runs) {
@@ -1005,16 +992,5 @@ public final class ProductionStorage {
     private static String json(JsonObject root) { return GSON.toJson(root) + System.lineSeparator(); }
     private static Path normalize(Path path, String label) {
         return Objects.requireNonNull(path, label).toAbsolutePath().normalize();
-    }
-    private static Path temporary(Path path) { return path.resolveSibling(path.getFileName() + ".tmp"); }
-    private static void createParent(Path path) throws IOException {
-        if (path.getParent() != null) Files.createDirectories(path.getParent());
-    }
-    private static void moveIntoPlace(Path source, Path target) throws IOException {
-        try {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 }

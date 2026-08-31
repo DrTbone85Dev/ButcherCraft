@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,6 +31,65 @@ class SimulationStateStorageTest {
         SimulationState restored = storage.load().orElseThrow();
 
         assertEquals(clock.state(), restored);
+    }
+
+    @Test
+    void exactDuplicateStateIsNotRepublished() throws Exception {
+        Path file = tempDir.resolve("duplicate_save.json");
+        SimulationStateStorage storage = new SimulationStateStorage(file, CONFIGURATION);
+        SimulationState state = new SimulationClock(CONFIGURATION).state();
+
+        storage.save(state);
+        String firstPublication = Files.readString(file, StandardCharsets.UTF_8);
+        storage.save(state);
+
+        assertEquals(1L, storage.successfulPublicationCount());
+        assertEquals(firstPublication, Files.readString(file, StandardCharsets.UTF_8));
+
+        SimulationStateStorage restarted = new SimulationStateStorage(file, CONFIGURATION);
+        assertEquals(state, restarted.load().orElseThrow());
+        restarted.save(state);
+        assertEquals(0L, restarted.successfulPublicationCount());
+    }
+
+    @Test
+    void sameTickWithDifferentPendingEventsIsRepublished() {
+        SimulationStateStorage storage = new SimulationStateStorage(
+                tempDir.resolve("material_change.json"),
+                CONFIGURATION
+        );
+        SimulationState first = new SimulationClock(CONFIGURATION).state();
+        SimulationState second = new SimulationState(
+                first.schemaVersion(),
+                first.simulationTick(),
+                first.calendar(),
+                List.of(event("daily_rollover_10", 10L, SimulationEventType.DAILY_ROLLOVER))
+        );
+
+        storage.save(first);
+        storage.save(second);
+
+        assertEquals(2L, storage.successfulPublicationCount());
+        assertEquals(second, storage.load().orElseThrow());
+    }
+
+    @Test
+    void boundedClockPublicationStressReloadsExactFinalRevisionWithoutAttemptFiles() throws Exception {
+        Path file = tempDir.resolve("clock_stress.json");
+        SimulationStateStorage storage = new SimulationStateStorage(file, CONFIGURATION);
+        SimulationClock clock = new SimulationClock(CONFIGURATION);
+        int publications = 1_000;
+
+        for (int revision = 1; revision <= publications; revision++) {
+            clock.advance(1L);
+            storage.save(clock.state());
+        }
+
+        assertEquals(publications, storage.successfulPublicationCount());
+        assertEquals(clock.state(), new SimulationStateStorage(file, CONFIGURATION).load().orElseThrow());
+        try (var files = Files.list(tempDir)) {
+            assertFalse(files.anyMatch(path -> path.getFileName().toString().startsWith("clock_stress.json.tmp-")));
+        }
     }
 
     @Test

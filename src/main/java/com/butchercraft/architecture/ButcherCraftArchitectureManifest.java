@@ -42,6 +42,7 @@ import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentSchema;
 import com.butchercraft.workstation.operation.MachineOperatingSchema;
+import com.butchercraft.workstation.projection.WorkstationProjectionSchema;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -158,8 +159,18 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/checkpoint_recovery_adr",
                 "docs/adr/ADR-PROPOSED-CHECKPOINT-RECOVERY.md",
-                "RATIFIED_ARCHITECTURAL_DIRECTION_IMPLEMENTATION_NOT_AUTHORIZED",
-                "AH-1-ADR-02",
+                "RATIFIED_LIVE_PUBLICATION_AND_STARTUP_RESTORATION_IMPLEMENTED",
+                "AH-1-ADR-02 IM-003-IM-007 IM-031C-R3 IM-031C-R4",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/legacy_split_snapshot_recovery_adr",
+                "docs/adr/ADR-PROPOSED-LEGACY-SPLIT-SNAPSHOT-RECOVERY-AND-COORDINATED-CHECKPOINT-PUBLICATION.md",
+                "RATIFIED_IM_031C_R1_THROUGH_R4_IMPLEMENTED_FINAL_OWNER_ACCEPTANCE_PENDING",
+                "AH-1-ADR-02A IM-031C-R1 IM-031C-R2 IM-031C-R2A IM-031C-R3 IM-031C-R3A IM-031C-R3B IM-031C-R3C IM-031C-R4",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/durable_workstation_projection_adr",
+                "docs/adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md",
+                "RATIFIED_R3A_R3B_R3C_AND_R4_PROJECTION_RECOVERY_IMPLEMENTED",
+                "ADR-02A-P1 IM-031C-R3A IM-031C-R3B IM-031C-R3C IM-031C-R4",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/transaction_validation_authority_adr",
                 "docs/adr/ADR-PROPOSED-TRANSACTION-VALIDATION-AUTHORITY.md",
@@ -198,8 +209,8 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/persistent_machine_operating_state_adr",
                 "docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md",
-                "RATIFIED_IM_031A_FOUNDATION_AND_IM_031B_GRINDER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED",
-                "DG-005 IM-031A IM-031B",
+                "RATIFIED_IM_031A_FOUNDATION_IM_031B_GRINDER_AND_IM_031C_PATTY_FORMER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-005 IM-031A IM-031B IM-031C",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
     }
 
@@ -256,19 +267,19 @@ public final class ButcherCraftArchitectureManifest {
                 "Evidence policy does not transfer source facts or runtime state away from producing subsystems");
         platformContract(builder, "butchercraft:platform_contract/checkpoint_publication",
                 ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-02 Checkpoint Recovery",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 Checkpoint Recovery and IM-031C-R3",
                 "Checkpoint Recovery owns generation identity, committed-generation selection, rollback, "
                         + "atomic checkpoint visibility, and storage-artifact quarantine");
         platformContract(builder, "butchercraft:platform_contract/checkpoint_owner_snapshots",
                 ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "ADR-02 Checkpoint Recovery",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 Checkpoint Recovery and IM-031C-R3",
                 "Checkpoint Recovery coordinates owner snapshots but each owner retains snapshot content authority");
         platformContract(builder, "butchercraft:platform_contract/platform_determinism_manifest",
                 ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "Platform Canonicalization Addendum and ADR-02 Checkpoint Recovery",
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "Platform Canonicalization Addendum, ADR-02, and IM-031C-R3",
                 "Checkpoint Recovery publishes the Platform Determinism Manifest while each source owns entries");
         platformContract(builder, "butchercraft:platform_contract/checkpoint_generation_identity_foundation",
                 ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
@@ -396,6 +407,141 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-007 Controlled Development Checkpoint Invocation",
                 "Development command surface rejects loaded-world restoration until a safe runtime boundary is authorized");
+        platformContract(builder, "butchercraft:platform_contract/split_snapshot_read_only_analysis_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R1",
+                "Checkpoint Recovery deterministically produces immutable read-only split-snapshot plans from exact owner evidence");
+        platformContract(builder, "butchercraft:platform_contract/split_snapshot_recovery_identity_foundation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R1",
+                "Checkpoint Recovery derives one canonical content-addressed Recovery Identity and analysis digest");
+        platformContract(builder, "butchercraft:platform_contract/historical_coordination_acknowledgement_evidence",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R1",
+                "Scheduler owns immutable Historical Coordination Acknowledgement evidence with no executable Work capability");
+        platformContract(builder, "butchercraft:platform_contract/scheduler_recovery_discontinuity_evidence",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R1",
+                "Scheduler owns a nonexecuting Recovery Discontinuity and exact next-admission boundary model");
+        platformContract(builder, "butchercraft:platform_contract/planning_recovery_authority_block_foundation",
+                ValidationCategory.PLANNING, PLANNING,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R1",
+                "Planning owns typed unresolved non-repeatable outcome blocks with conservative dependency closure");
+        platformContract(builder, "butchercraft:platform_contract/recovery_operator_authorization_model",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R1 IM-031C-R2",
+                "Checkpoint Recovery binds operator authority, disposition, world, Recovery Identity, analysis digest, authority blocks, and exact source snapshots before publication");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_reanalysis_gate",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "Legacy recovery reloads source evidence read-only and recomputes the exact plan before accepting operator authorization");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_owner_preparation",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "Every required owner prepares one immutable source-bound recovery snapshot before generation publication; preparation grants no live mutation authority");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_scheduler_publication",
+                ValidationCategory.SCHEDULER, SCHEDULER,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "Scheduler recovery snapshots preserve exact acknowledgements, the nonexecuting discontinuity, next admission boundary, and zero handler or synthetic-tick invocation");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_policy_b_publication",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "Recovery snapshots preserve the exact authorized unscheduled child and represent its existing Run under Policy B without child admission or replacement identity");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_immutable_publication",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "A frozen recovery intent publishes one complete immutable generation through the alternating dual-head store while preserving any predecessor generation");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_result_evidence",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "Checkpoint Recovery persists one schema-versioned content-stable Recovery Result containing authorization, owner publications, committed head, outcome, diagnostics, and remaining restrictions");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_idempotent_retry",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "Interrupted or repeated exact publication converges on one generation and one result without replaying consequences or replacing a newer head");
+        platformContract(builder, "butchercraft:platform_contract/legacy_recovery_mutation_gate",
+                ValidationCategory.OWNERSHIP, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R2",
+                "A committed recovery result preserves typed authority restrictions and defaults to whole-world consequential mutation blocking when independence is unproven");
+        platformContract(builder, "butchercraft:platform_contract/live_checkpoint_safe_boundary",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R3",
+                "Live checkpoint capture occurs after Scheduler finalizes the exact authoritative Clock tick and rejects any Clock/Scheduler mismatch");
+        platformContract(builder, "butchercraft:platform_contract/live_checkpoint_required_participants",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R3",
+                "Every live generation contains the exact canonical 17-owner participant set, including schema-versioned canonical empty snapshots");
+        platformContract(builder, "butchercraft:platform_contract/live_checkpoint_immutable_freeze",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R3",
+                "Owner-produced snapshot bytes are frozen on the server boundary before asynchronous immutable generation publication");
+        platformContract(builder, "butchercraft:platform_contract/live_checkpoint_trigger_policy",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R3",
+                "Manual, 6000-tick periodic, and bounded graceful-shutdown triggers coalesce without concurrent generation publication");
+        platformContract(builder, "butchercraft:platform_contract/live_checkpoint_no_startup_restore_gate",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-031C-R3 completion boundary",
+                "Live checkpoint publication never selects or installs a checkpoint; the separate R4 startup coordinator owns startup selection and restoration");
+        platformContract(builder, "butchercraft:platform_contract/startup_live_coherence_analysis",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A ADR-02A-P1 IM-031C-R4",
+                "Startup reads owner-native state and proves cross-owner coherence before consequential mutation is eligible");
+        platformContract(builder, "butchercraft:platform_contract/startup_source_selection",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A ADR-02A-P1 IM-031C-R4",
+                "Startup selects coherent LIVE state first, otherwise the latest valid committed COMPLETE_RESTORABLE checkpoint or recovery generation, without timestamp selection or owner mixing");
+        platformContract(builder, "butchercraft:platform_contract/owner_native_restoration_transaction",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R4",
+                "Checkpoint Recovery coordinates frozen owner-native preparation, atomic per-file publication, complete read-back verification, and deterministic interrupted-restoration resumption while each owner retains native-state semantics");
+        platformContract(builder, "butchercraft:platform_contract/restoration_intent_result_evidence",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R4",
+                "Schema-versioned World- and generation-bound Restoration Intent and Result evidence makes partial restoration visible and one logical restoration content-addressed and restart-stable");
+        platformContract(builder, "butchercraft:platform_contract/startup_consequential_mutation_gate",
+                ValidationCategory.OWNERSHIP, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A IM-031C-R4",
+                "Consequential owner mutation remains blocked until startup selection completes and every persisted recovery authority block is installed");
+        platformContract(builder, "butchercraft:platform_contract/restoration_no_consequence_replay",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02 ADR-02A IM-031C-R4",
+                "Owner-native restoration publishes persisted state only and never dispatches Scheduler work, executes operations, applies Workstation or Material Handling effects, advances Planning, or submits Transactions");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_native_restoration",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 IM-031C-R4",
+                "Workstation restores exact schema-1 durable per-instance projections without chunk force-loading and reconciles matching loaded instances before activation");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_policy_b_successor_reconciliation",
+                ValidationCategory.PERSISTENCE, WORKSTATION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 IM-031C-R4",
+                "Loaded reconciliation first applies Workstation-owned durable state and then accepts only an independently proven single-step Policy B operating-state successor bound by the immutable Restoration Result");
         platformContract(builder, "butchercraft:platform_contract/transaction_proposal_identity_foundation",
                 ValidationCategory.TRANSACTIONS, TRANSACTIONS,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1154,16 +1300,92 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.OWNERSHIP, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "DG-002A, DG-005, and IM-031A",
                 "Chunk unavailability pauses child admission without force loading and replacement instances cannot inherit a Run");
+        platformContract(builder, "butchercraft:platform_contract/workstation_durable_projection_authority",
+                ValidationCategory.OWNERSHIP, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Workstation singularly owns exact durable per-instance projection publication, freshness, reconciliation, and retirement evidence");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_exact_itemstack",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Each projection preserves ordered slots, exact ItemStack identity, count, components, and effective capacity");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_monotonic_revision",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Each exact Workstation Instance Identity owns an independent monotonic projection revision that cannot regress or transfer to a replacement");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_atomic_publication",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Frozen per-instance projection bytes publish through AtomicFilePublication with semantic read-back verification");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_unloaded_read",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Exact projections remain readable and deterministically enumerable without loading their block entities or chunks");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_loaded_reconciliation",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Loaded Workstations reconcile by exact identity and revision using durable projection or immutable owner evidence, never timestamps or chunk preference");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_legacy_classification",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Coherent loaded legacy Workstations bootstrap exact state while unloaded missing projections and unresolved effects fail visibly");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_retirement",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Retirement publishes an identity-bound tombstone while same-position replacement begins independent identity and revision history");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_checkpoint_read_candidate",
+                ValidationCategory.PERSISTENCE, WORKSTATION, ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3A",
+                "Workstation exposes defensive frozen projection bytes suitable for later owner snapshot capture without granting Checkpoint Recovery mutation authority");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_checkpoint_completeness_gate",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3B",
+                "Checkpoint Recovery deterministically closes the exact required Workstation set and rejects publication before head commit unless every required identity has one exact Workstation-owned durable projection");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_checkpoint_embedding",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3B",
+                "The Workstation participant embeds immutable exact projection bytes, revision, state digest, payload digest, lifecycle, and dependency reasons in canonical identity order");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_checkpoint_no_force_load",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3B",
+                "Checkpoint capture consumes durable projections for loaded and unloaded Workstations and never force-loads chunks to satisfy Workstation coverage");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_checkpoint_fail_closed",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3B",
+                "Legacy-unavailable, corrupt, unsupported, conflicting, or recovery-required projections reject the candidate while preserving the prior valid head");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_historical_classification",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3B",
+                "Read-only inspection classifies historical required chunk-unloaded or missing Workstation evidence as non-restorable without mutating historical generations");
+        platformContract(builder, "butchercraft:platform_contract/workstation_projection_r4_candidate_verifier",
+                ValidationCategory.PERSISTENCE, CHECKPOINT_RECOVERY,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "ADR-02A-P1 and IM-031C-R3B",
+                "A read-only verifier accepts only self-verifying complete Workstation participant snapshots; startup selection and owner-native restoration remain gated to R4");
         platformContract(builder, "butchercraft:platform_contract/grinder_continuous_run_activation",
                 ValidationCategory.EXECUTION, EXECUTION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-031B Grinder Continuous Policy Activation",
                 "Player-controlled Grinder operation uses one persistent continuous-explicit-stop Machine Run with repeated bounded children, RUNNING_EMPTY, OUTPUT_BLOCKED, exact-Run STOP, and explicit Policy B restart decisions");
+        platformContract(builder, "butchercraft:platform_contract/powered_processing_shared_run_coordination",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-031C Patty Former Continuous Policy Activation",
+                "Grinder and Patty Former reuse one machine-neutral continuous-cycle coordinator while retaining workstation-specific recipe authorization, inventory effects, and owner results");
+        platformContract(builder, "butchercraft:platform_contract/patty_former_continuous_run_activation",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-031C Patty Former Continuous Policy Activation",
+                "Player-controlled Patty Former operation uses one persistent continuous-explicit-stop Machine Run with repeated bounded children, RUNNING_EMPTY, OUTPUT_BLOCKED, exact-Run STOP, and explicit Policy B restart decisions");
         platformContract(builder, "butchercraft:platform_contract/machine_run_remaining_activation_gates",
                 ValidationCategory.EXECUTION, EXECUTION,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-031B completion boundary",
-                "Patty Former continuous cycling, employee Machine START/STOP, Production machine control, automatic restart, and machine wear remain unactivated");
+                "IM-031C completion boundary",
+                "Employee Machine START/STOP, Production machine control, automatic restart, and machine wear remain unactivated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -1253,6 +1475,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/machine_operating_state", WORKSTATION);
         own(builder, "butchercraft:responsibility/machine_operating_state_duration", WORKSTATION);
         own(builder, "butchercraft:responsibility/machine_operating_state_persistence", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_durable_projection", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_projection_revision", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_projection_reconciliation", WORKSTATION);
+        own(builder, "butchercraft:responsibility/workstation_projection_persistence", WORKSTATION);
         own(builder, "butchercraft:responsibility/material_transfer_identity", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/material_transfer_lifecycle", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/in_transit_item_stack_custody", MATERIAL_HANDLING);
@@ -1351,6 +1577,18 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/checkpoint_owner_snapshot_coordination", CHECKPOINT_RECOVERY);
         own(builder, "butchercraft:responsibility/checkpoint_cross_owner_validation", CHECKPOINT_RECOVERY);
         own(builder, "butchercraft:responsibility/checkpoint_coordinated_restoration_boundary", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/split_snapshot_recovery_analysis", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/split_snapshot_recovery_identity", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/legacy_recovery_operator_authorization", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/legacy_recovery_publication", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/legacy_recovery_result_evidence", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/legacy_recovery_mutation_gate", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/live_checkpoint_trigger_coordination", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/live_checkpoint_participant_registry", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/live_checkpoint_publication_status", CHECKPOINT_RECOVERY);
+        own(builder, "butchercraft:responsibility/scheduler_historical_coordination_acknowledgements", SCHEDULER);
+        own(builder, "butchercraft:responsibility/scheduler_recovery_discontinuity", SCHEDULER);
+        own(builder, "butchercraft:responsibility/planning_recovery_disposition", PLANNING);
         own(builder, "butchercraft:responsibility/resource_definitions", RESOURCE_AUTHORITIES);
         own(builder, "butchercraft:responsibility/capacity_definitions", RESOURCE_AUTHORITIES);
 
@@ -1937,6 +2175,34 @@ public final class ButcherCraftArchitectureManifest {
         );
         contract(
                 builder,
+                "butchercraft:responsibility/workstation_durable_projection",
+                WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "ADR-02A-P1 and IM-031C-R3A assign exact per-instance recovery projection authority to Workstation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_projection_revision",
+                WORKSTATION,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R3A assigns monotonic projection freshness to each exact Workstation Instance Identity"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_projection_reconciliation",
+                WORKSTATION,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R3A assigns loaded reconciliation and owner-evidence repair to Workstation"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/workstation_projection_persistence",
+                WORKSTATION,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R3A assigns bounded atomically published per-instance projection records to Workstation"
+        );
+        contract(
+                builder,
                 "butchercraft:responsibility/production_plans",
                 PRODUCTION,
                 ValidationCategory.PRODUCTION,
@@ -2165,6 +2431,55 @@ public final class ButcherCraftArchitectureManifest {
                 CHECKPOINT_RECOVERY,
                 ValidationCategory.PERSISTENCE,
                 "IM-003 assigns typed checkpoint recovery diagnostics to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/legacy_recovery_operator_authorization",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.OWNERSHIP,
+                "IM-031C-R2 assigns exact operator authorization validation to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/legacy_recovery_publication",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R2 assigns explicit owner-prepared legacy recovery generation publication to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/legacy_recovery_result_evidence",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R2 assigns immutable recovery intent and result evidence to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/legacy_recovery_mutation_gate",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.OWNERSHIP,
+                "IM-031C-R2 assigns publication of conservative post-recovery authority restrictions to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/live_checkpoint_trigger_coordination",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R3 assigns manual, periodic, and graceful-shutdown checkpoint trigger coordination to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/live_checkpoint_participant_registry",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R3 assigns the exact required participant set and completeness verification to Checkpoint Recovery"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/live_checkpoint_publication_status",
+                CHECKPOINT_RECOVERY,
+                ValidationCategory.PERSISTENCE,
+                "IM-031C-R3 assigns generation publication timing, result, failure, and committed-head diagnostics to Checkpoint Recovery"
         );
         contract(
                 builder,
@@ -2685,6 +3000,12 @@ public final class ButcherCraftArchitectureManifest {
                 "butchercraft/" + com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.JOURNAL_FILE_NAME,
                 WORKSTATION, com.butchercraft.workstation.endpoint.WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION,
                 PersistenceDataKind.IMMUTABLE_HISTORY, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:workstation_durable_projections",
+                "butchercraft/" + WorkstationProjectionSchema.DIRECTORY_NAME + "/"
+                        + WorkstationProjectionSchema.PROJECTION_DIRECTORY_NAME + "/"
+                        + WorkstationProjectionSchema.SCHEMA_DIRECTORY_NAME + "/<sha256-shard>/<instance>.json",
+                WORKSTATION, WorkstationProjectionSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:material_handling",
                 MaterialHandlingSchema.DIRECTORY_NAME + "/" + MaterialHandlingSchema.FILE_NAME,
                 MATERIAL_HANDLING, MaterialHandlingSchema.CURRENT_VERSION,

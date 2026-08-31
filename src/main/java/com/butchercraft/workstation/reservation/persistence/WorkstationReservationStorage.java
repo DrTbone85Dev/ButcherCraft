@@ -1,5 +1,6 @@
 package com.butchercraft.workstation.reservation.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.workstation.reservation.WorkstationReservationDirectory;
 import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
 import com.butchercraft.workstation.reservation.WorkstationReservationSchema;
@@ -12,13 +13,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -63,26 +59,12 @@ public final class WorkstationReservationStorage {
         if (!Files.exists(filePath)) {
             return WorkstationReservationDirectory.empty();
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load workstation reservations from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "workstation reservations"));
     }
 
     public void save(WorkstationReservationDirectory directory) {
         Objects.requireNonNull(directory, "directory");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(directory), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save workstation reservations to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(directory), "workstation reservations");
     }
 
     public String serialize(WorkstationReservationDirectory directory) {
@@ -154,14 +136,6 @@ public final class WorkstationReservationStorage {
                 requireInt(object, OPERATING_Z),
                 requireInt(object, ANCHOR_RADIUS)
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static JsonObject requireObject(JsonElement element, String label) {

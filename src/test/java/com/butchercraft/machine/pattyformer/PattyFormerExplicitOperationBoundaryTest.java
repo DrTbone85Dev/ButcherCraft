@@ -11,17 +11,62 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PattyFormerExplicitOperationBoundaryTest {
     @Test
-    void pattyFormerUsesExplicitStartPolicyAndExistingExecutionCoordinator() throws IOException {
+    void pattyFormerUsesPersistentRunControlAndExistingExecutionCoordinator() throws IOException {
         String blockEntity = source(
                 "src/main/java/com/butchercraft/machine/pattyformer/PattyFormerBlockEntity.java"
         );
+        String integration = source(
+                "src/main/java/com/butchercraft/integration/machine/pattyformer/PattyFormerContinuousRunService.java"
+        );
 
         assertTrue(blockEntity.contains("WorkstationOperationStartPolicy.EXPLICIT_REQUEST"));
-        assertTrue(blockEntity.contains("requestPlayerProcessing"));
-        assertTrue(blockEntity.contains("PattyFormerExecutionCoordinator.INSTANCE"));
+        assertTrue(blockEntity.contains("requestRunProcessing"));
+        assertTrue(blockEntity.contains("PattyFormerContinuousRunService.INSTANCE"));
+        assertTrue(integration.contains("PattyFormerExecutionCoordinator.INSTANCE"));
+        assertTrue(integration.contains("PoweredProcessingMachineRunService<PattyFormerBlockEntity>"));
+        String execution = source(
+                "src/main/java/com/butchercraft/machine/pattyformer/execution/PattyFormerExecutionCoordinator.java"
+        );
+        assertTrue(execution.contains("WorldIdentityRootIdentities.from"));
         assertTrue(blockEntity.contains("implements WorkstationTransferEndpoint"));
         assertFalse(blockEntity.contains("ProductionManager"));
         assertFalse(blockEntity.contains("Employee"));
+        assertFalse(blockEntity.contains("requestPlayerProcessing"));
+    }
+
+    @Test
+    void materialPresenceAndEndpointDepositCannotCreateRunAuthority() throws IOException {
+        String blockEntity = source(
+                "src/main/java/com/butchercraft/machine/pattyformer/PattyFormerBlockEntity.java"
+        );
+        String integration = source(
+                "src/main/java/com/butchercraft/integration/machine/pattyformer/PattyFormerContinuousRunService.java"
+        );
+
+        String endpoint = blockEntity.substring(
+                blockEntity.indexOf("public boolean endpointAccepts("),
+                blockEntity.indexOf("protected AbstractContainerMenu createWorkstationMenu")
+        );
+        assertFalse(endpoint.contains("startRun("));
+        assertFalse(endpoint.contains("coordinator"));
+        assertFalse(endpoint.contains("ExecutionService"));
+        assertFalse(endpoint.contains("SimulationSchedulerService"));
+        assertTrue(integration.contains("public PoweredMachineRunControlResult start("));
+    }
+
+    @Test
+    void diagnosticsExposeRunPolicyIdentityChildAndEligibilityWithoutNewCommand() throws IOException {
+        String diagnostics = source(
+                "src/main/java/com/butchercraft/command/ButcherCraftDiagnostics.java"
+        );
+
+        assertTrue(diagnostics.contains("Patty Former machine: state="));
+        assertTrue(diagnostics.contains("policy=powered_continuous_explicit_stop"));
+        assertTrue(diagnostics.contains("Patty Former Run: identity="));
+        assertTrue(diagnostics.contains("Patty Former child: active="));
+        assertTrue(diagnostics.contains("input_eligible="));
+        assertTrue(diagnostics.contains("output_blocked="));
+        assertTrue(diagnostics.contains("Patty Former Run recovery: "));
     }
 
     @Test

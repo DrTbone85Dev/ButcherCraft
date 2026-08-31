@@ -1,5 +1,103 @@
 # Changelog
 
+## ButcherCraft v0.10.6-alpha.1 - Checkpoint Recovery & Continuous Processing Update
+
+This release extends persistent player-controlled Machine Runs to both current
+processing machines and adds coordinated, evidence-based checkpoint recovery.
+The release keeps every processing cycle bounded and every restored owner under
+its existing authority; it does not add employee Machine Run control.
+
+### Continuous Machine Processing
+
+- Activated persistent continuous processing for the Patty Former alongside
+  the Grinder.
+- Added explicit GUI START and safe-boundary STOP controls for both machines,
+  plus restart-gated RESUME for the same preserved Run.
+- Added `RUNNING_EMPTY`; compatible input resumes the same active Run without a
+  new START request.
+- Added `OUTPUT_BLOCKED`; restoring compatible output capacity resumes the same
+  Run without consuming blocked input.
+- Kept every item cycle as a separately identified, bounded
+  Execution/Scheduler operation under the existing workstation recipe and
+  inventory authority.
+- Added safe STOP behavior at bounded child boundaries and restart Policy B,
+  which publishes `RESTART_REQUIRED` instead of silently restarting work.
+- Clarified persistent machine state, current cycle state, recovery guidance,
+  and progress in the Grinder and Patty Former interfaces.
+
+### Persistence Reliability
+
+- Added a shared Windows-safe atomic file-publication path with unique attempt
+  files and per-target serialization.
+- Added bounded retry only for classified transient Windows sharing and
+  access-denied failures, reusing the exact frozen payload on every attempt.
+- Suppressed redundant byte-identical Simulation Clock publications without
+  weakening fail-visible durability behavior.
+- Preserved explicit failure when a durable publication cannot be proven.
+
+### Checkpoint & Crash Recovery
+
+- Added coordinated live checkpoints across the complete canonical 17-owner
+  participant set at a coherent Clock/Scheduler boundary.
+- Added immutable checkpoint generations, dual committed-generation heads, and
+  hard-crash-safe rejection of incomplete or invalid generations.
+- Added startup live-state coherence analysis. Coherent live state remains
+  authoritative; otherwise startup may select only the latest valid committed
+  `COMPLETE_RESTORABLE` checkpoint.
+- Added exact owner-native restoration rather than consequence replay.
+- Added durable Restoration Intent and Result evidence with stable identity,
+  resumable interrupted restoration, and idempotent completion.
+- Added fail-closed world, configuration, schema, participant, and integrity
+  validation plus separate-process hard-crash recovery coverage.
+
+### Durable Workstation Recovery
+
+- Added Workstation-owned durable per-instance projections with exact
+  `ItemStack` and data-component persistence.
+- Made projection evidence available independently of block-entity and chunk
+  loading, allowing checkpoint capture without mass chunk force-loading.
+- Added exact unloaded-workstation checkpoint coverage and lazy block-entity
+  reconciliation when restored chunks later load.
+- Preserved replacement-instance protection, retirement/tombstone evidence,
+  and exact Workstation Instance Identity binding.
+- Limited legacy Workstation projection bootstrap to proof-complete historical
+  evidence; ambiguous state remains non-restorable.
+
+### Legacy Split-Snapshot Recovery
+
+- Added proof-complete analysis of the accepted historical split-snapshot case.
+- Added immutable Historical Coordination Acknowledgements and a nonexecuting
+  Scheduler Recovery Discontinuity while preserving completed operations and
+  authorized-but-unscheduled work exactly.
+- Required explicit operator authorization before immutable recovery evidence
+  can be published.
+- Validated offline recovery and later client boot against a disposable copy of
+  the actual historical failed world.
+- Kept recovery evidence-based and fail-closed; this is not arbitrary corrupt
+  save repair.
+
+### Validation & Stability
+
+- Passed the full Java validation suite at the accepted R4 baseline.
+- Passed all 300 registered GameTests.
+- Passed repeated Windows atomic-publication and restoration stress.
+- Passed separate-process hard-crash validation across checkpoint and partial
+  restoration boundaries.
+- Successfully restored and booted the disposable historical recovery case
+  without replaying completed work.
+
+### Remaining Alpha Limits
+
+- Employees cannot START, STOP, or RESUME Machine Runs.
+- Machine wear, damage, lubrication, maintenance, and breakdown remain
+  unimplemented.
+- Production-controlled machine operation remains unavailable.
+- Checkpoint retention and compaction are not implemented, so retained
+  generations can consume substantial save-disk space.
+- Ambiguous recovery outcomes remain authority-blocked rather than guessed.
+- The protected original historical world remains untouched and requires
+  separate Product Owner authorization before any restoration.
+
 ## ButcherCraft v0.10.5-alpha.1 - Continuous Processing Update
 
 ButcherCraft processing now supports practical product stacks and a persistent,

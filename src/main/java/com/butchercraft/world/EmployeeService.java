@@ -7,6 +7,8 @@ import com.butchercraft.world.business.Business;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarConfiguration;
 import com.butchercraft.world.business.runtime.BusinessRuntimeObservationSnapshot;
 import com.butchercraft.world.business.runtime.BusinessShiftDefinition;
+import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
+import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import com.butchercraft.world.identity.WorldIdentity;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
@@ -123,6 +125,7 @@ public final class EmployeeService {
 
     public void resetGameTestEmployees(MinecraftServer server) {
         requireGameTestServer(server);
+        requireMutation(server);
         ActiveEmployeeRuntime runtime = load(server);
         List<EmployeeRecord> retained = runtime.manager().registry().records().stream()
                 .filter(record -> !isGameTestRecord(record))
@@ -161,6 +164,7 @@ public final class EmployeeService {
     ) {
         Objects.requireNonNull(level, "level");
         MinecraftServer server = level.getServer();
+        requireMutation(server);
         ActiveEmployeeRuntime runtime = load(server);
         WorldIdentity worldIdentity = worldIdentityService.getOrCreate(server);
         Business business = defaultBusiness(worldIdentity).orElse(null);
@@ -208,6 +212,7 @@ public final class EmployeeService {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(employeeId, "employeeId");
         Objects.requireNonNull(anchorPos, "anchorPos");
+        requireMutation(level.getServer());
         EmployeeManager manager = managerFor(level.getServer());
         Optional<EmployeeRecord> existing = manager.find(employeeId);
         if (existing.isEmpty()) {
@@ -246,6 +251,7 @@ public final class EmployeeService {
     public EmployeeOperationResult<EmployeeRecord> assignShift(MinecraftServer server, EmployeeId employeeId, String shiftId) {
         Objects.requireNonNull(server, "server");
         Objects.requireNonNull(employeeId, "employeeId");
+        requireMutation(server);
         Optional<EmployeeShiftAssignment> shift = shiftAssignment(server, shiftId);
         if (shift.isEmpty()) {
             return EmployeeOperationResult.failed(
@@ -269,6 +275,7 @@ public final class EmployeeService {
             EmployeeId employeeId,
             EmployeeStatus status
     ) {
+        requireMutation(server);
         EmployeeOperationResult<EmployeeRecord> result = managerFor(server).transitionStatus(employeeId, status);
         if (result.succeeded() && !status.permitsPresence()) {
             WorkstationReservationService.INSTANCE.invalidateByEmployee(
@@ -285,6 +292,7 @@ public final class EmployeeService {
             EmployeeId employeeId,
             EmployeePresenceState state
     ) {
+        requireMutation(server);
         EmployeeOperationResult<EmployeeRecord> result = managerFor(server).setPresence(employeeId, state);
         if (result.succeeded() && state != EmployeePresenceState.PRESENT) {
             WorkstationReservationService.INSTANCE.invalidateByEmployee(
@@ -303,6 +311,7 @@ public final class EmployeeService {
     ) {
         Objects.requireNonNull(server, "server");
         Objects.requireNonNull(employeeId, "employeeId");
+        requireMutation(server);
         DepartmentId departmentId;
         try {
             departmentId = new DepartmentId(departmentIdValue);
@@ -338,6 +347,7 @@ public final class EmployeeService {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(departmentId, "departmentId");
         Objects.requireNonNull(anchorPos, "anchorPos");
+        requireMutation(level.getServer());
         if (!level.isInWorldBounds(anchorPos) || !level.isLoaded(anchorPos)) {
             throw new IllegalArgumentException("Department anchor position must be loaded and inside world bounds: "
                     + anchorPos.getX() + " " + anchorPos.getY() + " " + anchorPos.getZ());
@@ -434,6 +444,7 @@ public final class EmployeeService {
         if (!(entity.level() instanceof ServerLevel level)) {
             return;
         }
+        requireMutation(level.getServer());
         EmployeeId employeeId;
         try {
             employeeId = new EmployeeId(entity.employeeIdValue());
@@ -585,6 +596,10 @@ public final class EmployeeService {
         if (!className.contains("GameTestServer")) {
             throw new IllegalStateException("Employee GameTest helpers may only run on the GameTest server");
         }
+    }
+
+    private static void requireMutation(MinecraftServer server) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKFORCE);
     }
 
     private static EmployeeAnchor anchorFor(ServerLevel level, BlockPos pos) {

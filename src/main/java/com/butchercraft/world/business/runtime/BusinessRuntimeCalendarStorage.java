@@ -1,5 +1,6 @@
 package com.butchercraft.world.business.runtime;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -8,13 +9,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,26 +32,12 @@ public final class BusinessRuntimeCalendarStorage {
         if (!Files.exists(filePath)) {
             return Optional.empty();
         }
-        try {
-            return Optional.of(deserialize(Files.readString(filePath, StandardCharsets.UTF_8)));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Business Calendar Runtime state", exception);
-        }
+        return Optional.of(deserialize(AtomicFilePublication.readUtf8(filePath, "Business Calendar Runtime state")));
     }
 
     public void save(BusinessRuntimeCalendarState state) {
         Objects.requireNonNull(state, "state");
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporary = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporary, serialize(state), StandardCharsets.UTF_8);
-            moveIntoPlace(temporary);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save Business Calendar Runtime state", exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(state), "Business Calendar Runtime state");
     }
 
     public String serialize(BusinessRuntimeCalendarState state) {
@@ -93,14 +75,6 @@ public final class BusinessRuntimeCalendarStorage {
             );
         } catch (JsonParseException | IllegalStateException exception) {
             throw new IllegalArgumentException("Corrupt Business Calendar Runtime state", exception);
-        }
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

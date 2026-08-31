@@ -46,6 +46,12 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            if (project.hasProperty('butchercraft.quickPlayWorld')) {
+                programArguments.addAll(
+                        '--quickPlaySingleplayer',
+                        project.property('butchercraft.quickPlayWorld').toString()
+                )
+            }
         }
 
         server {
@@ -146,6 +152,58 @@ tasks.matching { it.name == 'runGameTestServer' }.configureEach {
 tasks.named('test', Test).configure {
     useJUnitPlatform()
     systemProperty 'butchercraft.projectDir', project.layout.projectDirectory.asFile.absolutePath
+    systemProperty 'butchercraft.testRuntimeClasspath', sourceSets.test.runtimeClasspath.asPath
+    if (project.hasProperty('butchercraft.r3cWorldRoot')) {
+        systemProperty 'butchercraft.r3cWorldRoot', project.property('butchercraft.r3cWorldRoot')
+    }
+    if (project.hasProperty('butchercraft.r3cPublish')) {
+        systemProperty 'butchercraft.r3cPublish', project.property('butchercraft.r3cPublish')
+    }
+    if (project.hasProperty('butchercraft.r3cSuccessor')) {
+        systemProperty 'butchercraft.r3cSuccessor', project.property('butchercraft.r3cSuccessor')
+    }
+    if (project.hasProperty('butchercraft.r4WorldRoot')) {
+        systemProperty 'butchercraft.r4WorldRoot', project.property('butchercraft.r4WorldRoot')
+    }
+}
+
+var releaseVersion = version.toString()
+var releaseModId = mod_id.toString()
+var releaseJarFile = layout.buildDirectory.file("libs/${releaseModId}-${releaseVersion}.jar")
+var verifyReleaseArtifact = tasks.register('verifyReleaseArtifact') {
+    dependsOn tasks.named('jar')
+    inputs.file(releaseJarFile)
+
+    doLast {
+        var expectedName = "${releaseModId}-${releaseVersion}.jar"
+        var releaseJar = releaseJarFile.get().asFile
+        if (!releaseJar.isFile()) {
+            throw new GradleException("Expected release artifact ${expectedName} was not produced")
+        }
+
+        var archive = new java.util.zip.ZipFile(releaseJar)
+        var metadataEntry = archive.getEntry('META-INF/neoforge.mods.toml')
+        if (metadataEntry == null) {
+            archive.close()
+            throw new GradleException('Packaged release artifact does not contain NeoForge metadata')
+        }
+        var packagedMetadata
+        try {
+            packagedMetadata = archive.getInputStream(metadataEntry).getText('UTF-8')
+        } finally {
+            archive.close()
+        }
+        if (!packagedMetadata.contains("modId=\"${releaseModId}\"")) {
+            throw new GradleException("Packaged NeoForge metadata does not contain mod id ${releaseModId}")
+        }
+        if (!packagedMetadata.contains("version=\"${releaseVersion}\"")) {
+            throw new GradleException("Packaged NeoForge metadata does not contain version ${releaseVersion}")
+        }
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn verifyReleaseArtifact
 }
 
 idea {

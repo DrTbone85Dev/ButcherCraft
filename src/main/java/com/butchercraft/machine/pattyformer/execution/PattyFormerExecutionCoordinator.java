@@ -19,6 +19,7 @@ import com.butchercraft.world.simulation.scheduler.SimulationWorkRequest;
 import com.butchercraft.world.simulation.scheduler.SimulationWorkRuntime;
 import com.butchercraft.world.simulation.scheduler.WorkFailureCode;
 import com.butchercraft.world.simulation.scheduler.WorkSubmissionResult;
+import com.butchercraft.world.identity.WorldIdentityRootIdentities;
 import com.butchercraft.workstation.WorkstationExecutionCancelRequest;
 import com.butchercraft.workstation.WorkstationExecutionCancelResult;
 import com.butchercraft.workstation.WorkstationExecutionCoordinator;
@@ -63,53 +64,18 @@ public final class PattyFormerExecutionCoordinator implements WorkstationExecuti
             ));
         }
         try {
+            PattyFormerExecutionPreparation preparation = prepareAuthorization(request, List.of());
             MinecraftServer server = request.tickContext().level().getServer();
             long tick = simulationTick(server);
-            String workstationIdentity = PattyFormerWorkstationReference.of(
-                    request.tickContext().level(),
-                    request.tickContext().blockPos()
-            ).identity();
-            String operationIdentity = PattyFormerExecutionIdentities.operationIdentity(request.operation());
-            String frozenInputIdentity = PattyFormerExecutionIdentities.inputIdentity(request.frozenInputs());
-            String expectedOutputIdentity =
-                    PattyFormerExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
-            String sourceFreshnessIdentity = PattyFormerExecutionIdentities.sourceFreshnessIdentity(
-                    workstationIdentity,
-                    request.operation(),
-                    operationIdentity,
-                    frozenInputIdentity,
-                    expectedOutputIdentity
-            );
-            ExecutionAuthorizationEvidence evidence = ExecutionAuthorizationEvidence.issued(
-                    PattyFormerExecutionConstants.OWNER_SUBSYSTEM_ID,
-                    PattyFormerExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
-                    workstationIdentity,
-                    PattyFormerExecutionConstants.OPERATION_TYPE,
-                    PattyFormerExecutionConstants.HANDLER_ID,
-                    frozenInputIdentity,
-                    sourceFreshnessIdentity,
-                    PattyFormerExecutionConstants.CONFIGURATION_IDENTITY,
-                    worldIdentity(server),
-                    tick,
-                    OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),
-                    List.of(workstationIdentity, operationIdentity, frozenInputIdentity, expectedOutputIdentity)
-            );
             ExecutionOperationResult<ExecutionOperationSnapshot> accepted = execution(server)
-                    .acceptAuthorization(ExecutionAuthorization.issue(evidence), tick);
+                    .acceptAuthorization(preparation.authorization(), tick);
             if (!accepted.accepted()) {
                 return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                         WorkstationFailureCode.EXECUTION_AUTHORIZATION_REJECTED,
                         first(accepted.messages(), accepted.failureCode().orElse(ExecutionFailureCode.UNKNOWN).serializedName())
                 ));
             }
-            ExecutionOperationSnapshot operation = accepted.value().orElseThrow();
-            return WorkstationExecutionStartResult.accepted(
-                    operation.operationId(),
-                    operation.domainEffectIdentity(),
-                    frozenInputIdentity,
-                    expectedOutputIdentity,
-                    sourceFreshnessIdentity
-            );
+            return acceptedResult(preparation, accepted.value().orElseThrow());
         } catch (RuntimeException exception) {
             return WorkstationExecutionStartResult.rejected(WorkstationFailure.of(
                     WorkstationFailureCode.EXECUTION_AUTHORIZATION_REJECTED,
@@ -118,6 +84,86 @@ public final class PattyFormerExecutionCoordinator implements WorkstationExecuti
                             : exception.getMessage()
             ));
         }
+    }
+
+    public PattyFormerExecutionPreparation prepareAuthorization(
+            WorkstationExecutionStartRequest request,
+            List<String> additionalExplicitInputIdentities
+    ) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(additionalExplicitInputIdentities, "additionalExplicitInputIdentities");
+        if (!PattyFormerExecutionConstants.PROMOTED_PATTY_FORMER_OPERATIONS
+                .contains(request.operation().operationId())) {
+            throw new IllegalArgumentException("Patty Former Execution authorizes only the beef patties operation");
+        }
+        if (request.operation().definition().operation().workstationCapability()
+                .filter(PattyFormerWorkstation.CAPABILITY_ID::equals)
+                .isEmpty()) {
+            throw new IllegalArgumentException("Patty Former operation does not declare its capability");
+        }
+        MinecraftServer server = request.tickContext().level().getServer();
+        long tick = simulationTick(server);
+        String workstationIdentity = PattyFormerWorkstationReference.of(
+                request.tickContext().level(),
+                request.tickContext().blockPos()
+        ).identity();
+        String operationIdentity = PattyFormerExecutionIdentities.operationIdentity(request.operation());
+        String frozenInputIdentity = PattyFormerExecutionIdentities.inputIdentity(request.frozenInputs());
+        String expectedOutputIdentity = PattyFormerExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
+        String sourceFreshnessIdentity = PattyFormerExecutionIdentities.sourceFreshnessIdentity(
+                workstationIdentity,
+                request.operation(),
+                operationIdentity,
+                frozenInputIdentity,
+                expectedOutputIdentity
+        );
+        List<String> explicitInputs = new java.util.ArrayList<>(List.of(
+                workstationIdentity,
+                operationIdentity,
+                frozenInputIdentity,
+                expectedOutputIdentity
+        ));
+        additionalExplicitInputIdentities.forEach(identity -> {
+            if (!explicitInputs.contains(identity)) explicitInputs.add(identity);
+        });
+        ExecutionAuthorizationEvidence evidence = ExecutionAuthorizationEvidence.issued(
+                PattyFormerExecutionConstants.OWNER_SUBSYSTEM_ID,
+                PattyFormerExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
+                workstationIdentity,
+                PattyFormerExecutionConstants.OPERATION_TYPE,
+                PattyFormerExecutionConstants.HANDLER_ID,
+                frozenInputIdentity,
+                sourceFreshnessIdentity,
+                PattyFormerExecutionConstants.CONFIGURATION_IDENTITY,
+                worldIdentity(server),
+                tick,
+                OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),
+                explicitInputs
+        );
+        return new PattyFormerExecutionPreparation(
+                ExecutionAuthorization.issue(evidence),
+                frozenInputIdentity,
+                expectedOutputIdentity,
+                sourceFreshnessIdentity
+        );
+    }
+
+    public WorkstationExecutionStartResult acceptedResult(
+            PattyFormerExecutionPreparation preparation,
+            ExecutionOperationSnapshot operation
+    ) {
+        Objects.requireNonNull(preparation, "preparation");
+        Objects.requireNonNull(operation, "operation");
+        if (!operation.operationId().equals(preparation.authorization().operationId())) {
+            throw new IllegalArgumentException("Accepted Patty Former operation does not match prepared authorization");
+        }
+        return WorkstationExecutionStartResult.accepted(
+                operation.operationId(),
+                operation.domainEffectIdentity(),
+                preparation.frozenInputIdentity(),
+                preparation.expectedOutputIdentity(),
+                preparation.sourceFreshnessIdentity()
+        );
     }
 
     @Override
@@ -235,7 +281,7 @@ public final class PattyFormerExecutionCoordinator implements WorkstationExecuti
     }
 
     private static String worldIdentity(MinecraftServer server) {
-        return "butchercraft:world/" + WorldIdentityService.INSTANCE.getOrCreate(server).id();
+        return WorldIdentityRootIdentities.from(WorldIdentityService.INSTANCE.getOrCreate(server)).identity();
     }
 
     private static SimulationWorkId workIdFor(ExecutionOperationId operationId) {

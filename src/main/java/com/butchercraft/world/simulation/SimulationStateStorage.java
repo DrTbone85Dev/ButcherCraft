@@ -1,5 +1,6 @@
 package com.butchercraft.world.simulation;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -8,13 +9,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +41,7 @@ public final class SimulationStateStorage {
 
     private final Path filePath;
     private final SimulationConfiguration configuration;
+    private long successfulPublicationCount;
 
     public SimulationStateStorage(Path filePath, SimulationConfiguration configuration) {
         this.filePath = Objects.requireNonNull(filePath, "filePath");
@@ -54,30 +52,27 @@ public final class SimulationStateStorage {
         return filePath;
     }
 
-    public Optional<SimulationState> load() {
+    public synchronized Optional<SimulationState> load() {
         if (!Files.exists(filePath)) {
             return Optional.empty();
         }
         try {
-            return Optional.of(deserialize(Files.readString(filePath, StandardCharsets.UTF_8)));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load simulation state from " + filePath, exception);
+            SimulationState loaded = deserialize(AtomicFilePublication.readUtf8(filePath, "simulation state"));
+            return Optional.of(loaded);
+        } catch (UncheckedIOException exception) {
+            throw new UncheckedIOException("Failed to load simulation state from " + filePath, exception.getCause());
         }
     }
 
-    public void save(SimulationState state) {
+    public synchronized void save(SimulationState state) {
         Objects.requireNonNull(state, "state").validate(configuration);
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(state), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save simulation state to " + filePath, exception);
+        if (AtomicFilePublication.publishUtf8IfChanged(filePath, serialize(state), "simulation state")) {
+            successfulPublicationCount++;
         }
+    }
+
+    synchronized long successfulPublicationCount() {
+        return successfulPublicationCount;
     }
 
     public String serialize(SimulationState state) {
@@ -159,14 +154,6 @@ public final class SimulationStateStorage {
                 requireString(object, PAYLOAD_REFERENCE),
                 SimulationEventStatus.fromSerializedName(requireString(object, EXECUTION_STATUS))
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static JsonObject requireObject(JsonElement element, String label) {

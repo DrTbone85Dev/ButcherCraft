@@ -1,5 +1,6 @@
 package com.butchercraft.world.execution.persistence;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.execution.ExecutionAttemptId;
 import com.butchercraft.world.execution.ExecutionAttemptRecord;
 import com.butchercraft.world.execution.ExecutionAuthorizationEvidence;
@@ -26,13 +27,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -87,17 +83,13 @@ public final class ExecutionStorage {
             loadedBaseline = null;
             return manager;
         }
-        try {
-            ExecutionManager manager = deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-            loadedBaseline = new LoadedPersistenceBaseline(
-                    manager,
-                    manager.operations(),
-                    compatibilityObservation.classification()
-            );
-            return manager;
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load Execution runtime from " + filePath, exception);
-        }
+        ExecutionManager manager = deserialize(AtomicFilePublication.readUtf8(filePath, "Execution runtime"));
+        loadedBaseline = new LoadedPersistenceBaseline(
+                manager,
+                manager.operations(),
+                compatibilityObservation.classification()
+        );
+        return manager;
     }
 
     public synchronized void save(ExecutionManager manager) {
@@ -105,18 +97,8 @@ public final class ExecutionStorage {
         if (loadedBaseline != null && loadedBaseline.preserveHistoricalPersistence(manager)) {
             return;
         }
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporary = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporary, serialize(manager), StandardCharsets.UTF_8);
-            moveIntoPlace(temporary);
-            loadedBaseline = null;
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save Execution runtime to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(manager), "Execution runtime");
+        loadedBaseline = null;
     }
 
     public String serialize(ExecutionManager manager) {
@@ -378,14 +360,6 @@ public final class ExecutionStorage {
                 record.message(),
                 record.referenceIdentity()
         );
-    }
-
-    private void moveIntoPlace(Path temporary) throws IOException {
-        try {
-            Files.move(temporary, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporary, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static int recordSchema(Integer value, int documentSchema) {

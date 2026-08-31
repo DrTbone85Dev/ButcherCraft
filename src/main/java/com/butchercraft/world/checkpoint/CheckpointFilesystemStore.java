@@ -1,8 +1,10 @@
 package com.butchercraft.world.checkpoint;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.google.gson.JsonParseException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +12,6 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,7 +41,7 @@ public final class CheckpointFilesystemStore {
         return layout;
     }
 
-    public CheckpointPublicationReport publish(CheckpointPublicationRequest request) {
+    public synchronized CheckpointPublicationReport publish(CheckpointPublicationRequest request) {
         Objects.requireNonNull(request, "request");
         List<CheckpointFailure> diagnostics = new ArrayList<>();
         List<CheckpointStorageArtifact> artifacts = new ArrayList<>();
@@ -58,26 +59,16 @@ public final class CheckpointFilesystemStore {
         if (Files.exists(finalGeneration)) {
             return classifyExistingGeneration(finalGeneration, manifest, request);
         }
-        if (Files.exists(staging)) {
-            CheckpointFailure failure = failure(
-                    CheckpointFailureCode.STAGING_DIRECTORY_CONFLICT,
-                    "staging",
-                    "Checkpoint staging directory already exists for " + manifest.generationId()
-            );
-            artifacts.add(artifact(CheckpointStorageArtifactKind.INCOMPLETE_STAGING_DIRECTORY, staging, failure));
-            return CheckpointPublicationReport.failed(
-                    CheckpointPublicationOutcome.FAILED,
-                    List.of(failure),
-                    artifacts
-            );
-        }
 
         try {
             Files.createDirectories(staging);
             probe.reached(CheckpointPublicationPhase.BEFORE_PAYLOAD_WRITE);
             writeOwnerPayloads(staging, request.ownerSnapshots());
             probe.reached(CheckpointPublicationPhase.BEFORE_MANIFEST);
-            writeNewFile(layout.generationManifest(staging), CheckpointFilesystemSerializer.generationManifestBytes(manifest));
+            writeOrVerifyFile(
+                    layout.generationManifest(staging),
+                    CheckpointFilesystemSerializer.generationManifestBytes(manifest)
+            );
             probe.reached(CheckpointPublicationPhase.AFTER_MANIFEST);
             diagnostics.addAll(validateStagedGeneration(staging, request).failures());
             if (!diagnostics.isEmpty()) {
@@ -197,7 +188,41 @@ public final class CheckpointFilesystemStore {
                         heads,
                         request.requiredOwners(),
                         request.expectedWorldIdentityRoot(),
-                        request.expectedPlatformDeterminismManifest()
+                        request.expectedPlatformDeterminismManifest(),
+                        request.acceptedPlatformDeterminismManifests()
+                )
+        );
+        return new CheckpointFilesystemRecoveryReport(selection, generations, heads, artifacts);
+    }
+
+    /** Inspects existing checkpoint artifacts without creating directories or publishing state. */
+    public CheckpointFilesystemRecoveryReport inspectReadOnly(CheckpointFilesystemRecoveryRequest request) {
+        Objects.requireNonNull(request, "request");
+        List<CheckpointStorageArtifact> artifacts = new ArrayList<>();
+        if (Files.exists(layout.storeRoot()) && !Files.isDirectory(layout.storeRoot())) {
+            CheckpointFailure failure = failure(
+                    CheckpointFailureCode.STORE_ROOT_UNAVAILABLE,
+                    "storeRoot",
+                    "Checkpoint store root exists but is not a directory"
+            );
+            return new CheckpointFilesystemRecoveryReport(
+                    CheckpointRecoverySelection.blocked(List.of(failure)),
+                    List.of(),
+                    List.of(),
+                    List.of()
+            );
+        }
+        artifacts.addAll(scanIncompleteArtifacts());
+        List<CheckpointGenerationRecord> generations = readGenerationRecords(request, artifacts);
+        List<CheckpointHeadRecord> heads = readHeadRecords(artifacts);
+        CheckpointRecoverySelection selection = evaluator.selectLatestValidCommitted(
+                new CheckpointRecoverySelectionRequest(
+                        generations,
+                        heads,
+                        request.requiredOwners(),
+                        request.expectedWorldIdentityRoot(),
+                        request.expectedPlatformDeterminismManifest(),
+                        request.acceptedPlatformDeterminismManifests()
                 )
         );
         return new CheckpointFilesystemRecoveryReport(selection, generations, heads, artifacts);
@@ -206,8 +231,22 @@ public final class CheckpointFilesystemStore {
     public CheckpointRecoveredGenerationReport loadSelectedGeneration(
             CheckpointFilesystemRecoveryRequest request
     ) {
+        return loadSelectedGeneration(request, false);
+    }
+
+    /** Reads the selected committed generation without creating checkpoint storage directories. */
+    public CheckpointRecoveredGenerationReport loadSelectedGenerationReadOnly(
+            CheckpointFilesystemRecoveryRequest request
+    ) {
+        return loadSelectedGeneration(request, true);
+    }
+
+    private CheckpointRecoveredGenerationReport loadSelectedGeneration(
+            CheckpointFilesystemRecoveryRequest request,
+            boolean readOnly
+    ) {
         Objects.requireNonNull(request, "request");
-        CheckpointFilesystemRecoveryReport recovery = recover(request);
+        CheckpointFilesystemRecoveryReport recovery = readOnly ? inspectReadOnly(request) : recover(request);
         Optional<CheckpointGenerationId> selectedGenerationId = recovery.selection().selectedGenerationId();
         Optional<String> selectedManifestDigest = recovery.selection().selectedManifestDigest();
         if (selectedGenerationId.isEmpty() || selectedManifestDigest.isEmpty()) {
@@ -253,6 +292,63 @@ public final class CheckpointFilesystemStore {
         }
     }
 
+    public CheckpointRecoveredGenerationReport loadCommittedGenerationReadOnly(
+            CheckpointFilesystemRecoveryRequest request,
+            CheckpointGenerationId generationId,
+            String manifestDigest
+    ) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(generationId, "generationId");
+        CheckpointValidation.digest(manifestDigest, "manifestDigest");
+        CheckpointFilesystemRecoveryReport recovery = inspectReadOnly(request);
+        List<CheckpointHeadRecord> matchingHeads = recovery.headRecords().stream()
+                .filter(CheckpointHeadRecord::digestMatches)
+                .filter(head -> head.selectedGenerationId().equals(generationId))
+                .filter(head -> head.selectedGenerationManifestDigest().equals(manifestDigest))
+                .toList();
+        CheckpointRecoverySelection exactSelection = evaluator.selectLatestValidCommitted(
+                new CheckpointRecoverySelectionRequest(
+                        recovery.generationRecords(),
+                        matchingHeads,
+                        request.requiredOwners(),
+                        request.expectedWorldIdentityRoot(),
+                        request.expectedPlatformDeterminismManifest(),
+                        request.acceptedPlatformDeterminismManifests()
+                )
+        );
+        boolean committed = exactSelection.selectedGenerationId().filter(generationId::equals).isPresent()
+                && exactSelection.selectedManifestDigest().filter(manifestDigest::equals).isPresent();
+        CheckpointGenerationRecord selected = recovery.generationRecords().stream()
+                .filter(record -> record.generationId().equals(generationId))
+                .filter(record -> record.manifest().manifestDigest().equals(manifestDigest))
+                .findFirst().orElse(null);
+        if (!committed || selected == null) {
+            List<CheckpointFailure> failures = new ArrayList<>(exactSelection.diagnostics());
+            failures.add(failure(
+                    CheckpointFailureCode.HEAD_REFERENCES_MISSING_GENERATION,
+                    "selectedGeneration",
+                    "Requested restoration generation is not a valid committed generation"
+            ));
+            return CheckpointRecoveredGenerationReport.failed(recovery, failures);
+        }
+        try {
+            return CheckpointRecoveredGenerationReport.recovered(
+                    recovery,
+                    new CheckpointRecoveredGeneration(
+                            selected,
+                            readSnapshotPayloadDescriptors(
+                                    layout.finalGenerationDirectory(generationId), selected.manifest())
+                    )
+            );
+        } catch (IOException | IllegalArgumentException | JsonParseException exception) {
+            return CheckpointRecoveredGenerationReport.failed(recovery, List.of(failure(
+                    CheckpointFailureCode.GENERATION_CORRUPTION,
+                    "selectedGeneration",
+                    "Requested restoration generation payloads could not be read"
+            )));
+        }
+    }
+
     public CheckpointRollbackDecision selectRollback(
             CheckpointRollbackRequest rollbackRequest,
             CheckpointFilesystemRecoveryRequest recoveryRequest
@@ -263,9 +359,10 @@ public final class CheckpointFilesystemStore {
                 new CheckpointRecoverySelectionRequest(
                         recovery.generationRecords(),
                         recovery.headRecords(),
-                        recoveryRequest.requiredOwners(),
-                        recoveryRequest.expectedWorldIdentityRoot(),
-                        recoveryRequest.expectedPlatformDeterminismManifest()
+                    recoveryRequest.requiredOwners(),
+                    recoveryRequest.expectedWorldIdentityRoot(),
+                    recoveryRequest.expectedPlatformDeterminismManifest(),
+                    recoveryRequest.acceptedPlatformDeterminismManifests()
                 )
         );
     }
@@ -337,7 +434,47 @@ public final class CheckpointFilesystemStore {
             CheckpointGenerationManifest existingManifest = readGenerationManifest(finalGeneration);
             if (existingManifest.equals(manifest)
                     && validateGenerationDirectory(finalGeneration, existingManifest, request).isEmpty()) {
-                return CheckpointPublicationReport.duplicate(existingManifest);
+                CheckpointHeadRecord expectedHead = CheckpointHeadRecord.forManifest(existingManifest);
+                List<CheckpointHeadRecord> validHeads = validHeadRecords();
+                Optional<CheckpointHeadRecord> matchingHead = validHeads.stream()
+                        .filter(expectedHead::equals)
+                        .findFirst();
+                if (matchingHead.isPresent()) {
+                    return CheckpointPublicationReport.duplicate(existingManifest, matchingHead);
+                }
+                long newestHeadSequence = validHeads.stream()
+                        .mapToLong(CheckpointHeadRecord::headSequence)
+                        .max()
+                        .orElse(0L);
+                if (newestHeadSequence > expectedHead.headSequence()) {
+                    return CheckpointPublicationReport.duplicate(existingManifest);
+                }
+                List<CheckpointFailure> diagnostics = writeHead(expectedHead).failures();
+                if (!hasBlockingFailures(diagnostics)) {
+                    try {
+                        probe.reached(CheckpointPublicationPhase.AFTER_HEAD_PUBLICATION);
+                    } catch (IOException exception) {
+                        return CheckpointPublicationReport.failed(
+                                CheckpointPublicationOutcome.FAILED,
+                                List.of(failure(
+                                        CheckpointFailureCode.HEAD_WRITE_FAILURE,
+                                        "headPublication",
+                                        "Checkpoint head publication completed but post-publication observation failed"
+                                )),
+                                List.of()
+                        );
+                    }
+                    return CheckpointPublicationReport.published(existingManifest, expectedHead, diagnostics);
+                }
+                return CheckpointPublicationReport.failed(
+                        CheckpointPublicationOutcome.FAILED,
+                        diagnostics,
+                        List.of(artifact(
+                                CheckpointStorageArtifactKind.UNCOMMITTED_GENERATION_DIRECTORY,
+                                finalGeneration,
+                                diagnostics.getFirst()
+                        ))
+                );
             }
         } catch (IOException | IllegalArgumentException | JsonParseException ignored) {
             // A malformed existing directory still creates an identity conflict for this publication.
@@ -362,11 +499,14 @@ public final class CheckpointFilesystemStore {
             CheckpointOwnerSnapshotPayload snapshot = snapshots.get(index);
             Path ownerDirectory = layout.ownerDirectory(generationDirectory, snapshot.descriptor().ownerId());
             Files.createDirectories(ownerDirectory);
-            writeNewFile(layout.ownerPayload(generationDirectory, snapshot.descriptor().ownerId()), snapshot.payloadBytes());
+            writeOrVerifyFile(
+                    layout.ownerPayload(generationDirectory, snapshot.descriptor().ownerId()),
+                    snapshot.payloadBytes()
+            );
             if (index == 0) {
                 probe.reached(CheckpointPublicationPhase.DURING_PAYLOAD_SET);
             }
-            writeNewFile(
+            writeOrVerifyFile(
                     layout.ownerManifest(generationDirectory, snapshot.descriptor().ownerId()),
                     CheckpointFilesystemSerializer.ownerManifestBytes(snapshot)
             );
@@ -449,21 +589,23 @@ public final class CheckpointFilesystemStore {
     private CheckpointIntegrityResult writeHead(CheckpointHeadRecord head) {
         List<CheckpointFailure> diagnostics = new ArrayList<>();
         Path target = layout.headForSequence(head.headSequence());
-        Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
+        Path legacyTemporary = target.resolveSibling(target.getFileName() + ".tmp");
         try {
             probe.reached(CheckpointPublicationPhase.DURING_HEAD_WRITE);
-            if (Files.exists(temporary)) {
+            if (Files.exists(legacyTemporary)) {
                 return CheckpointIntegrityResult.failed(List.of(failure(
                         CheckpointFailureCode.HEAD_WRITE_FAILURE,
                         "headTemporary",
                         "Checkpoint head temporary file already exists"
                 )));
             }
-            writeNewFile(temporary, CheckpointFilesystemSerializer.headRecordBytes(head));
-            try {
-                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException exception) {
-                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            AtomicFilePublication.PublicationGuarantee guarantee =
+                    AtomicFilePublication.publishBytesAllowingReducedGuarantee(
+                            target,
+                            CheckpointFilesystemSerializer.headRecordBytes(head),
+                            "checkpoint head"
+                    );
+            if (guarantee == AtomicFilePublication.PublicationGuarantee.REDUCED_GUARANTEE) {
                 diagnostics.add(failure(
                         CheckpointFailureCode.FILESYSTEM_GUARANTEE_REDUCED,
                         "headPublication",
@@ -479,7 +621,7 @@ public final class CheckpointFilesystemStore {
                 ));
             }
             return CheckpointIntegrityResult.failed(diagnostics);
-        } catch (IOException | IllegalArgumentException | JsonParseException exception) {
+        } catch (IOException | UncheckedIOException | IllegalArgumentException | JsonParseException exception) {
             return CheckpointIntegrityResult.failed(List.of(failure(
                     CheckpointFailureCode.HEAD_WRITE_FAILURE,
                     "headPublication",
@@ -490,7 +632,19 @@ public final class CheckpointFilesystemStore {
 
     private void moveFinalGeneration(Path staging, Path finalGeneration) throws IOException {
         Files.createDirectories(finalGeneration.getParent());
-        Files.move(staging, finalGeneration, StandardCopyOption.ATOMIC_MOVE);
+        try {
+            AtomicFilePublication.movePreparedAtomically(
+                    staging,
+                    finalGeneration,
+                    false,
+                    "checkpoint generation"
+            );
+        } catch (UncheckedIOException exception) {
+            IOException cause = exception.getCause();
+            if (cause instanceof AtomicMoveNotSupportedException unsupported) throw unsupported;
+            if (cause instanceof FileAlreadyExistsException conflict) throw conflict;
+            throw cause;
+        }
     }
 
     private void writeNewFile(Path path, byte[] bytes) throws IOException {
@@ -506,6 +660,23 @@ public final class CheckpointFilesystemStore {
             }
             channel.force(true);
         }
+    }
+
+    private void writeOrVerifyFile(Path path, byte[] bytes) throws IOException {
+        if (!Files.exists(path)) {
+            writeNewFile(path, bytes);
+            return;
+        }
+        if (!Files.isRegularFile(path) || !java.util.Arrays.equals(Files.readAllBytes(path), bytes)) {
+            throw new FileAlreadyExistsException(path.toString());
+        }
+    }
+
+    private List<CheckpointHeadRecord> validHeadRecords() {
+        List<CheckpointStorageArtifact> ignoredArtifacts = new ArrayList<>();
+        return readHeadRecords(ignoredArtifacts).stream()
+                .filter(CheckpointHeadRecord::digestMatches)
+                .toList();
     }
 
     private List<CheckpointStorageArtifact> scanIncompleteArtifacts() {
@@ -535,23 +706,39 @@ public final class CheckpointFilesystemStore {
                 ));
             }
         }
-        for (Path headTemporary : List.of(
-                layout.headA().resolveSibling(layout.headA().getFileName() + ".tmp"),
-                layout.headB().resolveSibling(layout.headB().getFileName() + ".tmp")
-        )) {
-            if (Files.exists(headTemporary)) {
-                artifacts.add(artifact(
-                        CheckpointStorageArtifactKind.HEAD_TEMPORARY_FILE,
-                        headTemporary,
-                        failure(
-                                CheckpointFailureCode.QUARANTINED_ARTIFACT,
-                                "headTemporary",
-                                "Incomplete checkpoint head temporary file is excluded from authority"
-                        )
-                ));
-            }
-        }
+        addHeadTemporaryArtifacts(artifacts, layout.headA());
+        addHeadTemporaryArtifacts(artifacts, layout.headB());
         return artifacts;
+    }
+
+    private void addHeadTemporaryArtifacts(List<CheckpointStorageArtifact> artifacts, Path head) {
+        Path legacyTemporary = head.resolveSibling(head.getFileName() + ".tmp");
+        if (Files.exists(legacyTemporary)) {
+            artifacts.add(headTemporaryArtifact(legacyTemporary));
+        }
+        Path parent = head.getParent();
+        if (parent == null || !Files.isDirectory(parent)) return;
+        String attemptPrefix = head.getFileName() + ".tmp-";
+        try (Stream<Path> paths = Files.list(parent)) {
+            paths.filter(path -> path.getFileName().toString().startsWith(attemptPrefix))
+                    .sorted(Comparator.comparing(Path::toString))
+                    .map(this::headTemporaryArtifact)
+                    .forEach(artifacts::add);
+        } catch (IOException exception) {
+            artifacts.add(headTemporaryArtifact(parent));
+        }
+    }
+
+    private CheckpointStorageArtifact headTemporaryArtifact(Path path) {
+        return artifact(
+                CheckpointStorageArtifactKind.HEAD_TEMPORARY_FILE,
+                path,
+                failure(
+                        CheckpointFailureCode.QUARANTINED_ARTIFACT,
+                        "headTemporary",
+                        "Incomplete checkpoint head temporary file is excluded from authority"
+                )
+        );
     }
 
     private List<CheckpointGenerationRecord> readGenerationRecords(
@@ -569,21 +756,13 @@ public final class CheckpointFilesystemStore {
                 }
                 try {
                     CheckpointGenerationManifest manifest = readGenerationManifest(generationDirectory);
-                    CheckpointPublicationRequest validationRequest = new CheckpointPublicationRequest(
-                            manifest.generationId(),
-                            manifest.predecessorGenerationId(),
-                            manifest.predecessorManifestDigest(),
-                            manifest.authoritativeSimulationTick(),
-                            readSnapshotPayloadDescriptors(generationDirectory, manifest),
-                            request.requiredOwners(),
-                            request.expectedPlatformDeterminismManifest(),
-                            request.expectedWorldIdentityRoot()
-                    );
-                    List<CheckpointFailure> failures = validateGenerationDirectory(
-                            generationDirectory,
+                    List<CheckpointFailure> failures = new ArrayList<>(evaluator.validateManifest(
                             manifest,
-                            validationRequest
-                    );
+                            request.requiredOwners(),
+                            request.expectedWorldIdentityRoot(),
+                            request.acceptedPlatformDeterminismManifests()
+                    ).failures());
+                    failures.addAll(validateOwnerPayloadFiles(generationDirectory, manifest));
                     if (failures.isEmpty()) {
                         records.add(new CheckpointGenerationRecord(manifest, CheckpointPublicationState.COMMITTED));
                     } else {
@@ -678,9 +857,13 @@ public final class CheckpointFilesystemStore {
     }
 
     private CheckpointHeadRecord readHead(Path headPath) throws IOException {
-        return CheckpointFilesystemSerializer.parseHeadRecord(
-                Files.readString(headPath, StandardCharsets.UTF_8)
-        );
+        try {
+            return CheckpointFilesystemSerializer.parseHeadRecord(
+                    AtomicFilePublication.readUtf8(headPath, "checkpoint head")
+            );
+        } catch (UncheckedIOException exception) {
+            throw exception.getCause();
+        }
     }
 
     private CheckpointStorageArtifact artifact(

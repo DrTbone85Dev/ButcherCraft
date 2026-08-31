@@ -1,5 +1,6 @@
 package com.butchercraft.world.goods;
 
+import com.butchercraft.persistence.AtomicFilePublication;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -8,13 +9,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -68,11 +64,7 @@ public final class GoodStorage {
         if (!Files.exists(filePath)) {
             return GoodRegistry.empty(knownIndustries);
         }
-        try {
-            return deserialize(Files.readString(filePath, StandardCharsets.UTF_8));
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to load goods from " + filePath, exception);
-        }
+        return deserialize(AtomicFilePublication.readUtf8(filePath, "Goods state"));
     }
 
     public void save(GoodRegistry registry) {
@@ -80,17 +72,7 @@ public final class GoodStorage {
         if (!registry.knownIndustries().equals(knownIndustries)) {
             throw new IllegalArgumentException("Good registry industry catalog does not match storage catalog");
         }
-        try {
-            Path parent = filePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + ".tmp");
-            Files.writeString(temporaryFile, serialize(registry), StandardCharsets.UTF_8);
-            moveIntoPlace(temporaryFile);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Failed to save goods to " + filePath, exception);
-        }
+        AtomicFilePublication.publishUtf8(filePath, serialize(registry), "Goods state");
     }
 
     public String serialize(GoodRegistry registry) {
@@ -275,14 +257,6 @@ public final class GoodStorage {
                 IndustryId.of(requireString(object, OWNING_INDUSTRY_ID)),
                 schemaVersion
         );
-    }
-
-    private void moveIntoPlace(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException ignored) {
-            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     private static JsonObject requireObject(JsonElement element, String label) {
