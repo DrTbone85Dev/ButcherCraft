@@ -25,13 +25,16 @@ class WorkstationReservationIntegrationTest {
     }
 
     @Test
-    void reservationsUseExistingGrinderAndPattyFormerIdentityModels() throws IOException {
+    void reservationsUseCanonicalWorkstationInstanceIdentityForProcessingWorkstations() throws IOException {
         String service = Files.readString(TestProjectPaths.projectPath(
                 "src/main/java/com/butchercraft/world/WorkstationReservationService.java"
         ));
 
-        assertTrue(service.contains("GrinderWorkstationReference.of"));
-        assertTrue(service.contains("PattyFormerWorkstationReference.of"));
+        assertTrue(service.contains("WorkstationEndpointService.INSTANCE.referenceFor"));
+        assertTrue(service.contains("reference.instanceId().value()"));
+        assertTrue(service.contains("reference.generation()"));
+        assertTrue(!service.contains("GrinderWorkstationReference.of"));
+        assertTrue(!service.contains("PattyFormerWorkstationReference.of"));
         assertTrue(service.contains("GrinderBlock.FACING"));
         assertTrue(service.contains("PattyFormerBlock.FACING"));
     }

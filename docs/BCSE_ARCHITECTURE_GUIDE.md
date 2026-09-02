@@ -280,8 +280,10 @@ DG-002 and DG-005. The ratified
 [`DG-005A Role-Aware Workstation Reservations amendment`](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 preserves one Workforce reservation authority while allowing one exact
 operator plus one compatible transfer-bound handler per Workstation Instance.
-Role-aware runtime remains unimplemented. IM-032A is next and requires separate
-authorization; IM-032B remains gated behind it.
+IM-032A implements the role-aware schema-2 foundation, conservative schema-1
+migration, exact instance and handler-evidence binding, Material Handling
+integration, and schema-specific checkpoint ownership. Product Owner acceptance
+remains pending. IM-032B remains unimplemented and separately gated.
 
 ### Transactions
 

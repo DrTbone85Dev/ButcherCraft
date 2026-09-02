@@ -10,6 +10,8 @@ import com.butchercraft.workstation.operation.MachineOperatingRegistry;
 import com.butchercraft.workstation.operation.MachineOperatingState;
 import com.butchercraft.workstation.operation.persistence.MachineOperatingStorage;
 import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
+import com.butchercraft.workstation.reservation.WorkstationReservationMigrationResolver;
+import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
@@ -44,13 +46,27 @@ import java.util.TreeSet;
 
 public final class NativeOwnerRestorationAdapters {
     private static final Path UNUSED = Path.of("native_restoration_validation.json");
-    private static final List<String> WORKSTATION_NATIVE_FILES = List.of(
+    private static final List<String> HISTORICAL_WORKSTATION_NATIVE_FILES = List.of(
             "machine_operating_states.json",
             "workstation_endpoint_journal.json",
             "workstation_instances.json",
             "workstation_reservations.json"
     );
+    private static final List<String> CURRENT_WORKSTATION_NATIVE_FILES = List.of(
+            "machine_operating_states.json",
+            "workstation_endpoint_journal.json",
+            "workstation_instances.json"
+    );
     private static final Set<String> WORKSTATION_VIRTUAL_FILES = Set.of("workstation_projections.json");
+    private static final List<String> HISTORICAL_WORKFORCE_NATIVE_FILES = List.of(
+            "departments.json", "employee_records.json",
+            "employee_material_handling_assignments.json", "workforce_definitions.json"
+    );
+    private static final List<String> CURRENT_WORKFORCE_NATIVE_FILES = List.of(
+            "departments.json", "employee_records.json",
+            "employee_material_handling_assignments.json", "workforce_definitions.json",
+            "workstation_reservations.json"
+    );
 
     private NativeOwnerRestorationAdapters() {
     }
@@ -74,9 +90,18 @@ public final class NativeOwnerRestorationAdapters {
         ));
         adapters.add(new FileBundleNativeRestorationAdapter(
                 LegacySplitRecoveryParticipants.WORKSTATION,
-                Set.of(1, 2, 3),
-                WORKSTATION_NATIVE_FILES,
-                WORKSTATION_VIRTUAL_FILES,
+                Map.of(
+                        1, HISTORICAL_WORKSTATION_NATIVE_FILES,
+                        2, HISTORICAL_WORKSTATION_NATIVE_FILES,
+                        3, HISTORICAL_WORKSTATION_NATIVE_FILES,
+                        4, CURRENT_WORKSTATION_NATIVE_FILES
+                ),
+                Map.of(
+                        1, WORKSTATION_VIRTUAL_FILES,
+                        2, WORKSTATION_VIRTUAL_FILES,
+                        3, WORKSTATION_VIRTUAL_FILES,
+                        4, WORKSTATION_VIRTUAL_FILES
+                ),
                 true,
                 NativeOwnerRestorationAdapters::policyBWorkstation,
                 NativeOwnerRestorationAdapters::validateWorkstation,
@@ -114,9 +139,20 @@ public final class NativeOwnerRestorationAdapters {
         adapters.add(simple(LegacySplitRecoveryParticipants.INVENTORY, List.of("inventory.json")));
         adapters.add(simple(LegacySplitRecoveryParticipants.BUSINESS_RUNTIME,
                 List.of("business_calendar_runtime.json", "business_runtime.json", "world_time.json")));
-        adapters.add(simple(LegacySplitRecoveryParticipants.WORKFORCE,
-                List.of("departments.json", "employee_records.json",
-                        "employee_material_handling_assignments.json", "workforce_definitions.json")));
+        adapters.add(new FileBundleNativeRestorationAdapter(
+                LegacySplitRecoveryParticipants.WORKFORCE,
+                Map.of(
+                        1, HISTORICAL_WORKFORCE_NATIVE_FILES,
+                        2, CURRENT_WORKFORCE_NATIVE_FILES
+                ),
+                Map.of(1, Set.of(), 2, Set.of()),
+                true,
+                NativeOwnerRestorationAdapters::identity,
+                NativeOwnerRestorationAdapters::validateWorkforce,
+                (context, state) -> FileBundleNativeRestorationAdapter.RestorationMetadata.open(),
+                (context, plan) -> { },
+                (context, state) -> List.of()
+        ));
         adapters.add(simple(LegacySplitRecoveryParticipants.GOODS, List.of("goods.json")));
         adapters.add(simple(LegacySplitRecoveryParticipants.ECONOMIC_ACTORS, List.of("economic_actors.json")));
         adapters.add(simple(LegacySplitRecoveryParticipants.ORDERS, List.of("orders.json")));
@@ -269,8 +305,9 @@ public final class NativeOwnerRestorationAdapters {
         }
         new WorkstationInstanceStorage(UNUSED)
                 .deserialize(text(state.files(), "workstation_instances.json"));
-        new WorkstationReservationStorage(UNUSED)
-                .deserialize(text(state.files(), "workstation_reservations.json"));
+        if (state.files().containsKey("workstation_reservations.json")) {
+            validateReservations(context, state);
+        }
         String journal = text(state.files(), "workstation_endpoint_journal.json");
         int schema = JsonParser.parseString(journal).getAsJsonObject().get("schema_version").getAsInt();
         if (schema == WorkstationEndpointSchema.LEGACY_ENDPOINT_PROTOCOL_VERSION) {
@@ -295,9 +332,39 @@ public final class NativeOwnerRestorationAdapters {
     }
 
     static Set<String> workstationCheckpointFileNames() {
-        TreeSet<String> files = new TreeSet<>(WORKSTATION_NATIVE_FILES);
+        TreeSet<String> files = new TreeSet<>(CURRENT_WORKSTATION_NATIVE_FILES);
         files.addAll(WORKSTATION_VIRTUAL_FILES);
         return Set.copyOf(files);
+    }
+
+    static Set<String> workforceCheckpointFileNames() {
+        return Set.copyOf(CURRENT_WORKFORCE_NATIVE_FILES);
+    }
+
+    private static void validateWorkforce(
+            OwnerNativeRestorationContext context,
+            FileBundleNativeRestorationAdapter.PreparedNativeState state
+    ) {
+        if (state.ownerSchemaVersion() == 2) {
+            validateReservations(context, state);
+        } else if (state.files().containsKey("workstation_reservations.json")) {
+            throw new IllegalArgumentException("Historical Workforce schema must not own workstation reservations");
+        }
+    }
+
+    private static void validateReservations(
+            OwnerNativeRestorationContext context,
+            FileBundleNativeRestorationAdapter.PreparedNativeState state
+    ) {
+        new WorkstationReservationStorage(UNUSED).deserialize(
+                text(state.files(), "workstation_reservations.json"),
+                new WorldIdentityRootIdentity(
+                        context.worldIdentityRoot().identity(),
+                        context.worldIdentityRoot().schemaVersion(),
+                        context.worldIdentityRoot().rootDigest()
+                ),
+                WorkstationReservationMigrationResolver.noProof()
+        );
     }
 
     private static void validateMaterialHandling(

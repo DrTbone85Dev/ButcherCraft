@@ -76,6 +76,9 @@ The foundation introduces deterministic metadata types for:
 - immutable successor-generation and alternating-head publication
 - schema-versioned durable Recovery Result evidence
 - crash-boundary retry and exact duplicate observation
+- schema-specific Workstation-reservation ownership, with historical
+  Workstation schemas retaining their original file and current Workforce
+  schema 2 owning the role-aware reservation file exactly once
 
 These types live under `com.butchercraft.world.checkpoint` and are independent
 from Minecraft, NeoForge, wall-clock time, random sources, runtime owner

@@ -1,6 +1,6 @@
 # ButcherCraft Material Handling
 
-Status: DG-002, DG-002A, DG-004, and DG-005A ratified; IM-028A through IM-029 live routes and IM-030A/IM-030B stack-aware foundation and selective activation implemented; role-aware reservation runtime gated
+Status: DG-002, DG-002A, DG-004, and DG-005A ratified; IM-028A through IM-029 live routes, IM-030A/IM-030B stack-aware activation, and IM-032A role-aware reservation integration implemented; IM-032A Product Owner acceptance pending
 
 ## Authority
 
@@ -77,12 +77,13 @@ The Grinder remains idle. Processing begins only through the separately
 explicit `/butchercraft employee operate <employee>` command.
 
 DG-005A preserves this source-then-destination order and one active reservation
-per employee. For future IM-032A, another employee's `MACHINE_OPERATOR` may
+per employee. Under IM-032A, another employee's `MACHINE_OPERATOR` may
 coexist with one exact transfer-bound `MATERIAL_HANDLER` at the same Workstation
 Instance. Material Handling requests that access from Workforce and does not own
 the reservation. The handler grant creates no custody, endpoint mutation,
-START, STOP, RESUME, or Machine Run authority. Current runtime remains on the
-generic exclusive schema-1 reservation model.
+START, STOP, RESUME, or Machine Run authority. The complete Workstation Instance
+is the handler conflict domain, and the request binds the current assignment,
+transfer, endpoint purpose/direction, lifecycle evidence, and exact generation.
 
 ## Patty Former Destination Readiness
 
@@ -196,12 +197,11 @@ after schema-2 publication.
 
 ## Current Gates
 
-The following remain unimplemented and unauthorized by IM-030B:
+The following remain unimplemented and unauthorized after IM-032A:
 
-- role-aware reservation schema 2, `MACHINE_OPERATOR`, `MATERIAL_HANDLER`, and
-  `LEGACY_EXCLUSIVE` runtime behavior;
-- IM-032A reservation implementation and IM-032B employee persistent machine
-  operation;
+- IM-032B employee persistent machine operation;
+- more than one handler per Workstation Instance or independent simultaneous
+  input/output handlers;
 - employee Patty Former operation;
 - routes or materials beyond Beef Trim Cutting Table to Grinder and Ground Beef
   Grinder to Patty Former;

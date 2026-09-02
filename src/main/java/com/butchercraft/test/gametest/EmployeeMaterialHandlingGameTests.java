@@ -12,6 +12,8 @@ import com.butchercraft.registration.ModItems;
 import com.butchercraft.workstation.WorkstationInventory;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
+import com.butchercraft.workstation.reservation.WorkstationReservationEndpointPurpose;
+import com.butchercraft.workstation.reservation.WorkstationReservationRole;
 import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.EmployeeService;
@@ -131,8 +133,9 @@ public final class EmployeeMaterialHandlingGameTests {
                 "Workforce assignment observes completion");
         WorkstationReservationRecord destination = reservation(helper, fixture.record());
         helper.assertTrue(destination.workstationType().equals("grinder")
-                        && destination.state() == WorkstationReservationState.EMPLOYEE_ARRIVED,
-                "Destination reservation remains active after deposit");
+                        && destination.state() == WorkstationReservationState.EMPLOYEE_ARRIVED
+                        && destination.role() == WorkstationReservationRole.MACHINE_OPERATOR,
+                "Completed transfer preserves the temporary IM-027 Grinder operation reservation");
         helper.assertTrue(fixture.grinder().workstationState() != WorkstationState.PROCESSING,
                 "Transport does not start Grinder processing");
         helper.assertTrue(counts(helper).equals(before),
@@ -241,46 +244,66 @@ public final class EmployeeMaterialHandlingGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = TEMPLATE, timeoutTicks = 100, batch = BATCH + "_05_source_conflict")
-    public static void sourceReservationConflictLeavesSourceUntouched(GameTestHelper helper) {
-        Fixture fixture = setup(helper, "Source Reservation Conflict");
+    @GameTest(template = TEMPLATE, timeoutTicks = 100, batch = BATCH + "_05_source_coexistence")
+    public static void sourceHandlerCoexistsWithAnotherEmployeeOperator(GameTestHelper helper) {
+        Fixture fixture = setup(helper, "Source Reservation Coexistence");
         EmployeeRecord competitor = createEmployee(helper, "Source Holder", SECOND_EMPLOYEE_POS);
         helper.assertTrue(WorkstationReservationService.INSTANCE.assign(
                         helper.getLevel(), competitor.employeeId(), helper.absolutePos(CUTTING_TABLE_POS)).succeeded(),
-                "Competing employee reserves the source");
+                "Another employee receives the source operator foundation reservation");
 
-        helper.assertTrue(request(helper, fixture.record(), "#1") == 0,
-                "Source reservation conflict rejects transfer assignment");
+        helper.assertTrue(request(helper, fixture.record(), "#1") == 1,
+                "Compatible transfer-bound source handler is accepted");
 
-        helper.assertTrue(ItemStack.isSameItemSameComponents(
-                        fixture.exactStack(), trimStack(fixture.cuttingTable())),
-                "Rejected source reservation leaves source inventory unchanged");
-        helper.assertTrue(assignment(helper, fixture.record()).state()
-                        == EmployeeMaterialHandlingAssignmentState.FAILED,
-                "Reservation conflict publishes a typed terminal Workforce failure");
+        List<WorkstationReservationRecord> reservations = WorkstationReservationService.INSTANCE.managerFor(
+                helper.getLevel().getServer()).reservationsForWorkstation(
+                        reservation(helper, fixture.record()).workstationIdentity());
+        helper.assertTrue(reservations.size() == 2
+                        && reservations.stream().anyMatch(value -> value.role()
+                                == WorkstationReservationRole.MACHINE_OPERATOR)
+                        && reservations.stream().anyMatch(value -> value.role()
+                                == WorkstationReservationRole.MATERIAL_HANDLER),
+                "One operator and one exact source handler coexist without sharing authority");
+        helper.assertTrue(trimStack(fixture.cuttingTable()).getCount() == 1,
+                "Compatible reservation admission alone does not withdraw source inventory");
         helper.succeed();
     }
 
-    @GameTest(template = TEMPLATE, timeoutTicks = 120, batch = BATCH + "_06_destination_conflict")
-    public static void destinationReservationConflictRetainsCustodyAndDisplay(GameTestHelper helper) {
-        Fixture fixture = setup(helper, "Destination Reservation Conflict");
+    @GameTest(template = TEMPLATE, timeoutTicks = 120, batch = BATCH + "_06_destination_coexistence")
+    public static void destinationHandlerCoexistsWithAnotherEmployeeOperator(GameTestHelper helper) {
+        Fixture fixture = setup(helper, "Destination Reservation Coexistence");
         EmployeeRecord competitor = createEmployee(helper, "Destination Holder", SECOND_EMPLOYEE_POS);
-        helper.assertTrue(WorkstationReservationService.INSTANCE.assign(
-                        helper.getLevel(), competitor.employeeId(), helper.absolutePos(GRINDER_POS)).succeeded(),
+        WorkstationReservationRecord operator = WorkstationReservationService.INSTANCE.assign(
+                        helper.getLevel(), competitor.employeeId(), helper.absolutePos(GRINDER_POS)).orThrow();
+        helper.assertTrue(operator.role() == WorkstationReservationRole.MACHINE_OPERATOR,
                 "Competing employee reserves the destination");
 
         request(helper, fixture.record(), "#1");
         arriveAtSource(helper, fixture);
 
         EmployeeMaterialHandlingAssignment current = assignment(helper, fixture.record());
-        helper.assertTrue(current.state() == EmployeeMaterialHandlingAssignmentState.WAITING_FOR_DESTINATION_RESERVATION,
-                "Employee waits visibly for the bound destination reservation");
+        helper.assertTrue(current.state() == EmployeeMaterialHandlingAssignmentState.CARRYING_TO_DESTINATION,
+                "Compatible destination handler proceeds while the operator remains responsible");
         assertProvenCustody(helper, current);
         helper.assertTrue(fixture.employee().getMainHandItem().is(ModItems.BEEF_TRIM.get()),
-                "Beef Trim remains visible while destination is occupied");
-        helper.assertTrue(WorkstationReservationService.INSTANCE.managerFor(helper.getLevel().getServer())
-                        .findByEmployee(fixture.record().employeeId().value()).isEmpty(),
-                "Employee holds no source reservation while waiting and never overlaps reservations");
+                "Beef Trim remains visibly carried under exact Material Handling custody");
+        List<WorkstationReservationRecord> concurrent = WorkstationReservationService.INSTANCE.managerFor(
+                helper.getLevel().getServer()).reservationsForWorkstation(operator.workstationIdentity());
+        helper.assertTrue(concurrent.size() == 2
+                        && concurrent.stream().anyMatch(value -> value.role()
+                                == WorkstationReservationRole.MACHINE_OPERATOR)
+                        && concurrent.stream().anyMatch(value -> value.role()
+                                == WorkstationReservationRole.MATERIAL_HANDLER),
+                "Destination holds one operator and one compatible handler");
+
+        arriveAtDestination(helper, fixture);
+        List<WorkstationReservationRecord> remaining = WorkstationReservationService.INSTANCE.managerFor(
+                helper.getLevel().getServer()).reservationsForWorkstation(operator.workstationIdentity());
+        helper.assertTrue(remaining.size() == 1
+                        && remaining.getFirst().reservationId().equals(operator.reservationId()),
+                "Handler completion releases only the handler and preserves the operator");
+        helper.assertTrue(fixture.grinder().workstationState() != WorkstationState.PROCESSING,
+                "Compatible handler access creates no machine operation authority");
         helper.succeed();
     }
 
@@ -653,6 +676,10 @@ public final class EmployeeMaterialHandlingGameTests {
         WorkstationReservationRecord reservation = reservation(helper, record);
         helper.assertTrue(reservation.workstationType().equals("cutting_table"),
                 "Cutting Table reservation is acquired first");
+        helper.assertTrue(reservation.role() == WorkstationReservationRole.MATERIAL_HANDLER
+                        && reservation.endpointScope().purpose()
+                                == WorkstationReservationEndpointPurpose.SOURCE,
+                "Source access is an exact transfer-bound handler reservation");
         helper.assertTrue(reservation.state() == WorkstationReservationState.EMPLOYEE_EN_ROUTE,
                 "Source reservation starts en route");
     }
@@ -669,6 +696,10 @@ public final class EmployeeMaterialHandlingGameTests {
         WorkstationReservationRecord reservation = reservation(helper, fixture.record());
         helper.assertTrue(reservation.workstationType().equals("grinder"),
                 "Destination reservation is acquired only after source release");
+        helper.assertTrue(reservation.role() == WorkstationReservationRole.MATERIAL_HANDLER
+                        && reservation.endpointScope().purpose()
+                                == WorkstationReservationEndpointPurpose.DESTINATION,
+                "Destination access is an exact transfer-bound handler reservation");
         helper.assertTrue(WorkstationReservationService.INSTANCE.activeReservations(
                         helper.getLevel().getServer()).stream()
                         .filter(value -> value.employeeIdentity().equals(fixture.record().employeeId().value()))

@@ -108,6 +108,7 @@ public final class OwnerNativeRestorationCoordinator {
                 );
             }
         }
+        requireExactReservationFileOwnership(plans);
         RestorationIntent intent = RestorationIntent.prepare(
                 identity,
                 generation.manifest(),
@@ -134,6 +135,7 @@ public final class OwnerNativeRestorationCoordinator {
         if (completed.isPresent()) return completed.orElseThrow();
 
         List<OwnerNativeRestorationPlan> plans = storage.loadCompletePreparedPlans(intent);
+        requireExactReservationFileOwnership(plans);
         List<RestorationParticipantResult> participants = new ArrayList<>();
         for (OwnerNativeRestorationPlan plan : plans) {
             OwnerNativeRestorationAdapter adapter = adapters.get(plan.ownerId());
@@ -290,6 +292,24 @@ public final class OwnerNativeRestorationCoordinator {
         return plans.stream()
                 .flatMap(plan -> plan.policyBRunIdentities().stream())
                 .distinct().sorted().toList();
+    }
+
+    private static void requireExactReservationFileOwnership(List<OwnerNativeRestorationPlan> plans) {
+        List<OwnerNativeRestorationPlan> owners = plans.stream()
+                .filter(plan -> plan.nativeFiles().stream().anyMatch(file ->
+                        file.targetRelativePath().equals("workstation_reservations.json")))
+                .toList();
+        if (owners.size() != 1) {
+            throw conflict("Restoration requires exactly one owner for workstation_reservations.json");
+        }
+        OwnerNativeRestorationPlan owner = owners.getFirst();
+        boolean historicalWorkstation = owner.ownerId().equals(LegacySplitRecoveryParticipants.WORKSTATION)
+                && owner.ownerSchemaVersion() <= 3;
+        boolean currentWorkforce = owner.ownerId().equals(LegacySplitRecoveryParticipants.WORKFORCE)
+                && owner.ownerSchemaVersion() >= 2;
+        if (!historicalWorkstation && !currentWorkforce) {
+            throw conflict("Workstation reservation file ownership is incompatible with owner schema");
+        }
     }
 
     private static StartupRecoveryException blocked(String message) {

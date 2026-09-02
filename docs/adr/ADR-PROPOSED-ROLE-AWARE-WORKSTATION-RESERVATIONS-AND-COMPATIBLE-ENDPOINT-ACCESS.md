@@ -1,6 +1,6 @@
 # ADR-DG-005A: Role-Aware Workstation Reservations And Compatible Endpoint Access
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION GATED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-032A IMPLEMENTED; PRODUCT OWNER ACCEPTANCE PENDING; IM-032B GATED
 
 Decision identifier: DG-005A
 
@@ -764,7 +764,28 @@ Owner ratification approved all seven decisions below:
    Reservation Foundation`, followed by `IM-032B - Employee Persistent Machine
    Operation`.
 
-Ratification does not implement role-aware reservations. The runtime remains on
-the current generic schema-1 reservation model, IM-032A and IM-032B remain
-separately gated, employee persistent machine operation does not exist, and
-DG-006 remains untouched.
+Ratification alone did not implement role-aware reservations. The separately
+authorized IM-032A milestone now implements the schema-2 foundation described
+by this decision. Product Owner acceptance remains pending. IM-032B employee
+persistent machine operation and DG-006 remain untouched and gated.
+
+## 29. Implementation Status
+
+IM-032A mechanically implements:
+
+- Workforce-owned schema-2 role-aware reservation persistence;
+- one reservation per employee, one operator per exact Workstation Instance,
+  and one compatible transfer-bound handler per exact instance;
+- exact role, request, assignment, transfer, endpoint scope, lifecycle,
+  freshness, and Workstation Instance generation identity binding;
+- deterministic schema-1 migration to proven `MATERIAL_HANDLER` or conservative
+  `LEGACY_EXCLUSIVE`, never inferred `MACHINE_OPERATOR`;
+- Material Handling source, destination, and source-return handler access;
+- schema-specific checkpoint ownership transition to Workforce for current
+  generations while preserving historical Workstation ownership; and
+- role-specific release, diagnostics, and Architecture Manifest enforcement.
+
+This implementation creates no employee START, STOP, RESUME, child-admission,
+Machine Run, endpoint mutation, custody, Scheduler, or Execution authority.
+IM-032B remains separately gated pending IM-032A Product Owner acceptance and
+explicit authorization.

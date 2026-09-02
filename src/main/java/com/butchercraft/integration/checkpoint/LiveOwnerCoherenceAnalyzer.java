@@ -4,6 +4,8 @@ import com.butchercraft.workstation.endpoint.persistence.WorkstationInstanceStor
 import com.butchercraft.workstation.endpoint.WorkstationInstanceRegistry;
 import com.butchercraft.workstation.operation.MachineOperatingRegistry;
 import com.butchercraft.workstation.operation.persistence.MachineOperatingStorage;
+import com.butchercraft.workstation.reservation.WorkstationReservationMigrationResolver;
+import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
 import com.butchercraft.world.checkpoint.CheckpointOwnerId;
@@ -12,6 +14,7 @@ import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
 import com.butchercraft.world.checkpoint.RecoveryMutationGate;
 import com.butchercraft.world.checkpoint.StartupRecoveryFailureCode;
 import com.butchercraft.world.checkpoint.WorldIdentityRootReference;
+import com.butchercraft.world.identity.WorldIdentityRootIdentity;
 import com.butchercraft.world.execution.persistence.ExecutionStorage;
 import com.butchercraft.world.execution.persistence.MachineRunStorage;
 import com.butchercraft.world.execution.ExecutionManager;
@@ -73,6 +76,7 @@ public final class LiveOwnerCoherenceAnalyzer {
         }
         validateExecutionAndWorkstation(server, root, documents, issues);
         validateMaterialHandling(root, documents, issues);
+        validateWorkstationReservations(root, documents, worldIdentity, issues);
         RecoveryMutationGate gate = readRecoveryGate(root, documents, schedulerTick, issues);
         boolean empty = documents.isEmpty();
         LiveOwnerCoherenceStatus status = issues.isEmpty()
@@ -279,6 +283,30 @@ public final class LiveOwnerCoherenceAnalyzer {
         }
     }
 
+    private void validateWorkstationReservations(
+            Path root,
+            Map<String, JsonObject> documents,
+            WorldIdentityRootReference worldIdentity,
+            List<StartupRecoveryIssue> issues
+    ) {
+        JsonObject document = documents.get("workstation_reservations.json");
+        if (document == null) return;
+        try {
+            new WorkstationReservationStorage(root.resolve("workstation_reservations.json")).deserialize(
+                    document.toString(),
+                    new WorldIdentityRootIdentity(
+                            worldIdentity.identity(), worldIdentity.schemaVersion(), worldIdentity.rootDigest()),
+                    WorkstationReservationMigrationResolver.noProof()
+            );
+        } catch (RuntimeException exception) {
+            issues.add(issue(
+                    StartupRecoveryFailureCode.LIVE_SPLIT_SNAPSHOT,
+                    LegacySplitRecoveryParticipants.WORKFORCE,
+                    "Workforce workstation reservations failed live owner validation"
+            ));
+        }
+    }
+
     private RecoveryMutationGate readRecoveryGate(
             Path root,
             Map<String, JsonObject> documents,
@@ -392,6 +420,7 @@ public final class LiveOwnerCoherenceAnalyzer {
         if (fileName.startsWith("simulation_state")) return CheckpointOwnerSnapshotCoordinator.CLOCK_OWNER;
         if (fileName.startsWith("simulation_scheduler")) return CheckpointOwnerSnapshotCoordinator.SCHEDULER_OWNER;
         if (fileName.startsWith("execution_")) return LegacySplitRecoveryParticipants.EXECUTION;
+        if (fileName.equals("workstation_reservations.json")) return LegacySplitRecoveryParticipants.WORKFORCE;
         if (fileName.startsWith("workstation_") || fileName.startsWith("machine_operating")) {
             return LegacySplitRecoveryParticipants.WORKSTATION;
         }
@@ -431,6 +460,7 @@ public final class LiveOwnerCoherenceAnalyzer {
         values.put(SchedulerSchema.FILE_NAME, Set.of(1, 2));
         values.put("workstation_endpoint_journal.json", Set.of(1, 2));
         values.put("material_handling.json", Set.of(1, 2));
+        values.put("workstation_reservations.json", Set.of(1, 2));
         return Map.copyOf(values);
     }
 }

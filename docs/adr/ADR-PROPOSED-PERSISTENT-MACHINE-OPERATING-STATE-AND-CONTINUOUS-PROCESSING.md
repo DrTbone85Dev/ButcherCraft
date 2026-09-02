@@ -1,7 +1,8 @@
 # ADR-DG-005: Persistent Machine Operating State And Continuous Processing
 
 Status: RATIFIED ARCHITECTURAL DIRECTION - IM-031A THROUGH IM-031C IMPLEMENTED;
-IM-031C PRODUCT OWNER ACCEPTED; DG-005A RATIFIED; IM-032A NEXT; IM-032B GATED
+IM-031C PRODUCT OWNER ACCEPTED; DG-005A RATIFIED; IM-032A IMPLEMENTED,
+PRODUCT OWNER ACCEPTANCE PENDING; IM-032B GATED
 
 Decision identifier: DG-005
 
@@ -1262,7 +1263,7 @@ until separately authorized and mechanically true.
   machine-neutral coordination and presentation while retaining Patty Former
   recipe, inventory-effect, and owner-result authority.
 - IM-031C is Product Owner accepted. Employee Machine Run control remains
-  unimplemented. DG-005A is ratified; IM-032A is the next reservation
-  foundation milestone, and IM-032B remains gated behind it.
+  unimplemented. DG-005A is ratified; IM-032A implements its reservation
+  foundation with Product Owner acceptance pending, and IM-032B remains gated.
 - Machine condition/wear and Production machine control remain separately
   gated.

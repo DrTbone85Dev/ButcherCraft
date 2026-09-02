@@ -8,6 +8,8 @@ import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReferenc
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReferenceResult;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService;
 import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
+import com.butchercraft.workstation.reservation.WorkstationReservationEndpointScope;
+import com.butchercraft.workstation.reservation.WorkstationReservationRole;
 import com.butchercraft.workstation.reservation.WorkstationReservationResult;
 import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.identity.WorldIdentityRootIdentities;
@@ -168,15 +170,23 @@ public final class EmployeeMaterialHandlingService {
         }
         Optional<WorkstationReservationRecord> existingReservation = reservationService.managerFor(level.getServer())
                 .findByEmployee(employeeId.value());
-        boolean existingSourceReservation = existingReservation
-                .filter(reservation -> reservationMatchesEndpoint(reservation, source))
+        Optional<EmployeeEntity> availableEmployee = entity(level, availability.record().orElseThrow());
+        boolean releasableSourceOperator = existingReservation
+                .filter(record -> record.role() == WorkstationReservationRole.MACHINE_OPERATOR)
+                .filter(record -> record.assignmentReference()
+                        .filter(reference -> reference.startsWith("butchercraft:transient_operator_assignment/v1/"))
+                        .isPresent())
+                .filter(record -> reservationMatchesEndpoint(record, source))
+                .filter(ignored -> availableEmployee
+                        .filter(employee -> !employee.workstationOperationState().active())
+                        .isPresent())
                 .isPresent();
         boolean releasableCompletedDestination = existingReservation.isPresent()
                 && runtime.manager().latestFor(employeeId)
                 .filter(previous -> previous.state() == EmployeeMaterialHandlingAssignmentState.COMPLETED)
                 .filter(previous -> isDestinationReservation(existingReservation.orElseThrow(), previous))
                 .isPresent();
-        if (existingReservation.isPresent() && !existingSourceReservation && !releasableCompletedDestination) {
+        if (existingReservation.isPresent() && !releasableSourceOperator && !releasableCompletedDestination) {
             return AssignmentResult.rejected(
                     AssignmentStatus.RESERVATION_CONFLICT,
                     Optional.empty(),
@@ -254,11 +264,13 @@ public final class EmployeeMaterialHandlingService {
                 EmployeeMaterialHandlingAssignmentState.WALKING_TO_SOURCE,
                 Optional.empty()
         );
-        if (releasableCompletedDestination) {
+        if (releasableSourceOperator || releasableCompletedDestination) {
             WorkstationReservationResult<WorkstationReservationRecord> released = reservationService.release(
                     level.getServer(),
-                    employeeId,
-                    "New explicit Material Handling assignment released the completed destination reservation"
+                    existingReservation.orElseThrow(),
+                    releasableSourceOperator
+                            ? "Explicit Material Handling assignment released the inactive transient source operator"
+                            : "New explicit Material Handling assignment released the completed destination reservation"
             );
             if (!released.succeeded()) {
                 materialHandlingService.cancel(level, transfer.transferReference(),
@@ -277,14 +289,12 @@ public final class EmployeeMaterialHandlingService {
                 );
             }
         }
-        if (existingSourceReservation) {
-            entity(level, availability.record().orElseThrow()).ifPresent(employeeService::synchronizeEntity);
-            return AssignmentResult.accepted(assignment);
-        }
-        WorkstationReservationResult<WorkstationReservationRecord> reservation = reservationService.assign(
+        WorkstationReservationResult<WorkstationReservationRecord> reservation = reserveHandler(
                 level,
-                employeeId,
-                sourcePosition
+                assignment,
+                transfer,
+                assignment.source(),
+                WorkstationReservationEndpointScope.source(assignment.source().endpointKey().canonicalValue())
         );
         if (!reservation.succeeded()) {
             materialHandlingService.cancel(level, transfer.transferReference(), "Source reservation was rejected");
@@ -337,7 +347,7 @@ public final class EmployeeMaterialHandlingService {
                     "Material Transfer has Unknown Outcome and requires reconciliation");
         }
         if (transfer.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
-            EmployeeMaterialHandlingAssignment completed = complete(runtime, assignment);
+            EmployeeMaterialHandlingAssignment completed = complete(level.getServer(), runtime, assignment);
             return AssignmentResult.completed(completed, "Transfer already completed");
         }
         if (assignment.state() != EmployeeMaterialHandlingAssignmentState.CANCELLATION_REQUESTED) {
@@ -407,7 +417,7 @@ public final class EmployeeMaterialHandlingService {
             return;
         }
         if (transfer.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
-            complete(runtime, assignment);
+            complete(level.getServer(), runtime, assignment);
             employee.clearCarryObservation(runtime.manager().latestFor(employeeId).orElseThrow().revision());
             return;
         }
@@ -689,7 +699,7 @@ public final class EmployeeMaterialHandlingService {
         if (reservation.isPresent() && isSourceReservation(reservation.orElseThrow(), assignment)) {
             WorkstationReservationResult<WorkstationReservationRecord> released = reservationService.release(
                     level.getServer(),
-                    assignment.employeeId(),
+                    reservation.orElseThrow(),
                     "Material Handling custody accepted; source reservation released"
             );
             if (!released.succeeded()) {
@@ -705,10 +715,20 @@ public final class EmployeeMaterialHandlingService {
                     "Employee still holds a conflicting reservation after source release");
             return;
         }
-        WorkstationReservationResult<WorkstationReservationRecord> destination = reservationService.assign(
+        MaterialTransferView transfer = materialHandlingService.findTransfer(
+                level.getServer(), assignment.transferId()).orElse(null);
+        if (transfer == null) {
+            recovery(runtime, assignment, EmployeeMaterialHandlingFailureCode.RECOVERY_REQUIRED,
+                    "Destination reservation cannot be acquired without authoritative transfer evidence");
+            return;
+        }
+        WorkstationReservationResult<WorkstationReservationRecord> destination = reserveHandler(
                 level,
-                assignment.employeeId(),
-                position(assignment.destination())
+                assignment,
+                transfer,
+                assignment.destination(),
+                WorkstationReservationEndpointScope.destination(
+                        assignment.destination().endpointKey().canonicalValue())
         );
         if (!destination.succeeded()) {
             transition(runtime, assignment,
@@ -732,12 +752,9 @@ public final class EmployeeMaterialHandlingService {
             return;
         }
         if (!currentEndpoint(level, assignment.destination())) {
-            reservationService.invalidateByEmployee(
-                    level.getServer(),
-                    assignment.employeeId(),
+            invalidateHandlerReservation(level.getServer(), assignment,
                     workstationName(assignment.destination())
-                            + " endpoint was removed or replaced while Material Handling retained custody"
-            );
+                            + " endpoint was removed or replaced while Material Handling retained custody");
             recovery(runtime, assignment, EmployeeMaterialHandlingFailureCode.DESTINATION_ENDPOINT_REPLACED,
                     workstationName(assignment.destination())
                             + " endpoint was removed or replaced while custody remained proven");
@@ -787,8 +804,15 @@ public final class EmployeeMaterialHandlingService {
         MaterialTransferView current = materialHandlingService.findTransfer(level.getServer(), assignment.transferId())
                 .orElse(transfer);
         if (current.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
-            EmployeeMaterialHandlingAssignment completed = complete(runtime, assignment);
+            EmployeeMaterialHandlingAssignment completed = complete(level.getServer(), runtime, assignment);
             employee.clearCarryObservation(completed.revision());
+            if (workstationType(completed.destination()).equals("grinder")) {
+                WorkstationReservationResult<WorkstationReservationRecord> operator = reservationService.assign(
+                        level, completed.employeeId(), position(completed.destination()));
+                if (operator.succeeded()) {
+                    employeeService.synchronizeEntity(employee);
+                }
+            }
             return;
         }
         if (current.lifecycle() == MaterialTransferLifecycle.DESTINATION_DEPOSIT_PREPARED) {
@@ -819,7 +843,7 @@ public final class EmployeeMaterialHandlingService {
             EmployeeEntity employee
     ) {
         if (transfer.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
-            EmployeeMaterialHandlingAssignment completed = complete(runtime, assignment);
+            EmployeeMaterialHandlingAssignment completed = complete(level.getServer(), runtime, assignment);
             employee.clearCarryObservation(completed.revision());
             return;
         }
@@ -830,11 +854,8 @@ public final class EmployeeMaterialHandlingService {
         }
         refreshCarry(employee, assignment, transfer);
         if (!currentEndpoint(level, assignment.source())) {
-            reservationService.invalidateByEmployee(
-                    level.getServer(),
-                    assignment.employeeId(),
-                    workstationName(assignment.source()) + " endpoint was removed or replaced during cancellation"
-            );
+            invalidateHandlerReservation(level.getServer(), assignment,
+                    workstationName(assignment.source()) + " endpoint was removed or replaced during cancellation");
             recovery(runtime, assignment, EmployeeMaterialHandlingFailureCode.SOURCE_ENDPOINT_REPLACED,
                     workstationName(assignment.source())
                             + " endpoint was removed or replaced while custody remained proven");
@@ -843,15 +864,23 @@ public final class EmployeeMaterialHandlingService {
         Optional<WorkstationReservationRecord> reservation = reservationService.managerFor(level.getServer())
                 .findByEmployee(assignment.employeeId().value());
         if (reservation.isPresent() && !isSourceReservation(reservation.orElseThrow(), assignment)) {
-            reservationService.release(level.getServer(), assignment.employeeId(),
+            if (!isDestinationReservation(reservation.orElseThrow(), assignment)) {
+                recovery(runtime, assignment, EmployeeMaterialHandlingFailureCode.RESERVATION_LOST,
+                        "Cancellation cannot replace an unrelated employee reservation");
+                return;
+            }
+            reservationService.release(level.getServer(), reservation.orElseThrow(),
                     "Cancellation returning custody to source");
             reservation = Optional.empty();
         }
         if (reservation.isEmpty()) {
-            WorkstationReservationResult<WorkstationReservationRecord> source = reservationService.assign(
+            WorkstationReservationResult<WorkstationReservationRecord> source = reserveHandler(
                     level,
-                    assignment.employeeId(),
-                    position(assignment.source())
+                    assignment,
+                    transfer,
+                    assignment.source(),
+                    WorkstationReservationEndpointScope.sourceReturn(
+                            assignment.source().endpointKey().canonicalValue())
             );
             if (!source.succeeded()) {
                 return;
@@ -872,7 +901,7 @@ public final class EmployeeMaterialHandlingService {
         );
         MaterialTransferView current = cancelled.transfer().orElse(transfer);
         if (cancelled.succeeded() && current.lifecycle() == MaterialTransferLifecycle.CANCELLED) {
-            reservationService.release(level.getServer(), assignment.employeeId(),
+            reservationService.release(level.getServer(), sourceReservation,
                     "Material returned to " + workstationName(assignment.source()));
             EmployeeMaterialHandlingAssignment terminal = transition(
                     runtime,
@@ -904,8 +933,9 @@ public final class EmployeeMaterialHandlingService {
                 assignment.failure().map(EmployeeMaterialHandlingFailure::detail).orElse("Employee transfer cancelled")
         );
         reservationService.managerFor(level.getServer()).findByEmployee(assignment.employeeId().value())
-                .ifPresent(ignored -> reservationService.release(
-                        level.getServer(), assignment.employeeId(), "Employee transfer cancelled before custody"));
+                .filter(reservation -> reservation.role() == WorkstationReservationRole.MATERIAL_HANDLER)
+                .ifPresent(reservation -> reservationService.release(
+                        level.getServer(), reservation, "Employee transfer cancelled before custody"));
         if (cancelled.succeeded()
                 && cancelled.transfer().filter(value -> value.lifecycle() == MaterialTransferLifecycle.CANCELLED).isPresent()) {
             return transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.CANCELLED, Optional.empty());
@@ -949,11 +979,19 @@ public final class EmployeeMaterialHandlingService {
                 assignment.assignmentId(),
                 new WaitState(wait.attempts() + 1, gameTime + RESERVATION_RETRY_INTERVAL_TICKS)
         );
-        WorkstationReservationResult<WorkstationReservationRecord> result = reservationService.assign(
-                level,
-                assignment.employeeId(),
-                position
-        );
+        MaterialTransferView transfer = materialHandlingService.findTransfer(
+                level.getServer(), assignment.transferId()).orElse(null);
+        if (transfer == null) {
+            recovery(runtime, assignment, EmployeeMaterialHandlingFailureCode.RECOVERY_REQUIRED,
+                    "Reservation retry requires authoritative Material Transfer evidence");
+            return false;
+        }
+        WorkstationEndpointReference endpoint = source ? assignment.source() : assignment.destination();
+        WorkstationReservationEndpointScope scope = source
+                ? WorkstationReservationEndpointScope.source(endpoint.endpointKey().canonicalValue())
+                : WorkstationReservationEndpointScope.destination(endpoint.endpointKey().canonicalValue());
+        WorkstationReservationResult<WorkstationReservationRecord> result = reserveHandler(
+                level, assignment, transfer, endpoint, scope);
         if (!result.succeeded()) {
             EmployeeMaterialHandlingAssignmentState waiting = source
                     ? EmployeeMaterialHandlingAssignmentState.WAITING_FOR_SOURCE_RESERVATION
@@ -981,7 +1019,7 @@ public final class EmployeeMaterialHandlingService {
             MaterialTransferView transfer,
             Availability availability
     ) {
-        reservationService.invalidateByEmployee(level.getServer(), assignment.employeeId(), availability.detail());
+        invalidateHandlerReservation(level.getServer(), assignment, availability.detail());
         EmployeeMaterialHandlingFailureCode code = switch (availability.status()) {
             case PLANT_CLOSED -> EmployeeMaterialHandlingFailureCode.PLANT_CLOSED;
             case EMPLOYEE_OFF_SHIFT -> EmployeeMaterialHandlingFailureCode.EMPLOYEE_OFF_SHIFT;
@@ -1005,7 +1043,7 @@ public final class EmployeeMaterialHandlingService {
             EmployeeMaterialHandlingFailureCode code,
             String detail
     ) {
-        reservationService.invalidateByEmployee(level.getServer(), assignment.employeeId(), detail);
+        invalidateHandlerReservation(level.getServer(), assignment, detail);
         if (transfer.hasProvenMaterialHandlingCustody()) {
             recovery(runtime, assignment, code, detail);
         } else {
@@ -1015,13 +1053,31 @@ public final class EmployeeMaterialHandlingService {
     }
 
     private EmployeeMaterialHandlingAssignment complete(
+            MinecraftServer server,
             ActiveAssignments runtime,
             EmployeeMaterialHandlingAssignment assignment
     ) {
+        reservationService.managerFor(server).findByEmployee(assignment.employeeId().value())
+                .filter(reservation -> reservation.role() == WorkstationReservationRole.MATERIAL_HANDLER)
+                .filter(reservation -> reservation.transferReference()
+                        .filter(assignment.transferId().value()::equals).isPresent())
+                .ifPresent(reservation -> reservationService.release(
+                        server, reservation, "Material Handling transfer reached terminal completion"));
         if (assignment.state() == EmployeeMaterialHandlingAssignmentState.COMPLETED) {
             return assignment;
         }
         return transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.COMPLETED, Optional.empty());
+    }
+
+    private void invalidateHandlerReservation(
+            MinecraftServer server,
+            EmployeeMaterialHandlingAssignment assignment,
+            String reason
+    ) {
+        reservationService.managerFor(server).findByEmployee(assignment.employeeId().value())
+                .filter(reservation -> isSourceReservation(reservation, assignment)
+                        || isDestinationReservation(reservation, assignment))
+                .ifPresent(reservation -> reservationService.invalidate(server, reservation, reason));
     }
 
     private EmployeeMaterialHandlingAssignment recovery(
@@ -1121,25 +1177,68 @@ public final class EmployeeMaterialHandlingService {
             WorkstationReservationRecord reservation,
             EmployeeMaterialHandlingAssignment assignment
     ) {
-        return reservationMatchesEndpoint(reservation, assignment.source());
+        return reservationMatchesEndpoint(reservation, assignment.source())
+                && reservation.role() == WorkstationReservationRole.MATERIAL_HANDLER
+                && reservation.assignmentReference().filter(assignment.assignmentId().value()::equals).isPresent()
+                && reservation.transferReference().filter(assignment.transferId().value()::equals).isPresent()
+                && (reservation.endpointScope().equals(WorkstationReservationEndpointScope.source(
+                        assignment.source().endpointKey().canonicalValue()))
+                    || reservation.endpointScope().equals(WorkstationReservationEndpointScope.sourceReturn(
+                        assignment.source().endpointKey().canonicalValue())));
     }
 
     private static boolean isDestinationReservation(
             WorkstationReservationRecord reservation,
             EmployeeMaterialHandlingAssignment assignment
     ) {
-        return reservationMatchesEndpoint(reservation, assignment.destination());
+        return reservationMatchesEndpoint(reservation, assignment.destination())
+                && reservation.role() == WorkstationReservationRole.MATERIAL_HANDLER
+                && reservation.assignmentReference().filter(assignment.assignmentId().value()::equals).isPresent()
+                && reservation.transferReference().filter(assignment.transferId().value()::equals).isPresent()
+                && reservation.endpointScope().equals(WorkstationReservationEndpointScope.destination(
+                        assignment.destination().endpointKey().canonicalValue()));
     }
 
     private static boolean reservationMatchesEndpoint(
             WorkstationReservationRecord reservation,
             WorkstationEndpointReference endpoint
     ) {
-        return reservation.workstationType().equals(workstationType(endpoint))
+        return reservation.workstationIdentity().equals(endpoint.instanceId().value())
+                && reservation.workstationGeneration() == endpoint.generation()
+                && reservation.workstationType().equals(workstationType(endpoint))
                 && reservation.dimensionIdentity().equals(endpoint.endpointKey().dimensionIdentity())
                 && reservation.workstationX() == endpoint.endpointKey().x()
                 && reservation.workstationY() == endpoint.endpointKey().y()
                 && reservation.workstationZ() == endpoint.endpointKey().z();
+    }
+
+    private WorkstationReservationResult<WorkstationReservationRecord> reserveHandler(
+            ServerLevel level,
+            EmployeeMaterialHandlingAssignment assignment,
+            MaterialTransferView transfer,
+            WorkstationEndpointReference endpoint,
+            WorkstationReservationEndpointScope scope
+    ) {
+        if (!transfer.transferIdentity().equals(assignment.transferId().value())
+                || !endpoint.instanceId().equals((scope.purpose()
+                        == com.butchercraft.workstation.reservation.WorkstationReservationEndpointPurpose.DESTINATION
+                        ? assignment.destination()
+                        : assignment.source()).instanceId())) {
+            return WorkstationReservationResult.failed(
+                    com.butchercraft.workstation.reservation.WorkstationReservationFailureCode.INVALID_HANDLER_TRANSFER,
+                    "Reservation endpoint does not match authoritative assignment and transfer evidence"
+            );
+        }
+        return reservationService.assignMaterialHandler(
+                level,
+                assignment.employeeId(),
+                position(endpoint),
+                assignment.assignmentId().value(),
+                transfer.transferIdentity(),
+                scope,
+                transfer.lifecycle().name().toLowerCase(java.util.Locale.ROOT),
+                assignment.revision()
+        );
     }
 
     private static String workstationType(WorkstationEndpointReference endpoint) {
@@ -1285,7 +1384,7 @@ public final class EmployeeMaterialHandlingService {
                 continue;
             }
             if (transfer.lifecycle() == MaterialTransferLifecycle.COMPLETED) {
-                complete(runtime, assignment);
+                complete(server, runtime, assignment);
             } else if (transfer.lifecycle() == MaterialTransferLifecycle.CANCELLED) {
                 transition(runtime, assignment, EmployeeMaterialHandlingAssignmentState.CANCELLED, Optional.empty());
             } else if (transfer.lifecycle() == MaterialTransferLifecycle.UNKNOWN_OUTCOME) {

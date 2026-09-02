@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A run-state foundation, IM-031B/IM-031C powered processing activation, and IM-031C-R3A/R3B durable projection and checkpoint completeness; DG-005A role-aware reservation architecture ratified and runtime-gated
+Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A run-state foundation, IM-031B/IM-031C powered processing activation, IM-031C-R3A/R3B durable projection and checkpoint completeness, and IM-032A role-aware reservation integration; IM-032A Product Owner acceptance pending
 
 ## Purpose
 
@@ -171,12 +171,13 @@ Startup order for this boundary is World Identity, Workstation instance
 registry, endpoint journal, block-entity projection reconciliation, Material
 Handling validation/reconciliation, then Workforce assignment reconstruction.
 
-DG-005A permits future handler access to a compatible endpoint while another
+DG-005A and IM-032A permit handler access to a compatible endpoint while another
 employee retains exact `MACHINE_OPERATOR` responsibility. Reservation
 compatibility never proves an endpoint effect is safe: Workstation still
 validates freshness, slot compatibility, capacity, active effects, instance
-identity, and recovery state before mutation. Current schema-1 reservation
-runtime still rejects simultaneous Workstation reservations.
+identity, and recovery state before mutation. Workforce schema 2 permits at
+most one compatible handler with one operator on an exact Workstation Instance;
+legacy-exclusive records still reject all coexistence.
 
 ### Stack-Aware Endpoint Foundation
 
@@ -391,9 +392,9 @@ inventory.
 DG-005A clarifies that a retained employee operator reservation is exclusive
 `MACHINE_OPERATOR` responsibility, not a prohibition on one compatible
 transfer-bound handler. Handler access creates no START, STOP, RESUME, child
-admission, or Machine Run authority. IM-032A must implement the role-aware
-reservation foundation before IM-032B may consume it for employee persistent
-machine operation.
+admission, or Machine Run authority. IM-032A implements the role-aware
+reservation foundation. IM-032B may consume it only after Product Owner
+acceptance and separate implementation authorization.
 
 ## Future Extension Points
 

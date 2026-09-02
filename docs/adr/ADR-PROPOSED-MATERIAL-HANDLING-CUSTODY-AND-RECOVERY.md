@@ -1,6 +1,6 @@
 # ADR-DG-002: Material Handling Custody And Recovery
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; DG-005A RESERVATION AMENDMENT RATIFIED; LATER SCOPE GATED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; DG-005A RATIFIED AND IM-032A RESERVATION INTEGRATION IMPLEMENTED; LATER SCOPE GATED
 
 Decision identifier: DG-002
 
@@ -11,7 +11,8 @@ commands, content, persistence, or Architecture Manifest declarations.
 IM-028B was later separately owner-authorized and is implemented within the
 Section 25 boundary. All later implementation remains separately gated.
 DG-005A later narrowly amends reservation compatibility only. Its role-aware
-runtime and persistence evolution remain gated behind IM-032A.
+runtime and persistence evolution are implemented by the separately authorized
+IM-032A milestone; Product Owner acceptance remains pending.
 
 Canonical platform reference:
 [`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
@@ -577,9 +578,8 @@ Handling remains transfer and in-transit custody authority; Workstation remains
 endpoint mutation authority; Execution remains Machine Run authority.
 
 The entire Workstation Instance is the initial handler conflict domain, so a
-second handler remains prohibited. Schema-1 runtime remains generic and
-exclusive until IM-032A separately implements the ratified role-aware schema.
-Historical reservations whose role cannot be proven must become
+second handler remains prohibited. IM-032A implements the ratified role-aware
+schema. Historical reservations whose role cannot be proven become
 `LEGACY_EXCLUSIVE`, not inferred operator reservations.
 
 ## 13. Workstation Selection And Development Surface

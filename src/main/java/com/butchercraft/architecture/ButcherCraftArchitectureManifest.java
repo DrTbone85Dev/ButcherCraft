@@ -43,6 +43,7 @@ import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentSchema;
 import com.butchercraft.workstation.operation.MachineOperatingSchema;
 import com.butchercraft.workstation.projection.WorkstationProjectionSchema;
+import com.butchercraft.workstation.reservation.WorkstationReservationSchema;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -1221,6 +1222,46 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "IM-029 Employee Grinder To Patty Former Material Handling",
                 "Workforce persists assignment intent and reconstructs movement and carry display only after Workstation and Material Handling reconciliation; post-custody cancellation returns through owner protocols");
+        platformContract(builder, "butchercraft:platform_contract/role_aware_reservation_authority",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Workforce singularly owns role-aware Workstation Reservation identity, compatibility, lifecycle, release, persistence, and restoration");
+        platformContract(builder, "butchercraft:platform_contract/role_aware_reservation_compatibility",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Each employee holds at most one active reservation and each exact Workstation Instance admits at most one MACHINE_OPERATOR plus one transfer-bound MATERIAL_HANDLER");
+        platformContract(builder, "butchercraft:platform_contract/role_aware_reservation_identity",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Every modern reservation binds World Identity, exact Workstation Instance and generation, employee, role, assignment, endpoint scope, lifecycle evidence, sequence, and configuration");
+        platformContract(builder, "butchercraft:platform_contract/role_aware_reservation_schema_2",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Workforce publishes canonically ordered schema-2 reservation state through the shared atomic persistence boundary and rejects malformed or unsupported candidates");
+        platformContract(builder, "butchercraft:platform_contract/role_aware_reservation_schema_1_migration",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Schema-1 reservations migrate to MATERIAL_HANDLER only from exact active transfer evidence and otherwise remain LEGACY_EXCLUSIVE; migration never infers MACHINE_OPERATOR");
+        platformContract(builder, "butchercraft:platform_contract/reservation_checkpoint_ownership_transition",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Current checkpoint generations store reservation state only in Workforce schema 2 while historical Workstation schemas retain their original reservation file ownership");
+        platformContract(builder, "butchercraft:platform_contract/reservation_role_specific_release",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "DG-005A and IM-032A",
+                "Release targets exact reservation identity and role so handler completion cannot release a coexisting operator and stale releases cannot remove newer authority");
+        platformContract(builder, "butchercraft:platform_contract/employee_persistent_machine_operation_gate",
+                ValidationCategory.GENERAL, WORKFORCE,
+                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
+                "IM-032A Role-Aware Workstation Reservation Foundation",
+                "MACHINE_OPERATOR is foundation-only and grants no employee START, STOP, RESUME, Scheduler dispatch, Machine Run mutation, or Workstation inventory authority before IM-032B");
         platformContract(builder, "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
                 ValidationCategory.OWNERSHIP, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1461,6 +1502,10 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/employee_material_handling_assignments", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_material_handling_assignment_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_carry_view_projection", WORKFORCE);
+        own(builder, "butchercraft:responsibility/workstation_reservation_identity", WORKFORCE);
+        own(builder, "butchercraft:responsibility/workstation_reservation_compatibility", WORKFORCE);
+        own(builder, "butchercraft:responsibility/workstation_reservation_lifecycle", WORKFORCE);
+        own(builder, "butchercraft:responsibility/workstation_reservation_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/workstation_approach_geometry", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_instance_identity", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_instance_generation", WORKSTATION);
@@ -3014,6 +3059,10 @@ public final class ButcherCraftArchitectureManifest {
                 EmployeeMaterialHandlingAssignmentSchema.DIRECTORY_NAME + "/"
                         + EmployeeMaterialHandlingAssignmentSchema.FILE_NAME,
                 WORKFORCE, EmployeeMaterialHandlingAssignmentSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:workstation_reservations",
+                WorkstationReservationSchema.DIRECTORY_NAME + "/" + WorkstationReservationSchema.FILE_NAME,
+                WORKFORCE, WorkstationReservationSchema.CURRENT_VERSION,
                 PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
     }
 

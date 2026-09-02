@@ -150,12 +150,17 @@ public final class OwnerNativeRestorationHardCrashProcess {
             if (!snapshot.descriptor().ownerId().equals(ownerId)) {
                 throw new IllegalArgumentException("Wrong owner snapshot");
             }
+            List<OwnerNativeRestorationPlan.NativeFile> files = new ArrayList<>();
+            files.add(OwnerNativeRestorationPlan.NativeFile.of(
+                    ownerId.value(), relativePath(ownerId), nativeBytes(ownerId)));
+            if (ownerId.equals(LegacySplitRecoveryParticipants.WORKSTATION)) {
+                files.add(OwnerNativeRestorationPlan.NativeFile.of(
+                        "workstation_reservations.json",
+                        "workstation_reservations.json",
+                        "{}".getBytes(StandardCharsets.UTF_8)));
+            }
             return OwnerNativeRestorationPlan.create(
-                    snapshot.descriptor(),
-                    List.of(OwnerNativeRestorationPlan.NativeFile.of(
-                            ownerId.value(), relativePath(ownerId), nativeBytes(ownerId))),
-                    Optional.empty()
-            );
+                    snapshot.descriptor(), 1, files, Optional.empty());
         }
 
         @Override

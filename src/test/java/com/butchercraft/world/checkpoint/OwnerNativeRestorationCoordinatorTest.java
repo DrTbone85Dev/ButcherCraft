@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -230,6 +231,33 @@ class OwnerNativeRestorationCoordinatorTest {
         assertTrue(fixture.storage().incompleteIntents().isEmpty());
     }
 
+    @Test
+    void missingReservationFileOwnerBlocksBeforeIntent() {
+        Fixture fixture = fixture();
+        StartupRecoveryException failure = assertThrows(StartupRecoveryException.class, () ->
+                fixture.coordinator(adapters(new AtomicInteger(), Set.of()))
+                        .prepareAndRestore(
+                                fixture.context(), fixture.generation(), fixture.head(), RestorationProbe.NONE));
+
+        assertEquals(StartupRecoveryFailureCode.RESTORATION_CONFLICT, failure.failureCode());
+        assertTrue(fixture.storage().incompleteIntents().isEmpty());
+    }
+
+    @Test
+    void duplicateReservationFileOwnersBlockBeforeIntent() {
+        Fixture fixture = fixture();
+        StartupRecoveryException failure = assertThrows(StartupRecoveryException.class, () ->
+                fixture.coordinator(adapters(
+                                new AtomicInteger(),
+                                Set.of(LegacySplitRecoveryParticipants.WORKSTATION,
+                                        LegacySplitRecoveryParticipants.WORKFORCE)))
+                        .prepareAndRestore(
+                                fixture.context(), fixture.generation(), fixture.head(), RestorationProbe.NONE));
+
+        assertEquals(StartupRecoveryFailureCode.CHECKPOINT_INVALID, failure.failureCode());
+        assertTrue(fixture.storage().incompleteIntents().isEmpty());
+    }
+
     private Fixture fixture() {
         Path worldRoot = temporary.resolve("world");
         Path ownerRoot = worldRoot.resolve("butchercraft");
@@ -288,8 +316,21 @@ class OwnerNativeRestorationCoordinatorTest {
     }
 
     private static List<OwnerNativeRestorationAdapter> adapters(AtomicInteger preparations) {
+        return adapters(preparations, Set.of(LegacySplitRecoveryParticipants.WORKSTATION));
+    }
+
+    private static List<OwnerNativeRestorationAdapter> adapters(
+            AtomicInteger preparations,
+            Set<CheckpointOwnerId> reservationOwners
+    ) {
         return LegacySplitRecoveryParticipants.REQUIRED_R2_OWNERS.stream()
-                .map(owner -> new FakeAdapter(owner, preparations))
+                .map(owner -> new FakeAdapter(
+                        owner,
+                        preparations,
+                        reservationOwners.contains(owner),
+                        owner.equals(LegacySplitRecoveryParticipants.WORKFORCE)
+                                && reservationOwners.contains(owner) ? 2 : 1
+                ))
                 .map(OwnerNativeRestorationAdapter.class::cast)
                 .toList();
     }
@@ -323,11 +364,17 @@ class OwnerNativeRestorationCoordinatorTest {
         ) {
             return new OwnerNativeRestorationCoordinator(storage, adapters(preparations), verifier);
         }
+
+        OwnerNativeRestorationCoordinator coordinator(List<OwnerNativeRestorationAdapter> adapters) {
+            return new OwnerNativeRestorationCoordinator(storage, adapters);
+        }
     }
 
     private record FakeAdapter(
             CheckpointOwnerId ownerId,
-            AtomicInteger preparations
+            AtomicInteger preparations,
+            boolean ownsReservationFile,
+            int ownerSchemaVersion
     ) implements OwnerNativeRestorationAdapter {
         @Override
         public OwnerNativeRestorationPlan prepare(
@@ -338,12 +385,17 @@ class OwnerNativeRestorationCoordinatorTest {
             if (!snapshot.descriptor().ownerId().equals(ownerId)) {
                 throw new IllegalArgumentException("Wrong owner snapshot");
             }
+            List<OwnerNativeRestorationPlan.NativeFile> files = new ArrayList<>();
+            files.add(OwnerNativeRestorationPlan.NativeFile.of(
+                    ownerId.value(), path(ownerId), nativeBytes(ownerId)));
+            if (ownsReservationFile) {
+                files.add(OwnerNativeRestorationPlan.NativeFile.of(
+                        "workstation_reservations.json",
+                        "workstation_reservations.json",
+                        "{}".getBytes(StandardCharsets.UTF_8)));
+            }
             return OwnerNativeRestorationPlan.create(
-                    snapshot.descriptor(),
-                    List.of(OwnerNativeRestorationPlan.NativeFile.of(
-                            ownerId.value(), path(ownerId), nativeBytes(ownerId))),
-                    Optional.empty()
-            );
+                    snapshot.descriptor(), ownerSchemaVersion, files, Optional.empty());
         }
 
         @Override

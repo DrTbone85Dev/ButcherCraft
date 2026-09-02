@@ -61,14 +61,14 @@ over its native schema, parser, validation, and logical state.
 | Clock | Current checkpoint schema or legacy recovery proof | `simulation_state.json` | Clock parser verifies the exact selected tick. |
 | Scheduler | Current checkpoint schema or legacy recovery proof | `simulation_scheduler.json`, optional `simulation_scheduler_recovery.json` | Scheduler parser verifies the selected tick, recovery discontinuity, acknowledgements, and admission boundary. |
 | Execution | 1 | `execution_operations.json`, `execution_machine_runs.json` | Execution parsers verify operations and Runs; active Runs enter persisted Policy B without creating a replacement Run or child. |
-| Workstation | 1, 2, 3 | `machine_operating_states.json`, endpoint journal, instance registry, reservations, and sharded durable projections | Workstation parsers verify native state and endpoint schema; powered state enters Policy B; schema-2 projection evidence restores exact per-instance records without chunk loading. |
+| Workstation | 1, 2, 3, 4 | Historical schemas 1-3 include `machine_operating_states.json`, endpoint journal, instance registry, reservations, and sharded durable projections. Current schema 4 omits reservations and retains the other Workstation-owned files. | Workstation parsers verify native state and endpoint schema; powered state enters Policy B; schema-2 projection evidence restores exact per-instance records without chunk loading. Historical schemas retain their original reservation ownership. |
 | Material Handling | 1, 2 | `material_handling.json` | The matching Material Handling parser verifies exact lifecycle and custody without withdrawal, deposit, return, cancellation, or retry. |
 | Planning | 1 | Seven Planning files plus `planning_recovery_authority.json` when required | Planning files remain exact; legacy Recovery Result installs the same persisted mutation gate without resolving or replaying the outcome. |
 | Production | 1 | `production_processes.json`, `production_plans.json`, `production_runs.json` | Schema and World Identity are validated; exact owner files are re-read. |
 | Transactions | 1 | `transactions.json` | Schema and World Identity are validated; no Transaction is submitted. |
 | Inventory | 1 | `inventory.json` | Schema and World Identity are validated; no quantity mutation API is called. |
 | Business Runtime | 1 | `business_calendar_runtime.json`, `business_runtime.json`, `world_time.json` | Schema and World Identity are validated; exact owner files are re-read. |
-| Workforce | 1 | `departments.json`, `employee_records.json`, `employee_material_handling_assignments.json`, `workforce_definitions.json` | Schema and World Identity are validated; exact owner files are re-read. |
+| Workforce | 1, 2 | Schema 1 includes `departments.json`, `employee_records.json`, `employee_material_handling_assignments.json`, and `workforce_definitions.json`. Current schema 2 also includes `workstation_reservations.json`. | Schema and World Identity are validated; exact owner files are re-read. Schema 2 restores role-aware reservations through Workforce authority. |
 | Goods | 1 | `goods.json` | Schema and World Identity are validated; exact owner file is re-read. |
 | Economic Actors | 1 | `economic_actors.json` | Schema and World Identity are validated; exact owner file is re-read. |
 | Orders | 1 | `orders.json` | Schema and World Identity are validated; exact owner file is re-read. |
@@ -79,6 +79,12 @@ over its native schema, parser, validation, and logical state.
 Unsupported owner or evidence schemas fail visibly before mutable startup.
 Canonical-empty owner state remains an explicit participant rather than an
 omitted owner.
+
+Checkpoint owner schema determines reservation ownership without inference.
+Every accepted generation contains `workstation_reservations.json` exactly
+once: historical Workstation schemas 1-3 own it, while current Workstation
+schema 4 excludes it and Workforce schema 2 owns it. Missing or duplicate
+ownership makes the generation non-restorable.
 
 ## Workstation Reconciliation
 

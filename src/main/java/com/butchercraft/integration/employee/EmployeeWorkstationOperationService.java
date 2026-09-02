@@ -11,6 +11,7 @@ import com.butchercraft.workstation.WorkstationProductionSnapshot;
 import com.butchercraft.workstation.WorkstationState;
 import com.butchercraft.workstation.WorkstationTickContext;
 import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
+import com.butchercraft.workstation.reservation.WorkstationReservationRole;
 import com.butchercraft.workstation.reservation.WorkstationReservationState;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.ExecutionService;
@@ -84,6 +85,10 @@ public final class EmployeeWorkstationOperationService {
                     "employee has no active workstation reservation");
         }
         WorkstationReservationRecord value = reservation.orElseThrow();
+        if (value.role() != WorkstationReservationRole.MACHINE_OPERATOR) {
+            return RequestResult.rejected(RequestStatus.RESERVATION_MISSING_OR_INVALID,
+                    "employee reservation does not grant machine-operator eligibility");
+        }
         if (!GRINDER_TYPE.equals(value.workstationType())) {
             return RequestResult.rejected(RequestStatus.UNSUPPORTED_WORKSTATION,
                     "reserved workstation is not a Grinder");

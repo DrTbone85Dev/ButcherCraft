@@ -392,7 +392,7 @@ public final class EmployeeWorkstationReservationGameTests {
                 .orThrow();
 
         helper.assertTrue(conflict.failure().orElseThrow().code()
-                        == WorkstationReservationFailureCode.WORKSTATION_ALREADY_RESERVED,
+                        == WorkstationReservationFailureCode.OPERATOR_ALREADY_RESERVED,
                 "Second employee cannot reserve occupied workstation");
         helper.assertTrue(released.state() == WorkstationReservationState.RELEASED,
                 "Release is explicit");
@@ -457,7 +457,7 @@ public final class EmployeeWorkstationReservationGameTests {
         helper.setBlock(GRINDER_POS, Blocks.AIR);
 
         helper.assertTrue(WorkstationReservationService.INSTANCE.managerFor(helper.getLevel().getServer())
-                        .findByWorkstation(reservation.workstationIdentity())
+                        .reservationsForWorkstation(reservation.workstationIdentity())
                         .isEmpty(),
                 "Workstation removal invalidates active reservation");
         helper.succeed();
@@ -515,17 +515,16 @@ public final class EmployeeWorkstationReservationGameTests {
                 WorkstationReservationService.reservationFile(helper.getLevel().getServer())
         );
         storage.save(WorkstationReservationService.INSTANCE.managerFor(helper.getLevel().getServer()).directory());
-        WorkstationReservationDirectory loaded = storage.load();
-        WorkstationReservationManager duplicateLoad = new WorkstationReservationManager(
-                WorkstationReservationDirectory.of(List.of(
-                        reservation,
-                        reservation.withState(WorkstationReservationState.RESERVED)
-                ))
+        WorkstationReservationDirectory source = WorkstationReservationService.INSTANCE
+                .managerFor(helper.getLevel().getServer()).directory();
+        WorkstationReservationDirectory loaded = storage.load(
+                source.worldIdentity(),
+                ignored -> Optional.empty()
         );
 
         helper.assertTrue(loaded.records().contains(reservation), "Valid reservation survives persistence reload");
-        helper.assertTrue(duplicateLoad.activeReservations().size() == 1,
-                "Duplicate reload reconciliation keeps one active claim");
+        helper.assertTrue(loaded.records().size() == 1,
+                "Schema-2 reload preserves one exact active claim");
         helper.succeed();
     }
 

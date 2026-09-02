@@ -390,8 +390,14 @@ public final class ButcherCraftDiagnostics {
                 .ifPresent(reservation -> {
                     source.sendSuccess(() -> Component.literal("Workstation reservation: "
                             + reservation.state().serializedName()
+                            + " | role " + reservation.role().serializedName()
+                            + " | reservation " + reservation.reservationId().value()
                             + " | " + reservation.workstationType()
-                            + " | " + reservation.workstationIdentity()), false);
+                            + " | " + reservation.workstationIdentity()
+                            + " | assignment " + reservation.assignmentReference().orElse("none")
+                            + " | transfer " + reservation.transferReference().orElse("none")
+                            + " | endpoint " + reservation.endpointScope().purpose().serializedName()
+                            + "/" + reservation.endpointScope().direction().serializedName()), false);
                     source.sendSuccess(() -> Component.literal("Operating position: "
                             + reservation.operatingX() + " "
                             + reservation.operatingY() + " "
@@ -473,6 +479,8 @@ public final class ButcherCraftDiagnostics {
                 .ifPresentOrElse(
                         reservation -> source.sendSuccess(() -> Component.literal("Reservation: "
                                 + reservation.state().serializedName()
+                                + " | " + reservation.role().serializedName()
+                                + " | " + reservation.reservationId().value()
                                 + " | " + reservation.workstationIdentity()), false),
                         () -> source.sendSuccess(() -> Component.literal("Reservation: none"), false)
                 );
@@ -805,8 +813,16 @@ public final class ButcherCraftDiagnostics {
         for (WorkstationReservationRecord reservation : reservations) {
             source.sendSuccess(() -> Component.literal(reservation.workstationType()
                     + " | " + reservation.state().serializedName()
+                    + " | role " + reservation.role().serializedName()
+                    + " | reservation " + reservation.reservationId().value()
                     + " | employee " + employeeDisplayForReservation(source, reservation)
                     + " | " + reservation.workstationIdentity()
+                    + " | assignment " + reservation.assignmentReference().orElse("none")
+                    + " | transfer " + reservation.transferReference().orElse("none")
+                    + " | endpoint " + reservation.endpointScope().purpose().serializedName()
+                    + "/" + reservation.endpointScope().direction().serializedName()
+                    + " | lifecycle " + reservation.lifecycleEvidence()
+                    + " | compatibility active"
                     + " | operating " + reservation.operatingX()
                     + " " + reservation.operatingY()
                     + " " + reservation.operatingZ()
@@ -838,18 +854,33 @@ public final class ButcherCraftDiagnostics {
                 + status.target().approachCandidates().stream()
                 .map(ButcherCraftDiagnostics::formatBlockPos)
                 .toList()), false);
-        if (status.reservation().isPresent()) {
-            WorkstationReservationRecord reservation = status.reservation().orElseThrow();
-            source.sendSuccess(() -> Component.literal("Reservation: "
-                    + reservation.state().serializedName()
-                    + " | employee " + employeeDisplayForReservation(source, reservation)
-                    + " | navigation " + employeeNavigationForReservation(source, reservation)), false);
-        } else {
-            source.sendSuccess(() -> Component.literal("Reservation: unreserved"), false);
-        }
+        sendWorkstationReservationRole(source, "MACHINE_OPERATOR", status.operatorReservation());
+        sendWorkstationReservationRole(source, "MATERIAL_HANDLER", status.handlerReservation());
         sendGrinderRunStatus(source, position);
         sendPattyFormerOperationStatus(source, position);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static void sendWorkstationReservationRole(
+            CommandSourceStack source,
+            String role,
+            Optional<WorkstationReservationRecord> reservation
+    ) {
+        if (reservation.isEmpty()) {
+            source.sendSuccess(() -> Component.literal(role + ": unreserved"), false);
+            return;
+        }
+        WorkstationReservationRecord value = reservation.orElseThrow();
+        source.sendSuccess(() -> Component.literal(role + ": "
+                + value.state().serializedName()
+                + " | reservation " + value.reservationId().value()
+                + " | employee " + employeeDisplayForReservation(source, value)
+                + " | assignment " + value.assignmentReference().orElse("none")
+                + " | transfer " + value.transferReference().orElse("none")
+                + " | endpoint " + value.endpointScope().purpose().serializedName()
+                + "/" + value.endpointScope().direction().serializedName()
+                + " | lifecycle " + value.lifecycleEvidence()
+                + " | navigation " + employeeNavigationForReservation(source, value)), false);
     }
 
     private static void sendGrinderRunStatus(CommandSourceStack source, BlockPos position) {

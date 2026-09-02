@@ -3,18 +3,21 @@ package com.butchercraft.world;
 import com.butchercraft.entity.employee.EmployeeEntity;
 import com.butchercraft.machine.grinder.GrinderBlock;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
-import com.butchercraft.machine.grinder.execution.GrinderWorkstationReference;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlock;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.pattyformer.PattyFormerBlock;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
-import com.butchercraft.machine.pattyformer.execution.PattyFormerWorkstationReference;
+import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReference;
 import com.butchercraft.workstation.reservation.WorkstationReservationFailure;
 import com.butchercraft.workstation.reservation.WorkstationReservationFailureCode;
 import com.butchercraft.workstation.reservation.WorkstationReservationManager;
+import com.butchercraft.workstation.reservation.WorkstationReservationEndpointScope;
+import com.butchercraft.workstation.reservation.WorkstationReservationMigrationEvidence;
+import com.butchercraft.workstation.reservation.LegacyWorkstationReservation;
 import com.butchercraft.workstation.reservation.WorkstationReservationRecord;
 import com.butchercraft.workstation.reservation.WorkstationReservationRequest;
 import com.butchercraft.workstation.reservation.WorkstationReservationResult;
+import com.butchercraft.workstation.reservation.WorkstationReservationRole;
 import com.butchercraft.workstation.reservation.WorkstationReservationSchema;
 import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
 import com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointReferenceResult;
@@ -26,6 +29,15 @@ import com.butchercraft.world.workforce.employee.EmployeeNavigationState;
 import com.butchercraft.world.workforce.employee.EmployeePresenceObservation;
 import com.butchercraft.world.workforce.employee.EmployeePresenceState;
 import com.butchercraft.world.workforce.employee.EmployeeRecord;
+import com.butchercraft.world.identity.WorldIdentityRootIdentities;
+import com.butchercraft.world.identity.WorldIdentityRootIdentity;
+import com.butchercraft.world.materialhandling.MaterialTransferLifecycle;
+import com.butchercraft.world.materialhandling.MaterialTransferId;
+import com.butchercraft.world.materialhandling.MaterialTransferView;
+import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
+import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignment;
+import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentId;
+import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentState;
 import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
 import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.minecraft.core.BlockPos;
@@ -70,6 +82,7 @@ public final class WorkstationReservationService {
         ActiveWorkstationReservations runtime = load(event.getServer());
         if (mutationPermitted(event.getServer())) {
             reconcileLoadedReservations(event.getServer(), runtime);
+            runtime.storage().save(runtime.manager().directory());
         }
     }
 
@@ -136,26 +149,237 @@ public final class WorkstationReservationService {
                     "Employee and workstation are in different worlds"
             );
         }
-        WorkstationReservationRequest request = new WorkstationReservationRequest(
+        ActiveWorkstationReservations runtime = load(server);
+        Optional<WorkstationReservationRecord> existing = runtime.manager().findByEmployee(employeeId.value());
+        if (existing.filter(record -> record.role() == WorkstationReservationRole.MACHINE_OPERATOR
+                && record.workstationIdentity().equals(value.workstationIdentity())).isPresent()) {
+            return WorkstationReservationResult.succeeded(
+                    existing.orElseThrow(),
+                    com.butchercraft.workstation.reservation.WorkstationReservationSuccessCode
+                            .EXISTING_RESERVATION_OBSERVED
+            );
+        }
+        WorldIdentityRootIdentity worldIdentity = worldIdentity(server);
+        Optional<String> assignmentReference = Optional.of(
+                "butchercraft:transient_operator_assignment/v1/" + level.getGameTime() + "/"
+                        + employeeId.value().replace(':', '/'));
+        String requestIdentity = WorkstationReservationRequest.canonicalRequestIdentity(
+                worldIdentity,
                 value.workstationIdentity(),
+                employee.employeeId().value(),
+                WorkstationReservationRole.MACHINE_OPERATOR,
+                assignmentReference,
+                Optional.empty(),
+                WorkstationReservationEndpointScope.none()
+        );
+        WorkstationReservationRequest request = WorkstationReservationRequest.machineOperator(
+                worldIdentity,
+                requestIdentity,
+                value.workstationIdentity(),
+                value.workstationGeneration(),
                 value.workstationType(),
                 employee.employeeId().value(),
+                assignmentReference,
                 level.getGameTime(),
                 value.dimensionIdentity(),
-                value.workstationPos().getX(),
-                value.workstationPos().getY(),
-                value.workstationPos().getZ(),
-                value.operatingPos().getX(),
-                value.operatingPos().getY(),
-                value.operatingPos().getZ(),
+                value.workstationPos().getX(), value.workstationPos().getY(), value.workstationPos().getZ(),
+                value.operatingPos().getX(), value.operatingPos().getY(), value.operatingPos().getZ(),
                 OPERATING_ANCHOR_RADIUS
         );
-        ActiveWorkstationReservations runtime = load(server);
         WorkstationReservationResult<WorkstationReservationRecord> result = runtime.manager().reserve(request);
         if (result.succeeded()) {
             runtime.storage().save(runtime.manager().directory());
         }
         return result;
+    }
+
+    public WorkstationReservationResult<WorkstationReservationRecord> assignMaterialHandler(
+            ServerLevel level,
+            EmployeeId employeeId,
+            BlockPos workstationPos,
+            String assignmentReference,
+            String transferReference,
+            WorkstationReservationEndpointScope endpointScope,
+            String lifecycleEvidence,
+            long lifecycleEvidenceRevision
+    ) {
+        Objects.requireNonNull(endpointScope, "endpointScope");
+        WorkstationReservationResult<ResolvedWorkstationTarget> target = resolveSupportedWorkstation(level, workstationPos);
+        if (!target.succeeded()) {
+            return WorkstationReservationResult.failed(
+                    target.failure().orElseThrow().code(), target.failure().orElseThrow().detail());
+        }
+        EmployeeRecord employee = employeeService.managerFor(level.getServer()).find(employeeId).orElse(null);
+        if (employee == null) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.UNKNOWN_EMPLOYEE, "Unknown employee: " + employeeId.value());
+        }
+        EmployeePresenceObservation observation = employeeService.observe(level.getServer(), employeeId).value().orElse(null);
+        if (observation == null) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.MISSING_BUSINESS_RUNTIME,
+                    "Business Runtime calendar is unavailable for workstation assignment");
+        }
+        Optional<WorkstationReservationFailure> employeeFailure = validateEmployeeForAssignment(level, employee, observation);
+        if (employeeFailure.isPresent()) {
+            WorkstationReservationFailure failure = employeeFailure.orElseThrow();
+            return WorkstationReservationResult.failed(failure.code(), failure.detail());
+        }
+        ResolvedWorkstationTarget value = target.orThrow();
+        if (!employee.entityLink().orElseThrow().dimensionIdentity().equals(value.dimensionIdentity())) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.EMPLOYEE_DIFFERENT_WORLD,
+                    "Employee and workstation are in different worlds");
+        }
+        Optional<WorkstationReservationFailure> handlerFailure = validateMaterialHandlerEvidence(
+                level,
+                employeeId,
+                value,
+                assignmentReference,
+                transferReference,
+                endpointScope,
+                lifecycleEvidence,
+                lifecycleEvidenceRevision
+        );
+        if (handlerFailure.isPresent()) {
+            WorkstationReservationFailure failure = handlerFailure.orElseThrow();
+            return WorkstationReservationResult.failed(failure.code(), failure.detail());
+        }
+        WorldIdentityRootIdentity worldIdentity = worldIdentity(level.getServer());
+        Optional<String> assignment = Optional.of(assignmentReference);
+        Optional<String> transfer = Optional.of(transferReference);
+        String requestIdentity = WorkstationReservationRequest.canonicalRequestIdentity(
+                worldIdentity,
+                value.workstationIdentity(),
+                employeeId.value(),
+                WorkstationReservationRole.MATERIAL_HANDLER,
+                assignment,
+                transfer,
+                endpointScope
+        );
+        WorkstationReservationRequest request = WorkstationReservationRequest.materialHandler(
+                worldIdentity,
+                requestIdentity,
+                value.workstationIdentity(),
+                value.workstationGeneration(),
+                value.workstationType(),
+                employeeId.value(),
+                assignmentReference,
+                transferReference,
+                endpointScope,
+                lifecycleEvidence,
+                lifecycleEvidenceRevision,
+                level.getGameTime(),
+                value.dimensionIdentity(),
+                value.workstationPos().getX(), value.workstationPos().getY(), value.workstationPos().getZ(),
+                value.operatingPos().getX(), value.operatingPos().getY(), value.operatingPos().getZ(),
+                OPERATING_ANCHOR_RADIUS
+        );
+        requireMutation(level.getServer());
+        ActiveWorkstationReservations runtime = load(level.getServer());
+        WorkstationReservationResult<WorkstationReservationRecord> result = runtime.manager().reserve(request);
+        if (result.succeeded()) runtime.storage().save(runtime.manager().directory());
+        return result;
+    }
+
+    private Optional<WorkstationReservationFailure> validateMaterialHandlerEvidence(
+            ServerLevel level,
+            EmployeeId employeeId,
+            ResolvedWorkstationTarget target,
+            String assignmentReference,
+            String transferReference,
+            WorkstationReservationEndpointScope endpointScope,
+            String lifecycleEvidence,
+            long lifecycleEvidenceRevision
+    ) {
+        EmployeeMaterialHandlingAssignment assignment;
+        MaterialTransferView transfer;
+        try {
+            assignment = EmployeeMaterialHandlingService.INSTANCE.managerFor(level.getServer())
+                    .find(new EmployeeMaterialHandlingAssignmentId(assignmentReference))
+                    .orElse(null);
+            transfer = MaterialHandlingService.INSTANCE.findTransfer(
+                    level.getServer(), new MaterialTransferId(transferReference)).orElse(null);
+        } catch (IllegalArgumentException exception) {
+            return invalidHandlerEvidence("Handler reservation identity evidence is malformed");
+        }
+        if (assignment == null || transfer == null) {
+            return invalidHandlerEvidence("Handler reservation requires an authoritative assignment and transfer");
+        }
+        if (!assignment.active()
+                || !assignment.employeeId().equals(employeeId)
+                || !assignment.transferId().value().equals(transfer.transferIdentity())
+                || !assignment.binds(transfer.source(), transfer.destination())
+                || transfer.employeeReference().filter(employeeId.value()::equals).isEmpty()) {
+            return invalidHandlerEvidence(
+                    "Handler reservation does not bind the authoritative employee, assignment, and transfer");
+        }
+        if (assignment.revision() != lifecycleEvidenceRevision
+                || !transfer.lifecycle().name().equalsIgnoreCase(lifecycleEvidence)) {
+            return invalidHandlerEvidence("Handler reservation lifecycle evidence is stale");
+        }
+        if (endpointScope.purpose()
+                == com.butchercraft.workstation.reservation.WorkstationReservationEndpointPurpose.SOURCE_RETURN
+                && (assignment.state() != EmployeeMaterialHandlingAssignmentState.CANCELLATION_REQUESTED
+                || !transfer.hasProvenMaterialHandlingCustody())) {
+            return invalidHandlerEvidence(
+                    "Source-return access requires an explicit Workforce cancellation and proven Material Handling custody");
+        }
+        WorkstationEndpointReference expectedEndpoint = switch (endpointScope.purpose()) {
+            case SOURCE, SOURCE_RETURN -> assignment.source();
+            case DESTINATION -> assignment.destination();
+            case NONE -> null;
+        };
+        if (expectedEndpoint == null
+                || !endpointScope.endpointIdentity().orElseThrow()
+                        .equals(expectedEndpoint.endpointKey().canonicalValue())
+                || !transferEndpointMatchesTarget(expectedEndpoint, target)
+                || !handlerLifecycleSupports(endpointScope, transfer.lifecycle())) {
+            return invalidHandlerEvidence(
+                    "Handler reservation endpoint scope is not authorized by the current transfer lifecycle");
+        }
+        return Optional.empty();
+    }
+
+    private static boolean transferEndpointMatchesTarget(
+            WorkstationEndpointReference endpoint,
+            ResolvedWorkstationTarget target
+    ) {
+        return endpoint.instanceId().value().equals(target.workstationIdentity())
+                && endpoint.generation() == target.workstationGeneration()
+                && endpoint.endpointKey().dimensionIdentity().equals(target.dimensionIdentity())
+                && endpoint.endpointKey().x() == target.workstationPos().getX()
+                && endpoint.endpointKey().y() == target.workstationPos().getY()
+                && endpoint.endpointKey().z() == target.workstationPos().getZ();
+    }
+
+    private static boolean handlerLifecycleSupports(
+            WorkstationReservationEndpointScope endpointScope,
+            MaterialTransferLifecycle lifecycle
+    ) {
+        return switch (endpointScope.purpose()) {
+            case SOURCE -> lifecycle == MaterialTransferLifecycle.REQUESTED
+                    || lifecycle == MaterialTransferLifecycle.SOURCE_BOUND
+                    || lifecycle == MaterialTransferLifecycle.SOURCE_WITHDRAW_PREPARED;
+            case DESTINATION -> lifecycle == MaterialTransferLifecycle.IN_TRANSIT
+                    || lifecycle == MaterialTransferLifecycle.DESTINATION_BOUND
+                    || lifecycle == MaterialTransferLifecycle.DESTINATION_DEPOSIT_PREPARED;
+            case SOURCE_RETURN -> lifecycle == MaterialTransferLifecycle.CANCELLATION_REQUESTED
+                    || lifecycle == MaterialTransferLifecycle.CANCELLATION_RETURN_PREPARED
+                    || lifecycle == MaterialTransferLifecycle.RECOVERY_REQUIRED
+                    || lifecycle == MaterialTransferLifecycle.SOURCE_WITHDRAW_COMMITTED
+                    || lifecycle == MaterialTransferLifecycle.IN_TRANSIT
+                    || lifecycle == MaterialTransferLifecycle.DESTINATION_BOUND
+                    || lifecycle == MaterialTransferLifecycle.DESTINATION_DEPOSIT_PREPARED;
+            case NONE -> false;
+        };
+    }
+
+    private static Optional<WorkstationReservationFailure> invalidHandlerEvidence(String detail) {
+        return Optional.of(new WorkstationReservationFailure(
+                WorkstationReservationFailureCode.INVALID_HANDLER_TRANSFER,
+                detail
+        ));
     }
 
     public WorkstationReservationResult<WorkstationReservationRecord> release(
@@ -173,6 +397,32 @@ public final class WorkstationReservationService {
         return result;
     }
 
+    public WorkstationReservationResult<WorkstationReservationRecord> release(
+            MinecraftServer server,
+            WorkstationReservationRecord reservation,
+            String reason
+    ) {
+        requireMutation(server);
+        ActiveWorkstationReservations runtime = load(server);
+        WorkstationReservationResult<WorkstationReservationRecord> result = runtime.manager().release(
+                reservation.reservationId(), reservation.role(), reason);
+        if (result.succeeded()) runtime.storage().save(runtime.manager().directory());
+        return result;
+    }
+
+    public WorkstationReservationResult<WorkstationReservationRecord> invalidate(
+            MinecraftServer server,
+            WorkstationReservationRecord reservation,
+            String reason
+    ) {
+        requireMutation(server);
+        ActiveWorkstationReservations runtime = load(server);
+        WorkstationReservationResult<WorkstationReservationRecord> result = runtime.manager().invalidate(
+                reservation.reservationId(), reservation.role(), reason);
+        if (result.succeeded()) runtime.storage().save(runtime.manager().directory());
+        return result;
+    }
+
     public Optional<WorkstationReservationRecord> invalidateByEmployee(
             MinecraftServer server,
             EmployeeId employeeId,
@@ -186,7 +436,7 @@ public final class WorkstationReservationService {
         return invalidated;
     }
 
-    public Optional<WorkstationReservationRecord> invalidateByWorkstation(
+    public List<WorkstationReservationRecord> invalidateByWorkstation(
             ServerLevel level,
             BlockPos workstationPos,
             String reason
@@ -194,40 +444,32 @@ public final class WorkstationReservationService {
         requireMutation(level.getServer());
         WorkstationReservationResult<ResolvedWorkstationTarget> target = resolveSupportedWorkstation(level, workstationPos);
         if (!target.succeeded()) {
-            return Optional.empty();
+            return List.of();
         }
         ActiveWorkstationReservations runtime = load(level.getServer());
-        Optional<WorkstationReservationRecord> invalidated =
+        List<WorkstationReservationRecord> invalidated =
                 runtime.manager().invalidateByWorkstation(target.orThrow().workstationIdentity(), reason);
-        invalidated.ifPresent(ignored -> runtime.storage().save(runtime.manager().directory()));
+        if (!invalidated.isEmpty()) runtime.storage().save(runtime.manager().directory());
         return invalidated;
     }
 
-    public Optional<WorkstationReservationRecord> invalidateGrinder(
+    public List<WorkstationReservationRecord> invalidateGrinder(
             ServerLevel level,
             BlockPos workstationPos,
             String reason
     ) {
-        return invalidateKnownWorkstation(
-                level,
-                GrinderWorkstationReference.of(level, workstationPos).identity(),
-                reason
-        );
+        return invalidateResolvedWorkstation(level, workstationPos, reason);
     }
 
-    public Optional<WorkstationReservationRecord> invalidatePattyFormer(
+    public List<WorkstationReservationRecord> invalidatePattyFormer(
             ServerLevel level,
             BlockPos workstationPos,
             String reason
     ) {
-        return invalidateKnownWorkstation(
-                level,
-                PattyFormerWorkstationReference.of(level, workstationPos).identity(),
-                reason
-        );
+        return invalidateResolvedWorkstation(level, workstationPos, reason);
     }
 
-    public Optional<WorkstationReservationRecord> invalidateCuttingTable(
+    public List<WorkstationReservationRecord> invalidateCuttingTable(
             ServerLevel level,
             BlockPos workstationPos,
             String reason
@@ -237,7 +479,7 @@ public final class WorkstationReservationService {
                 workstationPos
         );
         if (!reference.succeeded()) {
-            return Optional.empty();
+            return List.of();
         }
         return invalidateKnownWorkstation(
                 level,
@@ -335,10 +577,11 @@ public final class WorkstationReservationService {
         return managerFor(server).activeReservations();
     }
 
-    public Optional<WorkstationReservationRecord> findByWorkstation(ServerLevel level, BlockPos workstationPos) {
+    public List<WorkstationReservationRecord> reservationsForWorkstation(ServerLevel level, BlockPos workstationPos) {
         return resolveSupportedWorkstation(level, workstationPos)
                 .value()
-                .flatMap(target -> managerFor(level.getServer()).findByWorkstation(target.workstationIdentity()));
+                .map(target -> managerFor(level.getServer()).reservationsForWorkstation(target.workstationIdentity()))
+                .orElse(List.of());
     }
 
     public boolean hasActiveReservationAt(ServerLevel level, BlockPos workstationPos) {
@@ -405,7 +648,8 @@ public final class WorkstationReservationService {
         }
         return WorkstationReservationResult.succeeded(new ResolvedWorkstationStatus(
                 target.orThrow(),
-                managerFor(level.getServer()).findByWorkstation(target.orThrow().workstationIdentity())
+                managerFor(level.getServer()).operatorForWorkstation(target.orThrow().workstationIdentity()),
+                managerFor(level.getServer()).handlerForWorkstation(target.orThrow().workstationIdentity())
         ));
     }
 
@@ -416,7 +660,7 @@ public final class WorkstationReservationService {
         ActiveWorkstationReservations reset = new ActiveWorkstationReservations(
                 server,
                 runtime.storage(),
-                WorkstationReservationManager.empty()
+                WorkstationReservationManager.empty(worldIdentity(server))
         );
         active.set(reset);
         runtime.storage().save(reset.manager().directory());
@@ -484,22 +728,25 @@ public final class WorkstationReservationService {
         Objects.requireNonNull(workstationPos, "workstationPos");
         BlockEntity blockEntity = level.getBlockEntity(workstationPos);
         BlockState state = level.getBlockState(workstationPos);
-        if (blockEntity instanceof CuttingTableBlockEntity) {
-            WorkstationEndpointReferenceResult reference = WorkstationEndpointService.INSTANCE.referenceFor(
-                    level,
-                    workstationPos
+        WorkstationEndpointReferenceResult referenceResult = WorkstationEndpointService.INSTANCE.referenceFor(
+                level,
+                workstationPos
+        );
+        if (!referenceResult.succeeded()) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.UNSUPPORTED_WORKSTATION,
+                    "Workstation endpoint is unavailable: " + referenceResult.detail()
             );
-            if (!reference.succeeded()) {
-                return WorkstationReservationResult.failed(
-                        WorkstationReservationFailureCode.UNSUPPORTED_WORKSTATION,
-                        "Cutting Table endpoint is unavailable: " + reference.detail()
-                );
-            }
+        }
+        WorkstationEndpointReference reference = referenceResult.reference().orElseThrow();
+        if (blockEntity instanceof CuttingTableBlockEntity) {
             Direction facing = state.hasProperty(CuttingTableBlock.FACING)
                     ? state.getValue(CuttingTableBlock.FACING)
                     : Direction.NORTH;
             return WorkstationReservationResult.succeeded(new ResolvedWorkstationTarget(
-                    reference.reference().orElseThrow().instanceId().value(),
+                    reference.instanceId().value(),
+                    reference.generation(),
+                    reference.endpointKey().canonicalValue(),
                     CUTTING_TABLE_TYPE,
                     EmployeeService.dimensionIdentity(level),
                     workstationPos.immutable(),
@@ -512,7 +759,9 @@ public final class WorkstationReservationService {
                     ? state.getValue(GrinderBlock.FACING)
                     : Direction.NORTH;
             return WorkstationReservationResult.succeeded(new ResolvedWorkstationTarget(
-                    GrinderWorkstationReference.of(level, workstationPos).identity(),
+                    reference.instanceId().value(),
+                    reference.generation(),
+                    reference.endpointKey().canonicalValue(),
                     GRINDER_TYPE,
                     EmployeeService.dimensionIdentity(level),
                     workstationPos.immutable(),
@@ -525,7 +774,9 @@ public final class WorkstationReservationService {
                     ? state.getValue(PattyFormerBlock.FACING)
                     : Direction.NORTH;
             return WorkstationReservationResult.succeeded(new ResolvedWorkstationTarget(
-                    PattyFormerWorkstationReference.of(level, workstationPos).identity(),
+                    reference.instanceId().value(),
+                    reference.generation(),
+                    reference.endpointKey().canonicalValue(),
                     PATTY_FORMER_TYPE,
                     EmployeeService.dimensionIdentity(level),
                     workstationPos.immutable(),
@@ -548,7 +799,24 @@ public final class WorkstationReservationService {
                 resolveSupportedWorkstation(level, workstationPos);
         if (resolved.succeeded()) {
             ResolvedWorkstationTarget target = resolved.orThrow();
-            if (!target.workstationIdentity().equals(record.workstationIdentity())) {
+            if (record.role() == WorkstationReservationRole.LEGACY_EXCLUSIVE) {
+                if (!target.workstationType().equals(record.workstationType())
+                        || !target.dimensionIdentity().equals(record.dimensionIdentity())) {
+                    return Optional.empty();
+                }
+                return Optional.of(new ResolvedWorkstationTarget(
+                        record.workstationIdentity(),
+                        record.workstationGeneration(),
+                        "legacy-exclusive",
+                        target.workstationType(),
+                        target.dimensionIdentity(),
+                        target.workstationPos(),
+                        target.operatingPos(),
+                        target.approachCandidates()
+                ));
+            }
+            if (!target.workstationIdentity().equals(record.workstationIdentity())
+                    || target.workstationGeneration() != record.workstationGeneration()) {
                 return Optional.empty();
             }
             return Optional.of(target);
@@ -556,6 +824,8 @@ public final class WorkstationReservationService {
         if (!level.hasChunkAt(workstationPos)) {
             return Optional.of(new ResolvedWorkstationTarget(
                     record.workstationIdentity(),
+                    record.workstationGeneration(),
+                    record.endpointScope().endpointIdentity().orElse("legacy-unavailable"),
                     record.workstationType(),
                     record.dimensionIdentity(),
                     workstationPos,
@@ -576,23 +846,110 @@ public final class WorkstationReservationService {
             existing.storage().save(existing.manager().directory());
         }
         WorkstationReservationStorage storage = new WorkstationReservationStorage(reservationFile(server));
-        WorkstationReservationManager manager = new WorkstationReservationManager(storage.load());
+        WorkstationReservationManager manager = new WorkstationReservationManager(storage.load(
+                worldIdentity(server),
+                legacy -> migrationEvidence(server, legacy)
+        ));
         ActiveWorkstationReservations created = new ActiveWorkstationReservations(server, storage, manager);
         active.set(created);
         return created;
     }
 
-    private Optional<WorkstationReservationRecord> invalidateKnownWorkstation(
+    private List<WorkstationReservationRecord> invalidateKnownWorkstation(
             ServerLevel level,
             String workstationIdentity,
             String reason
     ) {
         requireMutation(level.getServer());
         ActiveWorkstationReservations runtime = load(level.getServer());
-        Optional<WorkstationReservationRecord> invalidated =
+        List<WorkstationReservationRecord> invalidated =
                 runtime.manager().invalidateByWorkstation(workstationIdentity, reason);
-        invalidated.ifPresent(ignored -> runtime.storage().save(runtime.manager().directory()));
+        if (!invalidated.isEmpty()) runtime.storage().save(runtime.manager().directory());
         return invalidated;
+    }
+
+    private List<WorkstationReservationRecord> invalidateResolvedWorkstation(
+            ServerLevel level,
+            BlockPos workstationPos,
+            String reason
+    ) {
+        WorkstationEndpointReferenceResult reference = WorkstationEndpointService.INSTANCE.referenceFor(level, workstationPos);
+        if (!reference.succeeded()) return List.of();
+        return invalidateKnownWorkstation(level, reference.reference().orElseThrow().instanceId().value(), reason);
+    }
+
+    private Optional<WorkstationReservationMigrationEvidence> migrationEvidence(
+            MinecraftServer server,
+            LegacyWorkstationReservation legacy
+    ) {
+        if (!legacy.state().active()) return Optional.empty();
+        EmployeeId employeeId;
+        try {
+            employeeId = new EmployeeId(legacy.employeeIdentity());
+        } catch (IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+        EmployeeMaterialHandlingAssignment assignment = EmployeeMaterialHandlingService.INSTANCE
+                .managerFor(server)
+                .activeFor(employeeId)
+                .orElse(null);
+        if (assignment == null) return Optional.empty();
+        MaterialTransferView transfer = MaterialHandlingService.INSTANCE
+                .findTransfer(server, assignment.transferId())
+                .orElse(null);
+        if (transfer == null
+                || transfer.lifecycle().terminal()
+                || transfer.employeeReference().filter(legacy.employeeIdentity()::equals).isEmpty()) {
+            return Optional.empty();
+        }
+        WorkstationEndpointReference endpoint;
+        WorkstationReservationEndpointScope scope;
+        if (assignment.state() == EmployeeMaterialHandlingAssignmentState.CANCELLATION_REQUESTED
+                && transfer.hasProvenMaterialHandlingCustody()) {
+            endpoint = assignment.source();
+            scope = WorkstationReservationEndpointScope.sourceReturn(endpoint.endpointKey().canonicalValue());
+        } else if (transfer.hasProvenMaterialHandlingCustody()) {
+            endpoint = assignment.destination();
+            scope = WorkstationReservationEndpointScope.destination(endpoint.endpointKey().canonicalValue());
+        } else {
+            endpoint = assignment.source();
+            scope = WorkstationReservationEndpointScope.source(endpoint.endpointKey().canonicalValue());
+        }
+        if (!legacyMatchesEndpoint(legacy, endpoint)) return Optional.empty();
+        String lifecycle = transfer.lifecycle().name().toLowerCase(java.util.Locale.ROOT);
+        String requestIdentity = WorkstationReservationRequest.canonicalRequestIdentity(
+                worldIdentity(server),
+                endpoint.instanceId().value(),
+                legacy.employeeIdentity(),
+                WorkstationReservationRole.MATERIAL_HANDLER,
+                Optional.of(assignment.assignmentId().value()),
+                Optional.of(assignment.transferId().value()),
+                scope
+        );
+        return Optional.of(new WorkstationReservationMigrationEvidence(
+                requestIdentity,
+                endpoint.instanceId().value(),
+                endpoint.generation(),
+                assignment.assignmentId().value(),
+                assignment.transferId().value(),
+                scope,
+                lifecycle,
+                assignment.revision()
+        ));
+    }
+
+    private static boolean legacyMatchesEndpoint(
+            LegacyWorkstationReservation legacy,
+            WorkstationEndpointReference endpoint
+    ) {
+        String type = endpoint.endpointKey().workstationTypeIdentity();
+        int separator = type.indexOf(':');
+        String localType = separator >= 0 ? type.substring(separator + 1) : type;
+        return legacy.workstationType().equals(localType)
+                && legacy.dimensionIdentity().equals(endpoint.endpointKey().dimensionIdentity())
+                && legacy.workstationX() == endpoint.endpointKey().x()
+                && legacy.workstationY() == endpoint.endpointKey().y()
+                && legacy.workstationZ() == endpoint.endpointKey().z();
     }
 
     private void reconcileLoadedReservations(
@@ -627,6 +984,26 @@ public final class WorkstationReservationService {
                 changed = true;
                 continue;
             }
+            if (record.role() == WorkstationReservationRole.MATERIAL_HANDLER) {
+                HandlerReconciliation reconciliation = reconcileHandlerBinding(server, record);
+                if (reconciliation == HandlerReconciliation.TERMINAL) {
+                    runtime.manager().release(
+                            record.reservationId(),
+                            WorkstationReservationRole.MATERIAL_HANDLER,
+                            "authoritative Material Handling transfer is terminal after reload"
+                    );
+                    changed = true;
+                    continue;
+                }
+                if (reconciliation == HandlerReconciliation.INVALID) {
+                    runtime.manager().invalidateByEmployee(
+                            record.employeeIdentity(),
+                            "Material Handler reservation binding is invalid after reload"
+                    );
+                    changed = true;
+                    continue;
+                }
+            }
             Optional<ServerLevel> level = loadedLevel(server, record.dimensionIdentity());
             if (level.isPresent()) {
                 BlockPos workstationPos = new BlockPos(
@@ -647,6 +1024,57 @@ public final class WorkstationReservationService {
         if (changed) {
             runtime.storage().save(runtime.manager().directory());
         }
+    }
+
+    private HandlerReconciliation reconcileHandlerBinding(
+            MinecraftServer server,
+            WorkstationReservationRecord record
+    ) {
+        EmployeeMaterialHandlingAssignment assignment;
+        MaterialTransferView transfer;
+        try {
+            assignment = EmployeeMaterialHandlingService.INSTANCE.managerFor(server)
+                    .find(new com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentId(
+                            record.assignmentReference().orElseThrow()))
+                    .orElse(null);
+            transfer = MaterialHandlingService.INSTANCE.findTransfer(
+                    server,
+                    new com.butchercraft.world.materialhandling.MaterialTransferId(
+                            record.transferReference().orElseThrow())
+            ).orElse(null);
+        } catch (IllegalArgumentException | java.util.NoSuchElementException exception) {
+            return HandlerReconciliation.INVALID;
+        }
+        if (assignment == null || transfer == null
+                || !assignment.employeeId().value().equals(record.employeeIdentity())
+                || !assignment.transferId().value().equals(record.transferReference().orElseThrow())
+                || !transfer.transferIdentity().equals(assignment.transferId().value())
+                || transfer.employeeReference().filter(record.employeeIdentity()::equals).isEmpty()
+                || !assignment.source().equals(transfer.source())
+                || !assignment.destination().equals(transfer.destination())) {
+            return HandlerReconciliation.INVALID;
+        }
+        if (transfer.lifecycle().terminal() || assignment.state().terminal()) {
+            return HandlerReconciliation.TERMINAL;
+        }
+        WorkstationEndpointReference endpoint = switch (record.endpointScope().purpose()) {
+            case SOURCE, SOURCE_RETURN -> assignment.source();
+            case DESTINATION -> assignment.destination();
+            case NONE -> null;
+        };
+        return endpoint != null
+                && record.endpointScope().endpointIdentity()
+                        .filter(endpoint.endpointKey().canonicalValue()::equals).isPresent()
+                && record.workstationIdentity().equals(endpoint.instanceId().value())
+                && record.workstationGeneration() == endpoint.generation()
+                ? HandlerReconciliation.VALID
+                : HandlerReconciliation.INVALID;
+    }
+
+    private enum HandlerReconciliation {
+        VALID,
+        TERMINAL,
+        INVALID
     }
 
     private static BlockPos operatingPosition(BlockPos workstationPos, Direction facing) {
@@ -687,11 +1115,15 @@ public final class WorkstationReservationService {
     }
 
     private static boolean mutationPermitted(MinecraftServer server) {
-        return StartupMutationGateService.INSTANCE.permits(server, LegacySplitRecoveryParticipants.WORKSTATION);
+        return StartupMutationGateService.INSTANCE.permits(server, LegacySplitRecoveryParticipants.WORKFORCE);
     }
 
     private static void requireMutation(MinecraftServer server) {
-        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKFORCE);
+    }
+
+    private static WorldIdentityRootIdentity worldIdentity(MinecraftServer server) {
+        return WorldIdentityRootIdentities.from(WorldIdentityService.INSTANCE.getOrCreate(server));
     }
 
     private static Optional<ServerLevel> loadedLevel(MinecraftServer server, String dimensionIdentity) {
@@ -723,16 +1155,20 @@ public final class WorkstationReservationService {
 
     public record ResolvedWorkstationStatus(
             ResolvedWorkstationTarget target,
-            Optional<WorkstationReservationRecord> reservation
+            Optional<WorkstationReservationRecord> operatorReservation,
+            Optional<WorkstationReservationRecord> handlerReservation
     ) {
         public ResolvedWorkstationStatus {
             target = Objects.requireNonNull(target, "target");
-            reservation = Objects.requireNonNull(reservation, "reservation");
+            operatorReservation = Objects.requireNonNull(operatorReservation, "operatorReservation");
+            handlerReservation = Objects.requireNonNull(handlerReservation, "handlerReservation");
         }
     }
 
     public record ResolvedWorkstationTarget(
             String workstationIdentity,
+            long workstationGeneration,
+            String endpointIdentity,
             String workstationType,
             String dimensionIdentity,
             BlockPos workstationPos,
@@ -741,6 +1177,10 @@ public final class WorkstationReservationService {
     ) {
         public ResolvedWorkstationTarget {
             workstationIdentity = Objects.requireNonNull(workstationIdentity, "workstationIdentity");
+            if (workstationGeneration < 0L) {
+                throw new IllegalArgumentException("Workstation generation must not be negative");
+            }
+            endpointIdentity = Objects.requireNonNull(endpointIdentity, "endpointIdentity");
             workstationType = Objects.requireNonNull(workstationType, "workstationType");
             dimensionIdentity = Objects.requireNonNull(dimensionIdentity, "dimensionIdentity");
             workstationPos = Objects.requireNonNull(workstationPos, "workstationPos").immutable();

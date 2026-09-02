@@ -145,7 +145,6 @@ public final class LiveCheckpointParticipantRegistry {
     private static CheckpointOwnerFileSnapshot workstation(MinecraftServer server, long tick) {
         var operating = MachineOperatingStateService.INSTANCE.snapshot(server);
         var instances = WorkstationEndpointService.INSTANCE.instanceRegistrySnapshot(server);
-        var reservations = WorkstationReservationService.INSTANCE.managerFor(server).directory();
         var projections = WorkstationCheckpointProjectionService.capture(
                 server,
                 instances,
@@ -162,8 +161,6 @@ public final class LiveCheckpointParticipantRegistry {
         Map<String, String> files = new TreeMap<>();
         files.put("machine_operating_states.json", new MachineOperatingStorage(UNUSED_PATH).serialize(operating));
         files.put("workstation_instances.json", new WorkstationInstanceStorage(UNUSED_PATH).serialize(instances));
-        files.put("workstation_reservations.json",
-                new WorkstationReservationStorage(UNUSED_PATH).serialize(reservations));
         files.put("workstation_projections.json", projections.json());
         boolean endpointJournalEmpty;
         var stackAware = StackAwareWorkstationEndpointRuntimeService.INSTANCE.currentJournal(server);
@@ -179,10 +176,9 @@ public final class LiveCheckpointParticipantRegistry {
         }
         boolean empty = operating.records().isEmpty()
                 && instances.records().isEmpty()
-                && reservations.records().isEmpty()
                 && endpointJournalEmpty
                 && projections.requiredProjectionCount() == 0;
-        return strings(LegacySplitRecoveryParticipants.WORKSTATION, 3, tick, empty, files);
+        return strings(LegacySplitRecoveryParticipants.WORKSTATION, 4, tick, empty, files);
     }
 
     private static CheckpointFailureCode workstationFailureCode(WorkstationProjectionReadCode code) {
@@ -241,14 +237,19 @@ public final class LiveCheckpointParticipantRegistry {
         var employees = EmployeeService.INSTANCE.managerFor(server);
         var departments = EmployeeService.INSTANCE.departmentManagerFor(server);
         var assignments = EmployeeMaterialHandlingService.INSTANCE.managerFor(server);
-        boolean empty = employees.registry().records().isEmpty() && assignments.assignments().isEmpty();
-        return strings(LegacySplitRecoveryParticipants.WORKFORCE, 1, tick, empty, Map.of(
-                "workforce_definitions.json", new WorkforceStorage(UNUSED_PATH).serialize(workforce.registry()),
-                "employee_records.json", new EmployeeStorage(UNUSED_PATH).serialize(employees.directory()),
-                "departments.json", new DepartmentStorage(UNUSED_PATH).serialize(departments.directory()),
-                "employee_material_handling_assignments.json",
-                new EmployeeMaterialHandlingAssignmentStorage(UNUSED_PATH).serialize(assignments.directory())
-        ));
+        var reservations = WorkstationReservationService.INSTANCE.managerFor(server).directory();
+        boolean empty = employees.registry().records().isEmpty()
+                && assignments.assignments().isEmpty()
+                && reservations.records().isEmpty();
+        Map<String, String> files = new TreeMap<>();
+        files.put("workforce_definitions.json", new WorkforceStorage(UNUSED_PATH).serialize(workforce.registry()));
+        files.put("employee_records.json", new EmployeeStorage(UNUSED_PATH).serialize(employees.directory()));
+        files.put("departments.json", new DepartmentStorage(UNUSED_PATH).serialize(departments.directory()));
+        files.put("employee_material_handling_assignments.json",
+                new EmployeeMaterialHandlingAssignmentStorage(UNUSED_PATH).serialize(assignments.directory()));
+        files.put("workstation_reservations.json",
+                new WorkstationReservationStorage(UNUSED_PATH).serialize(reservations));
+        return strings(LegacySplitRecoveryParticipants.WORKFORCE, 2, tick, empty, files);
     }
 
     private static CheckpointOwnerFileSnapshot planning(MinecraftServer server, long tick) {

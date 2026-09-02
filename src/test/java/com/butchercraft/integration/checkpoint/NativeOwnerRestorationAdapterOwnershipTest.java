@@ -19,17 +19,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class NativeOwnerRestorationAdapterOwnershipTest {
     @Test
-    void workstationAdapterClaimsOnlyWorkstationOwnedCheckpointFiles() {
-        Set<String> expected = Set.of(
+    void currentAdaptersAssignReservationFileOnlyToWorkforce() {
+        Set<String> expectedWorkstation = Set.of(
                 "machine_operating_states.json",
                 "workstation_endpoint_journal.json",
                 "workstation_instances.json",
-                "workstation_projections.json",
+                "workstation_projections.json"
+        );
+        Set<String> expectedWorkforce = Set.of(
+                "departments.json",
+                "employee_records.json",
+                "employee_material_handling_assignments.json",
+                "workforce_definitions.json",
                 "workstation_reservations.json"
         );
 
-        assertEquals(expected, NativeOwnerRestorationAdapters.workstationCheckpointFileNames());
-        assertFalse(expected.contains("execution_operations.json"));
+        assertEquals(expectedWorkstation, NativeOwnerRestorationAdapters.workstationCheckpointFileNames());
+        assertEquals(expectedWorkforce, NativeOwnerRestorationAdapters.workforceCheckpointFileNames());
+        assertFalse(expectedWorkstation.contains("workstation_reservations.json"));
+        assertFalse(expectedWorkforce.contains("execution_operations.json"));
     }
 
     @Test
@@ -56,7 +64,13 @@ class NativeOwnerRestorationAdapterOwnershipTest {
                 .collect(Collectors.toUnmodifiableSet());
 
         assertEquals(2L, generation.manifest().generationId().committedSequence());
-        assertEquals(NativeOwnerRestorationAdapters.workstationCheckpointFileNames(), actual);
+        assertEquals(Set.of(
+                "machine_operating_states.json",
+                "workstation_endpoint_journal.json",
+                "workstation_instances.json",
+                "workstation_projections.json",
+                "workstation_reservations.json"
+        ), actual);
     }
 
     private static Path configuredWorld() {

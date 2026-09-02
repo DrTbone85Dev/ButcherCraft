@@ -28,8 +28,8 @@ import java.util.Set;
 final class FileBundleNativeRestorationAdapter implements OwnerNativeRestorationAdapter {
     private final CheckpointOwnerId ownerId;
     private final Set<Integer> supportedOwnerSchemas;
-    private final List<String> legacySourceFiles;
-    private final Set<String> virtualFiles;
+    private final Map<Integer, List<String>> sourceFilesBySchema;
+    private final Map<Integer, Set<String>> virtualFilesBySchema;
     private final NativeTransform transform;
     private final NativeValidation validation;
     private final ProjectionReconciler projectionReconciler;
@@ -58,6 +58,29 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
                 (context, plan) -> { },
                 (context, state) -> List.of()
         );
+    }
+
+    FileBundleNativeRestorationAdapter(
+            CheckpointOwnerId ownerId,
+            Map<Integer, List<String>> sourceFilesBySchema,
+            Map<Integer, Set<String>> virtualFilesBySchema,
+            boolean legacySourceRequired,
+            NativeTransform transform,
+            NativeValidation validation,
+            RestorationMetadataExtractor metadataExtractor,
+            ProjectionReconciler projectionReconciler,
+            NativeFileAugmentor nativeFileAugmentor
+    ) {
+        this.ownerId = Objects.requireNonNull(ownerId, "ownerId");
+        this.sourceFilesBySchema = normalizedSourceFiles(sourceFilesBySchema);
+        this.virtualFilesBySchema = normalizedVirtualFiles(virtualFilesBySchema, this.sourceFilesBySchema.keySet());
+        this.supportedOwnerSchemas = this.sourceFilesBySchema.keySet();
+        this.legacySourceRequired = legacySourceRequired;
+        this.transform = Objects.requireNonNull(transform, "transform");
+        this.validation = Objects.requireNonNull(validation, "validation");
+        this.metadataExtractor = Objects.requireNonNull(metadataExtractor, "metadataExtractor");
+        this.projectionReconciler = Objects.requireNonNull(projectionReconciler, "projectionReconciler");
+        this.nativeFileAugmentor = Objects.requireNonNull(nativeFileAugmentor, "nativeFileAugmentor");
     }
 
     FileBundleNativeRestorationAdapter(
@@ -93,8 +116,16 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
         this.ownerId = Objects.requireNonNull(ownerId, "ownerId");
         this.supportedOwnerSchemas = Set.copyOf(Objects.requireNonNull(
                 supportedOwnerSchemas, "supportedOwnerSchemas"));
-        this.legacySourceFiles = List.copyOf(Objects.requireNonNull(legacySourceFiles, "legacySourceFiles"));
-        this.virtualFiles = Set.copyOf(Objects.requireNonNull(virtualFiles, "virtualFiles"));
+        List<String> normalizedSource = List.copyOf(Objects.requireNonNull(legacySourceFiles, "legacySourceFiles"));
+        Set<String> normalizedVirtual = Set.copyOf(Objects.requireNonNull(virtualFiles, "virtualFiles"));
+        this.sourceFilesBySchema = this.supportedOwnerSchemas.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
+                schema -> schema,
+                schema -> normalizedSource
+        ));
+        this.virtualFilesBySchema = this.supportedOwnerSchemas.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
+                schema -> schema,
+                schema -> normalizedVirtual
+        ));
         this.legacySourceRequired = legacySourceRequired;
         this.transform = Objects.requireNonNull(transform, "transform");
         this.validation = Objects.requireNonNull(validation, "validation");
@@ -123,8 +154,10 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
             if (!bundle.ownerId().equals(ownerId)) {
                 throw new IllegalArgumentException("Checkpoint file bundle belongs to another owner");
             }
-            requireExactBundleFiles(bundle);
             ownerSchema = bundle.ownerSchemaVersion();
+            requireSupportedSchema(ownerSchema);
+            requireExactBundleFiles(bundle, ownerSchema);
+            Set<String> virtualFiles = virtualFiles(ownerSchema);
             for (CheckpointOwnerFileSnapshot.FilePayload file : bundle.files()) {
                 if (file.logicalName().equals("workstation_projections.json")) {
                     projection = Optional.of(file.bytes());
@@ -137,9 +170,10 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
             if (legacySourceRequired) {
                 var source = RestorationAdapterSupport.requireLegacySource(context, ownerId);
                 ownerSchema = source.ownerSchemaVersion();
+                requireSupportedSchema(ownerSchema);
                 List<LegacyRecoverySourceBundle.SourceFile> files =
                         RestorationAdapterSupport.readAndVerifyLegacySource(
-                                context, ownerId, legacySourceFiles);
+                                context, ownerId, sourceFiles(ownerSchema));
                 files.forEach(file -> sourceFiles.put(file.logicalName(), file.bytes()));
             } else {
                 ownerSchema = descriptor.snapshotSchemaVersion();
@@ -170,9 +204,9 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
         );
     }
 
-    private void requireExactBundleFiles(CheckpointOwnerFileSnapshot bundle) {
-        Set<String> expected = new java.util.TreeSet<>(legacySourceFiles);
-        expected.addAll(virtualFiles);
+    private void requireExactBundleFiles(CheckpointOwnerFileSnapshot bundle, int ownerSchema) {
+        Set<String> expected = new java.util.TreeSet<>(sourceFiles(ownerSchema));
+        expected.addAll(virtualFiles(ownerSchema));
         Set<String> actual = bundle.files().stream()
                 .map(CheckpointOwnerFileSnapshot.FilePayload::logicalName)
                 .collect(java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
@@ -189,7 +223,7 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
         if (context.source() == RestorationSource.CHECKPOINT) {
             return Optional.of(CheckpointOwnerFileBundleCodec.decode(snapshot.payloadBytes()));
         }
-        if (virtualFiles.isEmpty()) return Optional.empty();
+        if (virtualFilesBySchema.values().stream().allMatch(Set::isEmpty)) return Optional.empty();
         try {
             CheckpointOwnerFileSnapshot bundle = CheckpointOwnerFileBundleCodec.decode(snapshot.payloadBytes());
             return bundle.ownerId().equals(ownerId) ? Optional.of(bundle) : Optional.empty();
@@ -227,6 +261,42 @@ final class FileBundleNativeRestorationAdapter implements OwnerNativeRestoration
             throw new IllegalArgumentException("Unsupported native owner schema for "
                     + ownerId.value() + ": " + schema);
         }
+    }
+
+    private List<String> sourceFiles(int schema) {
+        requireSupportedSchema(schema);
+        return sourceFilesBySchema.get(schema);
+    }
+
+    private Set<String> virtualFiles(int schema) {
+        requireSupportedSchema(schema);
+        return virtualFilesBySchema.getOrDefault(schema, Set.of());
+    }
+
+    private static Map<Integer, List<String>> normalizedSourceFiles(Map<Integer, List<String>> values) {
+        Map<Integer, List<String>> normalized = new LinkedHashMap<>();
+        Objects.requireNonNull(values, "sourceFilesBySchema").entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> normalized.put(entry.getKey(), List.copyOf(entry.getValue())));
+        if (normalized.isEmpty() || normalized.keySet().stream().anyMatch(schema -> schema <= 0)) {
+            throw new IllegalArgumentException("Schema-specific restoration files require positive schemas");
+        }
+        return Map.copyOf(normalized);
+    }
+
+    private static Map<Integer, Set<String>> normalizedVirtualFiles(
+            Map<Integer, Set<String>> values,
+            Set<Integer> schemas
+    ) {
+        Map<Integer, Set<String>> normalized = new LinkedHashMap<>();
+        Objects.requireNonNull(values, "virtualFilesBySchema").forEach((schema, files) -> {
+            if (!schemas.contains(schema)) {
+                throw new IllegalArgumentException("Virtual file mapping contains unsupported owner schema: " + schema);
+            }
+            normalized.put(schema, Set.copyOf(files));
+        });
+        schemas.forEach(schema -> normalized.putIfAbsent(schema, Set.of()));
+        return Map.copyOf(normalized);
     }
 
     private void validateGenericJson(OwnerNativeRestorationContext context, Map<String, byte[]> files) {

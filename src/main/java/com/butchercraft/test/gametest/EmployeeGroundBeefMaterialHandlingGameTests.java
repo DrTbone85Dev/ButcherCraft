@@ -79,7 +79,8 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
                     helper.getLevel(), fixture.record().employeeId(), helper.absolutePos(GRINDER_POS)
             ).orThrow();
             moveAndSynchronize(helper, fixture.employee(), GRINDER_OPERATING_POS);
-            helper.assertTrue(reservation(helper, fixture.record()).state() == WorkstationReservationState.EMPLOYEE_ARRIVED,
+            helper.assertTrue(reservation(helper, fixture.record(), "source arrival").state()
+                            == WorkstationReservationState.EMPLOYEE_ARRIVED,
                     "Completed employee operation leaves a reusable arrived Grinder source reservation");
 
             helper.assertTrue(executeTransferCommand(helper, fixture.record()) == 1,
@@ -92,13 +93,16 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
                     "Workforce observes proven custody before destination travel");
             helper.assertTrue(transfer.lifecycle() == MaterialTransferLifecycle.IN_TRANSIT,
                     "Material Handling owns the in-transit lifecycle");
-            helper.assertTrue(transfer.custodyLocation().orElseThrow() == MaterialCustodyLocation.MATERIAL_HANDLING_RUNTIME,
+            helper.assertTrue(transfer.custodyLocation().orElseThrow(() ->
+                            new IllegalStateException("In-transit transfer must publish a custody location"))
+                            == MaterialCustodyLocation.MATERIAL_HANDLING_RUNTIME,
                     "Material Handling is the singular proven custody location");
             helper.assertTrue(fixture.grinder().inventory().output().getCount() == 63,
                     "Committed schema-2 withdrawal leaves the exact Grinder output remainder");
             helper.assertTrue(ItemStack.isSameItemSameComponents(exactOutput, fixture.employee().getMainHandItem()),
                     "Employee visibly carries the exact one-unit Ground Beef custody projection");
-            helper.assertTrue(reservation(helper, fixture.record()).workstationType().equals("patty_former"),
+            helper.assertTrue(reservation(helper, fixture.record(), "destination acquisition").workstationType()
+                            .equals("patty_former"),
                     "Source reservation releases before the Patty Former reservation is acquired");
             assertOneReservation(helper, fixture.record());
 
@@ -122,9 +126,10 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
                     "Material Handling delivery to an OFF Patty Former creates no Machine Run");
             helper.assertTrue(fixture.employee().getMainHandItem().isEmpty(),
                     "Carry projection clears immediately after proven deposit");
-            helper.assertTrue(reservation(helper, fixture.record()).workstationType().equals("patty_former"),
-                    "Employee remains reserved at the Patty Former after delivery");
-            assertOneReservation(helper, fixture.record());
+            helper.assertTrue(WorkstationReservationService.INSTANCE.activeReservations(
+                            helper.getLevel().getServer()).stream()
+                            .noneMatch(value -> value.employeeIdentity().equals(fixture.record().employeeId().value())),
+                    "Completed Material Handling releases the transfer-bound destination handler");
             assertCounts(helper, beforeTransfer);
 
             helper.runAtTickTime(180, () -> {
@@ -364,7 +369,8 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
         helper.assertTrue(fixture.employee().getMainHandItem().is(ModItems.GROUND_BEEF.get())
                         && fixture.employee().getMainHandItem().getCount() == 1,
                 "Employee visibly carries exactly one Ground Beef");
-        helper.assertTrue(reservation(helper, fixture.record()).workstationType().equals("patty_former"),
+        helper.assertTrue(reservation(helper, fixture.record(), "destination acquisition").workstationType()
+                        .equals("patty_former"),
                 "Destination reservation follows proven source release");
         assertOneReservation(helper, fixture.record());
     }
@@ -405,7 +411,8 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
     private static EmployeeMaterialHandlingAssignment assignment(GameTestHelper helper, EmployeeRecord record) {
         return EmployeeMaterialHandlingService.INSTANCE.latestFor(
                 helper.getLevel().getServer(), record.employeeId()
-        ).orElseThrow();
+        ).orElseThrow(() -> new IllegalStateException(
+                "Employee Material Handling assignment is missing for " + record.employeeId().value()));
     }
 
     private static MaterialTransferView transfer(
@@ -414,12 +421,19 @@ public final class EmployeeGroundBeefMaterialHandlingGameTests {
     ) {
         return MaterialHandlingService.INSTANCE.findTransfer(
                 helper.getLevel().getServer(), assignment.transferId()
-        ).orElseThrow();
+        ).orElseThrow(() -> new IllegalStateException(
+                "Material Handling transfer is missing for " + assignment.transferId().value()));
     }
 
-    private static WorkstationReservationRecord reservation(GameTestHelper helper, EmployeeRecord record) {
+    private static WorkstationReservationRecord reservation(
+            GameTestHelper helper,
+            EmployeeRecord record,
+            String expectedPhase
+    ) {
         return WorkstationReservationService.INSTANCE.managerFor(helper.getLevel().getServer())
-                .findByEmployee(record.employeeId().value()).orElseThrow();
+                .findByEmployee(record.employeeId().value()).orElseThrow(() -> new IllegalStateException(
+                        "Active Workstation reservation is missing during " + expectedPhase + " for "
+                                + record.employeeId().value()));
     }
 
     private static void assertOneReservation(GameTestHelper helper, EmployeeRecord record) {
