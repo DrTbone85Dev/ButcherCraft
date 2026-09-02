@@ -1,6 +1,6 @@
 # ADR-DG-002: Material Handling Custody And Recovery
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; LATER SCOPE GATED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; DG-005A RESERVATION AMENDMENT RATIFIED; LATER SCOPE GATED
 
 Decision identifier: DG-002
 
@@ -10,6 +10,8 @@ implement runtime behavior, gameplay behavior, migration, schema files,
 commands, content, persistence, or Architecture Manifest declarations.
 IM-028B was later separately owner-authorized and is implemented within the
 Section 25 boundary. All later implementation remains separately gated.
+DG-005A later narrowly amends reservation compatibility only. Its role-aware
+runtime and persistence evolution remain gated behind IM-032A.
 
 Canonical platform reference:
 [`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).
@@ -30,6 +32,7 @@ Related authority:
 - [`Evidence Lifecycle ADR`](ADR-PROPOSED-EVIDENCE-LIFECYCLE.md)
 - [`Workforce Framework`](../WORKFORCE_FRAMEWORK.md)
 - [`Workstation Framework`](../WORKSTATION_FRAMEWORK.md)
+- [`DG-005A Role-Aware Workstation Reservations`](ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 - [`Generic Execution Runtime Foundation`](../GENERIC_EXECUTION_RUNTIME_FOUNDATION.md)
 - [`Live Scheduler Effect Enforcement`](../LIVE_SCHEDULER_EFFECT_ENFORCEMENT.md)
 
@@ -181,7 +184,7 @@ and runtime state remain unchanged.
 | Cross-transfer evidence | Material Handling Runtime | Workstations, Workforce |
 | Employee carry observation | Workforce, derived from Material Handling | Client and Employee entity persistence |
 | Rendering | Client presentation of synchronized observation | Client gameplay authority |
-| Reservation lifecycle | Workstation Reservation authority | Material Handling and Workforce internals |
+| Reservation lifecycle | Workforce Workstation Reservation authority | Material Handling, Workstation endpoint internals, and machine operation |
 | Machine operation | Workstation owner through existing operation path | Material Handling |
 
 Material Handling may request owner operations and consume immutable results.
@@ -559,6 +562,26 @@ Failure policy:
 
 No reservation grants inventory mutation or machine-operation authority.
 
+### 12.1 DG-005A Role-Aware Reservation Amendment
+
+DG-005A preserves one active Workstation reservation per employee while
+narrowly amending Workstation-instance exclusivity. Simultaneous conflicting
+reservations remain prohibited. One exact `MACHINE_OPERATOR` may coexist with
+one exact compatible, transfer-bound `MATERIAL_HANDLER` on the same DG-002A
+Workstation Instance.
+
+The handler grant binds one Material Handling transfer, endpoint purpose,
+direction, and available endpoint identity. It grants no custody, endpoint
+mutation, START, STOP, RESUME, or general operating responsibility. Material
+Handling remains transfer and in-transit custody authority; Workstation remains
+endpoint mutation authority; Execution remains Machine Run authority.
+
+The entire Workstation Instance is the initial handler conflict domain, so a
+second handler remains prohibited. Schema-1 runtime remains generic and
+exclusive until IM-032A separately implements the ratified role-aware schema.
+Historical reservations whose role cannot be proven must become
+`LEGACY_EXCLUSIVE`, not inferred operator reservations.
+
 ## 13. Workstation Selection And Development Surface
 
 Schema 1 performs no radius scan, nearest-workstation search, chunk scan, or
@@ -872,8 +895,10 @@ ADR exists.
   own operation progression and dispatch, not workstation inventory custody.
 - **Automatic nearest-workstation selection:** rejected because it introduces
   hidden search, chunk availability dependence, and nondeterministic ties.
-- **Two simultaneous workstation reservations:** rejected because it violates
-  current reservation exclusivity and increases deadlock risk.
+- **Unrestricted or conflicting simultaneous workstation reservations:**
+  rejected because they weaken deterministic access and increase deadlock risk.
+  DG-005A permits only one exact operator plus one exact compatible,
+  transfer-bound handler on the same Workstation Instance.
 - **Transport-specific Patty Former auto-start suppression:** rejected because
   machine semantics would depend on who inserted the same valid input.
 
@@ -1028,6 +1053,13 @@ Owner ratification approved Material Handling Custody and Recovery as follows:
 9. IM-028 is formally split into IM-028A and IM-028B.
 10. Employee-held item rendering is a non-authoritative synchronized display
     derived only from proven Material Handling custody.
+
+DG-005A later amends decision 5 only as to Workstation-instance compatibility.
+One employee still holds at most one active Workstation reservation, and the
+source-then-destination order remains unchanged. A separate employee may hold
+one compatible `MATERIAL_HANDLER` grant while another employee retains the
+exact machine's `MACHINE_OPERATOR` role. No custody or endpoint authority moves
+to reservation state.
 
 This ratification did not itself implement Material Handling. IM-028A and the
 separately owner-authorized IM-028B are now implemented within Sections 24 and

@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A run-state foundation, IM-031B/IM-031C powered processing activation, and IM-031C-R3A/R3B durable projection and checkpoint completeness
+Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A run-state foundation, IM-031B/IM-031C powered processing activation, and IM-031C-R3A/R3B durable projection and checkpoint completeness; DG-005A role-aware reservation architecture ratified and runtime-gated
 
 ## Purpose
 
@@ -25,6 +25,11 @@ This is not final artwork, not a player recipe-selection system, not a label sys
 - Material Handling may request and observe endpoint effects but never mutate a
   workstation slot. Workforce may reserve and navigate to endpoints but never
   gains endpoint mutation authority.
+- Workforce remains the singular Workstation Reservation authority. Ratified
+  [`DG-005A`](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
+  permits one `MACHINE_OPERATOR` plus one compatible transfer-bound
+  `MATERIAL_HANDLER` for an exact Workstation Instance without transferring
+  endpoint or operating-state authority to either role.
 - Workstation also owns one exact durable recovery projection per Workstation
   Instance Identity. Checkpoint Recovery consumes defensive frozen bytes for
   complete snapshots but may not publish, advance, or reinterpret this state.
@@ -165,6 +170,13 @@ operation gate after employee delivery.
 Startup order for this boundary is World Identity, Workstation instance
 registry, endpoint journal, block-entity projection reconciliation, Material
 Handling validation/reconciliation, then Workforce assignment reconstruction.
+
+DG-005A permits future handler access to a compatible endpoint while another
+employee retains exact `MACHINE_OPERATOR` responsibility. Reservation
+compatibility never proves an endpoint effect is safe: Workstation still
+validates freshness, slot compatibility, capacity, active effects, instance
+identity, and recovery state before mutation. Current schema-1 reservation
+runtime still rejects simultaneous Workstation reservations.
 
 ### Stack-Aware Endpoint Foundation
 
@@ -375,6 +387,13 @@ still consumes and produces one recipe quantity per bounded child, and
 Scheduler still dispatches each child independently. `RUNNING_EMPTY` and
 `OUTPUT_BLOCKED` keep a Run powered without creating failing work or mutating
 inventory.
+
+DG-005A clarifies that a retained employee operator reservation is exclusive
+`MACHINE_OPERATOR` responsibility, not a prohibition on one compatible
+transfer-bound handler. Handler access creates no START, STOP, RESUME, child
+admission, or Machine Run authority. IM-032A must implement the role-aware
+reservation foundation before IM-032B may consume it for employee persistent
+machine operation.
 
 ## Future Extension Points
 

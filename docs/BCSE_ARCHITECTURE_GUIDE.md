@@ -274,7 +274,14 @@ operating state, recipe validation, inventory mutation, and owner results. The
 shared integration coordinator composes owner publications but owns no
 canonical runtime state; machine-specific adapters retain machine semantics.
 IM-031C is Product Owner accepted. Employee Machine Run control remains
-unimplemented; its IM-031C sequencing gate is cleared for IM-032.
+unimplemented; its IM-031C sequencing gate is cleared for IM-032. The IM-032
+architecture review exposed a reservation compatibility conflict between
+DG-002 and DG-005. The ratified
+[`DG-005A Role-Aware Workstation Reservations amendment`](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
+preserves one Workforce reservation authority while allowing one exact
+operator plus one compatible transfer-bound handler per Workstation Instance.
+Role-aware runtime remains unimplemented. IM-032A is next and requires separate
+authorization; IM-032B remains gated behind it.
 
 ### Transactions
 
@@ -752,6 +759,7 @@ nothing.
 - [`Ratified Execution Handler Registry Evolution ADR`](adr/ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
 - [`Ratified Stack-Aware Workstation Inventory And Partial Transfer ADR`](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
 - [`Ratified Persistent Machine Operating State And Continuous Processing ADR`](adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
+- [`Ratified Role-Aware Workstation Reservations amendment`](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 - [`Ratified ADR-02A-P1 Durable Workstation Projection Amendment`](adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
 - [`IM-031A Machine Run-State Foundation`](MACHINE_RUN_STATE_FOUNDATION.md)
 - [`Material Handling Implementation`](MATERIAL_HANDLING.md)

@@ -1,6 +1,6 @@
 # ButcherCraft Material Handling
 
-Status: DG-002, DG-002A, and DG-004 ratified; IM-028A through IM-029 live routes and IM-030A/IM-030B stack-aware foundation and selective activation implemented
+Status: DG-002, DG-002A, DG-004, and DG-005A ratified; IM-028A through IM-029 live routes and IM-030A/IM-030B stack-aware foundation and selective activation implemented; role-aware reservation runtime gated
 
 ## Authority
 
@@ -15,6 +15,7 @@ The controlling architecture is:
 - [DG-002 Material Handling Custody And Recovery](adr/ADR-PROPOSED-MATERIAL-HANDLING-CUSTODY-AND-RECOVERY.md)
 - [DG-002A Workstation Endpoint Durability And Instance Identity](adr/ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
 - [DG-004 Stack-Aware Workstation Inventory And Partial Transfer](adr/ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
+- [DG-005A Role-Aware Workstation Reservations And Compatible Endpoint Access](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 
 No subsystem may infer custody from slot appearance or mutate another owner's
 state directly.
@@ -74,6 +75,14 @@ Schema 1 permits one employee reservation at a time:
 
 The Grinder remains idle. Processing begins only through the separately
 explicit `/butchercraft employee operate <employee>` command.
+
+DG-005A preserves this source-then-destination order and one active reservation
+per employee. For future IM-032A, another employee's `MACHINE_OPERATOR` may
+coexist with one exact transfer-bound `MATERIAL_HANDLER` at the same Workstation
+Instance. Material Handling requests that access from Workforce and does not own
+the reservation. The handler grant creates no custody, endpoint mutation,
+START, STOP, RESUME, or Machine Run authority. Current runtime remains on the
+generic exclusive schema-1 reservation model.
 
 ## Patty Former Destination Readiness
 
@@ -189,6 +198,10 @@ after schema-2 publication.
 
 The following remain unimplemented and unauthorized by IM-030B:
 
+- role-aware reservation schema 2, `MACHINE_OPERATOR`, `MATERIAL_HANDLER`, and
+  `LEGACY_EXCLUSIVE` runtime behavior;
+- IM-032A reservation implementation and IM-032B employee persistent machine
+  operation;
 - employee Patty Former operation;
 - routes or materials beyond Beef Trim Cutting Table to Grinder and Ground Beef
   Grinder to Patty Former;

@@ -1,7 +1,7 @@
 # ADR-DG-005: Persistent Machine Operating State And Continuous Processing
 
 Status: RATIFIED ARCHITECTURAL DIRECTION - IM-031A THROUGH IM-031C IMPLEMENTED;
-IM-031C PRODUCT OWNER ACCEPTED; IM-032 SEQUENCING GATE CLEARED
+IM-031C PRODUCT OWNER ACCEPTED; DG-005A RATIFIED; IM-032A NEXT; IM-032B GATED
 
 Decision identifier: DG-005
 
@@ -37,6 +37,7 @@ Canonical references:
 - [`DG-002A Workstation Endpoint Durability And Instance Identity`](ADR-PROPOSED-WORKSTATION-ENDPOINT-DURABILITY-AND-INSTANCE-IDENTITY.md)
 - [`DG-003 Execution Handler Registry Evolution And Save Compatibility`](ADR-PROPOSED-EXECUTION-HANDLER-REGISTRY-EVOLUTION.md)
 - [`DG-004 Stack-Aware Workstation Inventory And Partial Transfer`](ADR-PROPOSED-STACK-AWARE-WORKSTATION-INVENTORY-AND-PARTIAL-TRANSFER.md)
+- [`DG-005A Role-Aware Workstation Reservations`](ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 
 ## 1. Decision In Plain Language
 
@@ -759,10 +760,20 @@ silently turn a machine off or leave a Workforce record pretending to own the
 Run.
 
 One employee supervising multiple machines, skills, and unattended risk remain
-later gameplay-policy gates. The ratified initial IM-032 policy is
+later gameplay-policy gates. The ratified initial IM-032B policy is
 conservative: the starting employee retains the reservation, stays within
-operating tolerance, and remains responsible through STOP. IM-032 runtime
+operating tolerance, and remains responsible through STOP. IM-032B runtime
 changes remain separately gated.
+
+DG-005A clarifies that this retained exclusivity is the employee's exact
+`MACHINE_OPERATOR` role. It does not exclude one compatible, transfer-bound
+`MATERIAL_HANDLER` from temporary endpoint access on the same Workstation
+Instance. The handler cannot START, STOP, RESUME, admit a child, or acquire
+Machine Run responsibility. The operator retains responsibility through safe
+STOP, and Execution remains the sole Machine Run authority.
+
+Role-aware reservation runtime does not exist yet. IM-032A must establish that
+foundation before IM-032B may implement employee persistent machine operation.
 
 ## 21. Persistence Ownership
 
@@ -1080,13 +1091,19 @@ future sequence as follows:
 4. **IM-031C - Patty Former Continuous Operation.** Activate the separately
    ratified Patty Former policy after Grinder acceptance. Do not add employee
    operation by implication.
-5. **IM-032 - Employee Machine START/STOP Operation.** Replace the one-cycle
-   employee concept with explicit Run assignment, monitoring, STOP
-   responsibility, persistence/recovery, and the separately ratified operator
-   presence policy.
-6. **DG-006 - Machine Condition, Wear, Damage, And Maintenance.** Architecture
+5. **DG-005A - Role-Aware Workstation Reservations And Compatible Endpoint
+   Access.** Ratified architecture only; no runtime or schema change.
+6. **IM-032A - Role-Aware Workstation Reservation Foundation.** Implement and
+   validate role identity, compatibility, persistence migration, checkpoint
+   restoration, cancellation, replacement, and diagnostics before employee
+   Machine Run control.
+7. **IM-032B - Employee Persistent Machine Operation.** Consume the accepted
+   reservation foundation for explicit Run assignment, monitoring, START/STOP
+   responsibility, persistence/recovery, and the ratified operator-presence
+   policy.
+8. **DG-006 - Machine Condition, Wear, Damage, And Maintenance.** Architecture
    gate before any wear, damage, breakdown, maintenance, or repair runtime.
-7. **Later condition implementation milestone.** Number only after DG-006 is
+9. **Later condition implementation milestone.** Number only after DG-006 is
    ratified and current roadmap state is rechecked.
 
 IM-031A must explicitly address DG-003 compatibility. It may not change the
@@ -1210,6 +1227,14 @@ Owner ratification approved all 27 decisions below:
     DG-006, then separately numbered condition implementation, without
     renumbering completed milestones.
 
+DG-005A later clarifies decision 14 and replaces the single future IM-032 step
+in decision 27 with `DG-005A`, `IM-032A`, and `IM-032B`. The employee retains
+exclusive `MACHINE_OPERATOR` responsibility through safe STOP, while one exact
+compatible `MATERIAL_HANDLER` may service a bound endpoint without receiving
+Machine Run authority. DG-005A ratification changes architecture direction
+only; role-aware reservation runtime and employee persistent machine operation
+remain unimplemented.
+
 Ratification also confirms that capacity remains separate from throughput;
 continuous operation is a sequence of separately identified bounded recipe
 cycles, never one stack-sized atomic mutation. Machine Run authorization
@@ -1237,6 +1262,7 @@ until separately authorized and mechanically true.
   machine-neutral coordination and presentation while retaining Patty Former
   recipe, inventory-effect, and owner-result authority.
 - IM-031C is Product Owner accepted. Employee Machine Run control remains
-  unimplemented, but its IM-031C sequencing gate is cleared for IM-032.
+  unimplemented. DG-005A is ratified; IM-032A is the next reservation
+  foundation milestone, and IM-032B remains gated behind it.
 - Machine condition/wear and Production machine control remain separately
   gated.

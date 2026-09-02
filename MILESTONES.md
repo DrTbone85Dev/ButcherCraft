@@ -61,8 +61,12 @@ The ratified completed-and-next sequence is:
 10. IM-031C final Product Owner acceptance. Accepted at release baseline
     `0.10.6-alpha.1`, commit
     `7e7abb5b3edd3dfac5dba8590d1561f06e9bb540`.
-11. `IM-032` - Employee Machine START/STOP Operation. The IM-031C sequencing
-    gate is satisfied; implementation has not started.
+11. `DG-005A` - Role-Aware Workstation Reservations And Compatible Endpoint
+    Access. Ratified architecture only; no runtime or schema change.
+12. `IM-032A` - Role-Aware Workstation Reservation Foundation. Next in the
+    ratified sequence and still separately implementation-gated.
+13. `IM-032B` - Employee Persistent Machine Operation. Gated behind accepted
+    IM-032A implementation.
 
 The ratified
 [`ADR-02A-P1 durable Workstation projection amendment`](docs/adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
@@ -76,12 +80,13 @@ candidates preserve the prior head. Coherent live state wins at startup, while
 incoherent state may select only a valid committed `COMPLETE_RESTORABLE`
 generation. Historical incomplete generations remain non-restorable. IM-031C
 is complete and Product Owner accepted. IM-032 is no longer blocked by
-IM-031C acceptance, but no IM-032 implementation is recorded here.
+IM-031C acceptance. DG-005A is ratified, but IM-032A and IM-032B remain
+separately gated and no IM-032 runtime implementation is recorded here.
 
 ## DG-005: Persistent Machine Operating State And Continuous Processing
 
 Status: RATIFIED - IM-031A THROUGH IM-031C IMPLEMENTED; IM-031C ACCEPTED;
-IM-032 SEQUENCING GATE CLEARED
+DG-005A RATIFIED; IM-032A NEXT; IM-032B GATED
 
 The ratified
 [`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
@@ -106,9 +111,12 @@ authorization; completed status is recorded explicitly:
    `IM-031C-R2A` and historical successor validation `IM-031C-R3C`, are
    implemented. ADR-02A-P1 is ratified. Final Product Owner acceptance is
    complete.
-5. `IM-032` - Employee Machine START/STOP Operation with the conservative
-   reservation-and-presence-through-STOP policy.
-6. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
+5. `DG-005A` - Role-Aware Workstation Reservations And Compatible Endpoint
+   Access. Ratified architecture only.
+6. `IM-032A` - Role-Aware Workstation Reservation Foundation. Next and
+   separately implementation-gated.
+7. `IM-032B` - Employee Persistent Machine Operation. Gated behind IM-032A.
+8. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
    followed only later by a separately authorized implementation milestone.
 
 The previously referenced but unimplemented `IM-031 - Employee Patty Former
@@ -117,8 +125,33 @@ IM-030A and IM-030B inventory behavior remains unchanged. IM-031A alone did
 not authorize later runtime work; IM-031B and IM-031C are the separately
 authorized Grinder and Patty Former activations. ADR-02A recovery
 submilestones and final IM-031C acceptance precede IM-032. IM-031C is accepted,
-so the IM-032 sequencing gate is cleared; IM-032 implementation has not started.
-DG-006 and later work remain gated.
+so that sequencing gate is cleared. The IM-032 architecture review then proved
+a conflict between DG-002's generic exclusive reservation and DG-005's retained
+operator responsibility. The ratified
+[`DG-005A reservation amendment`](docs/adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
+resolves that architecture conflict. IM-032A is next but requires separate
+implementation authorization; IM-032B remains gated behind it. DG-006 and
+later work remain gated.
+
+## DG-005A: Role-Aware Workstation Reservations And Compatible Endpoint Access
+
+Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION GATED; IM-032A NEXT;
+IM-032B GATED
+
+The ratified
+[`DG-005A architecture amendment`](docs/adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
+preserves one exclusive employee machine operator while permitting one narrowly
+compatible, transfer-bound Material Handler to access an exact Workstation
+endpoint. The decision retains one reservation authority, Material Handling
+custody authority, Workstation endpoint authority, and Execution Machine Run
+authority. It includes explicit role identity, conservative schema-1 migration,
+checkpoint/recovery semantics, replacement protection, and a ratified IM-032A
+then IM-032B implementation sequence.
+
+DG-005A ratifies architecture only. Reservation runtime remains on schema 1,
+IM-032A has not started, IM-032B remains gated, and no reservation schema, Java,
+persistence, checkpoint, command, gameplay, Architecture Manifest, or employee
+persistent machine-operation implementation is authorized or recorded here.
 
 ## IM-031C: Patty Former Continuous Policy Activation
 

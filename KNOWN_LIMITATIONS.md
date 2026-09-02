@@ -9,6 +9,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 ### v0.10.6-alpha.1 Release Boundaries
 
 - Employees cannot START, STOP, or RESUME Machine Runs. Employee Grinder operation remains one bounded reservation-scoped request, and employee Patty Former operation remains unavailable.
+- DG-005A ratifies role-aware Workstation reservation architecture, but the runtime remains on generic exclusive schema 1. `MACHINE_OPERATOR`, compatible `MATERIAL_HANDLER`, and `LEGACY_EXCLUSIVE` behavior are not implemented. IM-032A is next and separately gated; IM-032B employee persistent machine operation remains gated behind it.
 - Machine wear, damage, lubrication, maintenance, and breakdown behavior are not implemented.
 - Production cannot control Machine Runs or assign automatic machine operation.
 - Checkpoint retention, compaction, compression, and storage budgeting are not implemented. Immutable retained generations can consume substantial save-disk space over time.

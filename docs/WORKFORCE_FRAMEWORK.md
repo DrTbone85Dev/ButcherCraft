@@ -1,6 +1,6 @@
 # Workforce Framework
 
-Status: implemented workforce, employee, navigation, reservation, one Grinder operation, and one explicit Beef Trim transfer foundation
+Status: implemented workforce, employee, navigation, schema-1 reservation, one Grinder operation, and explicit material-transfer foundations; DG-005A role-aware reservation architecture ratified and implementation-gated
 
 The Workforce Framework defines the staffing structure a business requires to
 operate and owns individual Employee Identity, Employment Records, Department
@@ -43,6 +43,15 @@ The workforce package owns:
   explicit employee/source/destination transfer intent and typed lifecycle.
 - `EmployeeMaterialHandlingAssignmentStorage` for Workforce-owned assignment
   persistence without ItemStacks, paths, renderer state, or mutation authority.
+- The singular Workstation Reservation authority for employee access,
+  exclusivity, arrival, operating-position evidence, release, invalidation, and
+  durable reservation state.
+- Ratified
+  [`DG-005A role semantics`](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
+  for one `MACHINE_OPERATOR` plus one compatible transfer-bound
+  `MATERIAL_HANDLER` per exact Workstation Instance. The current runtime
+  remains generic schema 1 until IM-032A is separately authorized and
+  implemented.
 - `DepartmentId`, `DepartmentRecord`, `DepartmentRegistry`, and
   `DepartmentManager` for Workforce-owned department definitions, anchors,
   and employee assignment validation.
@@ -216,6 +225,13 @@ proven Material Handling custody plus transfer reference, display state, and
 observation revision. Vanilla tracked entity data resynchronizes that bounded
 view for login and tracking; stale or conflicting revisions are rejected.
 
+DG-005A retains this one-reservation-per-employee and source-then-destination
+order. It narrowly permits another employee's exact `MACHINE_OPERATOR` to
+coexist with one compatible `MATERIAL_HANDLER` on the destination Workstation
+Instance. The entire Workstation Instance is the initial handler conflict
+domain. This is ratified architecture only; the implemented schema-1 manager
+still enforces generic exclusivity.
+
 Cancellation before custody leaves source inventory unchanged. Cancellation
 after custody keeps the display visible, reacquires the explicit source,
 physically returns, and invokes the Material Handling source-return protocol.
@@ -341,6 +357,17 @@ Employee navigation recovery state is not persisted. After reload, the entity
 reconstructs movement intent from employee records, department records, Business
 Runtime observation, and active workstation reservations.
 
+Workstation reservation state persists separately at:
+
+```text
+<world>/butchercraft/workstation_reservations.json
+```
+
+The current file remains schema 1 and contains generic exclusive reservations.
+DG-005A ratifies future Workforce-owned schema-2 role, assignment, transfer,
+endpoint, lifecycle, and exact Workstation Instance bindings plus conservative
+`LEGACY_EXCLUSIVE` migration. No schema-2 file or migration is implemented yet.
+
 ## Validation
 
 The workforce framework rejects:
@@ -438,3 +465,9 @@ IM-030B permits either existing route to withdraw one item from a larger
 compatible source stack and merge it into a compatible destination stack.
 Workforce still assigns and displays exactly one carried item and does not own
 the split, merge, endpoint effect, or in-transit custody.
+
+DG-005A ratifies the role-aware reservation architecture required before
+employee persistent machine operation. IM-032A is next and remains separately
+implementation-gated. IM-032B employee Grinder/Patty Former START/STOP remains
+gated behind IM-032A. Workforce still owns no Machine Run, endpoint mutation,
+Material Handling custody, or Scheduler authority.
