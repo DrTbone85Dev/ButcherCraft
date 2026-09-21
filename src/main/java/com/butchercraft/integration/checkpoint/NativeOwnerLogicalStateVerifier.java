@@ -38,6 +38,12 @@ import com.butchercraft.world.workforce.employee.EmployeeManager;
 import com.butchercraft.world.workforce.employee.EmployeeStorage;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentManager;
 import com.butchercraft.world.workforce.materialhandling.persistence.EmployeeMaterialHandlingAssignmentStorage;
+import com.butchercraft.world.workforce.machineoperation.EmployeeMachineOperationAssignmentManager;
+import com.butchercraft.world.workforce.machineoperation.persistence.EmployeeMachineOperationAssignmentStorage;
+import com.butchercraft.workstation.endpoint.persistence.WorkstationInstanceStorage;
+import com.butchercraft.workstation.reservation.WorkstationReservationMigrationResolver;
+import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
+import com.butchercraft.world.execution.persistence.MachineRunStorage;
 import com.butchercraft.world.business.runtime.BusinessRuntimeCalendarStorage;
 import com.butchercraft.world.checkpoint.OwnerNativeRestorationContext;
 import net.minecraft.server.MinecraftServer;
@@ -113,6 +119,21 @@ public final class NativeOwnerLogicalStateVerifier {
                 path(root, "employee_material_handling_assignments.json"))
                 .deserialize(read(root, "employee_material_handling_assignments.json"));
         new EmployeeMaterialHandlingAssignmentManager(assignments);
+        Path machineOperations = path(root, "employee_machine_operation_assignments.json");
+        if (Files.isRegularFile(machineOperations)) {
+            var machineOperationDirectory = new EmployeeMachineOperationAssignmentStorage(machineOperations)
+                    .deserialize(read(root, "employee_machine_operation_assignments.json"));
+            new EmployeeMachineOperationAssignmentManager(machineOperationDirectory);
+            var reservations = new WorkstationReservationStorage(path(root, "workstation_reservations.json"))
+                    .deserialize(read(root, "workstation_reservations.json"), world,
+                            WorkstationReservationMigrationResolver.noProof());
+            var machineRuns = new MachineRunStorage(path(root, "execution_machine_runs.json"))
+                    .deserialize(read(root, "execution_machine_runs.json"));
+            var workstationInstances = new WorkstationInstanceStorage(path(root, "workstation_instances.json"))
+                    .deserialize(read(root, "workstation_instances.json"));
+            EmployeeMachineOperationCoherenceValidator.validate(
+                    machineOperationDirectory, reservations, machineRuns, workstationInstances);
+        }
 
         ProductionDependencies productionDependencies = new ProductionDependencies(
                 goodManager,

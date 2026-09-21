@@ -6,6 +6,7 @@ import com.butchercraft.entity.employee.EmployeeEntity;
 import com.butchercraft.engine.product.Product;
 import com.butchercraft.engine.evaluation.ProcessingEvaluator;
 import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
+import com.butchercraft.integration.employee.EmployeePersistentMachineOperationService;
 import com.butchercraft.machine.bandsaw.BandsawWorkstation;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderWorkstation;
@@ -129,6 +130,7 @@ public final class ButcherCraftDiagnostics {
     private static final String EMPLOYEE_ARGUMENT = "employee";
     private static final String EMPLOYEE_COMMAND_TAIL_ARGUMENT = "employee_command";
     private static final String EMPLOYEE_TRANSFER_ARGUMENT = "employee_transfer";
+    private static final String EMPLOYEE_OPERATION_ARGUMENT = "employee_operation";
     private static final String DEPARTMENT_ARGUMENT = "department";
     private static final String DEPARTMENT_ANCHOR_POSITION_ARGUMENT = "anchor";
     private static final String WORKSTATION_POSITION_ARGUMENT = "position";
@@ -206,9 +208,23 @@ public final class ButcherCraftDiagnostics {
                                                  StringArgumentType.getString(context, EMPLOYEE_COMMAND_TAIL_ARGUMENT)))))
                         .then(Commands.literal("operate")
                                 .requires(ButcherCraftDiagnostics::canOperateEmployee)
+                                .then(Commands.argument(EMPLOYEE_OPERATION_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_WORKSTATION_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeOperate(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_OPERATION_ARGUMENT)))))
+                        .then(Commands.literal("operate-status")
+                                .requires(ButcherCraftDiagnostics::canOperateEmployee)
                                 .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
                                         .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
-                                        .executes(context -> runEmployeeOperate(
+                                        .executes(context -> runEmployeeOperateStatus(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
+                        .then(Commands.literal("operate-cancel")
+                                .requires(ButcherCraftDiagnostics::canOperateEmployee)
+                                .then(Commands.argument(EMPLOYEE_ARGUMENT, StringArgumentType.greedyString())
+                                        .suggests(EMPLOYEE_LOOKUP_SUGGESTIONS)
+                                        .executes(context -> runEmployeeOperateCancel(
                                                 context.getSource(),
                                                 StringArgumentType.getString(context, EMPLOYEE_ARGUMENT)))))
                         .then(Commands.literal("transfer")
@@ -409,6 +425,7 @@ public final class ButcherCraftDiagnostics {
                 employee -> sendEmployeeOperationDiagnostics(source, employee),
                 () -> source.sendSuccess(() -> Component.literal("Employee Operation: unavailable"), false)
         );
+        sendPersistentEmployeeOperationDiagnostics(source, employeeId);
         source.sendSuccess(() -> Component.literal("Plant: " + (value.plantOpen() ? "open" : "closed")), false);
         source.sendSuccess(() -> Component.literal("Reason: " + value.reason()), false);
         return Command.SINGLE_SUCCESS;
@@ -631,20 +648,34 @@ public final class ButcherCraftDiagnostics {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runEmployeeOperate(CommandSourceStack source, String employeeReference) {
-        EmployeeId employeeId = employeeId(employeeReference, source);
+    private static int runEmployeeOperate(CommandSourceStack source, String commandTail) {
+        EmployeeOperationCommand command = parseEmployeeOperationCommand(source, commandTail);
+        if (command == null) return 0;
+        EmployeeId employeeId = employeeId(command.employeeReference(), source);
         if (employeeId == null) {
             return 0;
         }
-        Optional<EmployeeEntity> entity = employeeEntity(source, employeeId);
-        if (entity.isEmpty()) {
-            source.sendSuccess(() -> Component.literal(
-                    "Employee not present: authoritative employee entity is unavailable in this dimension"), false);
-            return 0;
-        }
-        EmployeeWorkstationOperationService.RequestResult result =
-                EmployeeWorkstationOperationService.INSTANCE.request(entity.orElseThrow());
-        source.sendSuccess(() -> Component.literal(employeeOperationFeedback(result)), false);
+        EmployeePersistentMachineOperationService.AssignmentResult result =
+                EmployeePersistentMachineOperationService.INSTANCE.request(
+                        source.getLevel(), employeeId, command.workstation(), command.targetQuantity());
+        source.sendSuccess(() -> Component.literal(employeePersistentOperationFeedback(result)), false);
+        return result.accepted() ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int runEmployeeOperateStatus(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) return 0;
+        sendPersistentEmployeeOperationDiagnostics(source, employeeId);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runEmployeeOperateCancel(CommandSourceStack source, String employeeReference) {
+        EmployeeId employeeId = employeeId(employeeReference, source);
+        if (employeeId == null) return 0;
+        EmployeePersistentMachineOperationService.AssignmentResult result =
+                EmployeePersistentMachineOperationService.INSTANCE.cancel(
+                        source.getLevel(), employeeId, "Operator requested machine-operation cancellation");
+        source.sendSuccess(() -> Component.literal(employeePersistentOperationFeedback(result)), false);
         return result.accepted() ? Command.SINGLE_SUCCESS : 0;
     }
 
@@ -1097,6 +1128,26 @@ public final class ButcherCraftDiagnostics {
         };
     }
 
+    static String employeePersistentOperationFeedback(
+            EmployeePersistentMachineOperationService.AssignmentResult result
+    ) {
+        return switch (Objects.requireNonNull(result, "result").status()) {
+            case ACCEPTED -> "Machine-operation assignment accepted: " + result.detail();
+            case EXISTING_ASSIGNMENT -> "Existing machine-operation assignment observed: " + result.detail();
+            case EMPLOYEE_UNAVAILABLE -> "Employee unavailable: " + result.detail();
+            case PLANT_CLOSED -> "Plant closed: " + result.detail();
+            case ASSIGNMENT_CONFLICT -> "Assignment conflict: " + result.detail();
+            case ASSIGNMENT_NOT_FOUND -> "Assignment not found: " + result.detail();
+            case WORKSTATION_UNAVAILABLE -> "Workstation unavailable: " + result.detail();
+            case UNSUPPORTED_MACHINE -> "Unsupported machine: " + result.detail();
+            case INVALID_INPUT -> "Invalid machine input: " + result.detail();
+            case INVALID_TARGET -> "Invalid target quantity: " + result.detail();
+            case CANCELLATION_REQUESTED -> "Machine-operation cancellation requested: " + result.detail();
+            case CANCELLED -> "Machine-operation assignment cancelled: " + result.detail();
+            case RECOVERY_REQUIRED -> "Machine-operation recovery required: " + result.detail();
+        };
+    }
+
     static String employeeTransferFeedback(EmployeeMaterialHandlingService.AssignmentResult result) {
         return switch (Objects.requireNonNull(result, "result").status()) {
             case ASSIGNMENT_ACCEPTED -> "Assignment accepted: " + result.detail();
@@ -1242,6 +1293,32 @@ public final class ButcherCraftDiagnostics {
                     + exception.getMessage()
                     + ". Use: /butchercraft employee transfer <employee> "
                     + "<source-x> <source-y> <source-z> <destination-x> <destination-y> <destination-z>"), false);
+            return null;
+        }
+    }
+
+    private static EmployeeOperationCommand parseEmployeeOperationCommand(
+            CommandSourceStack source,
+            String value
+    ) {
+        try {
+            EmployeeCommandTail command = parseEmployeeCommandTail(value);
+            StringReader reader = new StringReader(command.value());
+            int x = readCoordinate(reader);
+            int y = readCoordinate(reader);
+            int z = readCoordinate(reader);
+            int quantity = readCoordinate(reader);
+            skipWhitespace(reader);
+            if (command.employeeReference().isBlank() || reader.canRead() || quantity <= 0) {
+                throw new IllegalArgumentException(
+                        "employee reference, exactly three coordinates, and a positive quantity are required");
+            }
+            return new EmployeeOperationCommand(
+                    command.employeeReference(), new BlockPos(x, y, z), quantity);
+        } catch (CommandSyntaxException | IllegalArgumentException exception) {
+            source.sendSuccess(() -> Component.literal("Invalid employee machine-operation request: "
+                    + exception.getMessage() + ". Use: /butchercraft employee operate <employee> "
+                    + "<x> <y> <z> <quantity>"), false);
             return null;
         }
     }
@@ -1459,6 +1536,26 @@ public final class ButcherCraftDiagnostics {
                 + " | Failure: " + diagnostics.failure()), false);
     }
 
+    private static void sendPersistentEmployeeOperationDiagnostics(CommandSourceStack source, EmployeeId employeeId) {
+        EmployeePersistentMachineOperationService.OperationDiagnostics diagnostics =
+                EmployeePersistentMachineOperationService.INSTANCE.diagnostics(source.getServer(), employeeId);
+        source.sendSuccess(() -> Component.literal("Machine Operation Assignment: "
+                + diagnostics.assignmentIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Lifecycle: " + diagnostics.lifecycle()
+                + " | machine: " + diagnostics.machineType()
+                + " | workstation: " + diagnostics.workstationIdentity()), false);
+        source.sendSuccess(() -> Component.literal("Target: " + diagnostics.target()
+                + " | completed: " + diagnostics.completed()
+                + " | remaining: " + diagnostics.remaining()), false);
+        source.sendSuccess(() -> Component.literal("Reservation: " + diagnostics.reservationIdentity()
+                + " | Run: " + diagnostics.runIdentity()
+                + " | Run state: " + diagnostics.runLifecycle()), false);
+        source.sendSuccess(() -> Component.literal("Machine state: " + diagnostics.machineState()
+                + " | child: " + diagnostics.childState()), false);
+        source.sendSuccess(() -> Component.literal("Pending supply: " + diagnostics.pendingSupply()
+                + " | failure/recovery: " + diagnostics.failure()), false);
+    }
+
     private static String formatBlockPos(BlockPos pos) {
         if (pos == null) {
             return "none";
@@ -1536,6 +1633,13 @@ public final class ButcherCraftDiagnostics {
             employeeReference = Objects.requireNonNull(employeeReference, "employeeReference").strip();
             value = Objects.requireNonNull(value, "value").strip();
         }
+    }
+
+    private record EmployeeOperationCommand(
+            String employeeReference,
+            BlockPos workstation,
+            int targetQuantity
+    ) {
     }
 
     private record EmployeeTransferCommand(

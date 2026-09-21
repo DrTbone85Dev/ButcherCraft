@@ -1,6 +1,6 @@
 # ButcherCraft Workstation Framework
 
-Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A run-state foundation, IM-031B/IM-031C powered processing activation, IM-031C-R3A/R3B durable projection and checkpoint completeness, and IM-032A role-aware reservation integration; IM-032A Product Owner acceptance pending
+Status: Milestones 2B through 2E workstation framework, IM-028A through IM-029 transfer endpoints, IM-030A/IM-030B stack-aware activation, IM-031A through IM-031C powered Run activation, IM-031C-R3A/R3B durable projection and checkpoint completeness, IM-032A role-aware reservations, and IM-032B finite employee operation implemented
 
 ## Purpose
 
@@ -178,6 +178,11 @@ validates freshness, slot compatibility, capacity, active effects, instance
 identity, and recovery state before mutation. Workforce schema 2 permits at
 most one compatible handler with one operator on an exact Workstation Instance;
 legacy-exclusive records still reject all coexistence.
+
+IM-032B adds a Workforce consumer of this role model. The finite employee
+assignment may request canonical exact-Run START/STOP only after arrival and
+exact operator validation. Workstation still owns operating state, recipe and
+capacity validation, inventory effects, durable projection, and owner results.
 
 ### Stack-Aware Endpoint Foundation
 
@@ -392,9 +397,9 @@ inventory.
 DG-005A clarifies that a retained employee operator reservation is exclusive
 `MACHINE_OPERATOR` responsibility, not a prohibition on one compatible
 transfer-bound handler. Handler access creates no START, STOP, RESUME, child
-admission, or Machine Run authority. IM-032A implements the role-aware
-reservation foundation. IM-032B may consume it only after Product Owner
-acceptance and separate implementation authorization.
+admission, or Machine Run authority. IM-032A implements the accepted role-aware
+reservation foundation. IM-032B consumes it for one exact finite operation
+assignment while preserving every Workstation authority.
 
 ## Future Extension Points
 
@@ -408,4 +413,4 @@ acceptance and separate implementation authorization.
 
 ## Explicit Exclusions
 
-This framework does not implement final machine art, power, fuel, employee automation beyond the IM-027 Beef Grinder request and the two explicit one-item transfer routes, Patty Former employee operation, batch hauling, Production-driven logistics, automatic workstation selection, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.
+This framework does not implement final machine art, power, fuel, autonomous employee machine selection, multi-machine tending, employee operation beyond the Grinder and Patty Former finite assignment path, batch hauling, Production-driven logistics, autonomous queues, general Logistics, refrigeration, temperature, freshness, cleanliness gameplay, maintenance gameplay, MCDA, customers, commerce, custom sounds, custom carrying animations, recipe-selection UI, labels, or public expansion API guarantees.

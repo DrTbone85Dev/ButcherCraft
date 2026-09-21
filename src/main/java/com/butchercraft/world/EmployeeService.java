@@ -153,6 +153,7 @@ public final class EmployeeService {
         runtime.departmentStorage().save(reset.departmentManager().directory());
         WorkstationReservationService.INSTANCE.resetGameTestReservations(server);
         EmployeeMaterialHandlingService.INSTANCE.resetGameTestAssignments(server);
+        EmployeeMachineOperationAssignmentService.INSTANCE.resetGameTestAssignments(server);
     }
 
     private EmployeeOperationResult<EmployeeRecord> createEmployee(
@@ -261,11 +262,7 @@ public final class EmployeeService {
         }
         EmployeeOperationResult<EmployeeRecord> result = managerFor(server).assignShift(employeeId, shift);
         if (result.succeeded()) {
-            WorkstationReservationService.INSTANCE.invalidateByEmployee(
-                    server,
-                    employeeId,
-                    "employee shift assignment changed"
-            );
+            cancelMachineOperationOrInvalidate(server, employeeId, "employee shift assignment changed");
         }
         return result;
     }
@@ -278,11 +275,8 @@ public final class EmployeeService {
         requireMutation(server);
         EmployeeOperationResult<EmployeeRecord> result = managerFor(server).transitionStatus(employeeId, status);
         if (result.succeeded() && !status.permitsPresence()) {
-            WorkstationReservationService.INSTANCE.invalidateByEmployee(
-                    server,
-                    employeeId,
-                    "employee status no longer permits workstation reservation"
-            );
+            cancelMachineOperationOrInvalidate(
+                    server, employeeId, "employee status no longer permits workstation reservation");
         }
         return result;
     }
@@ -295,11 +289,8 @@ public final class EmployeeService {
         requireMutation(server);
         EmployeeOperationResult<EmployeeRecord> result = managerFor(server).setPresence(employeeId, state);
         if (result.succeeded() && state != EmployeePresenceState.PRESENT) {
-            WorkstationReservationService.INSTANCE.invalidateByEmployee(
-                    server,
-                    employeeId,
-                    "employee presence no longer permits workstation reservation"
-            );
+            cancelMachineOperationOrInvalidate(
+                    server, employeeId, "employee presence no longer permits workstation reservation");
         }
         return result;
     }
@@ -330,11 +321,7 @@ public final class EmployeeService {
                 runtime.departmentManager().registry()
         );
         if (result.succeeded() && !previous.equals(result.orThrow().assignedDepartmentId())) {
-            WorkstationReservationService.INSTANCE.invalidateByEmployee(
-                    server,
-                    employeeId,
-                    "employee department assignment changed"
-            );
+            cancelMachineOperationOrInvalidate(server, employeeId, "employee department assignment changed");
         }
         return result;
     }
@@ -452,11 +439,18 @@ public final class EmployeeService {
             return;
         }
         EmployeeMaterialHandlingService.INSTANCE.handleNavigationFailure(entity, failureReason);
-        WorkstationReservationService.INSTANCE.invalidateByEmployee(
-                level.getServer(),
-                employeeId,
-                "navigation_unreachable:" + failureReason
-        );
+        cancelMachineOperationOrInvalidate(
+                level.getServer(), employeeId, "navigation_unreachable:" + failureReason);
+    }
+
+    private static void cancelMachineOperationOrInvalidate(
+            MinecraftServer server,
+            EmployeeId employeeId,
+            String reason
+    ) {
+        if (!EmployeeMachineOperationAssignmentService.INSTANCE.requestCancellation(server, employeeId, reason)) {
+            WorkstationReservationService.INSTANCE.invalidateByEmployee(server, employeeId, reason);
+        }
     }
 
     public static Path employeeFile(MinecraftServer server) {

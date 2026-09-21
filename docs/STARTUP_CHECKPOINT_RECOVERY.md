@@ -68,7 +68,7 @@ over its native schema, parser, validation, and logical state.
 | Transactions | 1 | `transactions.json` | Schema and World Identity are validated; no Transaction is submitted. |
 | Inventory | 1 | `inventory.json` | Schema and World Identity are validated; no quantity mutation API is called. |
 | Business Runtime | 1 | `business_calendar_runtime.json`, `business_runtime.json`, `world_time.json` | Schema and World Identity are validated; exact owner files are re-read. |
-| Workforce | 1, 2 | Schema 1 includes `departments.json`, `employee_records.json`, `employee_material_handling_assignments.json`, and `workforce_definitions.json`. Current schema 2 also includes `workstation_reservations.json`. | Schema and World Identity are validated; exact owner files are re-read. Schema 2 restores role-aware reservations through Workforce authority. |
+| Workforce | 1, 2, 3 | Schema 1 includes `departments.json`, `employee_records.json`, `employee_material_handling_assignments.json`, and `workforce_definitions.json`. Schema 2 adds `workstation_reservations.json`. Current schema 3 adds `employee_machine_operation_assignments.json`. | Schema and World Identity are validated; exact owner files are re-read. Schema 3 restores role-aware reservations and finite machine-operation assignments through Workforce authority, then validates exact cross-owner references without replaying START or STOP. |
 | Goods | 1 | `goods.json` | Schema and World Identity are validated; exact owner file is re-read. |
 | Economic Actors | 1 | `economic_actors.json` | Schema and World Identity are validated; exact owner file is re-read. |
 | Orders | 1 | `orders.json` | Schema and World Identity are validated; exact owner file is re-read. |
@@ -83,8 +83,14 @@ omitted owner.
 Checkpoint owner schema determines reservation ownership without inference.
 Every accepted generation contains `workstation_reservations.json` exactly
 once: historical Workstation schemas 1-3 own it, while current Workstation
-schema 4 excludes it and Workforce schema 2 owns it. Missing or duplicate
+schema 4 excludes it and Workforce schemas 2 and 3 own it. Missing or duplicate
 ownership makes the generation non-restorable.
+
+Workforce schema 3 additionally owns
+`employee_machine_operation_assignments.json`. Older Workforce schemas contain
+no persistent IM-032B assignment and restore canonical empty assignment state;
+no assignment is inferred from a Machine Run, reservation, employee position,
+or Workstation state.
 
 ## Workstation Reconciliation
 

@@ -1,6 +1,6 @@
 # Workforce Framework
 
-Status: implemented workforce, employee, navigation, role-aware schema-2 reservation, one Grinder operation, and explicit material-transfer foundations; IM-032A Product Owner acceptance pending and IM-032B gated
+Status: implemented workforce, employee, navigation, role-aware schema-2 reservations, explicit material handling, and IM-032B finite persistent Grinder/Patty Former operation; IM-032A AND IM-032B COMPLETE / PRODUCT OWNER ACCEPTED
 
 The Workforce Framework defines the staffing structure a business requires to
 operate and owns individual Employee Identity, Employment Records, Department
@@ -147,44 +147,69 @@ the bounded cooldown.
 
 ## Employee Workstation Operation
 
-IM-027 permits one arrived employee to request only
-`butchercraft:grind_beef` from one reserved Grinder. Beef Trim must already be
-present in the Grinder-owned input slot. The employee has no inventory source,
-does not create or insert an ItemStack, and does not collect Ground Beef.
-
-The sole IM-027 trigger is the permission-gated development/operator command:
+IM-032B replaces normal new IM-027 requests with one Workforce-owned finite
+persistent assignment for an exact employee and exact Grinder or Patty Former
+Workstation Instance:
 
 ```text
-/butchercraft employee operate <employee>
+/butchercraft employee operate <employee> <x> <y> <z> <quantity>
+/butchercraft employee operate-status <employee>
+/butchercraft employee operate-cancel <employee>
 ```
 
-The employee reference accepts `#1`, a unique plain display name, a quoted
-display name such as `"Casey 1"`, or a canonical Employee Identity. Arrival
-alone remains passive and does not start machine operation.
+Employee references accept `#1`, a unique plain display name, a quoted display
+name such as `"Casey 1"`, or a canonical Employee Identity. Coordinates are in
+the command source's current dimension. The target quantity must be positive.
+The Cutting Table is rejected because its policy is manual discrete.
 
-The transient employee lifecycle is:
+The assignment owns finite employee intent and a typed lifecycle from
+`CREATED` through navigation, reservation, input waiting, START, running,
+blocked/empty observation, exact STOP, safe-boundary waiting, and a terminal
+result. It persists at:
 
-```text
-idle -> preparing -> operating -> waiting_for_completion
-     -> operation_complete -> idle
-```
+`<world>/butchercraft/employee_machine_operation_assignments.json`
 
-Any accepted nonterminal state may instead reach explicit `failure`. One
-reservation produces at most one employee request attempt. Failure does not
-retry automatically.
+The document stores references to the exact `MACHINE_OPERATOR` reservation,
+Workstation Instance generation, Machine Run, pending Material Handling supply,
+and observed owner freshness. It does not copy or own those subsystem facts.
 
-The outer integration coordinator asks the Grinder to process through its
-existing controller. The Grinder validates its input, output capacity, recipe,
-and state; issues private Execution authorization; owns atomic slot mutation;
-and publishes owner result evidence. Execution owns operation lifecycle and
-terminal result evidence. Scheduler owns dispatch timing and effect
-observation. The employee reaches `operation_complete` only after observing
-both matching owner result and Execution result evidence.
+After physical arrival, Workforce acquires one exact `MACHINE_OPERATOR` and
+submits identity-bound START through the canonical powered-machine service.
+Execution owns the Run and finite child-admission gate; Scheduler dispatches
+each bounded child; Workstation owns recipe validation, state, inventory
+effects, and owner results. Only successful terminal children advance the
+completed quantity. Completion requests STOP against the exact Run and releases
+the exact operator only after the safe terminal boundary.
 
-Employee operation state is not stored in employee records or reservation
-persistence. Active-operation association is not reconstructed as general
-startup recovery. The Grinder and Execution owners retain their existing
-save-safety behavior independently.
+`RUNNING_EMPTY` retains the same Run only while an exact compatible inbound
+Material Handling transfer is active for that Workstation. Without proven
+supply, Workforce requests STOP and marks the incomplete assignment
+`INTERRUPTED`; later work requires a new explicit assignment. `OUTPUT_BLOCKED`
+retains the same Run and operator until capacity returns or cancellation is
+requested. A compatible separate employee may hold `MATERIAL_HANDLER`; neither
+assignment gains the other's authority.
+
+Restart Policy B restores the exact assignment, reservation, Workstation, and
+Run references as `RESTART_REQUIRED`. Employees do not autonomously RESUME.
+Explicit player RESUME may reactivate that same Run; cancellation may STOP it
+without first resuming. The historical transient IM-027 state remains only for
+bounded upgrade reconciliation and is not a competing new command path.
+
+A replaced Workstation leaves its assignment in `RECOVERY_REQUIRED` and never
+binds the assignment to the replacement instance. Explicit operator
+cancellation may terminalize only a proven pre-START orphan with zero completed
+work, no Run or child evidence, no pending Material Handling supply, and no
+unresolved authority. Workforce releases only an exact historical
+`MACHINE_OPERATOR` reservation; all other recovery states remain fail-closed
+and the replacement Workstation remains untouched.
+The Workstation registry must prove retirement of the exact original instance;
+the `workstation_replaced` diagnostic alone is insufficient. Cancellation also
+checks Execution's canonical START and STOP request evidence and any active Run
+on that historical instance, including evidence not yet observed by Workforce.
+Missing or unresolved evidence retains `RECOVERY_REQUIRED`. A successful
+`operate-cancel` preserves the historical failure, is idempotent, and frees the
+employee for a new explicit assignment. It never resolves or binds the block
+currently occupying the old coordinates.
 
 ## Employee Material Handling
 
@@ -469,8 +494,12 @@ compatible source stack and merge it into a compatible destination stack.
 Workforce still assigns and displays exactly one carried item and does not own
 the split, merge, endpoint effect, or in-transit custody.
 
-IM-032A implements the DG-005A role-aware reservation foundation and compatible
-Material Handling endpoint access. Product Owner acceptance is pending.
-IM-032B employee Grinder/Patty Former START/STOP remains unimplemented and
-separately gated. Workforce still owns no Machine Run, endpoint mutation,
-Material Handling custody, or Scheduler authority.
+IM-032A implements and Product Owner accepted the DG-005A role-aware reservation
+foundation and compatible Material Handling endpoint access. IM-032B consumes
+that foundation for finite Grinder and Patty Former assignments and is complete
+and Product Owner accepted, including the corrected orphan-assignment
+cancellation. Continuing beta testing does not hold acceptance open; future
+findings are targeted corrections unless they expose an architecture conflict.
+See the [IM-032 acceptance record](../MILESTONES.md#im-032-employee-machine-operation-acceptance).
+Workforce still owns no Machine Run, endpoint
+mutation, Material Handling custody, or Scheduler authority.

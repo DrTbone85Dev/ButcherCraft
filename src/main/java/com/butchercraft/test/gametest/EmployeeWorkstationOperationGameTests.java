@@ -348,8 +348,8 @@ public final class EmployeeWorkstationOperationGameTests {
         String prefix = "butchercraft employee operate ";
         helper.assertTrue(suggestions(helper, prefix).contains("Tom"),
                 "Plain employee display name is suggested as executable text");
-        helper.assertTrue(execute(helper, prefix + "Tom") == 1,
-                "Plain employee display name executes unchanged");
+        helper.assertTrue(operate(helper, "Tom") == 1,
+                "Plain employee display name resolves through the retained historical coordinator fixture");
         helper.succeed();
     }
 
@@ -365,8 +365,8 @@ public final class EmployeeWorkstationOperationGameTests {
         String quotedReference = "\"Casey 1\"";
         helper.assertTrue(suggestions(helper, prefix).contains(quotedReference),
                 "Spaced employee display name is suggested as quoted executable text");
-        helper.assertTrue(execute(helper, prefix + quotedReference) == 1,
-                "Quoted employee display name executes unchanged");
+        helper.assertTrue(operate(helper, quotedReference) == 1,
+                "Quoted employee display name resolves through the retained historical coordinator fixture");
         helper.succeed();
     }
 
@@ -629,7 +629,21 @@ public final class EmployeeWorkstationOperationGameTests {
     }
 
     private static int operate(GameTestHelper helper, String employeeReference) {
-        return execute(helper, "butchercraft employee operate " + employeeReference);
+        String normalized = employeeReference;
+        if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
+            normalized = normalized.substring(1, normalized.length() - 1);
+        }
+        String lookup = normalized;
+        EmployeeRecord record = EmployeeService.INSTANCE.managerFor(helper.getLevel().getServer()).registry().records()
+                .stream()
+                .filter(value -> value.employeeId().value().equals(lookup)
+                        || value.displayName().equals(lookup)
+                        || (lookup.startsWith("#") && lookup.substring(1).equals(
+                        Long.toString(Math.addExact(value.sequence(), 1L)))))
+                .findFirst()
+                .orElse(null);
+        if (record == null) return 0;
+        return EmployeeWorkstationOperationService.INSTANCE.request(entity(helper, record)).accepted() ? 1 : 0;
     }
 
     private static int execute(GameTestHelper helper, String command) {

@@ -1,6 +1,7 @@
 package com.butchercraft.entity.employee;
 
 import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
+import com.butchercraft.integration.employee.EmployeePersistentMachineOperationService;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.EmployeeMaterialHandlingService;
 import com.butchercraft.world.WorkstationReservationService;
@@ -204,11 +205,12 @@ public final class EmployeeEntity extends PathfinderMob {
             EmployeeMaterialHandlingService.INSTANCE.handleEmployeeRemoval(this);
             try {
                 EmployeeId employeeId = new EmployeeId(employeeIdValue());
-                WorkstationReservationService.INSTANCE.invalidateByEmployee(
-                        serverLevel.getServer(),
-                        employeeId,
-                        "employee entity removed"
-                );
+                boolean persistentOperation = EmployeePersistentMachineOperationService.INSTANCE
+                        .handleEmployeeRemoval(this, reason.shouldDestroy());
+                if (!persistentOperation) {
+                    WorkstationReservationService.INSTANCE.invalidateByEmployee(
+                            serverLevel.getServer(), employeeId, "employee entity removed");
+                }
             } catch (IllegalArgumentException ignored) {
                 // Unbound entities have no workstation reservation authority to release.
             }

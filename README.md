@@ -17,13 +17,18 @@ each bounded operation still consumes and produces only its recipe quantity,
 and compatible outputs merge. One active Grinder or Patty Former Run may
 authorize repeated bounded cycles; the Cutting Table remains discrete.
 
-Employees can now physically move two fixed products through the plant. A player can explicitly assign an employee to carry one Beef Trim from a Cutting Table to a Grinder, operate that Grinder through the existing deterministic Execution and Scheduler path, then assign the employee to carry the resulting one Ground Beef from the Grinder output to a selected Patty Former. Both routes use explicit coordinates and the same `/butchercraft employee transfer` command.
+Employees can now physically move two fixed products through the plant and operate both powered processing machines through finite persistent assignments. A player can explicitly assign one employee to operate an exact Grinder or Patty Former for a bounded quantity while another compatible employee delivers material through the existing Material Handling path. Workforce owns the assignment and `MACHINE_OPERATOR` reservation; Execution, Scheduler, Workstation, and Material Handling retain their existing authorities.
 
-Under the hood, the Material Handling Runtime owns exact in-transit `ItemStack` custody while Workstation owns durable endpoint instance identity, prepare/effect/result publication, source and destination reservations, and inventory effects. Transfer recovery and cancellation preserve exact-stack custody, and the DG-003 additive Execution-handler compatibility policy allows new handlers to be registered without invalidating compatible existing saves. These foundations preserve subsystem ownership rather than introducing a second inventory or execution path.
+IM-032A and IM-032B are complete and Product Owner accepted, including the
+corrected cancellation of proven consequence-free replaced-machine assignments.
+Continuing beta testing may identify targeted defects but does not leave this
+acceptance pending. See the [IM-032 acceptance record](MILESTONES.md#im-032-employee-machine-operation-acceptance).
+
+Under the hood, the Material Handling Runtime owns exact in-transit `ItemStack` custody while Workstation owns durable endpoint instance identity, prepare/effect/result publication, and inventory effects. Workforce owns source and destination reservations. Transfer recovery and cancellation preserve exact-stack custody, and the DG-003 additive Execution-handler compatibility policy allows new handlers to be registered without invalidating compatible existing saves. These foundations preserve subsystem ownership rather than introducing a second inventory or execution path.
 
 Coordinated checkpoints now capture every required durable owner at one coherent simulation boundary. Startup prefers coherent live state and otherwise may select the latest valid restorable checkpoint, publish exact owner-native state, and resume interrupted restoration without replaying completed work. Durable Workstation projections cover unloaded machines without mass chunk loading and reconcile lazily when their chunks load.
 
-This alpha remains deliberately bounded. Employee Grinder operation remains one reservation-scoped bounded request and is rejected while a player Machine Run is active; employees do not own Grinder START/STOP. Employees do not operate the Patty Former, select workstations automatically, claim Production Orders, run Production-driven or autonomous production chains, transport batches or arbitrary products, participate in general Logistics, or own an inventory. Machine wear, dry-running damage, automatic restart, and Production-controlled machine operation are not implemented.
+This alpha remains deliberately bounded. Employee operation requires an explicit command, exact employee and Workstation Instance, finite target, physical arrival, and one `MACHINE_OPERATOR` reservation. Employees do not autonomously RESUME after restart, select workstations, claim Production Orders, run Production-driven chains, tend multiple machines, transport batches or arbitrary products, participate in general Logistics, or own inventory. Machine wear, dry-running damage, automatic restart, and Production-controlled machine operation are not implemented.
 
 The platform foundation also includes immutable regional identity, manufacturers, properties, businesses, families, ownership, historical supply networks, runtime player identity, a simulation clock and event framework, mutable business operations, workforce definitions, economic Goods and Actors, actor-owned Inventory and Storage, a universal Transaction Framework, Orders and Contracts, the deterministic simulation Work pipeline, an industry-neutral Production Framework, the Economic Planning Engine, the generic Execution runtime, and the RFC-0022 Resource Allocation domain, runtime, deterministic Cycle, and provider observation framework. The scheduler includes internal Production and Planning handlers; Allocation has no live provider or Scheduler handler. General worker automation, pricing, logistics, markets, accounting, and additional employee-operated production remain future work.
 
@@ -113,7 +118,9 @@ Current development commands:
 The operation, transfer, cancellation, and anchor mutation commands require operator permission level 2:
 
 ```text
-/butchercraft employee operate <employee>
+/butchercraft employee operate <employee> <x> <y> <z> <quantity>
+/butchercraft employee operate-status <employee>
+/butchercraft employee operate-cancel <employee>
 /butchercraft employee transfer <employee> <source-x> <source-y> <source-z> <destination-x> <destination-y> <destination-z>
 /butchercraft employee transfer-status <employee>
 /butchercraft employee transfer-cancel <employee>
@@ -129,7 +136,9 @@ The world-time diagnostic is `/butchercraft time status`; there is no separate `
 - Employee Material Handling moves exactly one Beef Trim or one Ground Beef per assignment on two fixed routes.
 - The transfer command requires explicit source and destination coordinates.
 - Either route may withdraw one item from a larger compatible source stack and merge it into a compatible destination stack.
-- Ground Beef delivery to an OFF Patty Former leaves it `READY` and destination-reserved; delivery to the exact destination of an existing `RUNNING_EMPTY` Run makes that same Run eligible again. Delivery never grants START authority, and employees still cannot operate it.
+- Ground Beef delivery to an OFF Patty Former leaves it `READY`; delivery to the exact destination of an existing `RUNNING_EMPTY` Run makes that same Run eligible again. Delivery never grants START authority. A separate finite employee machine-operation assignment may request START after physical arrival and operator-reservation validation.
+- Employee machine-operation assignments support the Grinder and Patty Former, one exact machine and one finite quantity at a time. The Cutting Table remains unsupported for persistent operation.
+- Restart Policy B preserves the assignment and exact Run but requires explicit player RESUME; employees never resume a suspended Run autonomously.
 - Employee carrying remains exactly one item; quantity selection, batch hauling, and automatic repeated transfers are not implemented.
 - Production does not assign transfers.
 - Employees do not select workstations automatically.

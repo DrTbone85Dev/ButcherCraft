@@ -16,6 +16,7 @@ import com.butchercraft.world.BusinessRuntimeService;
 import com.butchercraft.world.EconomicActorService;
 import com.butchercraft.world.EconomicPlanningService;
 import com.butchercraft.world.EmployeeMaterialHandlingService;
+import com.butchercraft.world.EmployeeMachineOperationAssignmentService;
 import com.butchercraft.world.EmployeeService;
 import com.butchercraft.world.ExecutionMachineRunService;
 import com.butchercraft.world.ExecutionService;
@@ -49,6 +50,7 @@ import com.butchercraft.world.workforce.WorkforceStorage;
 import com.butchercraft.world.workforce.department.DepartmentStorage;
 import com.butchercraft.world.workforce.employee.EmployeeStorage;
 import com.butchercraft.world.workforce.materialhandling.persistence.EmployeeMaterialHandlingAssignmentStorage;
+import com.butchercraft.world.workforce.machineoperation.persistence.EmployeeMachineOperationAssignmentStorage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -237,9 +239,11 @@ public final class LiveCheckpointParticipantRegistry {
         var employees = EmployeeService.INSTANCE.managerFor(server);
         var departments = EmployeeService.INSTANCE.departmentManagerFor(server);
         var assignments = EmployeeMaterialHandlingService.INSTANCE.managerFor(server);
+        var machineOperations = EmployeeMachineOperationAssignmentService.INSTANCE.managerFor(server);
         var reservations = WorkstationReservationService.INSTANCE.managerFor(server).directory();
         boolean empty = employees.registry().records().isEmpty()
                 && assignments.assignments().isEmpty()
+                && machineOperations.assignments().isEmpty()
                 && reservations.records().isEmpty();
         Map<String, String> files = new TreeMap<>();
         files.put("workforce_definitions.json", new WorkforceStorage(UNUSED_PATH).serialize(workforce.registry()));
@@ -247,9 +251,11 @@ public final class LiveCheckpointParticipantRegistry {
         files.put("departments.json", new DepartmentStorage(UNUSED_PATH).serialize(departments.directory()));
         files.put("employee_material_handling_assignments.json",
                 new EmployeeMaterialHandlingAssignmentStorage(UNUSED_PATH).serialize(assignments.directory()));
+        files.put("employee_machine_operation_assignments.json",
+                new EmployeeMachineOperationAssignmentStorage(UNUSED_PATH).serialize(machineOperations.directory()));
         files.put("workstation_reservations.json",
                 new WorkstationReservationStorage(UNUSED_PATH).serialize(reservations));
-        return strings(LegacySplitRecoveryParticipants.WORKFORCE, 2, tick, empty, files);
+        return strings(LegacySplitRecoveryParticipants.WORKFORCE, 3, tick, empty, files);
     }
 
     private static CheckpointOwnerFileSnapshot planning(MinecraftServer server, long tick) {

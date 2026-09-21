@@ -5,6 +5,7 @@ import com.butchercraft.integration.machine.PoweredMachineRunControlResult;
 import com.butchercraft.integration.machine.PoweredMachineRunStatus;
 import com.butchercraft.integration.machine.PoweredProcessingMachineRunAdapter;
 import com.butchercraft.integration.machine.PoweredProcessingMachineRunService;
+import com.butchercraft.integration.employee.EmployeeMachineRunAdmissionGate;
 import com.butchercraft.machine.pattyformer.PattyFormerBlockEntity;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionCoordinator;
 import com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionPreparation;
@@ -25,7 +26,7 @@ public final class PattyFormerContinuousRunService {
     public static final PattyFormerContinuousRunService INSTANCE = new PattyFormerContinuousRunService();
 
     private final PoweredProcessingMachineRunService<PattyFormerBlockEntity> delegate =
-            new PoweredProcessingMachineRunService<>(new PattyFormerAdapter());
+            new PoweredProcessingMachineRunService<>(new PattyFormerAdapter(), EmployeeMachineRunAdmissionGate.INSTANCE);
 
     private PattyFormerContinuousRunService() {
     }
@@ -36,6 +37,27 @@ public final class PattyFormerContinuousRunService {
 
     public PoweredMachineRunControlResult stop(ServerLevel level, PattyFormerBlockEntity pattyFormer) {
         return delegate.stop(level, pattyFormer);
+    }
+
+    public PoweredMachineRunControlResult startForEmployee(
+            ServerLevel level,
+            PattyFormerBlockEntity pattyFormer,
+            String sourceOwner,
+            String sourceRequestIdentity,
+            String operatorReservationIdentity
+    ) {
+        return delegate.start(level, pattyFormer, sourceOwner, sourceRequestIdentity,
+                java.util.Optional.of(operatorReservationIdentity));
+    }
+
+    public PoweredMachineRunControlResult stopForEmployee(
+            ServerLevel level,
+            PattyFormerBlockEntity pattyFormer,
+            com.butchercraft.world.execution.MachineRunIdentity runIdentity,
+            String sourceOwner,
+            String sourceRequestIdentity
+    ) {
+        return delegate.stop(level, pattyFormer, runIdentity, sourceOwner, sourceRequestIdentity);
     }
 
     public PoweredMachineRunControlResult resume(ServerLevel level, PattyFormerBlockEntity pattyFormer) {
@@ -89,9 +111,13 @@ public final class PattyFormerContinuousRunService {
         }
 
         @Override
-        public boolean hasConflictingReservation(ServerLevel level, PattyFormerBlockEntity pattyFormer) {
-            // IM-029 leaves the delivering employee reserved here; player Run authority remains explicit and separate.
-            return false;
+        public boolean hasConflictingReservation(
+                ServerLevel level,
+                PattyFormerBlockEntity pattyFormer,
+                java.util.Optional<String> permittedOperatorReservation
+        ) {
+            return com.butchercraft.world.WorkstationReservationService.INSTANCE
+                    .hasConflictingMachineOperatorAt(level, pattyFormer.getBlockPos(), permittedOperatorReservation);
         }
 
         @Override

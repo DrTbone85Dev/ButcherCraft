@@ -28,6 +28,7 @@ class NativeOwnerRestorationAdapterOwnershipTest {
         );
         Set<String> expectedWorkforce = Set.of(
                 "departments.json",
+                "employee_machine_operation_assignments.json",
                 "employee_records.json",
                 "employee_material_handling_assignments.json",
                 "workforce_definitions.json",

@@ -1,6 +1,6 @@
 # ButcherCraft Patty Former
 
-Status: IM-031C persistent player-controlled continuous Run implemented
+Status: IM-031C persistent player-controlled continuous Run and IM-032B finite persistent employee operation implemented
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The Patty Former is a promoted gameplay workstation for one process:
 Ground Beef -> Beef Patties
 ```
 
-It reuses the existing Workstation -> Execution -> Scheduler -> owner-result path proven by the Grinder. IM-028C separates material deposit from operation authority: valid Ground Beef makes processing `READY`, but does not itself create an Execution operation, Machine Run, or Scheduler work. IM-029 allows an employee to deliver one exact Ground Beef from an explicit Grinder. IM-030B gives the input and output capacity `64` and permits delivery into a compatible stack. Accepted IM-031C activates DG-005's `POWERED_CONTINUOUS_EXPLICIT_STOP` policy through the shared machine-neutral Run coordinator while Patty Former recipe authorization, inventory effects, and owner results remain Patty Former-owned. Employee Patty Former operation remains unimplemented and belongs to IM-032. Worker AI, Allocation, packaging, cooking, refrigeration, and public workstation APIs remain gated.
+It reuses the existing Workstation -> Execution -> Scheduler -> owner-result path proven by the Grinder. IM-028C separates material deposit from operation authority: valid Ground Beef makes processing `READY`, but does not itself create an Execution operation, Machine Run, or Scheduler work. IM-029 allows an employee to deliver one exact Ground Beef from an explicit Grinder. IM-030B gives the input and output capacity `64` and permits delivery into a compatible stack. Accepted IM-031C activates DG-005's `POWERED_CONTINUOUS_EXPLICIT_STOP` policy through the shared machine-neutral Run coordinator while Patty Former recipe authorization, inventory effects, and owner results remain Patty Former-owned. IM-032B adds explicit finite employee operation through the same canonical Run boundary without granting Workforce recipe, inventory, child-dispatch, or Run ownership. Worker AI, Allocation, packaging, cooking, refrigeration, and public workstation APIs remain gated.
 
 ## Gameplay Content
 
@@ -43,10 +43,15 @@ Employee-assisted two-workstation flow:
 1. Process Beef Trim in the Grinder.
 2. Explicitly assign an employee to transfer Ground Beef from the Grinder to the Patty Former.
 3. Observe exact Material Handling custody and visible employee carrying.
-4. Explicitly START a Patty Former Run if the machine is OFF.
-5. Observe one or more bounded cycles produce Beef Patties until the machine is empty, blocked, or explicitly stopped.
+4. Explicitly START a Patty Former Run as the player, or issue a finite employee
+   operation assignment for the exact Patty Former.
+5. Observe bounded cycles produce Beef Patties until the player stops the Run
+   or the employee target/finite supply policy stops it.
 
-The employee transfer ends with processing `READY` and a destination reservation. If the machine is OFF, only the player can authorize START. If the exact destination already owns a `RUNNING_EMPTY` Run, delivery merely restores that existing Run's eligibility; it does not grant new authority.
+The employee transfer ends with processing `READY` and no START authority. If
+the machine is OFF, a player control or a separate eligible IM-032B assignment
+may request START. If the exact destination already owns a `RUNNING_EMPTY` Run,
+delivery merely restores that existing Run's eligibility.
 
 ## Continuous Run Controls
 
@@ -145,4 +150,4 @@ Manual client verification remains required before claiming human acceptance.
 
 ## Explicit Exclusions
 
-IM-031C does not add employee Patty Former operation, employee Machine START/STOP, Production-driven machine control or transfer, automatic workstation selection, autonomous logistics, general Logistics, carried quantities above one, batch transport, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, automatic restart, forced chunk loading, wear, damage, maintenance, compensation, final art, or final UI polish.
+IM-032B does not add Production-driven machine control or transfer, autonomous workstation selection, autonomous Policy B RESUME, multi-machine tending, general Logistics, carried quantities above one, batch transport, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, automatic restart, forced chunk loading, wear, damage, maintenance, compensation, final art, or final UI polish.

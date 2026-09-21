@@ -64,9 +64,9 @@ The ratified completed-and-next sequence is:
 11. `DG-005A` - Role-Aware Workstation Reservations And Compatible Endpoint
     Access. Ratified architecture implemented by IM-032A.
 12. `IM-032A` - Role-Aware Workstation Reservation Foundation. Implemented;
-    Product Owner acceptance pending.
-13. `IM-032B` - Employee Persistent Machine Operation. Not started and gated
-    behind accepted IM-032A plus separate implementation authorization.
+    Product Owner accepted.
+13. `IM-032B` - Employee Persistent Machine Operation. Complete; Product
+    Owner accepted.
 
 The ratified
 [`ADR-02A-P1 durable Workstation projection amendment`](docs/adr/ADR-PROPOSED-DURABLE-WORKSTATION-PROJECTION-AND-CHECKPOINT-COMPLETENESS.md)
@@ -81,12 +81,13 @@ incoherent state may select only a valid committed `COMPLETE_RESTORABLE`
 generation. Historical incomplete generations remain non-restorable. IM-031C
 is complete and Product Owner accepted. IM-032 is no longer blocked by
 IM-031C acceptance. DG-005A is ratified and IM-032A is implemented with
-Product Owner acceptance pending. IM-032B remains separately gated.
+Product Owner acceptance complete. IM-032B and the overall IM-032 body of work
+are complete and Product Owner accepted.
 
 ## DG-005: Persistent Machine Operating State And Continuous Processing
 
 Status: RATIFIED - IM-031A THROUGH IM-031C IMPLEMENTED; IM-031C ACCEPTED;
-DG-005A RATIFIED; IM-032A IMPLEMENTED, ACCEPTANCE PENDING; IM-032B GATED
+DG-005A RATIFIED; IM-032A AND IM-032B COMPLETE / PRODUCT OWNER ACCEPTED
 
 The ratified
 [`DG-005 architecture decision`](docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md)
@@ -114,11 +115,12 @@ authorization; completed status is recorded explicitly:
 5. `DG-005A` - Role-Aware Workstation Reservations And Compatible Endpoint
    Access. Ratified architecture implemented by IM-032A.
 6. `IM-032A` - Role-Aware Workstation Reservation Foundation. Implemented;
-   Product Owner acceptance pending.
-7. `IM-032B` - Employee Persistent Machine Operation. Gated behind accepted
-   IM-032A and separate implementation authorization.
-8. `DG-006` - Machine Condition, Wear, Damage, And Maintenance architecture,
-   followed only later by a separately authorized implementation milestone.
+   Product Owner accepted.
+7. `IM-032B` - Employee Persistent Machine Operation. Complete; Product
+   Owner accepted.
+8. `DG-006` - Machine Condition, Wear, Damage, Maintenance, and Breakdown.
+   Architecture/design may begin; implementation is not started or authorized.
+   Runtime work requires a later separately authorized implementation milestone.
 
 The previously referenced but unimplemented `IM-031 - Employee Patty Former
 Operation` is replaced by this sequence. No completed milestone is renumbered.
@@ -131,13 +133,14 @@ a conflict between DG-002's generic exclusive reservation and DG-005's retained
 operator responsibility. The ratified
 [`DG-005A reservation amendment`](docs/adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 resolves that architecture conflict. Separate IM-032A implementation
-authorization has now produced the role-aware foundation. Product Owner
-acceptance remains pending, and IM-032B, DG-006, and later work remain gated.
+authorization produced the accepted role-aware foundation. IM-032B now
+implements the accepted finite employee operation consumer. DG-006
+architecture/design may begin; its implementation and later runtime work remain
+gated.
 
 ## DG-005A: Role-Aware Workstation Reservations And Compatible Endpoint Access
 
-Status: RATIFIED; IM-032A IMPLEMENTED - PRODUCT OWNER ACCEPTANCE PENDING;
-IM-032B GATED
+Status: RATIFIED; IM-032A AND IM-032B COMPLETE / PRODUCT OWNER ACCEPTED
 
 The ratified
 [`DG-005A architecture amendment`](docs/adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
@@ -153,9 +156,111 @@ IM-032A implements Workforce-owned role-aware reservation schema 2, exact
 Workstation Instance binding, one-operator/one-compatible-handler admission,
 conservative schema-1 migration, role-specific release, Material Handling
 endpoint access, checkpoint ownership transition, diagnostics, and Architecture
-Manifest enforcement. Product Owner acceptance remains pending. IM-032B has
-not started; employee persistent machine operation, DG-006, and all broader
-machine behavior remain gated.
+Manifest enforcement. Product Owner acceptance is complete. IM-032B has
+been implemented and Product Owner accepted as a finite persistent Workforce
+assignment over canonical Machine Run START/STOP. DG-006 architecture/design
+may begin; all broader machine behavior remains implementation-gated.
+
+## IM-032: Employee Machine Operation Acceptance
+
+Status: COMPLETE / PRODUCT OWNER ACCEPTED
+
+Product Owner final acceptance was recorded on 2026-09-20. IM-032A is
+`COMPLETE / ACCEPTED`; IM-032B is `COMPLETE / PRODUCT OWNER ACCEPTED`.
+The accepted scope includes DG-005A's role-aware reservation foundation,
+IM-032A implementation and recovery compatibility, and IM-032B's finite
+persistent employee operation and corrected orphan-assignment cancellation.
+Version remains `0.10.6-alpha.1`; this closeout does not prepare a new release.
+
+Continuing beta testing does not reopen Product Owner acceptance. Future beta
+findings are targeted defect corrections unless they expose a new architecture
+conflict.
+
+### Accepted Validation Baseline
+
+The durable 2026-09-16 validation evidence was rechecked during closeout:
+
+- Java reports in `build/test-results/test/`: 351 suites, 1,782 tests total,
+  1,775 passed, 7 configured skips, 0 failures, and 0 errors.
+- GameTests: 321 registered, 321 executed, 321 passed, and 0 failed. The
+  retained `run/logs/2026-09-16-2.log.gz` confirms completion and normal server
+  shutdown after final checkpoint generation `37/72966` committed. The existing
+  shutdown-grace warning did not prevent that commit or successful exit.
+- Full Java test/build validation passed; the retained Gradle build log records
+  `BUILD SUCCESSFUL` with all 11 tasks executed. The artifact remains
+  `butchercraft-0.10.6-alpha.1.jar`.
+- `git diff --check`, local Markdown links, headings/fences, ASCII, trailing
+  whitespace, final newlines, and documentation-only closeout scope passed.
+- The Product Owner reports the corrected orphan-assignment manual retest
+  passed and the protected historical worlds remained unchanged. Closeout
+  neither opens those worlds nor repeats gameplay validation.
+
+### Preserved Authority And Future Scope
+
+Execution owns Machine Run identity, START/STOP, and lifecycle; Scheduler owns
+bounded child dispatch; Workstation owns operating state, recipes, inventory,
+and owner results; Workforce owns assignments, intent, navigation, presence,
+and reservations; Material Handling owns transfer lifecycle and in-transit
+custody; Checkpoint Recovery coordinates owner-native capture/restoration only.
+IM-032 preserves these ratified authorities, including DG-005A's schema-specific
+checkpoint ownership transition to Workforce and historical restoration
+compatibility. This closeout introduces no ownership transfer.
+
+Cutting Table remains `MANUAL_DISCRETE`. Wear, damage, lubrication, maintenance,
+breakdowns, dry-running damage, Production-driven automatic assignment,
+multi-machine tending, generalized simultaneous input/output handlers, and
+checkpoint retention/compaction remain future scope. One reservation per
+employee and one compatible handler per exact Workstation Instance remain the
+accepted limits.
+
+`DG-006 ARCHITECTURE/DESIGN MAY BEGIN` for Machine Condition, Wear, Damage,
+Maintenance, and Breakdown. `DG-006 IMPLEMENTATION NOT STARTED`; no DG-006
+proposal or runtime implementation is part of this closeout.
+
+## IM-032B: Employee Persistent Machine Operation
+
+Status: COMPLETE / PRODUCT OWNER ACCEPTED
+
+IM-032B adds one Workforce-owned, schema-versioned finite operation assignment
+for an exact employee and exact Grinder or Patty Former Workstation Instance.
+The employee navigates to the machine, acquires `MACHINE_OPERATOR`, and asks the
+canonical Execution Machine Run boundary to START and STOP one exact Run. Each
+successful bounded child advances the assignment once; active children do not
+count, and admission closes before child N+1.
+
+`RUNNING_EMPTY` retains the Run only while exact compatible inbound Material
+Handling supply is proven. Without such supply, the Run stops and the
+incomplete assignment becomes `INTERRUPTED`; a new explicit assignment is
+required. `OUTPUT_BLOCKED` retains the same Run and operator without consuming
+input; capacity becoming available permits processing under that same Run.
+Compatible Material Handling servicing remains limited to the two implemented
+routes, not generalized output hauling. Restart Policy B
+restores the exact references as `RESTART_REQUIRED` and requires explicit
+player RESUME. Cancellation and player STOP reconcile at the safe exact-Run
+boundary before Workforce releases the operator reservation.
+
+### Accepted Manual Acceptance Correction
+
+Product Owner testing found that replacement of the exact Workstation Instance
+could strand a consequence-free `RECOVERY_REQUIRED` assignment in the
+employee's active slot. The correction and manual retest are accepted.
+
+Explicit `operate-cancel` may terminalize only the proven pre-START orphan:
+zero completed work, exact original-instance retirement proven by Workstation,
+no Run or child evidence, no unresolved START/STOP, no pending supply ambiguity,
+no unresolved endpoint effect, and no ambiguous reservation release or other
+consequential authority. The `workstation_replaced` diagnostic alone is not
+proof. Any historical operator release must target its exact identity.
+Cancellation preserves historical failure evidence, is idempotent, and frees
+the employee for a new explicit assignment. It never binds to or mutates the
+replacement Workstation, STOPs its Run, or releases its reservation. Ambiguous
+`RECOVERY_REQUIRED` states remain fail-closed; this is not a general recovery
+reset.
+
+The milestone does not add Cutting Table operation, autonomous selection,
+Production dispatch, multi-machine tending, employee inventory, general
+Logistics, forced chunk loading, wear, damage, lubrication, maintenance, or
+breakdowns.
 
 ## IM-031C: Patty Former Continuous Policy Activation
 

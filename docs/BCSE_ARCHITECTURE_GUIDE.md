@@ -273,17 +273,22 @@ Workstation remains the separate owner of machine operating policy, current
 operating state, recipe validation, inventory mutation, and owner results. The
 shared integration coordinator composes owner publications but owns no
 canonical runtime state; machine-specific adapters retain machine semantics.
-IM-031C is Product Owner accepted. Employee Machine Run control remains
-unimplemented; its IM-031C sequencing gate is cleared for IM-032. The IM-032
+IM-031C and IM-032 are complete and Product Owner accepted. The IM-032
 architecture review exposed a reservation compatibility conflict between
 DG-002 and DG-005. The ratified
 [`DG-005A Role-Aware Workstation Reservations amendment`](adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md)
 preserves one Workforce reservation authority while allowing one exact
 operator plus one compatible transfer-bound handler per Workstation Instance.
-IM-032A implements the role-aware schema-2 foundation, conservative schema-1
-migration, exact instance and handler-evidence binding, Material Handling
-integration, and schema-specific checkpoint ownership. Product Owner acceptance
-remains pending. IM-032B remains unimplemented and separately gated.
+IM-032A implements the accepted role-aware schema-2 foundation, conservative
+schema-1 migration, exact instance and handler-evidence binding, Material
+Handling integration, and schema-specific checkpoint ownership. IM-032B
+consumes that foundation through a Workforce-owned finite assignment for exact
+Grinder and Patty Former instances. Execution retains Machine Run and finite
+child admission authority; Workstation retains operating state and inventory;
+Scheduler retains dispatch; Material Handling retains custody. DG-006
+architecture/design may begin, but its implementation is not started or
+authorized by this acceptance. See the
+[IM-032 acceptance record](../MILESTONES.md#im-032-employee-machine-operation-acceptance).
 
 ### Transactions
 

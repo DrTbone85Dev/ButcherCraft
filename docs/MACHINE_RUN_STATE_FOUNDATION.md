@@ -1,13 +1,13 @@
 # Machine Run-State / START-STOP Foundation
 
 Status: IM-031A implemented foundation; IM-031B Grinder and IM-031C Patty Former
-policies activated; IM-031C Product Owner accepted.
+player policies activated; IM-032B finite employee operation implemented.
 
 This note records the generic runtime authorized by DG-005 and its two live
 policy activations. IM-031B activates continuous player control for the
 Grinder, and IM-031C activates the same machine-neutral coordination for the
-Patty Former. Employee Machine Run control remains unimplemented; its IM-031C
-sequencing gate is cleared for IM-032.
+Patty Former. IM-032B adds a Workforce-owned finite assignment that may submit
+identity-bound START/STOP requests for those two machines without owning Runs.
 
 ## Singular Owners
 
@@ -20,6 +20,8 @@ sequencing gate is cleared for IM-032.
 - Scheduler continues to own bounded dispatch and invocation/effect identity.
 - The integration coordinator sequences owner publications but persists no
   state and grants no authority independently.
+- Workforce owns employee assignment intent, navigation, lifecycle, and exact
+  role-aware reservations. It stores only references to owner state.
 
 Machine Run and child Execution operation identities are distinct. Production
 Run, employee assignment, Scheduler Work/effect, and Workstation owner-result
@@ -140,6 +142,21 @@ No chunk is force-loaded. Eligibility returns only after the exact Workstation
 instance reconciles. Retired, replaced, or identity-conflicting endpoints enter
 explicit recovery and cannot inherit the old Run.
 
+## Employee Finite Operation
+
+IM-032B supports one exact Grinder or Patty Former assignment with a positive
+finite target. Physical arrival and an exact `MACHINE_OPERATOR` are required
+before Workforce submits START. Successful terminal child evidence advances
+the target once; a nonterminal child reserves admission capacity but is not
+counted complete. When the target is met, Workforce requests STOP against the
+exact Run and releases the operator only after the safe terminal boundary.
+
+`RUNNING_EMPTY` retains the Run only while exact compatible inbound Material
+Handling supply is proven. Otherwise the Run stops and the incomplete
+assignment becomes `INTERRUPTED`. `OUTPUT_BLOCKED` retains the same Run and
+operator. Restart Policy B leaves the assignment `RESTART_REQUIRED`; employees
+do not autonomously RESUME, while exact cancellation may STOP without resume.
+
 ## Diagnostics
 
 Read-only diagnostics expose Workstation Instance Identity, Run identity and
@@ -149,7 +166,7 @@ mutation authority.
 
 ## Gated Behavior
 
-- Employee machine START/STOP or employee-owned persistent Runs.
+- Autonomous employee Policy B RESUME or employee-owned Runs.
 - Automatic restart or forced chunk loading.
 - Wear, damage, jams, maintenance, or DG-006 behavior.
-- Production machine control or public extension API.
+- Production machine control, multi-machine tending, or public extension API.

@@ -5,6 +5,7 @@ import com.butchercraft.integration.machine.PoweredMachineRunControlResult;
 import com.butchercraft.integration.machine.PoweredMachineRunStatus;
 import com.butchercraft.integration.machine.PoweredProcessingMachineRunAdapter;
 import com.butchercraft.integration.machine.PoweredProcessingMachineRunService;
+import com.butchercraft.integration.employee.EmployeeMachineRunAdmissionGate;
 import com.butchercraft.machine.grinder.GrinderBlockEntity;
 import com.butchercraft.machine.grinder.execution.GrinderExecutionCoordinator;
 import com.butchercraft.machine.grinder.execution.GrinderExecutionPreparation;
@@ -26,7 +27,7 @@ public final class GrinderContinuousRunService {
     public static final GrinderContinuousRunService INSTANCE = new GrinderContinuousRunService();
 
     private final PoweredProcessingMachineRunService<GrinderBlockEntity> delegate =
-            new PoweredProcessingMachineRunService<>(new GrinderAdapter());
+            new PoweredProcessingMachineRunService<>(new GrinderAdapter(), EmployeeMachineRunAdmissionGate.INSTANCE);
 
     private GrinderContinuousRunService() {
     }
@@ -37,6 +38,27 @@ public final class GrinderContinuousRunService {
 
     public GrinderRunControlResult stop(ServerLevel level, GrinderBlockEntity grinder) {
         return control(delegate.stop(level, grinder));
+    }
+
+    public GrinderRunControlResult startForEmployee(
+            ServerLevel level,
+            GrinderBlockEntity grinder,
+            String sourceOwner,
+            String sourceRequestIdentity,
+            String operatorReservationIdentity
+    ) {
+        return control(delegate.start(level, grinder, sourceOwner, sourceRequestIdentity,
+                java.util.Optional.of(operatorReservationIdentity)));
+    }
+
+    public GrinderRunControlResult stopForEmployee(
+            ServerLevel level,
+            GrinderBlockEntity grinder,
+            com.butchercraft.world.execution.MachineRunIdentity runIdentity,
+            String sourceOwner,
+            String sourceRequestIdentity
+    ) {
+        return control(delegate.stop(level, grinder, runIdentity, sourceOwner, sourceRequestIdentity));
     }
 
     public GrinderRunControlResult resume(ServerLevel level, GrinderBlockEntity grinder) {
@@ -110,8 +132,13 @@ public final class GrinderContinuousRunService {
         }
 
         @Override
-        public boolean hasConflictingReservation(ServerLevel level, GrinderBlockEntity grinder) {
-            return WorkstationReservationService.INSTANCE.hasActiveReservationAt(level, grinder.getBlockPos());
+        public boolean hasConflictingReservation(
+                ServerLevel level,
+                GrinderBlockEntity grinder,
+                java.util.Optional<String> permittedOperatorReservation
+        ) {
+            return WorkstationReservationService.INSTANCE.hasConflictingMachineOperatorAt(
+                    level, grinder.getBlockPos(), permittedOperatorReservation);
         }
 
         @Override

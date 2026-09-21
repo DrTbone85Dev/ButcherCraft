@@ -1,6 +1,6 @@
 # ADR-DG-002: Material Handling Custody And Recovery
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; DG-005A RATIFIED AND IM-032A RESERVATION INTEGRATION IMPLEMENTED; LATER SCOPE GATED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-028A AND IM-028B FOUNDATIONS IMPLEMENTED; DG-005A/IM-032A RESERVATION INTEGRATION ACCEPTED; IM-032B COMPATIBLE OPERATOR/HANDLER CONSUMER IMPLEMENTED; LATER SCOPE GATED
 
 Decision identifier: DG-002
 
@@ -11,8 +11,9 @@ commands, content, persistence, or Architecture Manifest declarations.
 IM-028B was later separately owner-authorized and is implemented within the
 Section 25 boundary. All later implementation remains separately gated.
 DG-005A later narrowly amends reservation compatibility only. Its role-aware
-runtime and persistence evolution are implemented by the separately authorized
-IM-032A milestone; Product Owner acceptance remains pending.
+runtime and persistence evolution are implemented and accepted through IM-032A.
+IM-032B consumes the compatible operator/handler boundary without changing
+Material Handling custody authority.
 
 Canonical platform reference:
 [`Platform Canonicalization Addendum`](ADR-PLATFORM-CANONICALIZATION-ADDENDUM.md).

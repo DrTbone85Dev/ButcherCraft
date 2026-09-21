@@ -6,8 +6,9 @@ checkpoint invocation, IM-031C-R1 read-only split-snapshot analysis,
 IM-031C-R2 operator-authorized publication foundation, and IM-031C-R2A
 actual-world offline recovery validation, and IM-031C-R3 coordinated live
 checkpoint publication implemented; ADR-02A-P1 architecture ratified with
-IM-031C-R3A durable Workstation projection foundation and IM-031C-R3B
-checkpoint completeness activation implemented. R3C and R4 remain gated.
+IM-031C-R3A durable Workstation projection foundation, IM-031C-R3B checkpoint
+completeness activation, R3C legacy successor validation, R4 startup
+restoration, and IM-032B Workforce assignment capture implemented.
 
 This document records the narrow pure-Java checkpoint primitives introduced by
 IM-003, the minimal filesystem-backed publication proof introduced by IM-005,
@@ -79,6 +80,12 @@ The foundation introduces deterministic metadata types for:
 - schema-specific Workstation-reservation ownership, with historical
   Workstation schemas retaining their original file and current Workforce
   schema 2 owning the role-aware reservation file exactly once
+- Workforce checkpoint schema 3 owning
+  `employee_machine_operation_assignments.json` exactly once, while historical
+  schemas 1 and 2 restore canonical empty assignment state without inference
+- read-only cross-owner assignment coherence validation against exact employee,
+  reservation, Workstation Instance generation, Machine Run, and observed
+  successful-child evidence
 
 These types live under `com.butchercraft.world.checkpoint` and are independent
 from Minecraft, NeoForge, wall-clock time, random sources, runtime owner
@@ -95,6 +102,13 @@ IM-031C-R2 owner preparers remain immutable packaging boundaries. They do not
 import owner managers, mutation services, Scheduler handlers, Minecraft, or
 NeoForge, and they do not publish owner runtime state. The explicit admin tool
 is a Java service boundary rather than a registered Minecraft command.
+
+IM-032B evolves only the Workforce participant. Checkpoint Recovery coordinates
+its frozen assignment bytes but does not own or reconstruct assignments. Current
+schema 3 captures role-aware reservations and finite machine-operation
+assignments; Execution, Workstation, Scheduler, and Material Handling continue
+publishing their own referenced state. Owner-native restoration validates the
+complete reference graph and never replays START, STOP, or child effects.
 
 ## Ownership
 

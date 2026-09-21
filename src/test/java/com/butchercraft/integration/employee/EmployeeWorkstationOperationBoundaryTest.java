@@ -55,7 +55,7 @@ class EmployeeWorkstationOperationBoundaryTest {
 
         assertTrue(command.contains("Commands.literal(\"operate\")"));
         assertTrue(command.contains("StringArgumentType.greedyString()"));
-        assertTrue(command.contains("EmployeeWorkstationOperationService.INSTANCE.request"));
+        assertTrue(command.contains("EmployeePersistentMachineOperationService.INSTANCE.request"));
         assertFalse(command.contains("ExecutionAuthorization"));
         assertFalse(command.contains("SimulationSchedulerService"));
         assertFalse(command.contains("requestEmployeeProcessing"));

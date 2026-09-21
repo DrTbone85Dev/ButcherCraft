@@ -1,6 +1,6 @@
 # ADR-DG-005A: Role-Aware Workstation Reservations And Compatible Endpoint Access
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IM-032A IMPLEMENTED; PRODUCT OWNER ACCEPTANCE PENDING; IM-032B GATED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-032A AND IM-032B COMPLETE / PRODUCT OWNER ACCEPTED
 
 Decision identifier: DG-005A
 
@@ -765,9 +765,12 @@ Owner ratification approved all seven decisions below:
    Operation`.
 
 Ratification alone did not implement role-aware reservations. The separately
-authorized IM-032A milestone now implements the schema-2 foundation described
-by this decision. Product Owner acceptance remains pending. IM-032B employee
-persistent machine operation and DG-006 remain untouched and gated.
+authorized IM-032A milestone implements the accepted schema-2 foundation
+described by this decision. IM-032B consumes that foundation for finite
+persistent employee machine operation. Both milestones are complete and Product
+Owner accepted. DG-006 architecture/design may begin; its proposal and
+implementation remain untouched by this closeout and runtime implementation
+remains gated.
 
 ## 29. Implementation Status
 
@@ -785,7 +788,14 @@ IM-032A mechanically implements:
   generations while preserving historical Workstation ownership; and
 - role-specific release, diagnostics, and Architecture Manifest enforcement.
 
-This implementation creates no employee START, STOP, RESUME, child-admission,
+IM-032A itself creates no employee START, STOP, RESUME, child-admission,
 Machine Run, endpoint mutation, custody, Scheduler, or Execution authority.
-IM-032B remains separately gated pending IM-032A Product Owner acceptance and
-explicit authorization.
+
+IM-032B separately implements a Workforce-owned finite operation assignment
+that acquires `MACHINE_OPERATOR` and submits exact identity-bound START/STOP
+requests through the canonical Machine Run service. It does not own Runs,
+children, Workstation state or inventory, or Material Handling custody.
+Product Owner acceptance of IM-032B is complete, including the corrected
+consequence-free orphan cancellation. Overall IM-032 is complete and accepted;
+continuing beta testing does not reopen that gate. See the
+[milestone closeout](../../MILESTONES.md#im-032-employee-machine-operation-acceptance).

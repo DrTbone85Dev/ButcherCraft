@@ -41,6 +41,7 @@ import com.butchercraft.world.simulation.scheduler.SimulationStageDefinition;
 import com.butchercraft.world.workforce.department.DepartmentSchema;
 import com.butchercraft.world.workforce.employee.EmployeeSchema;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentSchema;
+import com.butchercraft.world.workforce.machineoperation.EmployeeMachineOperationAssignmentSchema;
 import com.butchercraft.workstation.operation.MachineOperatingSchema;
 import com.butchercraft.workstation.projection.WorkstationProjectionSchema;
 import com.butchercraft.workstation.reservation.WorkstationReservationSchema;
@@ -210,8 +211,13 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW);
         document(builder, "butchercraft:document/persistent_machine_operating_state_adr",
                 "docs/adr/ADR-PROPOSED-PERSISTENT-MACHINE-OPERATING-STATE-AND-CONTINUOUS-PROCESSING.md",
-                "RATIFIED_IM_031A_FOUNDATION_IM_031B_GRINDER_AND_IM_031C_PATTY_FORMER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED",
-                "DG-005 IM-031A IM-031B IM-031C",
+                "RATIFIED_IM_031A_THROUGH_IM_031C_AND_IM_032B_EMPLOYEE_OPERATION_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-005 IM-031A IM-031B IM-031C IM-032B",
+                ArchitectureValidationDisposition.ENFORCED_NOW);
+        document(builder, "butchercraft:document/role_aware_workstation_reservations_adr",
+                "docs/adr/ADR-PROPOSED-ROLE-AWARE-WORKSTATION-RESERVATIONS-AND-COMPATIBLE-ENDPOINT-ACCESS.md",
+                "RATIFIED_IM_032A_FOUNDATION_ACCEPTED_IM_032B_CONSUMER_IMPLEMENTED_LATER_SCOPE_GATED",
+                "DG-005A IM-032A IM-032B",
                 ArchitectureValidationDisposition.ENFORCED_NOW);
     }
 
@@ -1257,11 +1263,51 @@ public final class ButcherCraftArchitectureManifest {
                 ArchitectureValidationDisposition.ENFORCED_NOW,
                 "DG-005A and IM-032A",
                 "Release targets exact reservation identity and role so handler completion cannot release a coexisting operator and stale releases cannot remove newer authority");
-        platformContract(builder, "butchercraft:platform_contract/employee_persistent_machine_operation_gate",
-                ValidationCategory.GENERAL, WORKFORCE,
-                ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-032A Role-Aware Workstation Reservation Foundation",
-                "MACHINE_OPERATOR is foundation-only and grants no employee START, STOP, RESUME, Scheduler dispatch, Machine Run mutation, or Workstation inventory authority before IM-032B");
+        platformContract(builder, "butchercraft:platform_contract/employee_persistent_machine_operation_assignment",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "Workforce owns one finite persistent machine-operation assignment per employee without owning Machine Runs, child dispatch, Workstation state, inventory, or custody");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_operation_exact_bindings",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "Each assignment binds one exact employee, Workstation Instance generation, MACHINE_OPERATOR reservation, and Machine Run reference once START is accepted");
+        platformContract(builder, "butchercraft:platform_contract/employee_powered_machine_support",
+                ValidationCategory.EXECUTION, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "One generic Workforce coordination path supports Grinder and Patty Former powered-continuous explicit-stop policies while Cutting Table remains unsupported");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_run_control_boundary",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "Employee assignments submit identity-bound START and exact-Run STOP requests through canonical Execution Machine Run controls and never dispatch Scheduler children directly");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_operation_finite_admission",
+                ValidationCategory.EXECUTION, EXECUTION,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "Child admission stops when proven successful quantity plus the active child reaches the finite assignment target, preventing intentional child N+1");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_operation_supply_policy",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "RUNNING_EMPTY retains the exact Run only for a proven compatible Material Handling transfer to the exact Workstation; without that proof the Run stops and the incomplete assignment is interrupted");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_operation_output_blocked",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "OUTPUT_BLOCKED preserves the exact Run and MACHINE_OPERATOR without consuming input or creating a STOP/START cycle");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_operation_recovery",
+                ValidationCategory.PERSISTENCE, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "Workforce schema-1 assignment persistence and checkpoint schema 3 preserve exact assignment references; Policy B remains restart-required with no autonomous employee RESUME");
+        platformContract(builder, "butchercraft:platform_contract/employee_machine_operation_handler_compatibility",
+                ValidationCategory.OWNERSHIP, WORKFORCE,
+                ArchitectureValidationDisposition.ENFORCED_NOW,
+                "IM-032B Employee Persistent Machine Operation",
+                "One exact MACHINE_OPERATOR may coexist with one compatible transfer-bound MATERIAL_HANDLER without either role acquiring the other's authority");
         platformContract(builder, "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
                 ValidationCategory.OWNERSHIP, WORKSTATION,
                 ArchitectureValidationDisposition.ENFORCED_NOW,
@@ -1315,8 +1361,8 @@ public final class ButcherCraftArchitectureManifest {
         platformContract(builder, "butchercraft:platform_contract/employee_operation_future_scope_gates",
                 ValidationCategory.GENERAL, WORKFORCE,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-027 Employee Workstation Operation Foundation",
-                "Employee Patty Former operation, carrying beyond the IM-029 Beef Trim and Ground Beef routes, general Logistics, Production dispatch, job claiming, autonomous workflows, skills, productivity, and payroll remain gated");
+                "IM-032B Employee Persistent Machine Operation",
+                "Autonomous Policy B RESUME, Production dispatch, multi-machine tending, carrying beyond current routes, general Logistics, job claiming, skills, productivity, and payroll remain gated");
         platformContract(builder, "butchercraft:platform_contract/machine_run_execution_authority",
                 ValidationCategory.EXECUTION, EXECUTION, ArchitectureValidationDisposition.ENFORCED_NOW,
                 "DG-005 and IM-031A",
@@ -1425,8 +1471,8 @@ public final class ButcherCraftArchitectureManifest {
         platformContract(builder, "butchercraft:platform_contract/machine_run_remaining_activation_gates",
                 ValidationCategory.EXECUTION, EXECUTION,
                 ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED,
-                "IM-031C completion boundary",
-                "Employee Machine START/STOP, Production machine control, automatic restart, and machine wear remain unactivated");
+                "IM-032B completion boundary",
+                "Production machine control, automatic restart, multi-machine tending, and machine wear remain unactivated");
     }
 
     private static void addRuntimeAuthorities(ValidationContextBuilder builder) {
@@ -1499,6 +1545,9 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/employee_navigation_recovery", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_workstation_interaction_request", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_operation_completion_observation", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_machine_operation_assignments", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_machine_operation_assignment_persistence", WORKFORCE);
+        own(builder, "butchercraft:responsibility/employee_machine_operation_finite_intent", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_material_handling_assignments", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_material_handling_assignment_persistence", WORKFORCE);
         own(builder, "butchercraft:responsibility/employee_carry_view_projection", WORKFORCE);
@@ -1811,6 +1860,27 @@ public final class ButcherCraftArchitectureManifest {
                 WORKFORCE,
                 ValidationCategory.SIMULATION,
                 "IM-027 assigns read-only observation of matching workstation owner and Execution result evidence to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_machine_operation_assignments",
+                WORKFORCE,
+                ValidationCategory.OWNERSHIP,
+                "IM-032B assigns exact employee and Workstation-bound finite machine-operation lifecycle to Workforce"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_machine_operation_assignment_persistence",
+                WORKFORCE,
+                ValidationCategory.PERSISTENCE,
+                "IM-032B assigns schema-versioned machine-operation assignment persistence and restoration to Workforce while preserving owner references"
+        );
+        contract(
+                builder,
+                "butchercraft:responsibility/employee_machine_operation_finite_intent",
+                WORKFORCE,
+                ValidationCategory.EXECUTION,
+                "IM-032B assigns finite target intent and proven child-result accounting to Workforce without granting child-dispatch authority"
         );
         contract(
                 builder,
@@ -3059,6 +3129,11 @@ public final class ButcherCraftArchitectureManifest {
                 EmployeeMaterialHandlingAssignmentSchema.DIRECTORY_NAME + "/"
                         + EmployeeMaterialHandlingAssignmentSchema.FILE_NAME,
                 WORKFORCE, EmployeeMaterialHandlingAssignmentSchema.CURRENT_VERSION,
+                PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:employee_machine_operation_assignments",
+                EmployeeMachineOperationAssignmentSchema.DIRECTORY_NAME + "/"
+                        + EmployeeMachineOperationAssignmentSchema.FILE_NAME,
+                WORKFORCE, EmployeeMachineOperationAssignmentSchema.CURRENT_VERSION,
                 PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:workstation_reservations",
                 WorkstationReservationSchema.DIRECTORY_NAME + "/" + WorkstationReservationSchema.FILE_NAME,

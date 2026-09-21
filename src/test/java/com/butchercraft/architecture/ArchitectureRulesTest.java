@@ -1179,6 +1179,15 @@ class ArchitectureRulesTest {
                         "butchercraft:platform_contract/role_aware_reservation_schema_1_migration",
                         "butchercraft:platform_contract/reservation_checkpoint_ownership_transition",
                         "butchercraft:platform_contract/reservation_role_specific_release",
+                        "butchercraft:platform_contract/employee_persistent_machine_operation_assignment",
+                        "butchercraft:platform_contract/employee_machine_operation_exact_bindings",
+                        "butchercraft:platform_contract/employee_powered_machine_support",
+                        "butchercraft:platform_contract/employee_machine_run_control_boundary",
+                        "butchercraft:platform_contract/employee_machine_operation_finite_admission",
+                        "butchercraft:platform_contract/employee_machine_operation_supply_policy",
+                        "butchercraft:platform_contract/employee_machine_operation_output_blocked",
+                        "butchercraft:platform_contract/employee_machine_operation_recovery",
+                        "butchercraft:platform_contract/employee_machine_operation_handler_compatibility",
                         "butchercraft:platform_contract/grinder_ground_beef_source_endpoint",
                         "butchercraft:platform_contract/employee_ground_beef_transfer_route",
                         "butchercraft:platform_contract/patty_former_transport_operation_separation",
@@ -1269,13 +1278,17 @@ class ArchitectureRulesTest {
     }
 
     @Test
-    void currentManifestRegistersMachineRunFoundationAndTwoMachineActivation() {
+    void currentManifestRegistersMachineRunFoundationAndEmployeeOperationActivation() {
         ValidationContext context = ArchitectureValidationTestFixtures.validContext();
 
         assertTrue(context.architectureDocuments().stream().anyMatch(document -> document.id().value()
                 .equals("butchercraft:document/persistent_machine_operating_state_adr")
                 && document.status().equals(
-                        "RATIFIED_IM_031A_FOUNDATION_IM_031B_GRINDER_AND_IM_031C_PATTY_FORMER_ACTIVATION_IMPLEMENTED_LATER_SCOPE_GATED")));
+                        "RATIFIED_IM_031A_THROUGH_IM_031C_AND_IM_032B_EMPLOYEE_OPERATION_IMPLEMENTED_LATER_SCOPE_GATED")));
+        assertTrue(context.architectureDocuments().stream().anyMatch(document -> document.id().value()
+                .equals("butchercraft:document/role_aware_workstation_reservations_adr")
+                && document.status().contains("IM_032A_FOUNDATION_ACCEPTED")
+                && document.status().contains("IM_032B_CONSUMER_IMPLEMENTED")));
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
                 .equals("butchercraft:platform_contract/machine_run_execution_authority")
                 && contract.ownerId().value().equals("butchercraft:execution")
@@ -1294,6 +1307,18 @@ class ArchitectureRulesTest {
                 .equals("butchercraft:platform_contract/patty_former_continuous_run_activation")
                 && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
         assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/employee_persistent_machine_operation_assignment")
+                && contract.ownerId().value().equals("butchercraft:workforce")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/employee_machine_run_control_boundary")
+                && contract.ownerId().value().equals("butchercraft:execution")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
+                .equals("butchercraft:platform_contract/employee_machine_operation_handler_compatibility")
+                && contract.ownerId().value().equals("butchercraft:workforce")
+                && contract.disposition() == ArchitectureValidationDisposition.ENFORCED_NOW));
+        assertTrue(context.platformContracts().stream().anyMatch(contract -> contract.id().value()
                 .equals("butchercraft:platform_contract/machine_run_remaining_activation_gates")
                 && contract.disposition() == ArchitectureValidationDisposition.DECLARED_IMPLEMENTATION_GATED));
         assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
@@ -1302,6 +1327,14 @@ class ArchitectureRulesTest {
         assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
                 .equals("butchercraft:machine_operating_states")
                 && persistence.ownerId().value().equals("butchercraft:workstation")));
+        assertTrue(context.persistenceDescriptors().stream().anyMatch(persistence -> persistence.id()
+                .equals("butchercraft:employee_machine_operation_assignments")
+                && persistence.path().equals("butchercraft/employee_machine_operation_assignments.json")
+                && persistence.ownerId().value().equals("butchercraft:workforce")
+                && persistence.schemaVersion() == 1));
+        assertTrue(context.ownershipAssignments().stream().anyMatch(assignment -> assignment.responsibilityId()
+                .value().equals("butchercraft:responsibility/employee_machine_operation_assignments")
+                && assignment.ownerId().value().equals("butchercraft:workforce")));
     }
 
     @Test

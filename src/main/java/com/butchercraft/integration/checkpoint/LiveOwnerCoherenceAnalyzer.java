@@ -5,6 +5,7 @@ import com.butchercraft.workstation.endpoint.WorkstationInstanceRegistry;
 import com.butchercraft.workstation.operation.MachineOperatingRegistry;
 import com.butchercraft.workstation.operation.persistence.MachineOperatingStorage;
 import com.butchercraft.workstation.reservation.WorkstationReservationMigrationResolver;
+import com.butchercraft.workstation.reservation.WorkstationReservationDirectory;
 import com.butchercraft.workstation.reservation.persistence.WorkstationReservationStorage;
 import com.butchercraft.world.ExecutionService;
 import com.butchercraft.world.SimulationSchedulerService;
@@ -22,6 +23,8 @@ import com.butchercraft.world.execution.MachineRunRegistry;
 import com.butchercraft.world.materialhandling.MaterialHandlingSchema;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorage;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorageV2;
+import com.butchercraft.world.workforce.machineoperation.persistence.EmployeeMachineOperationAssignmentStorage;
+import com.butchercraft.world.workforce.machineoperation.EmployeeMachineOperationAssignmentDirectory;
 import com.butchercraft.world.planning.PlanningRecoveryState;
 import com.butchercraft.world.planning.PlanningRecoveryStorage;
 import com.butchercraft.world.simulation.SimulationClockService;
@@ -77,6 +80,7 @@ public final class LiveOwnerCoherenceAnalyzer {
         validateExecutionAndWorkstation(server, root, documents, issues);
         validateMaterialHandling(root, documents, issues);
         validateWorkstationReservations(root, documents, worldIdentity, issues);
+        validateMachineOperationAssignments(root, documents, worldIdentity, issues);
         RecoveryMutationGate gate = readRecoveryGate(root, documents, schedulerTick, issues);
         boolean empty = documents.isEmpty();
         LiveOwnerCoherenceStatus status = issues.isEmpty()
@@ -307,6 +311,45 @@ public final class LiveOwnerCoherenceAnalyzer {
         }
     }
 
+    private void validateMachineOperationAssignments(
+            Path root,
+            Map<String, JsonObject> documents,
+            WorldIdentityRootReference worldIdentity,
+            List<StartupRecoveryIssue> issues
+    ) {
+        JsonObject document = documents.get("employee_machine_operation_assignments.json");
+        if (document == null) return;
+        try {
+            EmployeeMachineOperationAssignmentDirectory assignments =
+                    new EmployeeMachineOperationAssignmentStorage(
+                            root.resolve("employee_machine_operation_assignments.json"))
+                            .deserialize(document.toString());
+            WorkstationReservationDirectory reservations = new WorkstationReservationStorage(
+                    root.resolve("workstation_reservations.json")).deserialize(
+                    requiredDocument(documents, "workstation_reservations.json").toString(),
+                    new WorldIdentityRootIdentity(
+                            worldIdentity.identity(), worldIdentity.schemaVersion(), worldIdentity.rootDigest()),
+                    WorkstationReservationMigrationResolver.noProof());
+            MachineRunRegistry runs = new MachineRunStorage(root.resolve("execution_machine_runs.json"))
+                    .deserialize(requiredDocument(documents, "execution_machine_runs.json").toString());
+            WorkstationInstanceRegistry instances = new WorkstationInstanceStorage(
+                    root.resolve("workstation_instances.json"))
+                    .deserialize(requiredDocument(documents, "workstation_instances.json").toString());
+            EmployeeMachineOperationCoherenceValidator.validate(assignments, reservations, runs, instances);
+        } catch (RuntimeException exception) {
+            issues.add(issue(
+                    StartupRecoveryFailureCode.LIVE_SPLIT_SNAPSHOT,
+                    LegacySplitRecoveryParticipants.WORKFORCE,
+                    "Workforce machine-operation assignments failed live owner validation"));
+        }
+    }
+
+    private static JsonObject requiredDocument(Map<String, JsonObject> documents, String fileName) {
+        JsonObject document = documents.get(fileName);
+        if (document == null) throw new IllegalArgumentException("Missing required owner document: " + fileName);
+        return document;
+    }
+
     private RecoveryMutationGate readRecoveryGate(
             Path root,
             Map<String, JsonObject> documents,
@@ -453,6 +496,7 @@ public final class LiveOwnerCoherenceAnalyzer {
                 "production_runs.json", "transactions.json", "inventory.json",
                 "business_calendar_runtime.json", "business_runtime.json", "world_time.json",
                 "departments.json", "employee_records.json", "employee_material_handling_assignments.json",
+                "employee_machine_operation_assignments.json",
                 "workforce_definitions.json", "goods.json", "economic_actors.json", "orders.json",
                 "contracts.json", "player_identities.json", PlanningRecoveryState.FILE_NAME,
                 SchedulerSchema.RECOVERY_FILE_NAME

@@ -1,6 +1,6 @@
 # ButcherCraft Grinder
 
-Status: Milestone 2C/2D machine wrapper through IM-017 recipe expansion, IM-027 employee operation, IM-030B stack-aware processing, and IM-031B continuous player Runs
+Status: Milestone 2C/2D machine wrapper through IM-017 recipe expansion, IM-030B stack-aware processing, IM-031B continuous player Runs, and IM-032B finite persistent employee operation
 
 ## Purpose
 
@@ -65,10 +65,14 @@ IM-031B activates `POWERED_CONTINUOUS_EXPLICIT_STOP` for player operation:
 - After restart, Policy B preserves the exact Run as `RESTART_REQUIRED`; GUI
   RESUME continues that Run and GUI STOP ends it. There is no automatic restart.
 
-The employee `/butchercraft employee operate <employee>` path remains one
-reservation-scoped bounded Beef operation and is rejected while a player Run
-is active. It does not grant employee START/STOP or persistent Run authority.
-Opening the menu and inserting material never grants START authority.
+The employee `/butchercraft employee operate <employee> <x> <y> <z>
+<quantity>` path creates or observes one Workforce-owned finite assignment.
+After physical arrival and exact `MACHINE_OPERATOR` acquisition, it submits
+identity-bound START/STOP to the same canonical Run service used by the player.
+The assignment processes exactly its target successful children, preserves the
+same Run while output is blocked, and stops when input is exhausted without
+proven inbound supply. Opening the menu, reserving the machine, or inserting
+material never grants START authority.
 
 The Grinder is obtainable through a generated shaped crafting recipe, appears in the ButcherCraft creative tab, drops itself through its block loot table, and drops stored contents on removal. All promoted trim and ground products are currently obtainable through the ButcherCraft creative tab as the development-stage acquisition bridge. This bridge is not final upstream butchering progression.
 

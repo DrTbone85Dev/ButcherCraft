@@ -1,8 +1,8 @@
 # ADR-DG-005: Persistent Machine Operating State And Continuous Processing
 
 Status: RATIFIED ARCHITECTURAL DIRECTION - IM-031A THROUGH IM-031C IMPLEMENTED;
-IM-031C PRODUCT OWNER ACCEPTED; DG-005A RATIFIED; IM-032A IMPLEMENTED,
-PRODUCT OWNER ACCEPTANCE PENDING; IM-032B GATED
+IM-031C PRODUCT OWNER ACCEPTED; DG-005A RATIFIED; IM-032A ACCEPTED; IM-032B
+COMPLETE / PRODUCT OWNER ACCEPTED
 
 Decision identifier: DG-005
 
@@ -114,7 +114,7 @@ The Grinder uses `WorkstationOperationStartPolicy.EXPLICIT_REQUEST`.
 - Remaining input does not create another operation.
 - A full or incompatible output rejects the cycle without consuming input.
 
-### 2.2 Current Employee Grinder Flow
+### 2.2 Historical Employee Grinder Flow At Ratification
 
 IM-027 is one transient, reservation-scoped Beef Grinder request.
 
@@ -764,7 +764,7 @@ One employee supervising multiple machines, skills, and unattended risk remain
 later gameplay-policy gates. The ratified initial IM-032B policy is
 conservative: the starting employee retains the reservation, stays within
 operating tolerance, and remains responsible through STOP. IM-032B runtime
-changes remain separately gated.
+implements that policy for explicit finite Grinder and Patty Former assignments.
 
 DG-005A clarifies that this retained exclusivity is the employee's exact
 `MACHINE_OPERATOR` role. It does not exclude one compatible, transfer-bound
@@ -773,8 +773,9 @@ Instance. The handler cannot START, STOP, RESUME, admit a child, or acquire
 Machine Run responsibility. The operator retains responsibility through safe
 STOP, and Execution remains the sole Machine Run authority.
 
-Role-aware reservation runtime does not exist yet. IM-032A must establish that
-foundation before IM-032B may implement employee persistent machine operation.
+IM-032A establishes the accepted role-aware reservation foundation. IM-032B
+consumes it without changing reservation, Machine Run, Workstation, Scheduler,
+or Material Handling ownership.
 
 ## 21. Persistence Ownership
 
@@ -1262,8 +1263,13 @@ until separately authorized and mechanically true.
 - IM-031C activates the same policy for the Patty Former through shared
   machine-neutral coordination and presentation while retaining Patty Former
   recipe, inventory-effect, and owner-result authority.
-- IM-031C is Product Owner accepted. Employee Machine Run control remains
-  unimplemented. DG-005A is ratified; IM-032A implements its reservation
-  foundation with Product Owner acceptance pending, and IM-032B remains gated.
+- IM-031C is Product Owner accepted. DG-005A is ratified and IM-032A is
+  accepted. IM-032B implements finite persistent employee Grinder and Patty
+  Former operation and is complete and Product Owner accepted, including the
+  corrected orphan-assignment cancellation. Overall IM-032 acceptance is
+  recorded in the [milestone closeout](../../MILESTONES.md#im-032-employee-machine-operation-acceptance).
+- DG-006 architecture/design may begin for Machine Condition, Wear, Damage,
+  Maintenance, and Breakdown. Its implementation is not started or authorized
+  by this closeout.
 - Machine condition/wear and Production machine control remain separately
   gated.

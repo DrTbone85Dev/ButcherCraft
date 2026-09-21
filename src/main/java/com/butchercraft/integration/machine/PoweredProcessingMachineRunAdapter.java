@@ -8,6 +8,7 @@ import com.butchercraft.world.execution.ExecutionAuthorization;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 /** Machine-specific recipe authorization at the generic continuous Run boundary. */
@@ -20,7 +21,7 @@ public interface PoweredProcessingMachineRunAdapter<M extends AbstractProcessing
 
     WorkstationEndpointProjection endpointProjection(M machine);
 
-    boolean hasConflictingReservation(ServerLevel level, M machine);
+    boolean hasConflictingReservation(ServerLevel level, M machine, Optional<String> permittedOperatorReservation);
 
     WorkstationProductionRequestResult requestRunProcessing(
             M machine,

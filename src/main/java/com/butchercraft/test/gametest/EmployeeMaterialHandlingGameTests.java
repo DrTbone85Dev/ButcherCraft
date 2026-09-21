@@ -2,6 +2,7 @@ package com.butchercraft.test.gametest;
 
 import com.butchercraft.ButcherCraft;
 import com.butchercraft.entity.employee.EmployeeEntity;
+import com.butchercraft.integration.employee.EmployeeWorkstationOperationService;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlock;
 import com.butchercraft.machine.cuttingtable.CuttingTableBlockEntity;
 import com.butchercraft.machine.grinder.GrinderBlock;
@@ -470,9 +471,8 @@ public final class EmployeeMaterialHandlingGameTests {
         arriveAtDestination(helper, fixture);
         helper.assertTrue(counts(helper).equals(before), "Transport itself creates no operation");
 
-        helper.assertTrue(execute(helper, commandSource(helper),
-                        "butchercraft employee operate #1") == 1,
-                "Existing explicit employee Grinder operation remains available after transfer");
+        helper.assertTrue(EmployeeWorkstationOperationService.INSTANCE.request(fixture.employee()).accepted(),
+                "Historical one-cycle employee Grinder operation remains available after transfer");
 
         helper.succeedWhen(() -> {
             helper.assertTrue(fixture.grinder().inventory().output().is(ModItems.GROUND_BEEF.get())

@@ -26,6 +26,7 @@ import com.butchercraft.world.execution.persistence.MachineRunStorage;
 import com.butchercraft.world.materialhandling.MaterialHandlingSchema;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorage;
 import com.butchercraft.world.materialhandling.persistence.MaterialHandlingStorageV2;
+import com.butchercraft.world.workforce.machineoperation.persistence.EmployeeMachineOperationAssignmentStorage;
 import com.butchercraft.world.planning.PlanningRecoveryState;
 import com.butchercraft.world.planning.PlanningRecoveryStorage;
 import com.butchercraft.world.simulation.SimulationClockService;
@@ -62,10 +63,15 @@ public final class NativeOwnerRestorationAdapters {
             "departments.json", "employee_records.json",
             "employee_material_handling_assignments.json", "workforce_definitions.json"
     );
-    private static final List<String> CURRENT_WORKFORCE_NATIVE_FILES = List.of(
+    private static final List<String> SCHEMA_2_WORKFORCE_NATIVE_FILES = List.of(
             "departments.json", "employee_records.json",
             "employee_material_handling_assignments.json", "workforce_definitions.json",
             "workstation_reservations.json"
+    );
+    private static final List<String> CURRENT_WORKFORCE_NATIVE_FILES = List.of(
+            "departments.json", "employee_records.json",
+            "employee_machine_operation_assignments.json", "employee_material_handling_assignments.json",
+            "workforce_definitions.json", "workstation_reservations.json"
     );
 
     private NativeOwnerRestorationAdapters() {
@@ -143,9 +149,10 @@ public final class NativeOwnerRestorationAdapters {
                 LegacySplitRecoveryParticipants.WORKFORCE,
                 Map.of(
                         1, HISTORICAL_WORKFORCE_NATIVE_FILES,
-                        2, CURRENT_WORKFORCE_NATIVE_FILES
+                        2, SCHEMA_2_WORKFORCE_NATIVE_FILES,
+                        3, CURRENT_WORKFORCE_NATIVE_FILES
                 ),
-                Map.of(1, Set.of(), 2, Set.of()),
+                Map.of(1, Set.of(), 2, Set.of(), 3, Set.of()),
                 true,
                 NativeOwnerRestorationAdapters::identity,
                 NativeOwnerRestorationAdapters::validateWorkforce,
@@ -345,10 +352,16 @@ public final class NativeOwnerRestorationAdapters {
             OwnerNativeRestorationContext context,
             FileBundleNativeRestorationAdapter.PreparedNativeState state
     ) {
-        if (state.ownerSchemaVersion() == 2) {
+        if (state.ownerSchemaVersion() >= 2) {
             validateReservations(context, state);
         } else if (state.files().containsKey("workstation_reservations.json")) {
             throw new IllegalArgumentException("Historical Workforce schema must not own workstation reservations");
+        }
+        if (state.ownerSchemaVersion() == 3) {
+            new EmployeeMachineOperationAssignmentStorage(UNUSED).deserialize(
+                    text(state.files(), "employee_machine_operation_assignments.json"));
+        } else if (state.files().containsKey("employee_machine_operation_assignments.json")) {
+            throw new IllegalArgumentException("Historical Workforce schema must not own machine-operation assignments");
         }
     }
 

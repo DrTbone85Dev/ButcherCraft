@@ -38,6 +38,8 @@ import com.butchercraft.world.materialhandling.runtime.MaterialHandlingService;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignment;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentId;
 import com.butchercraft.world.workforce.materialhandling.EmployeeMaterialHandlingAssignmentState;
+import com.butchercraft.world.workforce.machineoperation.EmployeeMachineOperationAssignment;
+import com.butchercraft.world.workforce.machineoperation.EmployeeMachineOperationAssignmentId;
 import com.butchercraft.world.checkpoint.LegacySplitRecoveryParticipants;
 import com.butchercraft.world.checkpoint.StartupMutationGateService;
 import net.minecraft.core.BlockPos;
@@ -282,6 +284,83 @@ public final class WorkstationReservationService {
         return result;
     }
 
+    public WorkstationReservationResult<WorkstationReservationRecord> assignMachineOperator(
+            ServerLevel level,
+            EmployeeId employeeId,
+            BlockPos workstationPos,
+            String assignmentReference
+    ) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(employeeId, "employeeId");
+        Objects.requireNonNull(workstationPos, "workstationPos");
+        EmployeeMachineOperationAssignment assignment;
+        try {
+            assignment = EmployeeMachineOperationAssignmentService.INSTANCE.managerFor(level.getServer())
+                    .find(new EmployeeMachineOperationAssignmentId(assignmentReference)).orElse(null);
+        } catch (IllegalArgumentException exception) {
+            assignment = null;
+        }
+        if (assignment == null || !assignment.active() || !assignment.employeeId().equals(employeeId)) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.RESERVATION_INVALID,
+                    "Machine operator reservation requires an active exact Workforce assignment");
+        }
+        EmployeeRecord employee = employeeService.managerFor(level.getServer()).find(employeeId).orElse(null);
+        if (employee == null) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.UNKNOWN_EMPLOYEE, "Unknown employee: " + employeeId.value());
+        }
+        EmployeePresenceObservation observation = employeeService.observe(level.getServer(), employeeId)
+                .value().orElse(null);
+        if (observation == null) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.MISSING_BUSINESS_RUNTIME,
+                    "Business Runtime calendar is unavailable for machine-operation assignment");
+        }
+        Optional<WorkstationReservationFailure> employeeFailure =
+                validateEmployeeForAssignment(level, employee, observation);
+        if (employeeFailure.isPresent()) {
+            WorkstationReservationFailure failure = employeeFailure.orElseThrow();
+            return WorkstationReservationResult.failed(failure.code(), failure.detail());
+        }
+        WorkstationReservationResult<ResolvedWorkstationTarget> target =
+                resolveSupportedWorkstation(level, workstationPos);
+        if (!target.succeeded()) {
+            return WorkstationReservationResult.failed(
+                    target.failure().orElseThrow().code(), target.failure().orElseThrow().detail());
+        }
+        ResolvedWorkstationTarget value = target.orThrow();
+        if (!assignment.workstation().instanceId().value().equals(value.workstationIdentity())
+                || assignment.workstation().generation() != value.workstationGeneration()
+                || !assignment.machineType().equals(value.workstationType())) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.WORKSTATION_INSTANCE_CONFLICT,
+                    "Machine-operation assignment targets another Workstation Instance");
+        }
+        if (employee.entityLink().filter(link -> link.dimensionIdentity().equals(value.dimensionIdentity())).isEmpty()) {
+            return WorkstationReservationResult.failed(
+                    WorkstationReservationFailureCode.EMPLOYEE_DIFFERENT_WORLD,
+                    "Employee and workstation are in different worlds");
+        }
+        WorldIdentityRootIdentity worldIdentity = worldIdentity(level.getServer());
+        Optional<String> assignmentIdentity = Optional.of(assignmentReference);
+        String requestIdentity = WorkstationReservationRequest.canonicalRequestIdentity(
+                worldIdentity, value.workstationIdentity(), employeeId.value(),
+                WorkstationReservationRole.MACHINE_OPERATOR, assignmentIdentity, Optional.empty(),
+                WorkstationReservationEndpointScope.none());
+        WorkstationReservationRequest request = WorkstationReservationRequest.machineOperator(
+                worldIdentity, requestIdentity, value.workstationIdentity(), value.workstationGeneration(),
+                value.workstationType(), employeeId.value(), assignmentIdentity, level.getGameTime(),
+                value.dimensionIdentity(), value.workstationPos().getX(), value.workstationPos().getY(),
+                value.workstationPos().getZ(), value.operatingPos().getX(), value.operatingPos().getY(),
+                value.operatingPos().getZ(), OPERATING_ANCHOR_RADIUS);
+        requireMutation(level.getServer());
+        ActiveWorkstationReservations runtime = load(level.getServer());
+        WorkstationReservationResult<WorkstationReservationRecord> result = runtime.manager().reserve(request);
+        if (result.succeeded()) runtime.storage().save(runtime.manager().directory());
+        return result;
+    }
+
     private Optional<WorkstationReservationFailure> validateMaterialHandlerEvidence(
             ServerLevel level,
             EmployeeId employeeId,
@@ -509,6 +588,17 @@ public final class WorkstationReservationService {
         if (!observation.plantOpen()
                 || observation.presenceState() != EmployeePresenceState.PRESENT
                 || observation.assignedDepartmentId().isEmpty()) {
+            if (record.role() == WorkstationReservationRole.MACHINE_OPERATOR
+                    && record.assignmentReference().flatMap(reference -> {
+                        try {
+                            return EmployeeMachineOperationAssignmentService.INSTANCE.managerFor(level.getServer())
+                                    .find(new EmployeeMachineOperationAssignmentId(reference));
+                        } catch (IllegalArgumentException exception) {
+                            return Optional.empty();
+                        }
+                    }).filter(EmployeeMachineOperationAssignment::active).isPresent()) {
+                return Optional.empty();
+            }
             runtime.manager().invalidateByEmployee(
                     employee.employeeId().value(),
                     "employee no longer available for workstation reservation"
@@ -593,6 +683,19 @@ public final class WorkstationReservationService {
                         && reservation.workstationX() == workstationPos.getX()
                         && reservation.workstationY() == workstationPos.getY()
                         && reservation.workstationZ() == workstationPos.getZ());
+    }
+
+    public boolean hasConflictingMachineOperatorAt(
+            ServerLevel level,
+            BlockPos workstationPos,
+            Optional<String> permittedOperatorReservation
+    ) {
+        Objects.requireNonNull(permittedOperatorReservation, "permittedOperatorReservation");
+        return reservationsForWorkstation(level, workstationPos).stream()
+                .filter(WorkstationReservationRecord::active)
+                .filter(record -> record.role() == WorkstationReservationRole.MACHINE_OPERATOR)
+                .anyMatch(record -> permittedOperatorReservation
+                        .filter(record.reservationId().value()::equals).isEmpty());
     }
 
     public boolean isWithinOperatingTolerance(
@@ -966,8 +1069,31 @@ public final class WorkstationReservationService {
                 changed = true;
                 continue;
             }
+            OperatorReconciliation operatorReconciliation = record.role() == WorkstationReservationRole.MACHINE_OPERATOR
+                    ? reconcileOperatorBinding(server, record)
+                    : OperatorReconciliation.NOT_APPLICABLE;
+            if (operatorReconciliation == OperatorReconciliation.TERMINAL) {
+                runtime.manager().release(
+                        record.reservationId(),
+                        WorkstationReservationRole.MACHINE_OPERATOR,
+                        "authoritative machine-operation assignment is terminal after reload"
+                );
+                changed = true;
+                continue;
+            }
+            if (operatorReconciliation == OperatorReconciliation.INVALID) {
+                runtime.manager().invalidateByEmployee(
+                        record.employeeIdentity(),
+                        "Machine Operator reservation binding is invalid after reload"
+                );
+                changed = true;
+                continue;
+            }
             Optional<EmployeeRecord> employee = employeeService.managerFor(server).find(employeeId);
             if (employee.isEmpty() || employee.orElseThrow().entityLink().isEmpty()) {
+                if (operatorReconciliation == OperatorReconciliation.VALID) {
+                    continue;
+                }
                 runtime.manager().invalidateByEmployee(record.employeeIdentity(), "reserved employee is missing");
                 changed = true;
                 continue;
@@ -977,6 +1103,9 @@ public final class WorkstationReservationService {
                     || !observation.orElseThrow().plantOpen()
                     || observation.orElseThrow().presenceState() != EmployeePresenceState.PRESENT
                     || observation.orElseThrow().assignedDepartmentId().isEmpty()) {
+                if (operatorReconciliation == OperatorReconciliation.VALID) {
+                    continue;
+                }
                 runtime.manager().invalidateByEmployee(
                         record.employeeIdentity(),
                         "reserved employee is not available after reload"
@@ -1026,6 +1155,30 @@ public final class WorkstationReservationService {
         }
     }
 
+    private OperatorReconciliation reconcileOperatorBinding(
+            MinecraftServer server,
+            WorkstationReservationRecord record
+    ) {
+        EmployeeMachineOperationAssignment assignment;
+        try {
+            assignment = EmployeeMachineOperationAssignmentService.INSTANCE.managerFor(server)
+                    .find(new EmployeeMachineOperationAssignmentId(record.assignmentReference().orElseThrow()))
+                    .orElse(null);
+        } catch (IllegalArgumentException | java.util.NoSuchElementException exception) {
+            return OperatorReconciliation.INVALID;
+        }
+        if (assignment == null
+                || !assignment.employeeId().value().equals(record.employeeIdentity())
+                || !assignment.workstation().instanceId().value().equals(record.workstationIdentity())
+                || assignment.workstation().generation() != record.workstationGeneration()
+                || !assignment.machineType().equals(record.workstationType())
+                || assignment.reservationId().isPresent()
+                && assignment.reservationId().filter(record.reservationId()::equals).isEmpty()) {
+            return OperatorReconciliation.INVALID;
+        }
+        return assignment.active() ? OperatorReconciliation.VALID : OperatorReconciliation.TERMINAL;
+    }
+
     private HandlerReconciliation reconcileHandlerBinding(
             MinecraftServer server,
             WorkstationReservationRecord record
@@ -1072,6 +1225,13 @@ public final class WorkstationReservationService {
     }
 
     private enum HandlerReconciliation {
+        VALID,
+        TERMINAL,
+        INVALID
+    }
+
+    private enum OperatorReconciliation {
+        NOT_APPLICABLE,
         VALID,
         TERMINAL,
         INVALID

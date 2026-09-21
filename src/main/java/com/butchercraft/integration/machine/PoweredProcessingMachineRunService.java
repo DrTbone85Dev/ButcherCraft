@@ -43,6 +43,7 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
     private final ExecutionMachineRunService runService;
     private final MachineOperatingStateService operatingService;
     private final WorkstationEndpointService endpointService;
+    private final MachineRunChildAdmissionGate admissionGate;
 
     public PoweredProcessingMachineRunService(PoweredProcessingMachineRunAdapter<M> adapter) {
         this(
@@ -50,8 +51,17 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
                 MachineRunCoordinatorService.INSTANCE,
                 ExecutionMachineRunService.INSTANCE,
                 MachineOperatingStateService.INSTANCE,
-                WorkstationEndpointService.INSTANCE
+                WorkstationEndpointService.INSTANCE,
+                MachineRunChildAdmissionGate.ALLOW_ALL
         );
+    }
+
+    public PoweredProcessingMachineRunService(
+            PoweredProcessingMachineRunAdapter<M> adapter,
+            MachineRunChildAdmissionGate admissionGate
+    ) {
+        this(adapter, MachineRunCoordinatorService.INSTANCE, ExecutionMachineRunService.INSTANCE,
+                MachineOperatingStateService.INSTANCE, WorkstationEndpointService.INSTANCE, admissionGate);
     }
 
     PoweredProcessingMachineRunService(
@@ -59,18 +69,40 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
             MachineRunCoordinatorService coordinator,
             ExecutionMachineRunService runService,
             MachineOperatingStateService operatingService,
-            WorkstationEndpointService endpointService
+            WorkstationEndpointService endpointService,
+            MachineRunChildAdmissionGate admissionGate
     ) {
         this.adapter = Objects.requireNonNull(adapter, "adapter");
         this.coordinator = Objects.requireNonNull(coordinator, "coordinator");
         this.runService = Objects.requireNonNull(runService, "runService");
         this.operatingService = Objects.requireNonNull(operatingService, "operatingService");
         this.endpointService = Objects.requireNonNull(endpointService, "endpointService");
+        this.admissionGate = MachineRunChildAdmissionGate.require(admissionGate);
     }
 
     public PoweredMachineRunControlResult start(ServerLevel level, M machine) {
+        WorkstationEndpointReferenceResult endpoint = endpointService.referenceFor(level, machine.getBlockPos());
+        if (!endpoint.succeeded()) return rejected(PoweredMachineRunControlCode.REJECTED, machine, endpoint.detail());
+        WorkstationEndpointReference reference = endpoint.reference().orElseThrow();
+        long operatingRevision = operatingService.find(level.getServer(), reference.instanceId().value())
+                .map(MachineOperatingRecord::revision)
+                .orElse(0L);
+        return start(level, machine, adapter.controlOwner(),
+                requestIdentity("start", reference.instanceId().value(), operatingRevision), Optional.empty());
+    }
+
+    public PoweredMachineRunControlResult start(
+            ServerLevel level,
+            M machine,
+            String sourceOwner,
+            String sourceRequestIdentity,
+            Optional<String> permittedOperatorReservation
+    ) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(machine, "machine");
+        Objects.requireNonNull(sourceOwner, "sourceOwner");
+        Objects.requireNonNull(sourceRequestIdentity, "sourceRequestIdentity");
+        Objects.requireNonNull(permittedOperatorReservation, "permittedOperatorReservation");
         long tick = tick(level);
         WorkstationEndpointReferenceResult endpoint = endpointService.referenceFor(level, machine.getBlockPos());
         if (!endpoint.succeeded()) return rejected(PoweredMachineRunControlCode.REJECTED, machine, endpoint.detail());
@@ -78,12 +110,17 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
         Optional<MachineRunRecord> active = runService.snapshot(level.getServer())
                 .activeFor(workstation.instanceId().value());
         if (active.isPresent()) {
-            return result(PoweredMachineRunControlCode.EXISTING_RESULT, machine, active,
-                    adapter.displayName() + " already has an active Machine Run");
+            MachineRunRecord existing = active.orElseThrow();
+            boolean sameRequest = sourceOwner.equals(adapter.controlOwner())
+                    || existing.startEvidence().sourceOwner().equals(sourceOwner)
+                    && existing.startEvidence().sourceRequestIdentity().equals(sourceRequestIdentity);
+            return result(sameRequest ? PoweredMachineRunControlCode.EXISTING_RESULT
+                            : PoweredMachineRunControlCode.BUSY,
+                    machine, active, adapter.displayName() + " already has an active Machine Run");
         }
         if (machine.productionSnapshot().activeExecutionOperationId().isPresent()
                 || machine.workstationState() == WorkstationState.PROCESSING
-                || adapter.hasConflictingReservation(level, machine)) {
+                || adapter.hasConflictingReservation(level, machine, permittedOperatorReservation)) {
             return rejected(PoweredMachineRunControlCode.BUSY, machine,
                     adapter.displayName() + " is reserved or already owns a bounded operation");
         }
@@ -95,8 +132,8 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
                 workstation,
                 POLICY,
                 operatingRevision,
-                adapter.controlOwner(),
-                requestIdentity("start", workstation.instanceId().value(), operatingRevision),
+                sourceOwner,
+                sourceRequestIdentity,
                 tick
         );
         if (!started.accepted()) return coordinationFailure(machine, started);
@@ -118,6 +155,26 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
                     adapter.displayName() + " is already OFF");
         }
         MachineRunRecord run = active.orElseThrow();
+        return stop(level, machine, run.runIdentity(), adapter.controlOwner(),
+                requestIdentity("stop", run.runIdentity().value(), run.revision()));
+    }
+
+    public PoweredMachineRunControlResult stop(
+            ServerLevel level,
+            M machine,
+            MachineRunIdentity exactRunIdentity,
+            String sourceOwner,
+            String sourceRequestIdentity
+    ) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(machine, "machine");
+        Objects.requireNonNull(exactRunIdentity, "exactRunIdentity");
+        Optional<MachineRunRecord> active = activeRun(level, machine);
+        if (active.filter(run -> run.runIdentity().equals(exactRunIdentity)).isEmpty()) {
+            return rejected(PoweredMachineRunControlCode.REJECTED, machine,
+                    adapter.displayName() + " exact Machine Run is no longer active");
+        }
+        MachineRunRecord run = active.orElseThrow();
         MachineOperatingRecord operating = operatingService.find(level.getServer(), run.workstationInstanceIdentity())
                 .orElse(null);
         if (operating == null) return rejected(PoweredMachineRunControlCode.RECOVERY_REQUIRED, machine,
@@ -128,8 +185,8 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
                 run.runIdentity(),
                 run.revision(),
                 operating.revision(),
-                adapter.controlOwner(),
-                requestIdentity("stop", run.runIdentity().value(), run.revision()),
+                sourceOwner,
+                sourceRequestIdentity,
                 tick
         );
         if (!stopped.accepted()) return coordinationFailure(machine, stopped);
@@ -271,6 +328,7 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
             publish(level, run, MachineOperatingState.RUNNING_EMPTY, Optional.empty(), Optional.empty(), tick);
             return;
         }
+        if (!admissionGate.mayAdmit(level.getServer(), run)) return;
         publish(level, run, MachineOperatingState.RUNNING,
                 Optional.of(eligibilityIdentity(run)), Optional.empty(), tick);
         MachineRunRecord current = runService.find(level.getServer(), run.runIdentity()).orElse(run);

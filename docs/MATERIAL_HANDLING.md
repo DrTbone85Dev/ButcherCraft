@@ -1,6 +1,6 @@
 # ButcherCraft Material Handling
 
-Status: DG-002, DG-002A, DG-004, and DG-005A ratified; IM-028A through IM-029 live routes, IM-030A/IM-030B stack-aware activation, and IM-032A role-aware reservation integration implemented; IM-032A Product Owner acceptance pending
+Status: DG-002, DG-002A, DG-004, and DG-005A ratified; IM-028A through IM-029 live routes, IM-030A/IM-030B stack-aware activation, IM-032A role-aware reservations, and IM-032B operator/handler coexistence implemented
 
 ## Authority
 
@@ -73,8 +73,9 @@ Schema 1 permits one employee reservation at a time:
 11. Material Handling clears custody and publishes completion.
 12. The Employee remains arrived and reserved at the Grinder.
 
-The Grinder remains idle. Processing begins only through the separately
-explicit `/butchercraft employee operate <employee>` command.
+The Grinder remains idle. Processing begins only through separate player
+control or the explicit finite `/butchercraft employee operate <employee> <x>
+<y> <z> <quantity>` assignment command.
 
 DG-005A preserves this source-then-destination order and one active reservation
 per employee. Under IM-032A, another employee's `MACHINE_OPERATOR` may
@@ -197,12 +198,11 @@ after schema-2 publication.
 
 ## Current Gates
 
-The following remain unimplemented and unauthorized after IM-032A:
+The following remain unimplemented and unauthorized after IM-032B:
 
-- IM-032B employee persistent machine operation;
 - more than one handler per Workstation Instance or independent simultaneous
   input/output handlers;
-- employee Patty Former operation;
+- autonomous material search or operation assignment;
 - routes or materials beyond Beef Trim Cutting Table to Grinder and Ground Beef
   Grinder to Patty Former;
 - carried quantities above one and batch hauling;
