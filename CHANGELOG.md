@@ -1,5 +1,89 @@
 # Changelog
 
+## ButcherCraft v0.10.7-alpha.1 - Employee Machine Operation Update
+
+Employees can now operate the Grinder and Patty Former for an explicitly
+assigned quantity, while another compatible employee handles material delivery.
+This release includes accepted DG-005A, IM-032A, and IM-032B work. It does not
+add Production-driven assignments or machine condition mechanics.
+
+### Employee Machine Operation
+
+- Added persistent finite assignments for the Grinder and Patty Former through
+  the same machine-operation path. Employees navigate physically, take
+  operating responsibility, and process bounded cycles under one persistent Run.
+- Stop safely at the requested target and retain excess input: 10 assigned
+  units with 64 Beef Trim process 10 Ground Beef and leave 54 Beef Trim.
+- Added explicit operator commands:
+  `/butchercraft employee operate <employee> <x> <y> <z> <quantity>`,
+  `/butchercraft employee operate-status <employee>`, and
+  `/butchercraft employee operate-cancel <employee>`.
+- Retain the same Run while output is blocked, without consuming input; the
+  employee remains responsible and processing can continue when space returns.
+- Wait in `RUNNING_EMPTY` only with proven compatible inbound material supply.
+  Without that supply, STOP closes the Run and the incomplete assignment becomes
+  `INTERRUPTED`; later continuation requires a new explicit assignment.
+- Honor cancellation and player STOP at the existing safe-cycle boundary. An
+  active bounded child may finish, but no later child starts automatically.
+- Preserve existing player controls and Cutting Table `MANUAL_DISCRETE` behavior.
+
+### Role-Aware Workstation Reservations
+
+- Separate exclusive `MACHINE_OPERATOR` responsibility from temporary,
+  transfer-bound `MATERIAL_HANDLER` access.
+- Permit one operator and one compatible handler on an exact Workstation
+  Instance, while retaining one active reservation per employee.
+- Bind reservations and assignments to exact instances, not just coordinates;
+  replacing a machine cannot inherit its predecessor's assignment or Run.
+- Preserve exact role-specific release and conservative historical reservation
+  migration without granting new machine-operation authority.
+
+### Material Handling Integration
+
+- Keep the operator assigned during compatible delivery by another employee.
+- Retain the two explicit one-item routes: Beef Trim from Cutting Table to
+  Grinder, and Ground Beef from Grinder to Patty Former. No general output
+  hauling or additional routes are introduced.
+- Keep material custody separate from machine control: a handler cannot grant
+  START/STOP authority and an operator does not own in-transit products.
+
+### Persistence & Recovery
+
+- Persist finite assignments and role-aware reservations through save/reload,
+  coordinated checkpoints, owner-native restoration, and hard-crash recovery.
+- Preserve exact employee, instance, reservation, and Run references without
+  duplicate START/STOP or replaying completed work.
+- Preserve restart Policy B: active machines become `RESTART_REQUIRED` and need
+  explicit permitted control; employees do not autonomously RESUME.
+
+### Fixes
+
+- Fixed a replaced-machine `RECOVERY_REQUIRED` assignment that could strand an
+  employee's assignment slot. Explicit cancellation now frees the employee only
+  when authoritative evidence proves the orphan consequence-free, preserving
+  failure history and leaving the replacement untouched. Ambiguous recovery
+  still fails closed; this is not a general recovery reset.
+
+### Validation & Stability
+
+- Release validation: 351 Java suites, 1,785 tests, 1,778 passed, seven configured
+  skips, no failures/errors, all 321 required GameTests passed, and clean build
+  passed. Product Owner manual acceptance of the corrected workflow is complete.
+- Expanded release-version checks cover canonical, generated, and packaged
+  metadata, artifact naming, and previous-release history. Release JARs exclude
+  GameTest classes/helpers while development GameTests remain available.
+
+### Remaining Alpha Limits
+
+- No automatic workstation selection, Production-driven machine operation,
+  multi-machine tending, employee inventory, batch transport, or autonomous
+  restart. Independent simultaneous input/output handlers remain unsupported.
+- No wear, damage, lubrication, maintenance, breakdown, repair, or dry-running
+  mechanical consequences. DG-006 architecture/design is next but has not begun;
+  no DG-006 implementation is included.
+- Checkpoint retention and compaction remain unresolved. Ambiguous recovery
+  stays authority-blocked, and protected historical worlds remain untouched.
+
 ## ButcherCraft v0.10.6-alpha.1 - Checkpoint Recovery & Continuous Processing Update
 
 This release extends persistent player-controlled Machine Runs to both current

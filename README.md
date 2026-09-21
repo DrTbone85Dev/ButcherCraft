@@ -4,7 +4,7 @@ ButcherCraft is a Minecraft 1.21.1 NeoForge project building a deterministic reg
 
 Registered content includes the Cutting Table, Grinder, Patty Former, Bandsaw, Packaging Table, retail-product proof, Packaging Supplies, six promoted Grinder recipes for Beef, Pork, Chicken, Buffalo, Lamb, and Venison trim to matching ground products, and the Beef Patties production chain from Beef Trim to Ground Beef to Beef Patties. The player-facing Production Order item guides and observes the manual multi-workstation chain.
 
-The v0.10.6 Checkpoint Recovery & Continuous Processing Update adds persistent player-controlled Grinder and Patty Former Runs, explicit START/STOP controls, clearer machine-state presentation, and coordinated checkpoint recovery. The Cutting Table retains its first player-operated fabrication recipe, `Beef Short Loin -> T-Bone Steak + Beef Trim`, with separate input, primary-output, and trim-output slots.
+The **v0.10.7-alpha.1 - Employee Machine Operation Update** lets employees operate the Grinder and Patty Former for an explicitly requested quantity. They walk to the selected machine, take operating responsibility, process bounded cycles, and stop at the target. Another employee may make a compatible material delivery without displacing the operator. Player machine controls remain unchanged. The Cutting Table remains manual and discrete, with its `Beef Short Loin -> T-Bone Steak + Beef Trim` recipe and separate input, primary-output, and trim-output slots.
 
 The Grinder now uses the persistent `POWERED_CONTINUOUS_EXPLICIT_STOP` policy. Normal right-click opens its inventory; GUI START creates one Machine Run that admits separately identified, bounded Execution/Scheduler cycles until stopped, empty, blocked, or recovery-gated. GUI STOP closes that exact Run at a safe cycle boundary, GUI RESUME continues the same restart-suspended Run, and Shift + right-click is the state-aware START/STOP shortcut. An empty Grinder remains powered as `RUNNING_EMPTY`; compatible input added later resumes the same Run. Full or incompatible output publishes `OUTPUT_BLOCKED` without consuming input.
 
@@ -41,7 +41,7 @@ The platform foundation also includes immutable regional identity, manufacturers
 - Minecraft: `1.21.1`
 - NeoForge: `21.1.235`
 - Java: `21`
-- Version: `0.10.6-alpha.1`
+- Version: `0.10.7-alpha.1`
 
 ## Commands
 
@@ -130,6 +130,29 @@ The operation, transfer, cancellation, and anchor mutation commands require oper
 
 The world-time diagnostic is `/butchercraft time status`; there is no separate `world-time` command literal.
 
+### Employee Machine Assignments
+
+Assign an exact Grinder or Patty Former and a positive target quantity with
+`/butchercraft employee operate <employee> <x> <y> <z> <quantity>`.
+The employee must physically arrive and acquire exclusive operating
+responsibility. For example, a target of 10 with 64 Beef Trim in a Grinder
+processes 10 Ground Beef and leaves 54 Beef Trim; it does not run until empty.
+Use `operate-status` to inspect the assignment and `operate-cancel` to request
+safe cancellation.
+
+An empty employee-operated machine retains its same Run only while a proven
+compatible Material Handling delivery is pending. Without that supply, it
+stops and the incomplete assignment becomes `INTERRUPTED`; later work needs a
+new explicit assignment. Blocked output retains the same Run and operator
+without consuming input, and processing may continue when capacity returns.
+Servicing remains limited to the two existing one-item transport routes.
+
+Cancellation or a player's STOP allows the active bounded cycle to finish but
+admits no later cycle; the employee does not immediately restart it. Assignment
+and exact Run references survive save/reload and recovery, but restart Policy B
+requires explicit permitted RESUME. Replacing a machine never transfers its
+old assignment to the replacement. Production does not create these assignments.
+
 ## Alpha Limitations
 
 - The Cutting Table has one fabrication recipe.
@@ -138,6 +161,7 @@ The world-time diagnostic is `/butchercraft time status`; there is no separate `
 - Either route may withdraw one item from a larger compatible source stack and merge it into a compatible destination stack.
 - Ground Beef delivery to an OFF Patty Former leaves it `READY`; delivery to the exact destination of an existing `RUNNING_EMPTY` Run makes that same Run eligible again. Delivery never grants START authority. A separate finite employee machine-operation assignment may request START after physical arrival and operator-reservation validation.
 - Employee machine-operation assignments support the Grinder and Patty Former, one exact machine and one finite quantity at a time. The Cutting Table remains unsupported for persistent operation.
+- Each employee holds at most one Workstation reservation. Each exact machine permits one operator and one compatible Material Handler, not independent simultaneous input/output handlers.
 - Restart Policy B preserves the assignment and exact Run but requires explicit player RESUME; employees never resume a suspended Run autonomously.
 - Employee carrying remains exactly one item; quantity selection, batch hauling, and automatic repeated transfers are not implemented.
 - Production does not assign transfers.

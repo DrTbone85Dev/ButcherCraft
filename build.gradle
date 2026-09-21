@@ -22,6 +22,10 @@ tasks.withType(ProcessResources).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+tasks.named('jar', Jar).configure {
+    exclude('com/butchercraft/test/**')
+}
+
 repositories {
     mavenCentral()
 }
@@ -150,6 +154,7 @@ tasks.matching { it.name == 'runGameTestServer' }.configureEach {
 }
 
 tasks.named('test', Test).configure {
+    dependsOn tasks.named('jar')
     useJUnitPlatform()
     systemProperty 'butchercraft.projectDir', project.layout.projectDirectory.asFile.absolutePath
     systemProperty 'butchercraft.testRuntimeClasspath', sourceSets.test.runtimeClasspath.asPath

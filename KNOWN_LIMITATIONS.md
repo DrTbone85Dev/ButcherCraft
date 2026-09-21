@@ -6,7 +6,7 @@ This file records expected risks, limitations, and prototype areas. It should be
 
 ## Current Repository Limitations
 
-### v0.10.6-alpha.1 Release Boundaries
+### v0.10.7-alpha.1 Release Boundaries
 
 - IM-032B implements explicit finite persistent employee operation for the Grinder and Patty Former. The employee physically arrives, holds one exact `MACHINE_OPERATOR`, and requests canonical exact-Run START/STOP; it cannot autonomously RESUME a Policy B restart-suspended Run.
 - IM-032A is complete and accepted and provides Workforce-owned role-aware Workstation reservation schema 2 with one `MACHINE_OPERATOR`, one compatible transfer-bound `MATERIAL_HANDLER`, conservative `LEGACY_EXCLUSIVE` migration, and one active reservation per employee. IM-032B and overall IM-032 are complete and Product Owner accepted. Continuing beta findings are targeted defect corrections unless they expose an architecture conflict, not a pending acceptance gate.
