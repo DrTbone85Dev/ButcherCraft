@@ -148,6 +148,16 @@ Automated coverage includes:
 
 Manual client verification remains required before claiming human acceptance.
 
+## Ratified Condition Direction
+
+The [ratified DG-006 ADR](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
+requires a separate Patty Former condition policy. V1 RUNNING_EMPTY and
+OUTPUT_BLOCKED are POWERED-IDLE, with no forming-cycle wear merely from either
+wait. Implementation and numeric balance remain gated.
+There is no live mechanical wear, damage, jam, maintenance, breakdown, repair,
+or empty/blocked exposure consequence. Grinder dry-running behavior is not
+applicable to this machine under the ratified V1 policy.
+
 ## Explicit Exclusions
 
 IM-032B does not add Production-driven machine control or transfer, autonomous workstation selection, autonomous Policy B RESUME, multi-machine tending, general Logistics, carried quantities above one, batch transport, additional Patty Former recipes, yield balancing, packaging, new species, public APIs, automatic restart, forced chunk loading, wear, damage, maintenance, compensation, final art, or final UI polish.

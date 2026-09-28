@@ -403,6 +403,13 @@ assignment while preserving every Workstation authority.
 
 ## Future Extension Points
 
+The [ratified DG-006 architecture](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
+establishes Workstation as the singular mechanical-condition owner. Condition
+must remain separate from inventory, operating state, Execution Machine Runs,
+Scheduler timing and Workforce assignments, while sharing the serialized owner
+publication boundary. Implementation remains gated; the Java Architecture
+Manifest makes no live condition guarantee.
+
 - Additional machines can define separate `WorkstationCapability` values.
 - Capabilities declare how many input and output slots a machine can expose.
 - Future poultry-specific restrictions should be capability/profile data, not Java species switches.

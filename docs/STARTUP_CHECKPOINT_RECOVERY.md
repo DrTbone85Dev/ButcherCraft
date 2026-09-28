@@ -145,6 +145,17 @@ state, and the unresolved Planning authority block. Minecraft loaded the
 restored disposable world. A later restart selected coherent live state and did
 not create another Restoration Intent or Result.
 
+## Ratified Condition Completeness Direction
+
+The [ratified DG-006 ADR](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
+requires exact condition payload/evidence in future condition-enabled
+Workstation snapshots, including unloaded instances, followed by owner-native
+restoration without consequence replay. Its crash policy keeps the last durable
+accounted exposure cutoff without reconstructing an unproven tail; ordinary
+wear remains inseparable from committed product. This is implementation-gated
+direction only: no current checkpoint schema changes, historical generation
+rewrites, condition migration, or Java Manifest guarantees are introduced.
+
 ## Remaining Gates
 
 The following remain outside R4:

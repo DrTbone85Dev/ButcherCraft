@@ -612,6 +612,20 @@ or identity-conflicting endpoint enters explicit recovery and cannot inherit
 the prior Run. The Cutting Table remains discrete. See
 `docs/MACHINE_RUN_STATE_FOUNDATION.md`.
 
+### Ratified Machine Condition Direction
+
+CURRENT: machines have no live mechanical condition, wear, damage, service,
+breakdown, repair, or dry-running consequence. The prototype engine equipment
+factor is not persistent machine condition.
+
+RATIFIED / IMPLEMENTATION GATED: [DG-006](docs/adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
+establishes Workstation-owned condition, distinct from inventory, operating
+state and Execution-owned Runs, embedded in a future version of the durable
+per-instance projection. Exact joint product/condition results and bounded
+exposure must preserve owner-native recovery. Separate implementation/schema
+authorization and balance review remain required. No Java Architecture
+Manifest enforcement or live condition subsystem is claimed.
+
 ## Industry-Neutral Production Architecture
 
 Phase 20 introduces `com.butchercraft.world.production` as a pure Java operational domain. It does not replace the economic `GoodTransformation` relationship or the existing local workstation transformation engine. A `ProductionProcessDefinition` describes a reusable executable Process with exact input and output lines, whole-batch deterministic yield, duration, required capabilities, optional Business and Workforce requirements, policy, tags, and typed metadata.

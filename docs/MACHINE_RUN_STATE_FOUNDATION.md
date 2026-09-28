@@ -164,6 +164,17 @@ lifecycle, operating state, active child operation, next child sequence, owner
 revisions, endpoint availability, and recovery detail. They do not expose
 mutation authority.
 
+## Ratified Condition Relationship
+
+[DG-006](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
+is ratified, not implemented. Workstation-owned condition must contribute
+exact local eligibility/fault evidence; Execution retains Run identity,
+START/STOP/RESUME and child authority. Proven breakdown leads to exact-Run
+FAILED at a safe boundary, not gameplay RECOVERY_REQUIRED; repair then needs
+a new explicit START. Legitimate STOP remains available. This future contract
+does not activate condition behavior or alter restart Policy B. The narrow
+reconciled no-child RESTART_REQUIRED service exception never implies RESUME.
+
 ## Gated Behavior
 
 - Autonomous employee Policy B RESUME or employee-owned Runs.

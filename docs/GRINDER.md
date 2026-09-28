@@ -76,6 +76,16 @@ material never grants START authority.
 
 The Grinder is obtainable through a generated shaped crafting recipe, appears in the ButcherCraft creative tab, drops itself through its block loot table, and drops stored contents on removal. All promoted trim and ground products are currently obtainable through the ButcherCraft creative tab as the development-stage acquisition bridge. This bridge is not final upstream butchering progression.
 
+## Ratified Condition Direction
+
+DG-006 [ratifies mechanical condition and dry-running policy](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md),
+not its implementation. The current Grinder has no wear, damage, maintenance,
+breakdown, repair, or dry-running consequence. Future RUNNING_EMPTY uses
+configurable grace then accelerated dry wear; successful processing resets
+grace, not STOP/reload. V1 OUTPUT_BLOCKED is POWERED-IDLE with no blocked-state
+wear merely from power. Numeric balance and implementation need separate owner
+approval; breakdown also requires a validated minimal player repair path.
+
 ## Verification Notes
 
 Automated tests cover:

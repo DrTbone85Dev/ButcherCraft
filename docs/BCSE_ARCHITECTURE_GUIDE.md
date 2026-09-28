@@ -285,9 +285,13 @@ Handling integration, and schema-specific checkpoint ownership. IM-032B
 consumes that foundation through a Workforce-owned finite assignment for exact
 Grinder and Patty Former instances. Execution retains Machine Run and finite
 child admission authority; Workstation retains operating state and inventory;
-Scheduler retains dispatch; Material Handling retains custody. DG-006
-architecture/design may begin, but its implementation is not started or
-authorized by this acceptance. See the
+Scheduler retains dispatch; Material Handling retains custody. The
+[ratified DG-006 machine condition ADR](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
+establishes Workstation-owned
+condition and exact projection/checkpoint evidence without changing Machine
+Run authority. Implementation remains gated; no condition, wear, damage, maintenance, lubrication, breakdown,
+repair, schema implementation, or Architecture Manifest enforcement is live.
+See the
 [IM-032 acceptance record](../MILESTONES.md#im-032-employee-machine-operation-acceptance).
 
 ### Transactions
