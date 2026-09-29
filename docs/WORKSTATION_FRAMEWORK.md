@@ -135,6 +135,18 @@ generations remain immutable. R3C supplies the complete historical successor,
 and R4 restores exact durable projections before matching loaded instances may
 activate; no chunk force-loading is required.
 
+## Machine Condition Foundation
+
+IM-033A adds the [machine condition foundation](MACHINE_CONDITION_FOUNDATION.md)
+to durable projection payload schema 2. Grinder and Patty Former use inert
+policies; Cutting Table is explicitly not applicable. Joint processing receipts
+bind exact inventory and condition post-state before the terminal owner result.
+Condition-aware repair requires both proofs; product-only evidence cannot imply
+wear. Current Workstation checkpoint participant schema 5 includes collection
+schema 3 and exact receipt closure. Historical projection/checkpoint bytes and
+endpoint protocols remain unchanged. IM-033A is complete and Product Owner
+accepted; machine-specific wear is not activated.
+
 ## Material Handling Endpoints
 
 IM-028A establishes the Cutting Table fabrication output as the source endpoint and one Grinder
@@ -407,8 +419,9 @@ The [ratified DG-006 architecture](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAG
 establishes Workstation as the singular mechanical-condition owner. Condition
 must remain separate from inventory, operating state, Execution Machine Runs,
 Scheduler timing and Workforce assignments, while sharing the serialized owner
-publication boundary. Implementation remains gated; the Java Architecture
-Manifest makes no live condition guarantee.
+publication boundary. IM-033A is complete and Product Owner accepted; the Java
+Architecture Manifest enforces the implemented foundation contracts. Production
+condition consequences and later machine-specific activation remain gated.
 
 - Additional machines can define separate `WorkstationCapability` values.
 - Capabilities declare how many input and output slots a machine can expose.

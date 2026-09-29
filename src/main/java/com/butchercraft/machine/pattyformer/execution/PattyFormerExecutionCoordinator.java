@@ -110,19 +110,24 @@ public final class PattyFormerExecutionCoordinator implements WorkstationExecuti
         String operationIdentity = PattyFormerExecutionIdentities.operationIdentity(request.operation());
         String frozenInputIdentity = PattyFormerExecutionIdentities.inputIdentity(request.frozenInputs());
         String expectedOutputIdentity = PattyFormerExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
-        String sourceFreshnessIdentity = PattyFormerExecutionIdentities.sourceFreshnessIdentity(
+        String inventoryFreshnessIdentity = PattyFormerExecutionIdentities.sourceFreshnessIdentity(
                 workstationIdentity,
                 request.operation(),
                 operationIdentity,
                 frozenInputIdentity,
                 expectedOutputIdentity
         );
+        String sourceFreshnessIdentity = request.condition().map(condition ->
+                com.butchercraft.workstation.condition.ConditionDigest.identity(
+                        "butchercraft:joint_workstation_freshness/v1", inventoryFreshnessIdentity,
+                        condition.freshnessIdentity())).orElse(inventoryFreshnessIdentity);
         List<String> explicitInputs = new java.util.ArrayList<>(List.of(
                 workstationIdentity,
                 operationIdentity,
                 frozenInputIdentity,
                 expectedOutputIdentity
         ));
+        request.condition().ifPresent(condition -> explicitInputs.add(condition.freshnessIdentity()));
         additionalExplicitInputIdentities.forEach(identity -> {
             if (!explicitInputs.contains(identity)) explicitInputs.add(identity);
         });
@@ -130,11 +135,11 @@ public final class PattyFormerExecutionCoordinator implements WorkstationExecuti
                 PattyFormerExecutionConstants.OWNER_SUBSYSTEM_ID,
                 PattyFormerExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
                 workstationIdentity,
-                PattyFormerExecutionConstants.OPERATION_TYPE,
-                PattyFormerExecutionConstants.HANDLER_ID,
+                request.condition().isPresent() ? PattyFormerExecutionConstants.CONDITION_OPERATION_TYPE : PattyFormerExecutionConstants.OPERATION_TYPE,
+                request.condition().isPresent() ? PattyFormerExecutionConstants.CONDITION_HANDLER_ID : PattyFormerExecutionConstants.HANDLER_ID,
                 frozenInputIdentity,
                 sourceFreshnessIdentity,
-                PattyFormerExecutionConstants.CONFIGURATION_IDENTITY,
+                request.condition().isPresent() ? PattyFormerExecutionConstants.CONDITION_CONFIGURATION : PattyFormerExecutionConstants.CONFIGURATION_IDENTITY,
                 worldIdentity(server),
                 tick,
                 OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),

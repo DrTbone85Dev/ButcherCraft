@@ -110,6 +110,11 @@ public final class ExecutionService {
         active.storage().save(active.manager());
     }
 
+    public synchronized String freezeCheckpointPersistence(MinecraftServer server) {
+        ActiveExecution active = load(server);
+        return active.storage().serialize(active.manager());
+    }
+
     public Optional<ExecutionManager> currentManager() {
         return Optional.ofNullable(activeState.get()).map(ActiveExecution::manager);
     }
@@ -142,6 +147,9 @@ public final class ExecutionService {
 
         ExecutionHandlerRegistry handlerRegistry = handlerRegistryFactory.apply(server);
         ExecutionStorage storage = new ExecutionStorage(executionFile(server), handlerRegistry, configuration);
+        var determinism = com.butchercraft.world.checkpoint.LivePlatformDeterminismManifest.currentReference(server);
+        storage.bindDeterminismManifestReference(determinism.identity() + "|" + determinism.schemaVersion()
+                + "|" + determinism.manifestDigest());
         ExecutionManager manager = storage.load();
         storage.compatibilityObservation().ifPresent(observation ->
                 ButcherCraft.LOGGER.info("Execution registry compatibility: {}", observation.diagnosticSummary()));
@@ -154,7 +162,9 @@ public final class ExecutionService {
         return new ExecutionHandlerRegistry(java.util.List.of(
                 new CuttingTableExecutionOperationHandler(server),
                 new GrinderExecutionOperationHandler(server),
-                new PattyFormerExecutionOperationHandler(server)
+                new PattyFormerExecutionOperationHandler(server),
+                GrinderExecutionOperationHandler.conditionAware(server),
+                PattyFormerExecutionOperationHandler.conditionAware(server)
         ));
     }
 

@@ -1,6 +1,18 @@
 package com.butchercraft.workstation.projection;
 
 import com.butchercraft.integration.materialhandling.ExactItemStackCodec;
+import com.butchercraft.workstation.condition.ConditionProjection;
+import com.butchercraft.workstation.condition.ConditionInitializationEvidence;
+import com.butchercraft.workstation.condition.MachineConditionPolicyRegistry;
+import com.butchercraft.workstation.condition.MachineConditionState;
+import com.butchercraft.workstation.condition.ConditionReceiptStorage;
+import com.butchercraft.workstation.condition.ConditionEffectReceipt;
+import com.butchercraft.workstation.condition.ConditionEffectKind;
+import com.butchercraft.workstation.condition.ConditionTransitionBinding;
+import com.butchercraft.workstation.condition.ConditionExposureType;
+import com.butchercraft.workstation.condition.ConditionDueIndex;
+import com.butchercraft.workstation.condition.ConditionDigest;
+import com.butchercraft.workstation.condition.WorkstationConditionEngine;
 import com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceLifecycle;
@@ -53,6 +65,52 @@ public final class DurableWorkstationProjectionService {
     private final ExecutionService executionService;
     private final ExactItemStackCodec stackCodec;
     private final WorkstationProjectionCodec projectionCodec;
+    private Optional<MachineConditionPolicyRegistry> conditionPolicies = Optional.empty();
+    private MinecraftServer conditionReceiptServer;
+    private ConditionReceiptStorage conditionReceiptStorage;
+    private final ConditionDueIndex conditionDue = new ConditionDueIndex();
+    private final java.util.Set<WorkstationInstanceId> conditionContinuouslyLoaded = new java.util.HashSet<>();
+    private long lastConditionClockTick = -1;
+
+    public synchronized void installConditionPolicies(MachineConditionPolicyRegistry policies) {
+        Objects.requireNonNull(policies, "policies");
+        if (conditionReceiptServer != null && conditionPolicies.isPresent()
+                && !conditionPolicies.orElseThrow().identity().equals(policies.identity())) {
+            throw new IllegalStateException("Condition policy composition cannot change outside an authorized boundary");
+        }
+        conditionPolicies = Optional.of(policies);
+    }
+
+    public synchronized String conditionPolicyRegistryIdentity() {
+        return conditionPolicies.orElseThrow().identity();
+    }
+
+    /** Explicit owner-safe configuration transition; no command or gameplay policy enables this in IM-033A. */
+    public synchronized DurableWorkstationProjection changeConditionPolicy(MinecraftServer server,
+            WorkstationInstanceId identity, String policyIdentity, long tick) {
+        var read = readWithLoadedValidation(server, identity);
+        if (read.code() != WorkstationProjectionReadCode.AVAILABLE) throw new IllegalStateException(read.detail());
+        var current = read.projection().orElseThrow();
+        var operating = operatingStateService.find(server, identity.value());
+        if (operating.flatMap(MachineOperatingRecord::activeChildOperationId).isPresent()
+                || current.processingOperationIdentity().map(ExecutionOperationId::of)
+                .flatMap(id -> executionService.managerFor(server).find(id)).filter(value -> !value.status().terminal()).isPresent()) {
+            throw new IllegalStateException("Prepared or admitted child freezes its condition policy");
+        }
+        var next = conditionPolicies.orElseThrow().require(policyIdentity, current.endpointKey().workstationTypeIdentity());
+        if (current.condition().orElseThrow().state().orElseThrow().policy().equals(next)) return current;
+        current = settleCondition(server, current, tick, true);
+        var condition = current.condition().orElseThrow();
+        var before = condition.state().orElseThrow();
+        String effect = ConditionDigest.identity("butchercraft:condition_policy_transition/v1", before.instanceId().value(),
+                before.digest(), next.identity(), Long.toString(tick));
+        var after = WorkstationConditionEngine.changePolicy(before, effect, next, tick);
+        var receipt = ConditionEffectReceipt.prepare(before, after, ConditionEffectKind.POLICY_TRANSITION,
+                effect, condition.receiptHead(), effect);
+        var result = publishCondition(server, current, condition.committed(receipt), Optional.of(receipt));
+        openConditionExposure(server, result, tick);
+        return read(server, identity).projection().orElseThrow();
+    }
 
     DurableWorkstationProjectionService(
             WorkstationEndpointService endpointService,
@@ -138,6 +196,16 @@ public final class DurableWorkstationProjectionService {
         }
 
         DurableWorkstationProjection durable = persisted.projection().orElseThrow();
+        conditionReceipts(level.getServer());
+        if (consequentialMutationPermitted) durable = finishConditionTransition(level.getServer(), durable);
+        if (consequentialMutationPermitted && !conditionContinuouslyLoaded.contains(durable.instanceId())
+                && durable.condition().flatMap(ConditionProjection::state).flatMap(MachineConditionState::activeExposure).isPresent()) {
+            durable = settleCondition(level.getServer(), durable,
+                    durable.condition().orElseThrow().state().orElseThrow().lastAccountedTick(), true);
+        }
+        if (consequentialMutationPermitted) conditionContinuouslyLoaded.add(durable.instanceId());
+        validateCondition(level.getServer(), durable);
+        if (workstation.conditionProjection().isEmpty()) workstation.acceptConditionProjection(durable.condition());
         validateExactStacks(level, durable);
         DurableWorkstationProjection live = capture(level, workstation, instance, durable.projectionRevision());
         boolean registryAdvanceOnly = provenMonotonicInstanceRegistryRevision(
@@ -146,6 +214,8 @@ public final class DurableWorkstationProjectionService {
                 endpointService.instanceRegistrySnapshot(level.getServer())
         );
         if (live.sameAuthoritativeState(durable) || registryAdvanceOnly) {
+            durable = migrateCondition(level.getServer(), durable, !previouslyBound);
+            workstation.acceptConditionProjection(durable.condition());
             workstation.acceptDurableProjectionReference(durable.projectionRevision(), durable.stateDigest());
             return new WorkstationProjectionReconciliationResult(
                     WorkstationProjectionReconciliationCode.EQUAL, Optional.of(durable),
@@ -162,6 +232,8 @@ public final class DurableWorkstationProjectionService {
             DurableWorkstationProjection repaired = capture(
                     level, workstation, instance, nextRevision);
             storage(level.getServer()).save(repaired);
+            repaired = migrateCondition(level.getServer(), repaired, false);
+            workstation.acceptConditionProjection(repaired.condition());
             workstation.acceptDurableProjectionReference(repaired.projectionRevision(), repaired.stateDigest());
             return new WorkstationProjectionReconciliationResult(
                     WorkstationProjectionReconciliationCode.OWNER_EVIDENCE_REPAIRED_DURABLE_PROJECTION,
@@ -212,6 +284,7 @@ public final class DurableWorkstationProjectionService {
         DurableWorkstationProjection current = persisted.projection().orElseThrow();
         DurableWorkstationProjection candidate = capture(
                 level, workstation, instance, Math.addExact(current.projectionRevision(), 1L));
+        validateCondition(level.getServer(), candidate);
         if (candidate.sameAuthoritativeState(current)) {
             workstation.acceptDurableProjectionReference(current.projectionRevision(), current.stateDigest());
             return current;
@@ -253,9 +326,26 @@ public final class DurableWorkstationProjectionService {
         } else {
             active = persisted;
         }
+        if (active.condition().flatMap(ConditionProjection::state).isPresent()) {
+            var condition = active.condition().orElseThrow();
+            if (condition.pendingOperatingTransition().isPresent()) throw new IllegalStateException("Incomplete condition transition blocks retirement");
+            var before = condition.state().orElseThrow();
+            String effect = ConditionDigest.identity("butchercraft:condition_retirement/v1", before.instanceId().value(), before.digest());
+            var after = WorkstationConditionEngine.retire(before, effect,
+                    com.butchercraft.world.simulation.SimulationClockService.INSTANCE.clock(level.getServer()).simulationTick(),
+                    conditionContinuouslyLoaded.contains(before.instanceId()));
+            var receipt = ConditionEffectReceipt.prepare(before, after, ConditionEffectKind.RETIREMENT, effect,
+                    condition.receiptHead(), effect);
+            conditionReceipts(level.getServer()).stage(receipt);
+            active = active.withCondition(Math.incrementExact(active.projectionRevision()), condition.committed(receipt));
+            storage.save(active);
+        }
         DurableWorkstationProjection tombstone = active.tombstone(
                 Math.addExact(active.projectionRevision(), 1L), retiredInstance.lastUpdateRevision(), reason);
         storage.save(tombstone);
+        conditionContinuouslyLoaded.remove(tombstone.instanceId());
+        conditionDue.remove(tombstone.instanceId());
+        workstation.acceptConditionProjection(tombstone.condition());
         workstation.acceptDurableProjectionReference(tombstone.projectionRevision(), tombstone.stateDigest());
         return new WorkstationProjectionReconciliationResult(
                 WorkstationProjectionReconciliationCode.RETIRED, Optional.of(tombstone),
@@ -270,14 +360,17 @@ public final class DurableWorkstationProjectionService {
         WorkstationProjectionReadResult read = storage(server).read(instance);
         if (read.code() != WorkstationProjectionReadCode.AVAILABLE) return;
         DurableWorkstationProjection current = read.projection().orElseThrow();
+        current = finishConditionTransition(server, current);
         DurableWorkstationProjection candidate = current.withOperatingStateReference(
                 Math.addExact(current.projectionRevision(), 1L), operatingReference(server, identity));
         if (candidate.equals(current)) {
             synchronizeLoadedProjectionReference(server, instance, current);
+            openConditionExposure(server, current);
             return;
         }
         storage(server).save(candidate);
         synchronizeLoadedProjectionReference(server, instance, candidate);
+        openConditionExposure(server, candidate);
     }
 
     public synchronized WorkstationProjectionReadResult read(MinecraftServer server, WorkstationInstanceId instanceId) {
@@ -297,6 +390,12 @@ public final class DurableWorkstationProjectionService {
     ) {
         WorkstationProjectionReadResult read = read(server, instanceId);
         if (read.projection().isEmpty()) return read;
+        try {
+            validateCondition(server, read.projection().orElseThrow());
+        } catch (RuntimeException exception) {
+            return WorkstationProjectionReadResult.unavailable(instanceId, WorkstationProjectionReadCode.RECOVERY_REQUIRED,
+                    exception.getMessage());
+        }
         if (read.code() == WorkstationProjectionReadCode.RETIRED) {
             return read;
         }
@@ -316,6 +415,10 @@ public final class DurableWorkstationProjectionService {
             return WorkstationProjectionReadResult.unavailable(
                     instanceId, WorkstationProjectionReadCode.IDENTITY_CONFLICT,
                     "Loaded physical Workstation block entity is missing or has the wrong type");
+        }
+        if (workstation.durablePublicationUncertain()) {
+            return WorkstationProjectionReadResult.unavailable(instanceId, WorkstationProjectionReadCode.RECOVERY_REQUIRED,
+                    "Workstation joint publication outcome is unresolved");
         }
         if (!workstation.durableBlockEntityTypeIdentity().equals(projection.blockEntityTypeIdentity())
                 || workstation.checkpointInstanceIdentity().filter(instanceId::equals).isEmpty()
@@ -415,7 +518,11 @@ public final class DurableWorkstationProjectionService {
                     "Unresolved endpoint effect blocks legacy durable projection bootstrap");
         }
         DurableWorkstationProjection initial = capture(level, workstation, instance, 1L);
+        conditionReceipts(level.getServer());
+        conditionContinuouslyLoaded.add(instance.instanceId());
         storage(level.getServer()).save(initial);
+        initial = migrateCondition(level.getServer(), initial, !previouslyBound);
+        workstation.acceptConditionProjection(initial.condition());
         workstation.acceptDurableProjectionReference(initial.projectionRevision(), initial.stateDigest());
         WorkstationProjectionReconciliationCode code = previouslyBound
                 ? WorkstationProjectionReconciliationCode.LEGACY_BOOTSTRAPPED
@@ -464,7 +571,7 @@ public final class DurableWorkstationProjectionService {
         if (!worldIdentity.equals(instance.worldIdentity())) {
             throw new IllegalStateException("Loaded Workstation references another World Identity");
         }
-        return DurableWorkstationProjection.active(
+        DurableWorkstationProjection captured = DurableWorkstationProjection.active(
                 worldIdentity,
                 instance.instanceId(),
                 instance.endpointKey(),
@@ -487,6 +594,8 @@ public final class DurableWorkstationProjectionService {
                 workstation.durableProcessingOwnerResultIdentity(),
                 operatingReference(level.getServer(), instance.instanceId())
         );
+        return workstation.conditionProjection().map(value -> captured.withCondition(projectionRevision, value))
+                .orElse(captured);
     }
 
     private RestoreAndVerifyResult restoreAndVerify(
@@ -497,12 +606,15 @@ public final class DurableWorkstationProjectionService {
     ) {
         workstation.restoreDurableProjectionState(
                 projectionCodec.decodeBlockEntityProjection(durable), level.registryAccess());
+        workstation.acceptConditionProjection(durable.condition());
         DurableWorkstationProjection verified = capture(level, workstation, instance, durable.projectionRevision());
         if (!verified.sameAuthoritativeState(durable)
                 && provenMonotonicInstanceRegistryRevision(
                 durable,
                 verified,
                 endpointService.instanceRegistrySnapshot(level.getServer()))) {
+            durable = migrateCondition(level.getServer(), durable, false);
+            workstation.acceptConditionProjection(durable.condition());
             workstation.acceptDurableProjectionReference(durable.projectionRevision(), durable.stateDigest());
             return new RestoreAndVerifyResult(durable, false);
         }
@@ -514,6 +626,8 @@ public final class DurableWorkstationProjectionService {
             );
             DurableWorkstationProjection repaired = capture(level, workstation, instance, nextRevision);
             storage(level.getServer()).save(repaired);
+            repaired = migrateCondition(level.getServer(), repaired, false);
+            workstation.acceptConditionProjection(repaired.condition());
             workstation.acceptDurableProjectionReference(repaired.projectionRevision(), repaired.stateDigest());
             return new RestoreAndVerifyResult(repaired, true);
         }
@@ -525,8 +639,246 @@ public final class DurableWorkstationProjectionService {
                     + "; actual digest=" + verified.stateDigest()
                     + policyBProofDiagnostic(level.getServer(), durable, verified));
         }
+        durable = migrateCondition(level.getServer(), durable, false);
+        workstation.acceptConditionProjection(durable.condition());
         workstation.acceptDurableProjectionReference(durable.projectionRevision(), durable.stateDigest());
         return new RestoreAndVerifyResult(durable, false);
+    }
+
+    private DurableWorkstationProjection migrateCondition(MinecraftServer server,
+            DurableWorkstationProjection projection, boolean newInstance) {
+        if (projection.condition().isPresent() || conditionPolicies.isEmpty()) return projection;
+        if (!StartupMutationGateService.INSTANCE.permits(server, LegacySplitRecoveryParticipants.WORKSTATION)) return projection;
+        if (projection.preparedEndpointEffectIdentity().isPresent()
+                || endpointService.hasUnresolvedEffects(server, projection.instanceId())) return projection;
+        if (projection.processingOperationIdentity().isPresent()) {
+            var operation = executionService.managerFor(server).find(
+                    ExecutionOperationId.of(projection.processingOperationIdentity().orElseThrow()));
+            if (operation.isEmpty() || !operation.orElseThrow().status().terminal()) return projection;
+        }
+        DurableWorkstationProjection successor = com.butchercraft.workstation.condition.ConditionInitialization.candidate(
+                projection, conditionPolicies.orElseThrow(),
+                com.butchercraft.world.simulation.SimulationClockService.INSTANCE.clock(server).simulationTick(), newInstance, true);
+        storage(server).save(successor);
+        return successor;
+    }
+
+    public synchronized DurableWorkstationProjection ensureConditionReady(ServerLevel level,
+            AbstractInventoryWorkstationBlockEntity workstation) {
+        WorkstationInstanceId instance = workstation.checkpointInstanceIdentity().orElseThrow(() ->
+                new IllegalStateException("Condition preparation requires reconciled Workstation Instance Identity"));
+        var read = read(level.getServer(), instance);
+        DurableWorkstationProjection current = read.projection().orElseThrow(() ->
+                new IllegalStateException("Condition preparation requires durable projection: " + read.code() + ": " + read.detail()));
+        DurableWorkstationProjection ready = migrateCondition(level.getServer(), current, false);
+        validateCondition(level.getServer(), ready);
+        workstation.acceptConditionProjection(ready.condition());
+        workstation.acceptDurableProjectionReference(ready.projectionRevision(), ready.stateDigest());
+        return ready;
+    }
+
+    private void validateCondition(MinecraftServer server, DurableWorkstationProjection projection) {
+        if (projection.condition().isEmpty()) return;
+        var result = com.butchercraft.workstation.condition.ConditionCoherenceValidator.validate(projection,
+                conditionPolicies.orElseThrow(() -> new IllegalStateException("Condition policy registry unavailable")),
+                conditionReceipts(server)::read);
+        if (!result.coherent()) throw new IllegalStateException(result.code() + ": " + result.detail());
+    }
+
+    public synchronized ConditionReceiptStorage conditionReceipts(MinecraftServer server) {
+        if (conditionReceiptServer != server) {
+            conditionReceiptStorage = new ConditionReceiptStorage(projectionRoot(server).getParent().getParent()
+                    .resolve("condition_effects").resolve("v1"));
+            conditionReceiptServer = server;
+            conditionDue.clear();
+            conditionContinuouslyLoaded.clear();
+            lastConditionClockTick = -1;
+        }
+        return conditionReceiptStorage;
+    }
+
+    /** This is preparation inside the existing Workstation owner boundary, before the operating file changes. */
+    public synchronized void prepareConditionTransition(MinecraftServer server, MachineOperatingRecord successor) {
+        var read = read(server, successor.workstation().instanceId());
+        if (read.code() != WorkstationProjectionReadCode.AVAILABLE) return;
+        var current = read.projection().orElseThrow();
+        if (current.condition().flatMap(ConditionProjection::state).isEmpty()) return;
+        var condition = current.condition().orElseThrow();
+        var before = condition.state().orElseThrow();
+        if (before.policy().inert()) return;
+        // An admitted child freezes condition. Non-exposure bookkeeping cannot invalidate that plan.
+        if (before.activeExposure().isEmpty() && (successor.activeChildOperationId().isPresent()
+                || (successor.state() != MachineOperatingState.RUNNING_EMPTY
+                && successor.state() != MachineOperatingState.OUTPUT_BLOCKED))) return;
+        if (condition.pendingOperatingTransition().isPresent()) {
+            throw new IllegalStateException("A condition/operating transition is already awaiting reconciliation");
+        }
+        ConditionTransitionBinding binding = new ConditionTransitionBinding(current.operatingStateReference(),
+                operatingReference(successor), successor.lastObservedSimulationTick());
+        String effect = ConditionDigest.identity("butchercraft:condition_transition_effect/v1",
+                before.instanceId().value(), before.digest(), binding.identity());
+        MachineConditionState after;
+        if (before.activeExposure().isPresent()) {
+            if (conditionContinuouslyLoaded.contains(before.instanceId())) {
+                after = WorkstationConditionEngine.closeExposure(before, effect,
+                        before.activeExposure().orElseThrow().availabilityProofIdentity(), binding.tick(),
+                        successor.endpointAvailability() == com.butchercraft.workstation.operation.MachineEndpointAvailability.AVAILABLE
+                                ? MachineConditionState.Suspension.STOPPED : MachineConditionState.Suspension.UNLOADED);
+            } else {
+                after = WorkstationConditionEngine.suspendAtDurableCutoff(before, effect,
+                        MachineConditionState.Suspension.RESTART_REQUIRED);
+            }
+        } else {
+            after = WorkstationConditionEngine.bindOperatingTransition(before, effect, binding.tick());
+        }
+        ConditionEffectReceipt receipt = ConditionEffectReceipt.prepare(before, after,
+                ConditionEffectKind.OPERATING_TRANSITION, binding.identity(), condition.receiptHead(), binding.identity(),
+                Optional.of(binding));
+        ConditionProjection prepared = condition.committed(receipt);
+        prepared = new ConditionProjection(prepared.applicability(), prepared.state(), prepared.receiptHead(),
+                Optional.of(receipt.digest()));
+        publishCondition(server, current, prepared, Optional.of(receipt));
+    }
+
+    private DurableWorkstationProjection finishConditionTransition(MinecraftServer server, DurableWorkstationProjection current) {
+        if (current.condition().flatMap(ConditionProjection::pendingOperatingTransition).isEmpty()) return current;
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
+        var condition = current.condition().orElseThrow();
+        var receipt = conditionReceipts(server).read(condition.pendingOperatingTransition().orElseThrow());
+        var binding = receipt.transition().orElseThrow();
+        if (!condition.receiptHead().filter(receipt.digest()::equals).isPresent()
+                || !condition.state().orElseThrow().equals(receipt.postState())
+                || !current.operatingStateReference().equals(binding.previous())
+                || !operatingReference(server, current.instanceId()).filter(binding.successor()::equals).isPresent()) {
+            throw new IllegalStateException("Condition closure is durable but exact operating successor is unproven");
+        }
+        var completed = new ConditionProjection(condition.applicability(), condition.state(), condition.receiptHead(), Optional.empty());
+        var paired = current.withOperatingStateReference(Math.incrementExact(current.projectionRevision()),
+                Optional.of(binding.successor())).withCondition(Math.incrementExact(current.projectionRevision()), completed);
+        storage(server).save(paired);
+        synchronizeLoadedProjectionReference(server, endpointService.instanceRecord(server, paired.instanceId()).orElseThrow(), paired);
+        paired.condition().flatMap(ConditionProjection::state).ifPresent(conditionDue::observe);
+        return paired;
+    }
+
+    private DurableWorkstationProjection publishCondition(MinecraftServer server, DurableWorkstationProjection baseline,
+            ConditionProjection condition, Optional<ConditionEffectReceipt> receipt) {
+        StartupMutationGateService.INSTANCE.require(server, LegacySplitRecoveryParticipants.WORKSTATION);
+        var current = read(server, baseline.instanceId()).projection().orElseThrow();
+        if (!current.equals(baseline)) throw new IllegalStateException("Stale condition owner candidate");
+        receipt.ifPresent(conditionReceipts(server)::stage);
+        com.butchercraft.workstation.condition.ConditionEvidenceClosure.verify(new ConditionProjection(
+                condition.applicability(), condition.state(), condition.receiptHead(), Optional.empty()),
+                conditionReceipts(server)::read);
+        var candidate = baseline.withCondition(Math.incrementExact(baseline.projectionRevision()), condition);
+        storage(server).save(candidate);
+        synchronizeLoadedProjectionReference(server, endpointService.instanceRecord(server, candidate.instanceId()).orElseThrow(), candidate);
+        condition.state().ifPresent(conditionDue::observe);
+        return candidate;
+    }
+
+    private void openConditionExposure(MinecraftServer server, DurableWorkstationProjection projection) {
+        openConditionExposure(server, projection, operatingStateService.find(server, projection.instanceId().value())
+                .map(MachineOperatingRecord::lastObservedSimulationTick).orElse(0L));
+    }
+
+    private void openConditionExposure(MinecraftServer server, DurableWorkstationProjection projection, long boundaryTick) {
+        var condition = projection.condition().orElse(null);
+        if (condition == null || condition.state().isEmpty() || condition.pendingOperatingTransition().isPresent()) return;
+        var before = condition.state().orElseThrow();
+        if (before.activeExposure().isPresent() || before.fault().isPresent()) return;
+        var operating = operatingStateService.find(server, projection.instanceId().value()).orElse(null);
+        if (operating == null || operating.activeChildOperationId().isPresent()
+                || operating.endpointAvailability() != com.butchercraft.workstation.operation.MachineEndpointAvailability.AVAILABLE
+                || !conditionContinuouslyLoaded.contains(projection.instanceId())) return;
+        ConditionExposureType type = switch (operating.state()) {
+            case RUNNING_EMPTY -> ConditionExposureType.DRY_RUNNING;
+            case OUTPUT_BLOCKED -> ConditionExposureType.BLOCKED_POWERED;
+            default -> null;
+        };
+        if (type == null || before.policy().exposure(type).isEmpty()) return;
+        String proof = ConditionDigest.identity("butchercraft:condition_loaded_interval/v1", before.instanceId().value(),
+                before.digest(), operating.contentDigest());
+        String effect = ConditionDigest.identity("butchercraft:condition_open/v1", proof);
+        var after = WorkstationConditionEngine.openExposure(before, effect, type, operating.contentDigest(),
+                operating.revision(), proof, boundaryTick, false);
+        var receipt = ConditionEffectReceipt.prepare(before, after, ConditionEffectKind.EXPOSURE_OPENED,
+                proof, condition.receiptHead(), operating.contentDigest());
+        publishCondition(server, projection, condition.committed(receipt), Optional.of(receipt));
+    }
+
+    public synchronized void settleConditionDue(MinecraftServer server, long tick) {
+        conditionReceipts(server);
+        for (var entry : conditionDue.due(tick, 64)) {
+            var read = read(server, entry.instanceId());
+            if (read.code() != WorkstationProjectionReadCode.AVAILABLE) { conditionDue.remove(entry.instanceId()); continue; }
+            var projection = read.projection().orElseThrow();
+            var state = projection.condition().flatMap(ConditionProjection::state).orElseThrow();
+            if (!state.digest().equals(entry.conditionDigest())) { conditionDue.observe(state); continue; }
+            settleCondition(server, projection, tick, false);
+        }
+    }
+
+    public synchronized void advanceCondition(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        if (!StartupMutationGateService.INSTANCE.permits(event.getServer(), LegacySplitRecoveryParticipants.WORKSTATION)) return;
+        conditionReceipts(event.getServer());
+        long tick = com.butchercraft.world.simulation.SimulationClockService.INSTANCE.clock(event.getServer()).simulationTick();
+        if (lastConditionClockTick >= 0 && tick != lastConditionClockTick && tick != lastConditionClockTick + 1) {
+            // Only active indexed intervals are visited; a Clock jump is never physical exposure.
+            conditionContinuouslyLoaded.clear();
+            for (var entry : conditionDue.due(Long.MAX_VALUE, Integer.MAX_VALUE)) {
+                var read = read(event.getServer(), entry.instanceId());
+                if (read.code() == WorkstationProjectionReadCode.AVAILABLE) {
+                    settleCondition(event.getServer(), read.projection().orElseThrow(), tick, true);
+                } else conditionDue.remove(entry.instanceId());
+            }
+        }
+        lastConditionClockTick = tick;
+        settleConditionDue(event.getServer(), tick);
+    }
+
+    private DurableWorkstationProjection settleCondition(MinecraftServer server, DurableWorkstationProjection projection,
+            long tick, boolean close) {
+        var condition = projection.condition().orElseThrow();
+        var before = condition.state().orElseThrow();
+        if (condition.pendingOperatingTransition().isPresent()) throw new IllegalStateException("Condition transition is incomplete");
+        if (before.activeExposure().isEmpty()) return projection;
+        String effect = ConditionDigest.identity("butchercraft:condition_settlement/v1", before.instanceId().value(),
+                before.digest(), Long.toString(tick), Boolean.toString(close));
+        boolean proven = conditionContinuouslyLoaded.contains(before.instanceId());
+        var after = !proven ? WorkstationConditionEngine.suspendAtDurableCutoff(before, effect,
+                MachineConditionState.Suspension.RESTART_REQUIRED)
+                : close ? WorkstationConditionEngine.closeExposure(before, effect,
+                before.activeExposure().orElseThrow().availabilityProofIdentity(), tick, MachineConditionState.Suspension.UNLOADED)
+                : WorkstationConditionEngine.settle(before, effect,
+                before.activeExposure().orElseThrow().availabilityProofIdentity(), tick);
+        var receipt = ConditionEffectReceipt.prepare(before, after, !proven ? ConditionEffectKind.EXPOSURE_SUSPENDED
+                : close ? ConditionEffectKind.EXPOSURE_CLOSED : ConditionEffectKind.EXPOSURE_SETTLED,
+                effect, condition.receiptHead(), effect);
+        return publishCondition(server, projection, condition.committed(receipt), Optional.of(receipt));
+    }
+
+    public synchronized void conditionUnloaded(MinecraftServer server, WorkstationInstanceId identity, long tick) {
+        var read = read(server, identity);
+        if (read.code() == WorkstationProjectionReadCode.AVAILABLE
+                && read.projection().orElseThrow().condition().flatMap(ConditionProjection::state).isPresent()) {
+            settleCondition(server, read.projection().orElseThrow(), tick, true);
+        }
+        conditionContinuouslyLoaded.remove(identity);
+        conditionDue.remove(identity);
+    }
+
+    public synchronized void prepareConditionCheckpoint(MinecraftServer server, long tick,
+            List<WorkstationInstanceId> required) {
+        for (var identity : required) {
+            var read = read(server, identity);
+            if (read.code() != WorkstationProjectionReadCode.AVAILABLE && read.code() != WorkstationProjectionReadCode.RETIRED) continue;
+            var before = read.projection().orElseThrow();
+            var projection = migrateCondition(server, before, false);
+            if (!projection.equals(before)) synchronizeLoadedProjectionReference(server,
+                    endpointService.instanceRecord(server, identity).orElseThrow(), projection);
+            if (projection.condition().flatMap(ConditionProjection::state).isPresent()) settleCondition(server, projection, tick, false);
+        }
     }
 
     private boolean laterLiveProjectionIsProven(
@@ -534,6 +886,10 @@ public final class DurableWorkstationProjectionService {
             DurableWorkstationProjection live,
             DurableWorkstationProjection durable
     ) {
+        if (live.processingOwnerResultIdentity().filter(value -> value.startsWith("butchercraft:workstation_result/v2/")).isPresent()
+                && !live.processingOwnerResultIdentity().equals(durable.processingOwnerResultIdentity())) {
+            return jointProcessingSuccessorIsProven(server, live, durable);
+        }
         MachineOperatingRecord operating = operatingStateService
                 .find(server, live.instanceId().value()).orElse(null);
         var startup = StartupRecoveryService.INSTANCE.status();
@@ -560,6 +916,39 @@ public final class DurableWorkstationProjectionService {
         return endpointProof || processingProof;
     }
 
+    private boolean jointProcessingSuccessorIsProven(MinecraftServer server,
+            DurableWorkstationProjection live, DurableWorkstationProjection durable) {
+        if (live.processingOperationIdentity().isEmpty() || live.condition().isEmpty()
+                || durable.condition().isEmpty() || live.inventoryRevision() <= durable.inventoryRevision()
+                || !live.instanceId().equals(durable.instanceId())
+                || live.endpointEffectRevision() != durable.endpointEffectRevision()
+                || live.lastAppliedJournalSequence() != durable.lastAppliedJournalSequence()
+                || !processingOwnerResultIsDurable(server, live.processingOperationIdentity().orElseThrow(),
+                live.processingOwnerResultIdentity().orElseThrow())) return false;
+        try {
+            validateCondition(server, live);
+            var receipt = conditionReceipts(server).closure(live.condition().orElseThrow()).stream()
+                    .filter(value -> value.processing().isPresent()
+                            && com.butchercraft.workstation.condition.ConditionProcessingCandidates.resultIdentity(value)
+                            .equals(live.processingOwnerResultIdentity().orElseThrow()))
+                    .findFirst().orElseThrow();
+            var binding = receipt.processing().orElseThrow();
+            var digest = new ConditionDigest("butchercraft:joint_processing_inventory/v1").add(live.slots().size());
+            for (var slot : live.slots()) {
+                digest.add(slot.exactStack().isEmpty());
+                slot.exactStack().ifPresent(stack -> digest.add(stack.contentDigest()));
+            }
+            return binding.operation().value().equals(live.processingOperationIdentity().orElseThrow())
+                    && binding.postInventoryDigest().equals(digest.finish())
+                    && binding.plannedProjectionRevision() > durable.projectionRevision()
+                    && receipt.postState().equals(live.condition().orElseThrow().state().orElseThrow())
+                    && receipt.preConditionDigest().equals(durable.condition().orElseThrow().state().orElseThrow().digest())
+                    && receipt.previousReceiptDigest().equals(durable.condition().orElseThrow().receiptHead());
+        } catch (RuntimeException exception) {
+            return false;
+        }
+    }
+
     private void synchronizeLoadedProjectionReference(
             MinecraftServer server,
             WorkstationInstanceRecord instance,
@@ -579,6 +968,7 @@ public final class DurableWorkstationProjectionService {
             return;
         }
         workstation.acceptDurableProjectionReference(projection.projectionRevision(), projection.stateDigest());
+        workstation.acceptConditionProjection(projection.condition());
     }
 
     static boolean provenMonotonicInstanceRegistryRevision(

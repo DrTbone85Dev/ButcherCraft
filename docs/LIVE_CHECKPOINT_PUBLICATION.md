@@ -47,6 +47,14 @@ eligibility tick, and typed failures.
 
 ## Storage
 
+IM-033A [condition foundation](MACHINE_CONDITION_FOUNDATION.md) extends the
+existing Workstation participant to schema 5 with projection collection schema 3.
+It freezes payload-schema-2 projections and their complete immutable condition
+receipt dependencies. Active exposure settles only through a proven loaded
+Clock boundary before capture. An incomplete condition/operating transition or
+missing required receipt rejects the candidate; the prior head remains valid.
+No eighteenth owner, generation rewrite, or condition-effect replay is added.
+
 Live generations are stored below:
 
 ```text

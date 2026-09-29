@@ -10,6 +10,9 @@ public final class PattyFormerExecutionConstants {
     public static final String EXECUTABLE_REFERENCE_TYPE = "butchercraft:workstation/patty_former";
     public static final String OPERATION_TYPE = "butchercraft:workstation/patty_former_operation";
     public static final String HANDLER_ID = "butchercraft:execution_handler/patty_former_player_operation";
+    public static final String CONDITION_OPERATION_TYPE = "butchercraft:workstation/patty_former_operation_v2";
+    public static final String CONDITION_HANDLER_ID = "butchercraft:execution_handler/patty_former_condition_operation_v2";
+    public static final String CONDITION_CONFIGURATION = "butchercraft:execution_configuration/patty_former_condition_operation_v2";
     public static final String CONFIGURATION_IDENTITY =
             "butchercraft:execution_configuration/patty_former_player_operation_v1";
     public static final Set<ResourceLocation> PROMOTED_PATTY_FORMER_OPERATIONS = Set.of(

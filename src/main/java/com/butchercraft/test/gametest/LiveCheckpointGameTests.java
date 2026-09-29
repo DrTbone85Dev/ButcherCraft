@@ -196,7 +196,10 @@ public final class LiveCheckpointGameTests {
         succeedAfterCommit(helper, before, status -> {
             String projections = ownerFile(helper,
                     LegacySplitRecoveryParticipants.WORKSTATION, "workstation_projections.json");
-            helper.assertTrue(projections.contains("\"schema_version\": 2")
+            var projectionDocument = com.google.gson.JsonParser.parseString(projections).getAsJsonObject();
+            helper.assertTrue(projectionDocument.get("schema_version").getAsInt()
+                            == com.butchercraft.workstation.checkpoint.WorkstationCheckpointProjectionService.SCHEMA_VERSION
+                            && projectionDocument.has("condition_receipts")
                             && projections.contains("\"payload_base64\"")
                             && projections.contains("\"workstation_restorable_status\": \"complete_restorable\""),
                     "Workstation participant embeds exact self-verifying durable projection payloads");

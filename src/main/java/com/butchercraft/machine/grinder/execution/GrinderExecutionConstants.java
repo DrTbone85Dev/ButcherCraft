@@ -11,6 +11,9 @@ public final class GrinderExecutionConstants {
     public static final String OPERATION_TYPE = "butchercraft:workstation/grinder_operation";
     public static final String HANDLER_ID = "butchercraft:execution_handler/grinder_player_operation";
     public static final String CONFIGURATION_IDENTITY = "butchercraft:execution_configuration/grinder_player_operation_v1";
+    public static final String CONDITION_OPERATION_TYPE = "butchercraft:workstation/grinder_operation_v2";
+    public static final String CONDITION_HANDLER_ID = "butchercraft:execution_handler/grinder_condition_operation_v2";
+    public static final String CONDITION_CONFIGURATION = "butchercraft:execution_configuration/grinder_condition_operation_v2";
     public static final Set<ResourceLocation> PROMOTED_GRINDER_OPERATIONS = Set.of(
             BuiltInDefinitionIds.GRIND_BEEF,
             BuiltInDefinitionIds.GRIND_PORK,

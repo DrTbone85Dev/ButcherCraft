@@ -273,6 +273,8 @@ public final class MachineOperatingStateService {
         MachineOperatingMutation mutation = mutationFactory.apply(active.registry());
         if (mutation.changed()) {
             clockPersistence.accept(server);
+            mutation.record().ifPresent(record -> DurableWorkstationProjectionService.INSTANCE
+                    .prepareConditionTransition(server, record));
             active.storage().save(mutation.registry());
             active = new ActiveState(active.server(), active.storage(), mutation.registry(), true);
             activeState.set(active);

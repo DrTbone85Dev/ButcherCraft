@@ -21,19 +21,28 @@ import java.util.function.Supplier;
 
 public final class GrinderExecutionOperationHandler implements ExecutionOperationHandler {
     private final Supplier<MinecraftServer> serverSupplier;
-    private final ExecutionHandlerContract contract = ExecutionHandlerContract.idempotent(
-            GrinderExecutionConstants.HANDLER_ID,
-            GrinderExecutionConstants.OPERATION_TYPE,
-            50,
-            GrinderExecutionConstants.CONFIGURATION_IDENTITY
-    );
+    private final ExecutionHandlerContract contract;
+    private final boolean conditionAware;
 
     public GrinderExecutionOperationHandler(MinecraftServer server) {
         this(() -> Objects.requireNonNull(server, "server"));
     }
 
     GrinderExecutionOperationHandler(Supplier<MinecraftServer> serverSupplier) {
+        this(serverSupplier, false);
+    }
+
+    private GrinderExecutionOperationHandler(Supplier<MinecraftServer> serverSupplier, boolean conditionAware) {
         this.serverSupplier = Objects.requireNonNull(serverSupplier, "serverSupplier");
+        this.conditionAware = conditionAware;
+        contract = ExecutionHandlerContract.idempotent(
+                conditionAware ? GrinderExecutionConstants.CONDITION_HANDLER_ID : GrinderExecutionConstants.HANDLER_ID,
+                conditionAware ? GrinderExecutionConstants.CONDITION_OPERATION_TYPE : GrinderExecutionConstants.OPERATION_TYPE,
+                50, conditionAware ? GrinderExecutionConstants.CONDITION_CONFIGURATION : GrinderExecutionConstants.CONFIGURATION_IDENTITY);
+    }
+
+    public static GrinderExecutionOperationHandler conditionAware(MinecraftServer server) {
+        return new GrinderExecutionOperationHandler(() -> Objects.requireNonNull(server, "server"), true);
     }
 
     @Override
@@ -44,13 +53,13 @@ public final class GrinderExecutionOperationHandler implements ExecutionOperatio
     @Override
     public ExecutionHandlerValidation validateAuthorization(ExecutionAuthorizationEvidence evidence) {
         Objects.requireNonNull(evidence, "evidence");
-        if (!GrinderExecutionConstants.OPERATION_TYPE.equals(evidence.operationType())) {
+        if (!contract.operationType().equals(evidence.operationType())) {
             return ExecutionHandlerValidation.rejected(
                     ExecutionFailureCode.UNSUPPORTED_OPERATION_TYPE,
                     "Grinder handler supports only the IM-012 selected operation type"
             );
         }
-        if (!GrinderExecutionConstants.HANDLER_ID.equals(evidence.handlerId())) {
+        if (!contract.handlerId().equals(evidence.handlerId())) {
             return ExecutionHandlerValidation.rejected(
                     ExecutionFailureCode.HANDLER_REJECTED_AUTHORIZATION,
                     "Grinder authorization targets a different handler"
@@ -79,6 +88,11 @@ public final class GrinderExecutionOperationHandler implements ExecutionOperatio
                     ExecutionFailureCode.INVALID_FROZEN_INPUT,
                     "Grinder authorization did not explicitly bind its frozen input identity"
             );
+        }
+        if (conditionAware && evidence.explicitInputIdentities().stream()
+                .filter(identity -> identity.startsWith("butchercraft:condition_freshness/v1/")).count() != 1) {
+            return ExecutionHandlerValidation.rejected(ExecutionFailureCode.HANDLER_REJECTED_AUTHORIZATION,
+                    "Condition-aware Grinder authorization requires exact condition freshness");
         }
         return ExecutionHandlerValidation.acceptedResult();
     }
@@ -117,6 +131,12 @@ public final class GrinderExecutionOperationHandler implements ExecutionOperatio
             );
         }
 
+        if (conditionAware != grinder.conditionPreparationIdentity().isPresent()
+                || conditionAware && !evidence.explicitInputIdentities().contains(
+                grinder.conditionPreparationIdentity().orElseThrow())) {
+            return failed(context, ExecutionFailureCode.HANDLER_REJECTED_INPUT,
+                    "Grinder condition preparation does not match the exact handler contract", 1);
+        }
         WorkstationExecutionEffectResult effect = grinder.completeScheduledExecution(
                 context.operation().operationId(),
                 context.operation().domainEffectIdentity(),

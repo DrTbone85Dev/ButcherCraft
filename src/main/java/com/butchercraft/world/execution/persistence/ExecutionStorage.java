@@ -2,6 +2,8 @@ package com.butchercraft.world.execution.persistence;
 
 import com.butchercraft.persistence.AtomicFilePublication;
 import com.butchercraft.world.execution.ExecutionAttemptId;
+import com.butchercraft.world.execution.ExecutionContractBindings;
+import com.butchercraft.world.execution.ExecutionHandlerContractDescriptor;
 import com.butchercraft.world.execution.ExecutionAttemptRecord;
 import com.butchercraft.world.execution.ExecutionAuthorizationEvidence;
 import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
@@ -35,6 +37,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 public final class ExecutionStorage {
+    public static final int CURRENT_PERSISTENCE_SCHEMA = 2;
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping().serializeNulls().setPrettyPrinting().create();
 
@@ -44,6 +47,8 @@ public final class ExecutionStorage {
     private final ExecutionRegistryCompatibilityClassifier compatibilityClassifier;
     private volatile ExecutionRegistryCompatibilityObservation compatibilityObservation;
     private LoadedPersistenceBaseline loadedBaseline;
+    private ExecutionContractBindings persistedBindings;
+    private Optional<String> determinismManifestReference = Optional.empty();
 
     public ExecutionStorage(
             Path filePath,
@@ -67,6 +72,13 @@ public final class ExecutionStorage {
 
     public Path filePath() {
         return filePath;
+    }
+
+    public synchronized void bindDeterminismManifestReference(String reference) {
+        if (Objects.requireNonNull(reference, "reference").isBlank()) {
+            throw new IllegalArgumentException("Execution determinism reference must not be blank");
+        }
+        determinismManifestReference = Optional.of(reference);
     }
 
     public synchronized ExecutionManager load() {
@@ -101,13 +113,19 @@ public final class ExecutionStorage {
         loadedBaseline = null;
     }
 
-    public String serialize(ExecutionManager manager) {
+    public synchronized String serialize(ExecutionManager manager) {
         Objects.requireNonNull(manager, "manager").validateForPersistence();
+        ExecutionContractBindings bindings = ExecutionContractBindings.create(manager.handlerRegistry(),
+                manager.operations(), persistedBindings == null ? List.of() : persistedBindings.evolutions(),
+                Optional.ofNullable(compatibilityObservation), determinismManifestReference.isPresent()
+                        ? determinismManifestReference : persistedBindings == null ? Optional.empty()
+                        : persistedBindings.determinismManifestReference());
         ExecutionDocument document = new ExecutionDocument(
-                ExecutionSchema.CURRENT_VERSION,
+                CURRENT_PERSISTENCE_SCHEMA,
                 manager.handlerRegistry().registryIdentity(),
                 manager.configuration().configurationIdentity(),
-                manager.operations().stream().map(ExecutionStorage::toOperationRecord).toList()
+                manager.operations().stream().map(ExecutionStorage::toOperationRecord).toList(),
+                toBindingsRecord(bindings)
         );
         return GSON.toJson(document) + System.lineSeparator();
     }
@@ -120,7 +138,7 @@ public final class ExecutionStorage {
                     "Execution persistence root"
             );
             int schema = Objects.requireNonNull(document.schemaVersion(), "Execution schema version");
-            if (schema != ExecutionSchema.CURRENT_VERSION) {
+            if (schema != ExecutionSchema.CURRENT_VERSION && schema != CURRENT_PERSISTENCE_SCHEMA) {
                 compatibilityObservation = compatibilityClassifier.classify(
                         schema,
                         document.handlerRegistryIdentity(),
@@ -132,16 +150,24 @@ public final class ExecutionStorage {
                 throw new ExecutionRegistryCompatibilityException(compatibilityObservation);
             }
             List<ExecutionOperationSnapshot> snapshots = requireList(document.operations(), "operations").stream()
-                    .map(record -> fromOperationRecord(record, schema))
+                    .map(record -> fromOperationRecord(record, ExecutionSchema.CURRENT_VERSION))
                     .toList();
-            compatibilityObservation = compatibilityClassifier.classify(
-                    schema,
+            if (schema == CURRENT_PERSISTENCE_SCHEMA) {
+                persistedBindings = fromBindingsRecord(Objects.requireNonNull(document.contractBindings(), "Execution contract bindings"));
+                compatibilityObservation = persistedBindings.validate(document.handlerRegistryIdentity(),
+                        document.configurationIdentity(), handlerRegistry, configuration, snapshots);
+            } else {
+                if (document.contractBindings() != null) throw new IllegalArgumentException("Legacy Execution schema contains newer bindings");
+                persistedBindings = null;
+                compatibilityObservation = compatibilityClassifier.classify(
+                    ExecutionSchema.CURRENT_VERSION,
                     document.handlerRegistryIdentity(),
                     document.configurationIdentity(),
                     handlerRegistry,
                     configuration,
                     snapshots
-            );
+                );
+            }
             if (!compatibilityObservation.permitsExecutionAuthority()) {
                 throw new ExecutionRegistryCompatibilityException(compatibilityObservation);
             }
@@ -382,7 +408,63 @@ public final class ExecutionStorage {
             @SerializedName("schema_version") Integer schemaVersion,
             @SerializedName("handler_registry_identity") String handlerRegistryIdentity,
             @SerializedName("configuration_identity") String configurationIdentity,
-            List<OperationRecord> operations
+            List<OperationRecord> operations,
+            @SerializedName("contract_bindings") BindingsRecord contractBindings
+    ) { }
+
+    private static BindingsRecord toBindingsRecord(ExecutionContractBindings bindings) {
+        return new BindingsRecord(bindings.handlers().stream().map(handler -> new HandlerRecord(handler.schemaVersion(),
+                handler.handlerId(), handler.operationType(), handler.contractIdentity(), handler.configurationIdentity())).toList(),
+                bindings.operations().stream().map(operation -> new BindingRecord(operation.operationIdentity(),
+                        operation.handlerIdentity(), operation.contractIdentity())).toList(), bindings.compatibilityPolicyIdentity(),
+                bindings.evolutions().stream().map(evolution -> new EvolutionRecord(evolution.priorRegistry(),
+                        evolution.currentRegistry(), evolution.classification().name(), evolution.legacyProfile().orElse(null),
+                        evolution.identity())).toList(), bindings.determinismManifestReference().orElse(null), bindings.digest());
+    }
+
+    private static ExecutionContractBindings fromBindingsRecord(BindingsRecord bindings) {
+        return new ExecutionContractBindings(requireList(bindings.handlers(), "handler contracts").stream().map(handler ->
+                new ExecutionHandlerContractDescriptor(handler.schemaVersion(), handler.handlerId(), handler.operationType(),
+                        handler.contractIdentity(), handler.configurationIdentity())).toList(),
+                requireList(bindings.operations(), "operation bindings").stream().map(operation ->
+                        new ExecutionContractBindings.OperationBinding(operation.operationIdentity(), operation.handlerIdentity(),
+                                operation.contractIdentity())).toList(), bindings.compatibilityPolicyIdentity(),
+                requireList(bindings.evolutions(), "registry evolutions").stream().map(evolution ->
+                        new ExecutionContractBindings.Evolution(evolution.priorRegistry(), evolution.currentRegistry(),
+                                ExecutionRegistryCompatibilityClassification.valueOf(evolution.classification()),
+                                Optional.ofNullable(evolution.legacyProfile()), evolution.identity())).toList(),
+                Optional.ofNullable(bindings.determinismManifestReference()), bindings.digest());
+    }
+
+    private record BindingsRecord(
+            List<HandlerRecord> handlers,
+            List<BindingRecord> operations,
+            @SerializedName("compatibility_policy_identity") String compatibilityPolicyIdentity,
+            List<EvolutionRecord> evolutions,
+            @SerializedName("determinism_manifest_reference") String determinismManifestReference,
+            String digest
+    ) { }
+
+    private record HandlerRecord(
+            @SerializedName("schema_version") int schemaVersion,
+            @SerializedName("handler_id") String handlerId,
+            @SerializedName("operation_type") String operationType,
+            @SerializedName("contract_identity") String contractIdentity,
+            @SerializedName("configuration_identity") String configurationIdentity
+    ) { }
+
+    private record BindingRecord(
+            @SerializedName("operation_identity") String operationIdentity,
+            @SerializedName("handler_identity") String handlerIdentity,
+            @SerializedName("contract_identity") String contractIdentity
+    ) { }
+
+    private record EvolutionRecord(
+            @SerializedName("prior_registry") String priorRegistry,
+            @SerializedName("current_registry") String currentRegistry,
+            String classification,
+            @SerializedName("legacy_profile") String legacyProfile,
+            String identity
     ) { }
 
     private record OperationRecord(

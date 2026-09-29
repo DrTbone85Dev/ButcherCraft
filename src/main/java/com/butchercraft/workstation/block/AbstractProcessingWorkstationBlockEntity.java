@@ -1,6 +1,12 @@
 package com.butchercraft.workstation.block;
 
 import com.butchercraft.product.integration.ProductStackAdapter;
+import com.butchercraft.workstation.condition.ConditionProcessingPreparation;
+import com.butchercraft.workstation.condition.ConditionProcessingCommit;
+import com.butchercraft.workstation.condition.ConditionProcessingCandidates;
+import com.butchercraft.workstation.condition.ConditionDigest;
+import com.butchercraft.workstation.WorkstationConditionProcessingAccess;
+import com.butchercraft.workstation.projection.DurableWorkstationProjectionService;
 import com.butchercraft.workstation.DevelopmentProductItemMapping;
 import com.butchercraft.workstation.WorkstationCapability;
 import com.butchercraft.workstation.WorkstationExecutionCoordinator;
@@ -168,6 +174,61 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
         inventory().setInputLocked(controller::inputLocked);
         inventory().setOutputExtractionAllowed(controller::outputExtractionAllowed);
         inventory().setInputSlotValidator(this::canAcceptInput);
+        controller.attachConditionAccess(new WorkstationConditionProcessingAccess() {
+            @Override
+            public Optional<ConditionProcessingPreparation> prepare() {
+                if (!(level instanceof ServerLevel serverLevel)
+                        || !(AbstractProcessingWorkstationBlockEntity.this
+                        instanceof com.butchercraft.workstation.endpoint.runtime.WorkstationTransferEndpoint)) {
+                    return Optional.empty();
+                }
+                var projection = DurableWorkstationProjectionService.INSTANCE.ensureConditionReady(
+                        serverLevel, AbstractProcessingWorkstationBlockEntity.this);
+                if (projection.condition().isEmpty()) {
+                    throw new IllegalStateException("Historical child/endpoint must resolve before new condition-aware work");
+                }
+                return projection.condition().orElseThrow().state().map(ConditionProcessingPreparation::of);
+            }
+
+            @Override
+            public ConditionProcessingCommit prepareCommit(ConditionProcessingPreparation preparation,
+                    com.butchercraft.world.execution.ExecutionOperationId operation,
+                    com.butchercraft.workstation.WorkstationInventoryCommitPlan inventoryPlan,
+                    com.butchercraft.world.execution.ExecutionOwnerResultEvidence productResult, long tick) {
+                if (!(level instanceof ServerLevel serverLevel)) throw new IllegalStateException("Server owner required");
+                var owner = DurableWorkstationProjectionService.INSTANCE;
+                var durable = owner.read(serverLevel.getServer(), preparation.preState().instanceId())
+                        .projection().orElseThrow();
+                var condition = durable.condition().orElseThrow();
+                if (!conditionProjection().equals(durable.condition())) {
+                    throw new IllegalStateException("Loaded condition differs from durable owner baseline");
+                }
+                ConditionDigest slots = new ConditionDigest("butchercraft:joint_processing_inventory/v1");
+                var codec = new com.butchercraft.integration.materialhandling.ExactItemStackCodec();
+                slots.add(inventoryPlan.postInputs().size() + inventoryPlan.postOutputs().size());
+                for (ItemStack stack : inventoryPlan.postInputs()) {
+                    slots.add(stack.isEmpty());
+                    if (!stack.isEmpty()) slots.add(codec.encode(serverLevel.registryAccess(), stack).contentDigest());
+                }
+                for (ItemStack stack : inventoryPlan.postOutputs()) {
+                    slots.add(stack.isEmpty());
+                    if (!stack.isEmpty()) slots.add(codec.encode(serverLevel.registryAccess(), stack).contentDigest());
+                }
+                ConditionProcessingCommit candidate = ConditionProcessingCandidates.prepare(condition, preparation,
+                        operation, slots.finish(), productResult, tick, Math.incrementExact(durable.projectionRevision()));
+                owner.conditionReceipts(serverLevel.getServer()).stage(candidate.receipt());
+                return candidate;
+            }
+
+            @Override
+            public void installPreparedMirror(ConditionProcessingCommit candidate) {
+                acceptConditionProjection(Optional.of(candidate.projection()));
+            }
+        });
+    }
+
+    public final Optional<String> conditionPreparationIdentity() {
+        return controller.conditionPreparationIdentity();
     }
 
     public WorkstationState workstationState() {
@@ -270,6 +331,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
     }
 
     public final WorkstationProductionRequestResult requestProductionProcessing(WorkstationTickContext tickContext) {
+        ensureDurableProjectionReady();
         beginDurableProjectionMutation();
         try {
             return controller.requestProductionProcessing(tickContext);
@@ -283,6 +345,7 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
             Function<com.butchercraft.workstation.WorkstationExecutionStartRequest,
                     com.butchercraft.workstation.WorkstationExecutionStartResult> executionStart
     ) {
+        ensureDurableProjectionReady();
         beginDurableProjectionMutation();
         try {
             return controller.requestProductionProcessing(tickContext, executionStart);
@@ -302,16 +365,21 @@ public abstract class AbstractProcessingWorkstationBlockEntity extends AbstractI
                     "Workstation level is unavailable during scheduled Execution effect"
             ));
         }
+        CompoundTag before = checkpointProjectionSnapshot(level.registryAccess());
+        var conditionBefore = conditionProjection();
         beginDurableProjectionMutation();
         try {
-            return controller.completeScheduledExecution(
+            WorkstationExecutionEffectResult result = controller.completeScheduledExecution(
                     level.registryAccess(),
                     operationId,
                     domainEffectIdentity,
                     authoritativeTick
             );
-        } finally {
             endDurableProjectionMutation();
+            return result;
+        } catch (RuntimeException exception) {
+            failJointPublication(before, conditionBefore);
+            throw exception;
         }
     }
 

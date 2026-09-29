@@ -153,7 +153,9 @@ Manual client verification remains required before claiming human acceptance.
 The [ratified DG-006 ADR](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
 requires a separate Patty Former condition policy. V1 RUNNING_EMPTY and
 OUTPUT_BLOCKED are POWERED-IDLE, with no forming-cycle wear merely from either
-wait. Implementation and numeric balance remain gated.
+wait. [IM-033A foundation](MACHINE_CONDITION_FOUNDATION.md) adds exact durable
+condition and joint successful-cycle evidence under an inert production policy.
+IM-033C activation and numeric balance remain gated.
 There is no live mechanical wear, damage, jam, maintenance, breakdown, repair,
 or empty/blocked exposure consequence. Grinder dry-running behavior is not
 applicable to this machine under the ratified V1 policy.

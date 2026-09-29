@@ -4,6 +4,7 @@ import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointStackPayload;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
+import com.butchercraft.workstation.condition.ConditionCodec;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -35,8 +36,11 @@ public final class WorkstationProjectionCodec {
         try {
             JsonObject root = object(JsonParser.parseString(new String(frozenBytes, StandardCharsets.UTF_8)), "root");
             int schema = integer(root, "schema_version");
-            if (schema != WorkstationProjectionSchema.CURRENT_VERSION) {
+            if (schema != WorkstationProjectionSchema.CURRENT_VERSION && schema != WorkstationProjectionSchema.LEGACY_VERSION) {
                 throw new UnsupportedWorkstationProjectionSchemaException(schema);
+            }
+            if (schema == WorkstationProjectionSchema.LEGACY_VERSION && root.has("condition")) {
+                throw new IllegalArgumentException("Legacy projection contains contradictory condition evidence");
             }
             JsonObject world = object(required(root, "world_identity"), "world identity");
             WorldIdentityRootIdentity worldIdentity = new WorldIdentityRootIdentity(
@@ -84,12 +88,16 @@ public final class WorkstationProjectionCodec {
                     optionalString(root, "processing_operation_identity"),
                     optionalString(root, "processing_owner_result_identity"),
                     operating,
+                    schema == WorkstationProjectionSchema.CURRENT_VERSION
+                            ? Optional.of(new ConditionCodec().projection(object(required(root, "condition"), "condition")))
+                            : Optional.empty(),
                     WorkstationProjectionStatus.valueOf(string(root, "status")),
                     optionalString(root, "retirement_reason"),
                     optionalString(root, "prior_active_projection_digest"),
                     string(root, "state_digest")
             );
-        } catch (UnsupportedWorkstationProjectionSchemaException exception) {
+        } catch (UnsupportedWorkstationProjectionSchemaException
+                 | com.butchercraft.workstation.condition.UnsupportedConditionSchemaException exception) {
             throw exception;
         } catch (RuntimeException exception) {
             throw new IllegalArgumentException("Corrupt durable Workstation projection", exception);
@@ -157,6 +165,7 @@ public final class WorkstationProjectionCodec {
             root.add("operating_state_reference", json);
         });
         root.addProperty("status", projection.status().name());
+        projection.condition().ifPresent(value -> root.add("condition", new ConditionCodec().projection(value)));
         addOptional(root, "retirement_reason", projection.retirementReason());
         addOptional(root, "prior_active_projection_digest", projection.priorActiveProjectionDigest());
         root.addProperty("state_digest", projection.stateDigest());

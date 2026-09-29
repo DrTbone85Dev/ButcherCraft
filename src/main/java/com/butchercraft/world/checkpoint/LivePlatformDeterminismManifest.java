@@ -24,13 +24,21 @@ public final class LivePlatformDeterminismManifest {
 
     public static PlatformDeterminismManifestReference currentReference(MinecraftServer server) {
         Objects.requireNonNull(server, "server");
+        return reference(ExecutionService.INSTANCE.configuredHandlerRegistry(server).registryIdentity(), true);
+    }
+
+    private static PlatformDeterminismManifestReference reference(String executionRegistry, boolean conditionEnabled) {
         List<String> lines = new ArrayList<>();
         lines.add("identity=" + IDENTITY);
         lines.add("schemaVersion=" + SCHEMA_VERSION);
         lines.add("checkpointSchema=" + CheckpointSchema.CURRENT_VERSION);
         lines.add("cadenceTicks=" + LiveCheckpointPolicy.PERIODIC_INTERVAL_TICKS);
-        lines.add("executionRegistry=" + ExecutionService.INSTANCE.configuredHandlerRegistry(server)
-                .registryIdentity());
+        lines.add("executionRegistry=" + executionRegistry);
+        if (conditionEnabled) {
+            lines.add("conditionPolicies=" + com.butchercraft.workstation.projection.DurableWorkstationProjectionService.INSTANCE.conditionPolicyRegistryIdentity());
+            lines.add("conditionProjectionSchema=" + com.butchercraft.workstation.projection.WorkstationProjectionSchema.CURRENT_VERSION);
+            lines.add("conditionCheckpointSchema=" + com.butchercraft.workstation.checkpoint.WorkstationCheckpointProjectionService.SCHEMA_VERSION);
+        }
         SimulationSchedulerService.INSTANCE.configuredHandlerRegistry().handlers().stream()
                 .map(handler -> "schedulerHandler=" + handler.supportedTypeId().value()
                         + "|" + handler.effectPolicy().effectType().name())
@@ -50,6 +58,8 @@ public final class LivePlatformDeterminismManifest {
     public static List<PlatformDeterminismManifestReference> acceptedRecoveryReferences(
             MinecraftServer server
     ) {
-        return List.of(currentReference(server), LEGACY_R2A_REFERENCE);
+        return List.of(currentReference(server), reference(
+                com.butchercraft.world.execution.ExecutionLegacyRegistryProfiles.PRE_CONDITION_SCHEMA_1_REGISTRY_IDENTITY,
+                false), LEGACY_R2A_REFERENCE);
     }
 }

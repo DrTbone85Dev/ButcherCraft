@@ -21,19 +21,28 @@ import java.util.function.Supplier;
 
 public final class PattyFormerExecutionOperationHandler implements ExecutionOperationHandler {
     private final Supplier<MinecraftServer> serverSupplier;
-    private final ExecutionHandlerContract contract = ExecutionHandlerContract.idempotent(
-            PattyFormerExecutionConstants.HANDLER_ID,
-            PattyFormerExecutionConstants.OPERATION_TYPE,
-            50,
-            PattyFormerExecutionConstants.CONFIGURATION_IDENTITY
-    );
+    private final ExecutionHandlerContract contract;
+    private final boolean conditionAware;
 
     public PattyFormerExecutionOperationHandler(MinecraftServer server) {
         this(() -> Objects.requireNonNull(server, "server"));
     }
 
     PattyFormerExecutionOperationHandler(Supplier<MinecraftServer> serverSupplier) {
+        this(serverSupplier, false);
+    }
+
+    private PattyFormerExecutionOperationHandler(Supplier<MinecraftServer> serverSupplier, boolean conditionAware) {
         this.serverSupplier = Objects.requireNonNull(serverSupplier, "serverSupplier");
+        this.conditionAware = conditionAware;
+        contract = ExecutionHandlerContract.idempotent(
+                conditionAware ? PattyFormerExecutionConstants.CONDITION_HANDLER_ID : PattyFormerExecutionConstants.HANDLER_ID,
+                conditionAware ? PattyFormerExecutionConstants.CONDITION_OPERATION_TYPE : PattyFormerExecutionConstants.OPERATION_TYPE,
+                50, conditionAware ? PattyFormerExecutionConstants.CONDITION_CONFIGURATION : PattyFormerExecutionConstants.CONFIGURATION_IDENTITY);
+    }
+
+    public static PattyFormerExecutionOperationHandler conditionAware(MinecraftServer server) {
+        return new PattyFormerExecutionOperationHandler(() -> Objects.requireNonNull(server, "server"), true);
     }
 
     @Override
@@ -44,13 +53,13 @@ public final class PattyFormerExecutionOperationHandler implements ExecutionOper
     @Override
     public ExecutionHandlerValidation validateAuthorization(ExecutionAuthorizationEvidence evidence) {
         Objects.requireNonNull(evidence, "evidence");
-        if (!PattyFormerExecutionConstants.OPERATION_TYPE.equals(evidence.operationType())) {
+        if (!contract.operationType().equals(evidence.operationType())) {
             return ExecutionHandlerValidation.rejected(
                     ExecutionFailureCode.UNSUPPORTED_OPERATION_TYPE,
                     "Patty Former handler supports only the selected operation type"
             );
         }
-        if (!PattyFormerExecutionConstants.HANDLER_ID.equals(evidence.handlerId())) {
+        if (!contract.handlerId().equals(evidence.handlerId())) {
             return ExecutionHandlerValidation.rejected(
                     ExecutionFailureCode.HANDLER_REJECTED_AUTHORIZATION,
                     "Patty Former authorization targets a different handler"
@@ -79,6 +88,11 @@ public final class PattyFormerExecutionOperationHandler implements ExecutionOper
                     ExecutionFailureCode.INVALID_FROZEN_INPUT,
                     "Patty Former authorization did not explicitly bind its frozen input identity"
             );
+        }
+        if (conditionAware && evidence.explicitInputIdentities().stream()
+                .filter(identity -> identity.startsWith("butchercraft:condition_freshness/v1/")).count() != 1) {
+            return ExecutionHandlerValidation.rejected(ExecutionFailureCode.HANDLER_REJECTED_AUTHORIZATION,
+                    "Condition-aware Patty Former authorization requires exact condition freshness");
         }
         return ExecutionHandlerValidation.acceptedResult();
     }
@@ -117,6 +131,12 @@ public final class PattyFormerExecutionOperationHandler implements ExecutionOper
             );
         }
 
+        if (conditionAware != pattyFormer.conditionPreparationIdentity().isPresent()
+                || conditionAware && !evidence.explicitInputIdentities().contains(
+                pattyFormer.conditionPreparationIdentity().orElseThrow())) {
+            return failed(context, ExecutionFailureCode.HANDLER_REJECTED_INPUT,
+                    "Patty Former condition preparation does not match the exact handler contract", 1);
+        }
         WorkstationExecutionEffectResult effect = pattyFormer.completeScheduledExecution(
                 context.operation().operationId(),
                 context.operation().domainEffectIdentity(),

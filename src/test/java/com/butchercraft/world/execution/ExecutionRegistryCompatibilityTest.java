@@ -265,6 +265,45 @@ class ExecutionRegistryCompatibilityTest {
         );
     }
 
+    @Test
+    void conditionHandlerEvolutionRetainsHistoricalChildrenAndPersistsExactBindings() {
+        var oldOperation = operation(GRINDER, "pre_condition");
+        var old = currentRegistry();
+        var oldDocument = com.google.gson.JsonParser.parseString(new ExecutionStorage(Path.of("old.json"), old, CONFIGURATION)
+                .serialize(new ExecutionManager(old, CONFIGURATION, List.of(oldOperation)))).getAsJsonObject();
+        oldDocument.addProperty("schema_version", 1);
+        oldDocument.remove("contract_bindings");
+        String historical = oldDocument.toString();
+        var current = registry(GRINDER, PATTY_FORMER, CUTTING_TABLE,
+                ExecutionHandlerContract.idempotent(
+                        com.butchercraft.machine.grinder.execution.GrinderExecutionConstants.CONDITION_HANDLER_ID,
+                        com.butchercraft.machine.grinder.execution.GrinderExecutionConstants.CONDITION_OPERATION_TYPE, 50,
+                        com.butchercraft.machine.grinder.execution.GrinderExecutionConstants.CONDITION_CONFIGURATION),
+                ExecutionHandlerContract.idempotent(
+                        com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionConstants.CONDITION_HANDLER_ID,
+                        com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionConstants.CONDITION_OPERATION_TYPE, 50,
+                        com.butchercraft.machine.pattyformer.execution.PattyFormerExecutionConstants.CONDITION_CONFIGURATION));
+        var storage = currentStorage("condition.json", current);
+        var loaded = storage.deserialize(historical);
+        assertEquals(oldOperation, loaded.operations().iterator().next());
+        storage.bindDeterminismManifestReference("test:condition_platform_manifest");
+        var upgraded = com.google.gson.JsonParser.parseString(storage.serialize(loaded)).getAsJsonObject();
+        assertEquals(2, upgraded.get("schema_version").getAsInt());
+        var bindings = upgraded.getAsJsonObject("contract_bindings");
+        assertEquals(5, bindings.getAsJsonArray("handlers").size());
+        assertEquals(1, bindings.getAsJsonArray("operations").size());
+        assertEquals(GRINDER.contractIdentity(), bindings.getAsJsonArray("operations").get(0).getAsJsonObject()
+                .get("contract_identity").getAsString());
+        assertEquals("test:condition_platform_manifest", bindings.get("determinism_manifest_reference").getAsString());
+        assertEquals(1, bindings.getAsJsonArray("evolutions").size());
+        var reload = currentStorage("reload.json", current);
+        assertEquals(loaded.operations(), reload.deserialize(upgraded.toString()).operations());
+        assertEquals(upgraded, com.google.gson.JsonParser.parseString(reload.serialize(loaded)));
+        assertEquals(historical, oldDocument.toString(), "Reading historical schema does not edit its bytes");
+        bindings.getAsJsonArray("operations").get(0).getAsJsonObject().addProperty("contract_identity", CUTTING_TABLE.contractIdentity());
+        assertThrows(IllegalArgumentException.class, () -> reload.deserialize(upgraded.toString()));
+    }
+
     private ExecutionStorage currentStorage(String fileName, ExecutionHandlerRegistry registry) {
         return new ExecutionStorage(temporaryDirectory.resolve(fileName), registry, CONFIGURATION);
     }
@@ -272,7 +311,11 @@ class ExecutionRegistryCompatibilityTest {
     private static String legacyJson(List<ExecutionOperationSnapshot> operations) {
         ExecutionHandlerRegistry legacy = registry(GRINDER, PATTY_FORMER);
         ExecutionManager manager = new ExecutionManager(legacy, CONFIGURATION, operations);
-        return new ExecutionStorage(Path.of("legacy.json"), legacy, CONFIGURATION).serialize(manager);
+        var document = com.google.gson.JsonParser.parseString(
+                new ExecutionStorage(Path.of("legacy.json"), legacy, CONFIGURATION).serialize(manager)).getAsJsonObject();
+        document.addProperty("schema_version", 1);
+        document.remove("contract_bindings");
+        return document.toString();
     }
 
     private static ExecutionOperationSnapshot operation(ExecutionHandlerContract contract, String suffix) {

@@ -1573,6 +1573,9 @@ public final class ButcherCraftArchitectureManifest {
         own(builder, "butchercraft:responsibility/workstation_projection_revision", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_projection_reconciliation", WORKSTATION);
         own(builder, "butchercraft:responsibility/workstation_projection_persistence", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_condition_state", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_condition_effects", WORKSTATION);
+        own(builder, "butchercraft:responsibility/machine_condition_exposure", WORKSTATION);
         own(builder, "butchercraft:responsibility/material_transfer_identity", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/material_transfer_lifecycle", MATERIAL_HANDLING);
         own(builder, "butchercraft:responsibility/in_transit_item_stack_custody", MATERIAL_HANDLING);
@@ -2316,6 +2319,15 @@ public final class ButcherCraftArchitectureManifest {
                 ValidationCategory.PERSISTENCE,
                 "IM-031C-R3A assigns bounded atomically published per-instance projection records to Workstation"
         );
+        contract(builder, "butchercraft:responsibility/machine_condition_state", WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "DG-006 and IM-033A bind condition applicability, revision, digest and policy to exact Workstation Instance Identity");
+        contract(builder, "butchercraft:responsibility/machine_condition_effects", WORKSTATION,
+                ValidationCategory.PERSISTENCE,
+                "IM-033A embeds condition activation in the Workstation projection with retained immutable effect receipts; production policies remain inert");
+        contract(builder, "butchercraft:responsibility/machine_condition_exposure", WORKSTATION,
+                ValidationCategory.OWNERSHIP,
+                "IM-033A assigns deterministic explicit-input exposure arithmetic and bounded active-subset settlement to Workstation");
         contract(
                 builder,
                 "butchercraft:responsibility/production_plans",
@@ -3084,7 +3096,7 @@ public final class ButcherCraftArchitectureManifest {
                 "butchercraft:execution_operations",
                 "butchercraft/" + ExecutionSchema.FILE_NAME,
                 EXECUTION,
-                ExecutionSchema.CURRENT_VERSION,
+                com.butchercraft.world.execution.persistence.ExecutionStorage.CURRENT_PERSISTENCE_SCHEMA,
                 PersistenceDataKind.SEPARATED_DEFINITIONS_AND_RUNTIME,
                 OrderingPolicy.CANONICAL_ID,
                 new ArchitectureReference(STAGE_REGISTRY_ID, BuiltInSimulationStages.EXECUTION.value())
@@ -3121,6 +3133,9 @@ public final class ButcherCraftArchitectureManifest {
                         + WorkstationProjectionSchema.SCHEMA_DIRECTORY_NAME + "/<sha256-shard>/<instance>.json",
                 WORKSTATION, WorkstationProjectionSchema.CURRENT_VERSION,
                 PersistenceDataKind.MUTABLE_RUNTIME, OrderingPolicy.CANONICAL_ID);
+        persistence(builder, "butchercraft:workstation_condition_receipts",
+                "butchercraft/workstations/condition_effects/v1/<sha256-shard>/<digest>.json",
+                WORKSTATION, 1, PersistenceDataKind.IMMUTABLE_HISTORY, OrderingPolicy.CANONICAL_ID);
         persistence(builder, "butchercraft:material_handling",
                 MaterialHandlingSchema.DIRECTORY_NAME + "/" + MaterialHandlingSchema.FILE_NAME,
                 MATERIAL_HANDLING, MaterialHandlingSchema.CURRENT_VERSION,

@@ -86,7 +86,7 @@ public final class NativeOwnerRestorationAdapters {
                 SimulationSchedulerService.INSTANCE.configuredHandlerRegistry()));
         adapters.add(fileAdapter(
                 LegacySplitRecoveryParticipants.EXECUTION,
-                Set.of(1),
+                Set.of(1, 2),
                 List.of("execution_operations.json", "execution_machine_runs.json"),
                 Set.of(),
                 true,
@@ -100,13 +100,15 @@ public final class NativeOwnerRestorationAdapters {
                         1, HISTORICAL_WORKSTATION_NATIVE_FILES,
                         2, HISTORICAL_WORKSTATION_NATIVE_FILES,
                         3, HISTORICAL_WORKSTATION_NATIVE_FILES,
-                        4, CURRENT_WORKSTATION_NATIVE_FILES
+                        4, CURRENT_WORKSTATION_NATIVE_FILES,
+                        5, CURRENT_WORKSTATION_NATIVE_FILES
                 ),
                 Map.of(
                         1, WORKSTATION_VIRTUAL_FILES,
                         2, WORKSTATION_VIRTUAL_FILES,
                         3, WORKSTATION_VIRTUAL_FILES,
-                        4, WORKSTATION_VIRTUAL_FILES
+                        4, WORKSTATION_VIRTUAL_FILES,
+                        5, WORKSTATION_VIRTUAL_FILES
                 ),
                 true,
                 NativeOwnerRestorationAdapters::policyBWorkstation,
@@ -332,6 +334,11 @@ public final class NativeOwnerRestorationAdapters {
     ) {
         byte[] projection = state.workstationProjection().orElseThrow(() ->
                 new IllegalArgumentException("Complete-restorable Workstation snapshot omits durable projections"));
+        int projectionSchema = JsonParser.parseString(new String(projection, StandardCharsets.UTF_8))
+                .getAsJsonObject().get("schema_version").getAsInt();
+        if ((state.ownerSchemaVersion() >= 5) != (projectionSchema == WorkstationCheckpointProjectionService.SCHEMA_VERSION)) {
+            throw new IllegalArgumentException("Workstation participant and condition projection schemas disagree");
+        }
         WorkstationInstanceRegistry instances = new WorkstationInstanceStorage(UNUSED)
                 .deserialize(text(state.files(), "workstation_instances.json"));
         return WorkstationCheckpointProjectionService.prepareRestorationProjectionFiles(

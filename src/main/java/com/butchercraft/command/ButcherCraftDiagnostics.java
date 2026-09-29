@@ -889,7 +889,42 @@ public final class ButcherCraftDiagnostics {
         sendWorkstationReservationRole(source, "MATERIAL_HANDLER", status.handlerReservation());
         sendGrinderRunStatus(source, position);
         sendPattyFormerOperationStatus(source, position);
+        sendConditionStatus(source, position);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static void sendConditionStatus(CommandSourceStack source, BlockPos position) {
+        if (!source.getLevel().hasChunkAt(position)) return;
+        if (!(source.getLevel().getBlockEntity(position)
+                instanceof com.butchercraft.workstation.block.AbstractInventoryWorkstationBlockEntity machine)
+                || machine.checkpointInstanceIdentity().isEmpty()) return;
+        var owner = com.butchercraft.workstation.projection.DurableWorkstationProjectionService.INSTANCE;
+        var read = owner.readWithLoadedValidation(source.getServer(), machine.checkpointInstanceIdentity().orElseThrow());
+        source.sendSuccess(() -> Component.literal("Condition recovery: " + read.code() + " | " + read.detail()), false);
+        read.projection().ifPresent(projection -> {
+            source.sendSuccess(() -> Component.literal("Condition instance: " + projection.instanceId().value()
+                    + " | projection " + projection.projectionRevision() + " | " + projection.stateDigest()), false);
+            if (projection.condition().isEmpty()) {
+                source.sendSuccess(() -> Component.literal("Condition: LEGACY_INITIALIZATION_REQUIRED"), false);
+                return;
+            }
+            var condition = projection.condition().orElseThrow();
+            source.sendSuccess(() -> Component.literal("Condition applicability: " + condition.applicability()), false);
+            condition.state().ifPresent(state -> {
+                source.sendSuccess(() -> Component.literal("Condition schema " + state.schemaVersion() + " | revision "
+                        + state.revision() + " | loss " + state.mechanicalLoss() + "/" + state.policy().maximumLoss()
+                        + " | " + state.band() + " | service debt " + state.serviceDebt()), false);
+                source.sendSuccess(() -> Component.literal("Condition policy: " + state.policy().identity()
+                        + " | eligibility " + state.eligibility() + " | suspension " + state.suspension()), false);
+                source.sendSuccess(() -> Component.literal("Condition exposure: " + state.activeExposure().map(exposure ->
+                        exposure.type() + " | start " + exposure.startTick() + " | accounted " + exposure.accountedThroughTick())
+                        .orElse("none") + " | durable cutoff " + state.lastAccountedTick()
+                        + " | unproven tail discarded " + state.unprovenTailDiscarded()), false);
+                source.sendSuccess(() -> Component.literal("Condition fault: " + state.fault().map(fault -> fault.type().name()).orElse("none")
+                        + " | last effect " + state.lastEffectIdentity().orElse("none")
+                        + " | pending operating transition " + condition.pendingOperatingTransition().orElse("none")), false);
+            });
+        });
     }
 
     private static void sendWorkstationReservationRole(

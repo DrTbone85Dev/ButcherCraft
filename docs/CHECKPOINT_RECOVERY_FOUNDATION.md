@@ -372,6 +372,13 @@ Operational details are in
 
 ## Deferred Work
 
+Separately authorized [IM-033A machine condition foundation](MACHINE_CONDITION_FOUNDATION.md)
+is complete and Product Owner accepted. Workstation participant schema 5 supplies exact condition-aware
+projection collection schema 3 and receipt closure; owner-native restoration
+verifies the frozen bytes without recomputing consequences. Historical schema-2
+collections remain readable and restore before healthy condition migration.
+Production wear remains inactive and no checkpoint retention policy is added.
+
 The following remain explicitly deferred:
 
 - generation archive cleanup

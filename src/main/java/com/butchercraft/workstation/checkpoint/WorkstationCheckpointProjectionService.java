@@ -61,7 +61,8 @@ import java.util.Arrays;
 
 /** Workstation-owned serialization of loaded block-entity projections needed for later reconciliation. */
 public final class WorkstationCheckpointProjectionService {
-    public static final int SCHEMA_VERSION = 2;
+    public static final int SCHEMA_VERSION = 3;
+    public static final int PRE_CONDITION_SCHEMA_VERSION = 2;
     public static final int LEGACY_SCHEMA_VERSION = 1;
     private static final Gson GSON = StrictJsonPersistence.gson();
     private static final WorkstationProjectionCodec PROJECTION_CODEC = new WorkstationProjectionCodec();
@@ -100,13 +101,22 @@ public final class WorkstationCheckpointProjectionService {
             public boolean loaded(WorkstationInstanceRecord instance) {
                 return isLoaded(server, instance);
             }
-        });
+        }, digest -> DurableWorkstationProjectionService.INSTANCE.conditionReceipts(server).frozen(digest));
     }
 
     static WorkstationCheckpointProjectionSnapshot capture(
             WorkstationInstanceRegistry instances,
             List<WorkstationCheckpointDependency> dependencies,
             ProjectionAccess projectionAccess
+    ) {
+        return capture(instances, dependencies, projectionAccess, null);
+    }
+
+    static WorkstationCheckpointProjectionSnapshot capture(
+            WorkstationInstanceRegistry instances,
+            List<WorkstationCheckpointDependency> dependencies,
+            ProjectionAccess projectionAccess,
+            java.util.function.Function<String, byte[]> conditionReceiptSource
     ) {
         Objects.requireNonNull(instances, "instances");
         Objects.requireNonNull(projectionAccess, "projectionAccess");
@@ -116,6 +126,7 @@ public final class WorkstationCheckpointProjectionService {
 
         long freezeStarted = System.nanoTime();
         JsonArray entries = new JsonArray();
+        ConditionCheckpointClosure conditionClosure = new ConditionCheckpointClosure();
         List<WorkstationCheckpointBlocker> blockers = new ArrayList<>(required.blockers());
         int loaded = 0;
         int unloaded = 0;
@@ -143,6 +154,7 @@ public final class WorkstationCheckpointProjectionService {
                             "Frozen projection does not bind the exact registry and durable projection state"));
                     continue;
                 }
+                if (conditionReceiptSource != null) conditionClosure.include(decoded, conditionReceiptSource);
                 boolean loadedNow = projectionAccess.loaded(instance);
                 if (loadedNow) loaded++; else unloaded++;
                 entries.add(entry(instance, requirement.dependencies(), frozen, decoded, loadedNow));
@@ -159,7 +171,9 @@ public final class WorkstationCheckpointProjectionService {
         long serializationStarted = System.nanoTime();
         WorkstationCheckpointCompletenessStatus status = completeness(blockers);
         JsonObject root = new JsonObject();
-        root.addProperty("schema_version", SCHEMA_VERSION);
+        root.addProperty("schema_version", conditionReceiptSource == null
+                ? PRE_CONDITION_SCHEMA_VERSION : SCHEMA_VERSION);
+        if (conditionReceiptSource != null) root.add("condition_receipts", conditionClosure.encode());
         root.addProperty("workstation_restorable_status", status.serializedName());
         root.addProperty("workstation_instance_registry_revision", instances.ownerRevision());
         root.addProperty("required_projection_count", required.requirements().size());
@@ -367,6 +381,11 @@ public final class WorkstationCheckpointProjectionService {
             OwnerNativeRestorationPlan plan
     ) {
         Objects.requireNonNull(server, "server");
+        verifyRestored(context, plan);
+    }
+
+    /** Owner-native byte and semantic verification does not require loading any world chunk. */
+    public static void verifyRestored(OwnerNativeRestorationContext context, OwnerNativeRestorationPlan plan) {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(plan, "plan");
         WorkstationInstanceRegistry instances = parseInstances(plan);
@@ -378,6 +397,16 @@ public final class WorkstationCheckpointProjectionService {
                 plan.workstationProjection().orElseThrow(), StandardCharsets.UTF_8)).getAsJsonObject();
         List<RestorationProjection> projections = restorationProjections(context, instances, root);
         WorkstationProjectionStorage storage = projectionStorage(context.ownerRoot());
+        if (root.get("schema_version").getAsInt() == SCHEMA_VERSION) {
+            for (var receipt : ConditionCheckpointClosure.decode(root.getAsJsonArray("condition_receipts"),
+                    projections.stream().map(RestorationProjection::projection).toList()).nativeFiles(context.ownerRoot())) {
+                byte[] observed = AtomicFilePublication.readBytes(context.ownerRoot().resolve(receipt.targetRelativePath()),
+                        "restored Workstation condition receipt");
+                if (!Arrays.equals(observed, receipt.bytes())) {
+                    throw new IllegalStateException("Restored condition receipt differs from frozen checkpoint bytes");
+                }
+            }
+        }
         for (RestorationProjection projection : projections) {
             byte[] observed = AtomicFilePublication.readBytes(
                     storage.pathFor(projection.instance().instanceId()),
@@ -409,7 +438,8 @@ public final class WorkstationCheckpointProjectionService {
                 Objects.requireNonNull(projectionEvidence, "projectionEvidence"), StandardCharsets.UTF_8))
                 .getAsJsonObject();
         WorkstationProjectionStorage storage = projectionStorage(context.ownerRoot());
-        return restorationProjections(context, instances, root).stream()
+        List<RestorationProjection> projections = restorationProjections(context, instances, root);
+        List<OwnerNativeRestorationPlan.NativeFile> files = new ArrayList<>(projections.stream()
                 .map(projection -> {
                     Path target = storage.pathFor(projection.instance().instanceId());
                     String relative = context.ownerRoot().toAbsolutePath().normalize().relativize(target)
@@ -419,7 +449,12 @@ public final class WorkstationCheckpointProjectionService {
                             relative,
                             projection.frozenBytes());
                 })
-                .toList();
+                .toList());
+        if (root.get("schema_version").getAsInt() == SCHEMA_VERSION) {
+            files.addAll(ConditionCheckpointClosure.decode(root.getAsJsonArray("condition_receipts"),
+                    projections.stream().map(RestorationProjection::projection).toList()).nativeFiles(context.ownerRoot()));
+        }
+        return List.copyOf(files);
     }
 
     private static List<RestorationProjection> restorationProjections(
@@ -428,9 +463,9 @@ public final class WorkstationCheckpointProjectionService {
             JsonObject root
     ) {
         int schema = root.get("schema_version").getAsInt();
-        if (schema != SCHEMA_VERSION) {
+        if (schema != SCHEMA_VERSION && schema != PRE_CONDITION_SCHEMA_VERSION) {
             throw new IllegalArgumentException(
-                    "R4 cannot restore non-schema-2 Workstation projection evidence: " + schema);
+                    "R4 cannot restore unsupported Workstation projection evidence: " + schema);
         }
         if (!WorkstationCheckpointCompletenessStatus.COMPLETE_RESTORABLE.serializedName().equals(
                 root.get("workstation_restorable_status").getAsString())
@@ -488,6 +523,12 @@ public final class WorkstationCheckpointProjectionService {
                 .collect(java.util.stream.Collectors.toSet());
         if (!represented.containsAll(requiredActive)) {
             throw new IllegalArgumentException("Workstation projection omits an active instance");
+        }
+        if (schema == SCHEMA_VERSION) {
+            ConditionCheckpointClosure.decode(root.getAsJsonArray("condition_receipts"),
+                    projections.stream().map(RestorationProjection::projection).toList());
+        } else if (root.has("condition_receipts") || projections.stream().anyMatch(p -> p.projection().condition().isPresent())) {
+            throw new IllegalArgumentException("Historical checkpoint schema cannot carry condition-aware projections");
         }
         return projections.stream().sorted(Comparator.comparing(value -> value.instance().instanceId())).toList();
     }

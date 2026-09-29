@@ -30,6 +30,11 @@ public final class WorkstationInventory extends ItemStackHandler {
     private BooleanSupplier inputLocked = () -> false;
     private BooleanSupplier outputExtractionAllowed = () -> false;
     private IntPredicate transferLocked = slot -> false;
+    private Runnable ownerMutationGuard = () -> { };
+
+    public void setOwnerMutationGuard(Runnable guard) {
+        ownerMutationGuard = Objects.requireNonNull(guard, "guard");
+    }
     private BiPredicate<Integer, ItemStack> inputValidator =
             (slot, stack) -> ProductStackAdapter.readProductData(stack).succeeded();
     private boolean suppressChangeListener;
@@ -356,6 +361,7 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+        if (!simulate) ownerMutationGuard.run();
         if (transferLocked.test(slot)) {
             return stack;
         }
@@ -367,6 +373,7 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        if (!simulate) ownerMutationGuard.run();
         if (transferLocked.test(slot)) {
             return ItemStack.EMPTY;
         }
@@ -381,6 +388,7 @@ public final class WorkstationInventory extends ItemStackHandler {
 
     @Override
     public void setStackInSlot(int slot, ItemStack stack) {
+        ownerMutationGuard.run();
         if (transferLocked.test(slot) && !suppressChangeListener) {
             return;
         }

@@ -614,17 +614,21 @@ the prior Run. The Cutting Table remains discrete. See
 
 ### Ratified Machine Condition Direction
 
-CURRENT: machines have no live mechanical condition, wear, damage, service,
-breakdown, repair, or dry-running consequence. The prototype engine equipment
-factor is not persistent machine condition.
+IM-033A is separately authorized under [DG-006](docs/adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md).
+Its [condition foundation](docs/MACHINE_CONDITION_FOUNDATION.md) adds
+Workstation-owned per-instance condition, independent condition freshness,
+immutable policy/effect evidence, frozen joint processing consequences, and
+bounded exposure accounting. Durable projection payload schema 2 and Workstation
+checkpoint collection schema 3 preserve exact condition and required receipts;
+the live Workstation participant is schema 5. Historical restoration precedes
+explicit healthy migration. Operating-state and endpoint journal schemas remain
+unchanged. Execution document schema 2 binds additive condition-aware contracts
+while retaining historical children under DG-003.
 
-RATIFIED / IMPLEMENTATION GATED: [DG-006](docs/adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
-establishes Workstation-owned condition, distinct from inventory, operating
-state and Execution-owned Runs, embedded in a future version of the durable
-per-instance projection. Exact joint product/condition results and bounded
-exposure must preserve owner-native recovery. Separate implementation/schema
-authorization and balance review remain required. No Java Architecture
-Manifest enforcement or live condition subsystem is claimed.
+IM-033A is complete and Product Owner accepted. Production Grinder and Patty Former policies are
+inert; Cutting Table is not condition-applicable. No live wear, dry-running
+damage, breakdown, maintenance, repair, lubrication, or numeric balance is
+activated. IM-033B, IM-033C, and IM-034 remain separately gated.
 
 ## Industry-Neutral Production Architecture
 

@@ -177,6 +177,10 @@ public final class LiveCheckpointService {
         long totalStart = System.nanoTime();
         PreparedContext prepared;
         try {
+            com.butchercraft.workstation.projection.DurableWorkstationProjectionService.INSTANCE.prepareConditionCheckpoint(
+                    current.server(), tick, com.butchercraft.workstation.checkpoint.WorkstationCheckpointProjectionService.requiredInstanceIds(
+                            com.butchercraft.workstation.endpoint.runtime.WorkstationEndpointService.INSTANCE.instanceRegistrySnapshot(current.server()),
+                            com.butchercraft.integration.checkpoint.LiveWorkstationCheckpointDependencyCollector.collect(current.server())));
             prepared = prepareContext(current, tick);
         } catch (RuntimeException exception) {
             failBoundary(current, tick, failure(exception));

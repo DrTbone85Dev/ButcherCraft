@@ -84,7 +84,8 @@ public final class WorkstationCheckpointRestorabilityVerifier {
             if (schema == WorkstationCheckpointProjectionService.LEGACY_SCHEMA_VERSION) {
                 return verifyLegacy(root, activeRequired, bundleBytes);
             }
-            if (schema != WorkstationCheckpointProjectionService.SCHEMA_VERSION) {
+            if (schema != WorkstationCheckpointProjectionService.SCHEMA_VERSION
+                    && schema != WorkstationCheckpointProjectionService.PRE_CONDITION_SCHEMA_VERSION) {
                 return new WorkstationCheckpointRestorabilityReport(
                         WorkstationCheckpointCompletenessStatus.UNSUPPORTED,
                         activeRequired, 0, 0, 0, bundleBytes,
@@ -138,6 +139,7 @@ public final class WorkstationCheckpointRestorabilityVerifier {
         }
 
         Set<String> represented = new HashSet<>();
+        List<DurableWorkstationProjection> projections = new ArrayList<>();
         String previous = "";
         for (JsonElement element : entries) {
             JsonObject entry = element.getAsJsonObject();
@@ -154,6 +156,7 @@ public final class WorkstationCheckpointRestorabilityVerifier {
                         "Workstation projection payload digest mismatch: " + identity);
             }
             DurableWorkstationProjection projection = PROJECTION_CODEC.decode(frozen);
+            projections.add(projection);
             if (!projection.instanceId().value().equals(identity)
                     || projection.schemaVersion() != requiredInt(entry, "projection_schema")
                     || projection.projectionRevision() != requiredLong(entry, "projection_revision")
@@ -182,6 +185,11 @@ public final class WorkstationCheckpointRestorabilityVerifier {
                 return historicalIncomplete(required, participantBytes,
                         "Required active Workstation projection is absent: " + instance.instanceId().value());
             }
+        }
+        if (requiredInt(root, "schema_version") == WorkstationCheckpointProjectionService.SCHEMA_VERSION) {
+            ConditionCheckpointClosure.decode(requiredArray(root, "condition_receipts"), projections);
+        } else if (root.has("condition_receipts") || projections.stream().anyMatch(value -> value.condition().isPresent())) {
+            throw new IllegalArgumentException("Historical checkpoint schema cannot carry condition state");
         }
         return new WorkstationCheckpointRestorabilityReport(
                 WorkstationCheckpointCompletenessStatus.COMPLETE_RESTORABLE,

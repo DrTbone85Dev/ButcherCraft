@@ -108,19 +108,24 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
         String operationIdentity = GrinderExecutionIdentities.operationIdentity(request.operation());
         String frozenInputIdentity = GrinderExecutionIdentities.inputIdentity(request.frozenInputs());
         String expectedOutputIdentity = GrinderExecutionIdentities.expectedOutputIdentity(request.expectedOutputs());
-        String sourceFreshnessIdentity = GrinderExecutionIdentities.sourceFreshnessIdentity(
+        String inventoryFreshnessIdentity = GrinderExecutionIdentities.sourceFreshnessIdentity(
                 workstationIdentity,
                 request.operation(),
                 operationIdentity,
                 frozenInputIdentity,
                 expectedOutputIdentity
         );
+        String sourceFreshnessIdentity = request.condition().map(condition ->
+                com.butchercraft.workstation.condition.ConditionDigest.identity(
+                        "butchercraft:joint_workstation_freshness/v1", inventoryFreshnessIdentity,
+                        condition.freshnessIdentity())).orElse(inventoryFreshnessIdentity);
         List<String> explicitInputs = new java.util.ArrayList<>(List.of(
                 workstationIdentity,
                 operationIdentity,
                 frozenInputIdentity,
                 expectedOutputIdentity
         ));
+        request.condition().ifPresent(condition -> explicitInputs.add(condition.freshnessIdentity()));
         additionalExplicitInputIdentities.forEach(identity -> {
             if (!explicitInputs.contains(identity)) explicitInputs.add(identity);
         });
@@ -128,11 +133,11 @@ public final class GrinderExecutionCoordinator implements WorkstationExecutionCo
                 GrinderExecutionConstants.OWNER_SUBSYSTEM_ID,
                 GrinderExecutionConstants.EXECUTABLE_REFERENCE_TYPE,
                 workstationIdentity,
-                GrinderExecutionConstants.OPERATION_TYPE,
-                GrinderExecutionConstants.HANDLER_ID,
+                request.condition().isPresent() ? GrinderExecutionConstants.CONDITION_OPERATION_TYPE : GrinderExecutionConstants.OPERATION_TYPE,
+                request.condition().isPresent() ? GrinderExecutionConstants.CONDITION_HANDLER_ID : GrinderExecutionConstants.HANDLER_ID,
                 frozenInputIdentity,
                 sourceFreshnessIdentity,
-                GrinderExecutionConstants.CONFIGURATION_IDENTITY,
+                request.condition().isPresent() ? GrinderExecutionConstants.CONDITION_CONFIGURATION : GrinderExecutionConstants.CONFIGURATION_IDENTITY,
                 worldIdentity(server),
                 tick,
                 OptionalLong.of(Math.addExact(tick, request.operation().totalTicks() + 200L)),

@@ -31,7 +31,7 @@ public final class WorldTimeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = TEMPLATE, timeoutTicks = 100, batch = "world_time_isolated_rate")
     public static void sixtyMinuteConfigurationAdvancesDayTimeSlowerThanGameTime(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         long startGameTime = level.getGameTime();

@@ -289,8 +289,12 @@ Scheduler retains dispatch; Material Handling retains custody. The
 [ratified DG-006 machine condition ADR](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
 establishes Workstation-owned
 condition and exact projection/checkpoint evidence without changing Machine
-Run authority. Implementation remains gated; no condition, wear, damage, maintenance, lubrication, breakdown,
-repair, schema implementation, or Architecture Manifest enforcement is live.
+Run authority. Separately authorized [IM-033A foundation](MACHINE_CONDITION_FOUNDATION.md)
+is complete and Product Owner accepted: Workstation owns condition, joint processing
+results, exposure, projection schema 2, and exact receipt closure. Checkpoint
+coordinates collection schema 3 and owner-native restoration only. Production
+policies remain inert; wear, damage, maintenance, lubrication, breakdown, repair,
+and machine-specific activation remain gated.
 See the
 [IM-032 acceptance record](../MILESTONES.md#im-032-employee-machine-operation-acceptance).
 

@@ -103,6 +103,8 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
         Objects.requireNonNull(sourceOwner, "sourceOwner");
         Objects.requireNonNull(sourceRequestIdentity, "sourceRequestIdentity");
         Objects.requireNonNull(permittedOperatorReservation, "permittedOperatorReservation");
+        if (conditionDenies(machine)) return rejected(PoweredMachineRunControlCode.REJECTED, machine,
+                "Workstation mechanical condition denies START; this is not a recovery failure");
         long tick = tick(level);
         WorkstationEndpointReferenceResult endpoint = endpointService.referenceFor(level, machine.getBlockPos());
         if (!endpoint.succeeded()) return rejected(PoweredMachineRunControlCode.REJECTED, machine, endpoint.detail());
@@ -311,6 +313,7 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
         if (operating == null || operating.state() == MachineOperatingState.RESTART_REQUIRED
                 || operating.state() == MachineOperatingState.STOPPING
                 || operating.state() == MachineOperatingState.RECOVERY_REQUIRED) return;
+        if (conditionDenies(machine)) return;
         if (machine.workstationState() == WorkstationState.BLOCKED && machine.lastFailure().isPresent()) {
             WorkstationFailure failure = machine.lastFailure().orElseThrow();
             if (outputBlocked(failure)) {
@@ -331,6 +334,7 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
         if (!admissionGate.mayAdmit(level.getServer(), run)) return;
         publish(level, run, MachineOperatingState.RUNNING,
                 Optional.of(eligibilityIdentity(run)), Optional.empty(), tick);
+        if (conditionDenies(machine)) return;
         MachineRunRecord current = runService.find(level.getServer(), run.runIdentity()).orElse(run);
         WorkstationProductionRequestResult requested = adapter.requestRunProcessing(
                 machine,
@@ -401,6 +405,11 @@ public final class PoweredProcessingMachineRunService<M extends AbstractProcessi
                     tick
             );
         }
+    }
+
+    private boolean conditionDenies(M machine) {
+        return machine.conditionProjection().flatMap(com.butchercraft.workstation.condition.ConditionProjection::state)
+                .flatMap(com.butchercraft.workstation.condition.MachineConditionState::fault).isPresent();
     }
 
     private Optional<MachineRunRecord> activeRun(ServerLevel level, M machine) {

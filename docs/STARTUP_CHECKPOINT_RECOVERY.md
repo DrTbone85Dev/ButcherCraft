@@ -148,13 +148,17 @@ not create another Restoration Intent or Result.
 ## Ratified Condition Completeness Direction
 
 The [ratified DG-006 ADR](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
-requires exact condition payload/evidence in future condition-enabled
+requires exact condition payload/evidence in condition-enabled
 Workstation snapshots, including unloaded instances, followed by owner-native
 restoration without consequence replay. Its crash policy keeps the last durable
 accounted exposure cutoff without reconstructing an unproven tail; ordinary
-wear remains inseparable from committed product. This is implementation-gated
-direction only: no current checkpoint schema changes, historical generation
-rewrites, condition migration, or Java Manifest guarantees are introduced.
+wear remains inseparable from committed product. Separately authorized
+[IM-033A foundation](MACHINE_CONDITION_FOUNDATION.md) supplies projection schema 2,
+Workstation collection schema 3, participant schema 5, and exact receipt files
+through the existing owner-native restoration path. Historical pre-condition
+state restores under its original schema before explicit healthy migration.
+No historical generation is rewritten, and no effect is replayed. Production
+condition policies remain inert; IM-033A is complete and Product Owner accepted.
 
 ## Remaining Gates
 

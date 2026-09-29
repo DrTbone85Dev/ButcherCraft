@@ -1,6 +1,9 @@
 package com.butchercraft.workstation;
 
 import com.butchercraft.engine.product.Product;
+import com.butchercraft.workstation.condition.ConditionProcessingPreparation;
+import com.butchercraft.workstation.condition.ConditionProcessingCommit;
+import com.butchercraft.workstation.condition.ConditionCodec;
 import com.butchercraft.engine.result.OperationResult;
 import com.butchercraft.world.execution.ExecutionDomainEffectIdentity;
 import com.butchercraft.world.execution.ExecutionOperationId;
@@ -68,6 +71,17 @@ public final class WorkstationProcessingController {
     private String expectedOutputIdentity;
     private String sourceFreshnessIdentity;
     private ExecutionOwnerResultEvidence ownerResultEvidence;
+    private WorkstationConditionProcessingAccess conditionAccess;
+    private ConditionProcessingPreparation conditionPreparation;
+
+    public void attachConditionAccess(WorkstationConditionProcessingAccess access) {
+        if (conditionAccess != null) throw new IllegalStateException("Workstation condition access is already attached");
+        conditionAccess = Objects.requireNonNull(access, "access");
+    }
+
+    public Optional<String> conditionPreparationIdentity() {
+        return Optional.ofNullable(conditionPreparation).map(ConditionProcessingPreparation::freshnessIdentity);
+    }
 
     public WorkstationProcessingController(
             WorkstationInventory inventory,
@@ -404,6 +418,9 @@ public final class WorkstationProcessingController {
     }
 
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        if (conditionPreparation != null) {
+            tag.putString("ConditionPreparation", new ConditionCodec().state(conditionPreparation.preState()).toString());
+        }
         tag.putString(STATE_TAG, state.name());
         if (selectedOperationId != null) {
             tag.putString(SELECTED_OPERATION_TAG, selectedOperationId.toString());
@@ -455,6 +472,10 @@ public final class WorkstationProcessingController {
     }
 
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        // A malformed condition-aware plan is not an old child and must never fall back to legacy processing.
+        conditionPreparation = tag.contains("ConditionPreparation", Tag.TAG_STRING)
+                ? ConditionProcessingPreparation.of(new ConditionCodec().state(com.google.gson.JsonParser.parseString(
+                tag.getString("ConditionPreparation")).getAsJsonObject())) : null;
         try {
             state = tag.contains(STATE_TAG, Tag.TAG_STRING)
                     ? WorkstationState.valueOf(tag.getString(STATE_TAG))
@@ -548,6 +569,14 @@ public final class WorkstationProcessingController {
             return;
         }
 
+        try {
+            conditionPreparation = conditionAccess == null ? null : conditionAccess.prepare().orElse(null);
+        } catch (RuntimeException exception) {
+            block(WorkstationFailure.of(WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED,
+                    "Workstation condition preparation rejected: " + exception.getMessage()));
+            return;
+        }
+
         selectedOperationId = operation.operationId();
         elapsedTicks = 0;
         totalTicks = operation.totalTicks();
@@ -567,7 +596,8 @@ public final class WorkstationProcessingController {
                     capability,
                     operation,
                     reservedInputSnapshots,
-                    prepared.proposedOutputs()
+                    prepared.proposedOutputs(),
+                    Optional.ofNullable(conditionPreparation)
             );
             WorkstationExecutionStartResult startResult = executionStart
                     .map(start -> start.apply(startRequest))
@@ -785,15 +815,23 @@ public final class WorkstationProcessingController {
                         committed.committedOutputs(),
                         authoritativeTick
                 );
-        try {
-            completionCommitted = true;
-            commitPlan.commit();
-            elapsedTicks = totalTicks;
-            if (resultEvidence != null) {
-                ownerResultEvidence = resultEvidence;
+        ConditionProcessingCommit conditionCommit = null;
+        if (conditionPreparation != null) {
+            try {
+                if (conditionAccess == null || resultEvidence == null) {
+                    throw new IllegalStateException("Condition-aware child has no joint owner boundary");
+                }
+                conditionCommit = conditionAccess.prepareCommit(conditionPreparation, executionOperationId,
+                        commitPlan, resultEvidence, authoritativeTick);
+                resultEvidence = conditionCommit.ownerResult();
+            } catch (RuntimeException exception) {
+                block(WorkstationFailure.of(WorkstationFailureCode.PROCESSING_VALIDATION_REJECTED,
+                        "Joint product/condition preparation rejected: " + exception.getMessage()));
+                return Optional.empty();
             }
-            clearFailure();
-            setState(WorkstationState.COMPLETE);
+        }
+        try {
+            commitPlan.commit();
         } catch (RuntimeException exception) {
             completionCommitted = false;
             block(WorkstationFailure.of(
@@ -802,6 +840,13 @@ public final class WorkstationProcessingController {
             ));
             return Optional.empty();
         }
+        // From this point a failure belongs to the enclosing joint publication boundary, not a retry.
+        completionCommitted = true;
+        if (conditionCommit != null) conditionAccess.installPreparedMirror(conditionCommit);
+        elapsedTicks = totalTicks;
+        if (resultEvidence != null) ownerResultEvidence = resultEvidence;
+        clearFailure();
+        setState(WorkstationState.COMPLETE);
         return Optional.ofNullable(resultEvidence);
     }
 
@@ -822,6 +867,7 @@ public final class WorkstationProcessingController {
     }
 
     private void resetRuntimeProgress() {
+        conditionPreparation = null;
         selectedOperationId = null;
         elapsedTicks = 0;
         totalTicks = 0;

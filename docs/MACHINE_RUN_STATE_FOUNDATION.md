@@ -167,7 +167,9 @@ mutation authority.
 ## Ratified Condition Relationship
 
 [DG-006](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
-is ratified, not implemented. Workstation-owned condition must contribute
+is ratified. Separately authorized [IM-033A foundation](MACHINE_CONDITION_FOUNDATION.md)
+adds inert condition persistence and exact processing/exposure contracts.
+Workstation-owned condition contributes
 exact local eligibility/fault evidence; Execution retains Run identity,
 START/STOP/RESUME and child authority. Proven breakdown leads to exact-Run
 FAILED at a safe boundary, not gameplay RECOVERY_REQUIRED; repair then needs
@@ -179,5 +181,5 @@ reconciled no-child RESTART_REQUIRED service exception never implies RESUME.
 
 - Autonomous employee Policy B RESUME or employee-owned Runs.
 - Automatic restart or forced chunk loading.
-- Wear, damage, jams, maintenance, or DG-006 behavior.
+- Production wear, damage, jams, maintenance, or later DG-006 activation.
 - Production machine control, multi-machine tending, or public extension API.

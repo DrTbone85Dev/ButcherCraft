@@ -1,6 +1,14 @@
 # ADR-DG-006: Machine Condition, Wear, Damage, Maintenance, And Breakdown
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION GATED
+Status: RATIFIED ARCHITECTURAL DIRECTION - IM-033A COMPLETE / PRODUCT OWNER ACCEPTED; ACTIVATION GATED
+
+Implementation status: the owner separately authorized IM-033A. Its
+[foundation implementation](../MACHINE_CONDITION_FOUNDATION.md) is complete and
+Product Owner accepted, with inert production policies. The
+[acceptance record](../IM-033A-COMPLETION-REPORT.md#product-owner-acceptance-record)
+records the 2026-09-28 owner decision. This does not mark DG-006 fully
+implemented or activate IM-033B, IM-033C, or IM-034. The ratification-time
+preflight and decision record below remain historical.
 
 Decision identifier: DG-006
 
@@ -1119,12 +1127,13 @@ No runtime, test, resource, schema, Manifest, save or version file was changed.
 
 ### Implementation Gate
 
-Ratification records architecture only. IM-033A is the recommended next
-implementation milestone, pending separate authorization; IM-033B, IM-033C and
-IM-034 remain gated. No condition runtime, fields, persistence schema, wear,
-damage, maintenance, repair, lubrication, breakdown, resource or recipe is
-implemented. No save or version is changed. Java Architecture Manifest entries
-must not claim these future guarantees until mechanically true.
+Ratification alone records architecture. The later separate IM-033A
+authorization permits foundation runtime, versioned projection/effect evidence,
+and recovery validation under inert production policies. IM-033B, IM-033C and
+IM-034 remain gated. No production wear, damage, maintenance, repair,
+lubrication, breakdown, resource or recipe activation is authorized here.
+Java Architecture Manifest entries may claim only mechanically true foundation
+guarantees. The release version remains unchanged.
 
 ## 38. Documentation Validation And Next Step
 
@@ -1135,6 +1144,6 @@ is needed solely for ratification. Protected worlds are not opened or modified.
 Version remains `0.10.7-alpha.1`.
 
 See the [ratification completion report](../DG-006-PROPOSAL-REVIEW.md#ratification-completion-report)
-for observed validation, complete changed paths and preserved gates. IM-033A
-may be considered next only after separate owner authorization. Stop here;
-ratification is not permission to begin implementation.
+for ratification-time validation, complete changed paths and preserved gates.
+Separate IM-033A authorization is now recorded in the implementation-status note
+above; ratification itself was not permission to begin runtime work.

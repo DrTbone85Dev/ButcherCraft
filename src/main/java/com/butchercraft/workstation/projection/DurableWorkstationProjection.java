@@ -3,6 +3,7 @@ package com.butchercraft.workstation.projection;
 import com.butchercraft.workstation.endpoint.WorkstationEndpointKey;
 import com.butchercraft.workstation.endpoint.WorkstationInstanceId;
 import com.butchercraft.world.identity.WorldIdentityRootIdentity;
+import com.butchercraft.workstation.condition.ConditionProjection;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -36,13 +37,15 @@ public record DurableWorkstationProjection(
         Optional<String> processingOperationIdentity,
         Optional<String> processingOwnerResultIdentity,
         Optional<WorkstationOperatingStateReference> operatingStateReference,
+        Optional<ConditionProjection> condition,
         WorkstationProjectionStatus status,
         Optional<String> retirementReason,
         Optional<String> priorActiveProjectionDigest,
         String stateDigest
 ) implements Comparable<DurableWorkstationProjection> {
     public DurableWorkstationProjection {
-        if (schemaVersion != WorkstationProjectionSchema.CURRENT_VERSION) {
+        if (schemaVersion != WorkstationProjectionSchema.CURRENT_VERSION
+                && schemaVersion != WorkstationProjectionSchema.LEGACY_VERSION) {
             throw new IllegalArgumentException("Unsupported durable Workstation projection schema: " + schemaVersion);
         }
         worldIdentity = Objects.requireNonNull(worldIdentity, "worldIdentity");
@@ -55,7 +58,9 @@ public record DurableWorkstationProjection(
                 instanceAllocationConfigurationIdentity, "instanceAllocationConfigurationIdentity");
         projectionConfigurationIdentity = requireText(
                 projectionConfigurationIdentity, "projectionConfigurationIdentity");
-        if (!WorkstationProjectionSchema.CONFIGURATION_IDENTITY.equals(projectionConfigurationIdentity)) {
+        String expectedConfiguration = schemaVersion == WorkstationProjectionSchema.LEGACY_VERSION
+                ? WorkstationProjectionSchema.LEGACY_CONFIGURATION_IDENTITY : WorkstationProjectionSchema.CONFIGURATION_IDENTITY;
+        if (!expectedConfiguration.equals(projectionConfigurationIdentity)) {
             throw new IllegalArgumentException("Unsupported durable Workstation projection configuration");
         }
         blockEntityTypeIdentity = requireText(blockEntityTypeIdentity, "blockEntityTypeIdentity");
@@ -82,6 +87,17 @@ public record DurableWorkstationProjection(
         processingOwnerResultIdentity = optionalIdentity(
                 processingOwnerResultIdentity, "processingOwnerResultIdentity");
         operatingStateReference = Objects.requireNonNull(operatingStateReference, "operatingStateReference");
+        condition = Objects.requireNonNull(condition, "condition");
+        if ((schemaVersion == WorkstationProjectionSchema.CURRENT_VERSION) != condition.isPresent()) {
+            throw new IllegalArgumentException("Condition evidence is missing or present in a legacy projection");
+        }
+        if (condition.flatMap(ConditionProjection::state).isPresent()) {
+            var value = condition.orElseThrow().state().orElseThrow();
+            if (!value.instanceId().equals(instanceId)
+                    || !value.policy().machineType().equals(endpointKey.workstationTypeIdentity())) {
+                throw new IllegalArgumentException("Condition targets another Workstation instance or machine type");
+            }
+        }
         if (operatingStateReference.isPresent()
                 && !operatingStateReference.orElseThrow().workstationInstanceIdentity().equals(instanceId.value())) {
             throw new IllegalArgumentException("Operating-state reference targets another Workstation instance");
@@ -113,7 +129,7 @@ public record DurableWorkstationProjection(
                 endpointEffectRevision, lastAppliedJournalSequence, slotCapacityConfigurationIdentity,
                 slots, exactBlockEntityProjection, preparedEndpointEffectIdentity,
                 lastEndpointEffectIdentity, lastEndpointOwnerResultIdentity, processingOperationIdentity,
-                processingOwnerResultIdentity, operatingStateReference, status, retirementReason,
+                processingOwnerResultIdentity, operatingStateReference, condition, status, retirementReason,
                 priorActiveProjectionDigest
         );
         if (!expectedDigest.equals(stateDigest)) {
@@ -144,24 +160,24 @@ public record DurableWorkstationProjection(
             Optional<WorkstationOperatingStateReference> operatingStateReference
     ) {
         String digest = calculateStateDigest(
-                WorkstationProjectionSchema.CURRENT_VERSION, worldIdentity, instanceId, endpointKey,
+                WorkstationProjectionSchema.LEGACY_VERSION, worldIdentity, instanceId, endpointKey,
                 instanceGeneration, instanceAllocationConfigurationIdentity,
-                WorkstationProjectionSchema.CONFIGURATION_IDENTITY, blockEntityTypeIdentity,
+                WorkstationProjectionSchema.LEGACY_CONFIGURATION_IDENTITY, blockEntityTypeIdentity,
                 instanceRegistryRevision, inventoryRevision, endpointEffectRevision,
                 lastAppliedJournalSequence, slotCapacityConfigurationIdentity, slots,
                 exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
                 lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
-                operatingStateReference, WorkstationProjectionStatus.ACTIVE, Optional.empty(), Optional.empty()
+                operatingStateReference, Optional.empty(), WorkstationProjectionStatus.ACTIVE, Optional.empty(), Optional.empty()
         );
         return new DurableWorkstationProjection(
-                WorkstationProjectionSchema.CURRENT_VERSION, worldIdentity, instanceId, endpointKey,
+                WorkstationProjectionSchema.LEGACY_VERSION, worldIdentity, instanceId, endpointKey,
                 instanceGeneration, instanceAllocationConfigurationIdentity,
-                WorkstationProjectionSchema.CONFIGURATION_IDENTITY, blockEntityTypeIdentity,
+                WorkstationProjectionSchema.LEGACY_CONFIGURATION_IDENTITY, blockEntityTypeIdentity,
                 instanceRegistryRevision, projectionRevision, inventoryRevision, endpointEffectRevision,
                 lastAppliedJournalSequence, slotCapacityConfigurationIdentity, slots,
                 exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
                 lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
-                operatingStateReference, WorkstationProjectionStatus.ACTIVE, Optional.empty(), Optional.empty(), digest
+                operatingStateReference, Optional.empty(), WorkstationProjectionStatus.ACTIVE, Optional.empty(), Optional.empty(), digest
         );
     }
 
@@ -179,7 +195,7 @@ public record DurableWorkstationProjection(
                 lastAppliedJournalSequence, slotCapacityConfigurationIdentity, slots,
                 exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
                 lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
-                operatingStateReference, WorkstationProjectionStatus.TOMBSTONED, retirement, prior
+                operatingStateReference, condition, WorkstationProjectionStatus.TOMBSTONED, retirement, prior
         );
         return new DurableWorkstationProjection(
                 schemaVersion, worldIdentity, instanceId, endpointKey, instanceGeneration,
@@ -188,7 +204,7 @@ public record DurableWorkstationProjection(
                 endpointEffectRevision, lastAppliedJournalSequence, slotCapacityConfigurationIdentity,
                 slots, exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
                 lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
-                operatingStateReference, WorkstationProjectionStatus.TOMBSTONED, retirement, prior, digest
+                operatingStateReference, condition, WorkstationProjectionStatus.TOMBSTONED, retirement, prior, digest
         );
     }
 
@@ -205,7 +221,7 @@ public record DurableWorkstationProjection(
                 lastAppliedJournalSequence, slotCapacityConfigurationIdentity, slots,
                 exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
                 lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
-                exactReference, status, retirementReason, priorActiveProjectionDigest
+                exactReference, condition, status, retirementReason, priorActiveProjectionDigest
         );
         if (digest.equals(stateDigest)) return this;
         return new DurableWorkstationProjection(
@@ -215,8 +231,27 @@ public record DurableWorkstationProjection(
                 endpointEffectRevision, lastAppliedJournalSequence, slotCapacityConfigurationIdentity,
                 slots, exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
                 lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
-                exactReference, status, retirementReason, priorActiveProjectionDigest, digest
+                exactReference, condition, status, retirementReason, priorActiveProjectionDigest, digest
         );
+    }
+
+    public DurableWorkstationProjection withCondition(long nextRevision, ConditionProjection nextCondition) {
+        Optional<ConditionProjection> value = Optional.of(Objects.requireNonNull(nextCondition, "nextCondition"));
+        String digest = calculateStateDigest(WorkstationProjectionSchema.CURRENT_VERSION, worldIdentity, instanceId,
+                endpointKey, instanceGeneration, instanceAllocationConfigurationIdentity,
+                WorkstationProjectionSchema.CONFIGURATION_IDENTITY, blockEntityTypeIdentity, instanceRegistryRevision,
+                inventoryRevision, endpointEffectRevision, lastAppliedJournalSequence, slotCapacityConfigurationIdentity,
+                slots, exactBlockEntityProjection, preparedEndpointEffectIdentity, lastEndpointEffectIdentity,
+                lastEndpointOwnerResultIdentity, processingOperationIdentity, processingOwnerResultIdentity,
+                operatingStateReference, value, status, retirementReason, priorActiveProjectionDigest);
+        return new DurableWorkstationProjection(WorkstationProjectionSchema.CURRENT_VERSION, worldIdentity, instanceId,
+                endpointKey, instanceGeneration, instanceAllocationConfigurationIdentity,
+                WorkstationProjectionSchema.CONFIGURATION_IDENTITY, blockEntityTypeIdentity, instanceRegistryRevision,
+                nextRevision, inventoryRevision, endpointEffectRevision, lastAppliedJournalSequence,
+                slotCapacityConfigurationIdentity, slots, exactBlockEntityProjection, preparedEndpointEffectIdentity,
+                lastEndpointEffectIdentity, lastEndpointOwnerResultIdentity, processingOperationIdentity,
+                processingOwnerResultIdentity, operatingStateReference, value, status, retirementReason,
+                priorActiveProjectionDigest, digest);
     }
 
     public boolean sameAuthoritativeState(DurableWorkstationProjection other) {
@@ -257,6 +292,7 @@ public record DurableWorkstationProjection(
         addMismatch(fields, "processing_owner_result_identity",
                 processingOwnerResultIdentity, other.processingOwnerResultIdentity);
         addMismatch(fields, "operating_state_reference", operatingStateReference, other.operatingStateReference);
+        addMismatch(fields, "condition", condition, other.condition);
         addMismatch(fields, "status", status, other.status);
         addMismatch(fields, "retirement_reason", retirementReason, other.retirementReason);
         addMismatch(fields, "prior_active_projection_digest",
@@ -291,6 +327,7 @@ public record DurableWorkstationProjection(
             Optional<String> processingOperationIdentity,
             Optional<String> processingOwnerResultIdentity,
             Optional<WorkstationOperatingStateReference> operatingStateReference,
+            Optional<ConditionProjection> condition,
             WorkstationProjectionStatus status,
             Optional<String> retirementReason,
             Optional<String> priorActiveProjectionDigest
@@ -319,6 +356,9 @@ public record DurableWorkstationProjection(
                 .add(reference.revision()).add(reference.state()).add(reference.contentDigest()));
         addOptional(digest, retirementReason);
         addOptional(digest, priorActiveProjectionDigest);
+        if (schemaVersion >= WorkstationProjectionSchema.CURRENT_VERSION) {
+            digest.add(condition.orElseThrow().digest());
+        }
         return digest.finish();
     }
 

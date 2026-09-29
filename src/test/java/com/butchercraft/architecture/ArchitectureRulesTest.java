@@ -1251,7 +1251,7 @@ class ArchitectureRulesTest {
                 persistence.id().equals("butchercraft:workstation_durable_projections")
                         && persistence.path().startsWith("butchercraft/workstations/projections/v1/")
                         && persistence.ownerId().value().equals("butchercraft:workstation")
-                        && persistence.schemaVersion() == 1));
+                        && persistence.schemaVersion() == 2));
         assertTrue(context.platformContracts().stream().anyMatch(contract ->
                 contract.id().value().equals(
                         "butchercraft:platform_contract/workstation_projection_checkpoint_completeness_gate")

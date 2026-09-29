@@ -64,6 +64,8 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
     private boolean durableProjectionPublicationSuppressed;
     private int durableProjectionMutationDepth;
     private boolean durableProjectionMutationChanged;
+    private boolean durablePublicationUncertain;
+    private Optional<com.butchercraft.workstation.condition.ConditionProjection> conditionProjection = Optional.empty();
 
     protected AbstractInventoryWorkstationBlockEntity(
             BlockEntityType<?> type,
@@ -97,6 +99,10 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         inventory.setTransferLocked(slot -> (endpointProjection.preparedEffectId().isPresent()
                 || stackAwarePreparedEffectId.isPresent()) && endpointProjection.preparedSlotIndex() == slot);
         inventory.setInputValidator(stack -> !stack.isEmpty());
+        inventory.setOwnerMutationGuard(() -> {
+            requireCertainDurablePublication();
+            if (!durableProjectionPublicationSuppressed) ensureDurableProjectionReady();
+        });
         inventory.setOutputExtractionAllowed(() -> true);
     }
 
@@ -113,6 +119,7 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
     }
 
     public void dropContents(Level level, BlockPos pos) {
+        requireCertainDurablePublication();
         beforeDropContents();
         for (ItemStack stack : inventory.inputs()) {
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
@@ -299,6 +306,7 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
 
     @Override
     public void setChanged() {
+        if (!durableProjectionPublicationSuppressed) requireCertainDurablePublication();
         super.setChanged();
         if (durableProjectionMutationDepth > 0) {
             durableProjectionMutationChanged = true;
@@ -306,11 +314,27 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         }
         if (!durableProjectionPublicationSuppressed && durableProjectionReady
                 && level instanceof ServerLevel serverLevel) {
-            DurableWorkstationProjectionService.INSTANCE.publishAuthorizedMutation(serverLevel, this);
+            try {
+                DurableWorkstationProjectionService.INSTANCE.publishAuthorizedMutation(serverLevel, this);
+            } catch (RuntimeException exception) {
+                durablePublicationUncertain = true;
+                throw exception;
+            }
         }
     }
 
+    @Override
+    public void onChunkUnloaded() {
+        if (level instanceof ServerLevel server && checkpointInstanceIdentity().isPresent()) {
+            DurableWorkstationProjectionService.INSTANCE.conditionUnloaded(server.getServer(),
+                    checkpointInstanceIdentity().orElseThrow(),
+                    com.butchercraft.world.simulation.SimulationClockService.INSTANCE.clock(server.getServer()).simulationTick());
+        }
+        super.onChunkUnloaded();
+    }
+
     protected final void beginDurableProjectionMutation() {
+        requireCertainDurablePublication();
         durableProjectionMutationDepth = Math.addExact(durableProjectionMutationDepth, 1);
     }
 
@@ -385,6 +409,7 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
     }
 
     protected final void ensureDurableProjectionReady() {
+        requireCertainDurablePublication();
         if (durableProjectionReady || !(level instanceof ServerLevel serverLevel)
                 || !(this instanceof WorkstationTransferEndpoint)) {
             return;
@@ -400,8 +425,45 @@ public abstract class AbstractInventoryWorkstationBlockEntity extends BlockEntit
         return durableProjectionRevision;
     }
 
+    public final boolean durablePublicationUncertain() { return durablePublicationUncertain; }
+
+    private void requireCertainDurablePublication() {
+        if (durablePublicationUncertain && !durableProjectionPublicationSuppressed) {
+            throw new IllegalStateException("Workstation publication outcome requires exact owner reconciliation");
+        }
+        if (!durableProjectionPublicationSuppressed && conditionProjection.flatMap(
+                com.butchercraft.workstation.condition.ConditionProjection::pendingOperatingTransition).isPresent()) {
+            throw new IllegalStateException("Workstation condition/operating transition requires exact owner reconciliation");
+        }
+    }
+
+    protected final void failJointPublication(CompoundTag before, Optional<com.butchercraft.workstation.condition.ConditionProjection> condition) {
+        durableProjectionMutationDepth = 0;
+        durableProjectionMutationChanged = false;
+        restoreDurableProjectionState(before, Objects.requireNonNull(level).registryAccess());
+        acceptConditionProjection(condition);
+        durablePublicationUncertain = true;
+    }
+
     public final Optional<String> durableProjectionDigest() {
         return durableProjectionDigest;
+    }
+
+    public final Optional<com.butchercraft.workstation.condition.ConditionProjection> conditionProjection() {
+        return conditionProjection;
+    }
+
+    /** Reconciled owner mirror only; never loaded as an independent condition authority from chunk NBT. */
+    public final void acceptConditionProjection(
+            Optional<com.butchercraft.workstation.condition.ConditionProjection> projection
+    ) {
+        Objects.requireNonNull(projection, "projection").flatMap(
+                com.butchercraft.workstation.condition.ConditionProjection::state).ifPresent(state -> {
+                    if (checkpointInstanceIdentity().filter(state.instanceId()::equals).isEmpty()) {
+                        throw new IllegalStateException("Condition mirror targets another Workstation instance");
+                    }
+                });
+        conditionProjection = projection;
     }
 
     public final String durableBlockEntityTypeIdentity() {

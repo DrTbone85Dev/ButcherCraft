@@ -136,11 +136,11 @@ public final class LiveCheckpointParticipantRegistry {
         var runs = ExecutionMachineRunService.INSTANCE.snapshot(server);
         Map<String, String> files = Map.of(
                 "execution_operations.json",
-                new ExecutionStorage(UNUSED_PATH, manager.handlerRegistry(), manager.configuration()).serialize(manager),
+                ExecutionService.INSTANCE.freezeCheckpointPersistence(server),
                 "execution_machine_runs.json",
                 new MachineRunStorage(UNUSED_PATH).serialize(runs)
         );
-        return strings(LegacySplitRecoveryParticipants.EXECUTION, 1, tick,
+        return strings(LegacySplitRecoveryParticipants.EXECUTION, 2, tick,
                 manager.operations().isEmpty() && runs.runs().isEmpty(), files);
     }
 
@@ -180,7 +180,7 @@ public final class LiveCheckpointParticipantRegistry {
                 && instances.records().isEmpty()
                 && endpointJournalEmpty
                 && projections.requiredProjectionCount() == 0;
-        return strings(LegacySplitRecoveryParticipants.WORKSTATION, 4, tick, empty, files);
+        return strings(LegacySplitRecoveryParticipants.WORKSTATION, 5, tick, empty, files);
     }
 
     private static CheckpointFailureCode workstationFailureCode(WorkstationProjectionReadCode code) {

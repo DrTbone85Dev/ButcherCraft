@@ -272,7 +272,7 @@ class StartupCheckpointCandidateSelectorTest {
         JsonArray entries = new JsonArray();
         entries.add(entry);
         JsonObject root = new JsonObject();
-        root.addProperty("schema_version", WorkstationCheckpointProjectionService.SCHEMA_VERSION);
+        root.addProperty("schema_version", WorkstationCheckpointProjectionService.PRE_CONDITION_SCHEMA_VERSION);
         root.addProperty("workstation_restorable_status", "complete_restorable");
         root.addProperty("workstation_instance_registry_revision", instance.lastUpdateRevision());
         root.addProperty("required_projection_count", 1);

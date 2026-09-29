@@ -37,10 +37,31 @@ public final class WorkstationProjectionStorage {
     }
 
     public Path pathFor(WorkstationInstanceId instanceId) {
+        return pathUnder(rootDirectory, instanceId);
+    }
+
+    public Path pathFor(DurableWorkstationProjection projection) {
+        return projection.schemaVersion() == WorkstationProjectionSchema.LEGACY_VERSION
+                ? legacyPath(projection.instanceId()) : pathFor(projection.instanceId());
+    }
+
+    private Path legacyPath(WorkstationInstanceId instanceId) {
+        Path legacy = rootDirectory.getFileName().toString().equals(WorkstationProjectionSchema.SCHEMA_DIRECTORY_NAME)
+                ? rootDirectory.resolveSibling(WorkstationProjectionSchema.LEGACY_SCHEMA_DIRECTORY_NAME) : rootDirectory;
+        return pathUnder(legacy, instanceId);
+    }
+
+    private Path readPath(WorkstationInstanceId instanceId) {
+        Path current = pathFor(instanceId);
+        AtomicFilePublication.requireNoInterruptedPublication(current, LABEL);
+        return Files.exists(current) ? current : legacyPath(instanceId);
+    }
+
+    private static Path pathUnder(Path root, WorkstationInstanceId instanceId) {
         String hash = sha256(Objects.requireNonNull(instanceId, "instanceId").value());
-        Path path = rootDirectory.resolve(hash.substring(0, 2)).resolve(hash.substring(2, 4))
+        Path path = root.resolve(hash.substring(0, 2)).resolve(hash.substring(2, 4))
                 .resolve(hash + ".json").toAbsolutePath().normalize();
-        if (!path.startsWith(rootDirectory)) {
+        if (!path.startsWith(root)) {
             throw new IllegalStateException("Projection path escaped Workstation-owned persistence root");
         }
         return path;
@@ -51,16 +72,42 @@ public final class WorkstationProjectionStorage {
         if (frozen.length > WorkstationProjectionSchema.MAXIMUM_RECORD_BYTES) {
             throw new IllegalStateException("Durable Workstation projection exceeds bounded record size");
         }
-        Path target = pathFor(projection.instanceId());
+        Path target = pathFor(projection);
         for (int attempt = 1; attempt <= MAXIMUM_CONCURRENT_PUBLICATION_ATTEMPTS; attempt++) {
             AtomicFilePublication.requireNoInterruptedPublication(target, LABEL);
             Optional<byte[]> currentBytes = Files.exists(target)
                     ? Optional.of(AtomicFilePublication.readBytes(target, LABEL))
                     : Optional.empty();
-            if (currentBytes.isPresent()) {
-                DurableWorkstationProjection current = codec.decode(currentBytes.orElseThrow());
+            Path baselinePath = readPath(projection.instanceId());
+            Optional<byte[]> baseline = Files.exists(baselinePath)
+                    ? Optional.of(AtomicFilePublication.readBytes(baselinePath, LABEL)) : Optional.empty();
+            if (baseline.isPresent()) {
+                DurableWorkstationProjection current = codec.decode(baseline.orElseThrow());
                 if (!current.instanceId().equals(projection.instanceId())) {
                     throw new IllegalStateException("Projection target contains another Workstation Instance Identity");
+                }
+                if (current.schemaVersion() > projection.schemaVersion()) {
+                    throw new IllegalStateException("Durable Workstation projection schema cannot regress");
+                }
+                current.condition().ifPresent(prior -> {
+                    var next = projection.condition().orElseThrow();
+                    if (prior.applicability() != next.applicability()) {
+                        throw new IllegalStateException("Condition applicability cannot change for the same instance");
+                    }
+                    prior.state().ifPresent(before -> {
+                        var after = next.state().orElseThrow();
+                        if (after.revision() < before.revision()
+                                || after.effectCount() < before.effectCount()
+                                || after.lastAccountedTick() < before.lastAccountedTick()
+                                || !after.initializationEvidence().equals(before.initializationEvidence())
+                                || (after.revision() == before.revision() && !after.equals(before))) {
+                            throw new IllegalStateException("Condition revision or immutable initialization conflicts");
+                        }
+                    });
+                });
+                if (current.schemaVersion() == WorkstationProjectionSchema.LEGACY_VERSION
+                        && projection.schemaVersion() == WorkstationProjectionSchema.CURRENT_VERSION) {
+                    preserveLegacySource(current, baseline.orElseThrow());
                 }
                 if (current.projectionRevision() > projection.projectionRevision()) {
                     throw new IllegalStateException("Durable Workstation projection revision cannot regress");
@@ -97,7 +144,7 @@ public final class WorkstationProjectionStorage {
 
     public WorkstationProjectionReadResult read(WorkstationInstanceRecord expected) {
         Objects.requireNonNull(expected, "expected");
-        Path path = pathFor(expected.instanceId());
+        Path path = readPath(expected.instanceId());
         try {
             AtomicFilePublication.requireNoInterruptedPublication(path, LABEL);
             if (!Files.exists(path)) {
@@ -140,7 +187,8 @@ public final class WorkstationProjectionStorage {
                         "Active Workstation instance resolves to a tombstoned projection");
             }
             return WorkstationProjectionReadResult.available(projection);
-        } catch (UnsupportedWorkstationProjectionSchemaException exception) {
+        } catch (UnsupportedWorkstationProjectionSchemaException
+                 | com.butchercraft.workstation.condition.UnsupportedConditionSchemaException exception) {
             return WorkstationProjectionReadResult.unavailable(
                     expected.instanceId(), WorkstationProjectionReadCode.UNSUPPORTED_SCHEMA, exception.getMessage());
         } catch (RuntimeException exception) {
@@ -152,7 +200,7 @@ public final class WorkstationProjectionStorage {
 
     public DurableWorkstationProjection readForRetirement(WorkstationInstanceRecord expected) {
         Objects.requireNonNull(expected, "expected");
-        Path path = pathFor(expected.instanceId());
+        Path path = readPath(expected.instanceId());
         AtomicFilePublication.requireNoInterruptedPublication(path, LABEL);
         if (!Files.exists(path)) return null;
         DurableWorkstationProjection projection = codec.decode(AtomicFilePublication.readBytes(path, LABEL));
@@ -170,7 +218,7 @@ public final class WorkstationProjectionStorage {
         WorkstationProjectionReadResult result = read(expected);
         DurableWorkstationProjection projection = result.projection().orElseThrow(() ->
                 new IllegalStateException("Projection is not checkpoint-readable: " + result.code() + ": " + result.detail()));
-        byte[] frozen = AtomicFilePublication.readBytes(pathFor(expected.instanceId()), LABEL);
+        byte[] frozen = AtomicFilePublication.readBytes(readPath(expected.instanceId()), LABEL);
         DurableWorkstationProjection reread = codec.decode(frozen);
         if (!reread.equals(projection)) {
             throw new IllegalStateException("Projection changed while freezing checkpoint-read candidate");
@@ -181,7 +229,7 @@ public final class WorkstationProjectionStorage {
 
     public long size(WorkstationInstanceId instanceId) {
         try {
-            return Files.size(pathFor(instanceId));
+            return Files.size(readPath(instanceId));
         } catch (java.io.IOException exception) {
             throw new IllegalStateException("Failed to read durable Workstation projection size", exception);
         }
@@ -202,6 +250,19 @@ public final class WorkstationProjectionStorage {
     ) {
         return new FrozenWorkstationProjectionSnapshot(
                 projection.instanceId(), projection.projectionRevision(), projection.stateDigest(), bytes);
+    }
+
+    private void preserveLegacySource(DurableWorkstationProjection source, byte[] bytes) {
+        String hash = publicationDigest(bytes).substring("sha256:".length());
+        Path target = rootDirectory.resolve("legacy_sources").resolve(sha256(source.instanceId().value()))
+                .resolve(hash + ".json");
+        AtomicFilePublication.requireNoInterruptedPublication(target, LABEL);
+        if (!Files.exists(target)) {
+            AtomicFilePublication.publishBytesIfDigestMatches(target, Optional.empty(), bytes, LABEL);
+        }
+        if (!java.util.Arrays.equals(bytes, AtomicFilePublication.readBytes(target, LABEL))) {
+            throw new IllegalStateException("Immutable pre-condition projection source conflicts");
+        }
     }
 
     private static String publicationDigest(byte[] bytes) {

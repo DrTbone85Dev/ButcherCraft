@@ -119,9 +119,9 @@ authorization; completed status is recorded explicitly:
 7. `IM-032B` - Employee Persistent Machine Operation. Complete; Product
    Owner accepted.
 8. `DG-006` - Machine Condition, Wear, Damage, Maintenance, and Breakdown.
-   Ratified architectural direction; implementation gated.
-   Implementation is not started or authorized.
-   Runtime work requires a later separately authorized implementation milestone.
+   Ratified architectural direction; IM-033A foundation separately authorized.
+   IM-033A is complete and Product Owner accepted;
+   later activation remains gated.
 
 The previously referenced but unimplemented `IM-031 - Employee Patty Former
 Operation` is replaced by this sequence. No completed milestone is renumbered.
@@ -136,7 +136,8 @@ operator responsibility. The ratified
 resolves that architecture conflict. Separate IM-032A implementation
 authorization produced the accepted role-aware foundation. IM-032B now
 implements the accepted finite employee operation consumer. DG-006 is now
-ratified; its implementation and later runtime work remain gated.
+ratified; IM-033A foundation is complete and Product Owner accepted, with later
+activation gated.
 
 ## DG-005A: Role-Aware Workstation Reservations And Compatible Endpoint Access
 
@@ -163,33 +164,63 @@ all broader machine behavior remains implementation-gated.
 
 ## DG-006: Machine Condition, Wear, Damage, Maintenance, And Breakdown
 
-Status: RATIFIED ARCHITECTURAL DIRECTION - IMPLEMENTATION GATED
+Status: RATIFIED; IM-033A COMPLETE / PRODUCT OWNER ACCEPTED; ACTIVATION GATED
 
 The [ratified DG-006 ADR](docs/adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md)
 establishes Workstation-owned aggregate condition with typed exposure/service
 state, exact joint product/wear results, bounded deterministic exposure,
 durable per-instance projection, and checkpoint/legacy compatibility. It does
-not authorize runtime implementation or ratify numeric balance. Current runtime still has no condition,
-wear, damage, lubrication, maintenance, breakdown, repair, or dry-running
-consequence. IM-032 remains complete and Product Owner accepted.
+not itself authorize runtime implementation or ratify numeric balance. Separate
+IM-033A authorization permits the condition foundation with inert production
+policies. No production wear, damage, lubrication, maintenance, breakdown,
+repair, or dry-running consequence is activated. IM-032 remains complete and
+Product Owner accepted.
 
 Ratified sequence after repository numbering verification, not implementation authorization:
 
 1. `IM-033A` - Machine Condition Foundation; model, evidence, persistence and
-   recovery, without live condition consequences.
+   recovery, without live condition consequences. Complete / Product Owner accepted.
 2. `IM-033B` - Grinder Condition Activation; owner-approved policy and balance,
    with a validated minimal player repair path before breakdown activation.
+   Next only after separate Product Owner implementation authorization.
 3. `IM-033C` - Patty Former Condition Activation; independent machine policy
-   and repair support, not copied Grinder dry-running behavior.
+   and repair support, not copied Grinder dry-running behavior. Gated.
 4. `IM-034` - Richer Maintenance And Repair Gameplay; service beyond
-   the minimal repair gate. Employee maintenance remains separate.
+   the minimal repair gate. Gated; employee maintenance remains separate.
 
 The fresh numbering check found no competing IM-033/IM-034 reservations.
-IM-033A is the recommended next milestone, not authorized work. Every
-implementation needs separate owner authorization; none has started. See the
+IM-033A is complete and Product Owner accepted. Every later activation needs
+separate owner authorization. DG-006 is not fully implemented. See the
 [ratification report](docs/DG-006-PROPOSAL-REVIEW.md#ratification-completion-report)
 for preflight, all 34 decisions, invariants A-J and documentation validation.
 The IM-032 closeout below remains historical.
+
+## IM-033A: Machine Condition Foundation
+
+Status: COMPLETE / PRODUCT OWNER ACCEPTED
+
+Product Owner acceptance was recorded on 2026-09-28. The
+[acceptance record](docs/IM-033A-COMPLETION-REPORT.md#product-owner-acceptance-record)
+records the accepted foundation, validation evidence, limitations, and gates.
+
+The [foundation guide](docs/MACHINE_CONDITION_FOUNDATION.md) records singular
+Workstation condition ownership, frozen joint processing consequences, exact
+receipts, bounded exposure, schema-specific projection/checkpoint integration,
+owner-native restoration, healthy legacy migration, and read-only diagnostics.
+Production Grinder and Patty Former policies remain inert. Cutting Table is
+explicitly not condition-applicable. Version remains `0.10.7-alpha.1`.
+IM-033B, IM-033C, and IM-034 have not begun and remain gated.
+
+IM-033B is next only after separate Product Owner implementation authorization.
+Before production activation, owner balance review must cover condition scale,
+ordinary processing wear, dry-run grace, accelerated dry-run wear rate, service,
+critical and fault/breakdown thresholds, and minimal repair behavior/restoration.
+No values are chosen by this acceptance.
+
+The [completion report](docs/IM-033A-COMPLETION-REPORT.md) records 357 Java suites
+(1,816 tests: 1,809 passed, seven opt-in skips), 338/338 GameTests, both builds,
+two stable datagen passes, client title-screen verification and protected-world
+hash comparison. No production condition consequences are activated.
 
 ## IM-032: Employee Machine Operation Acceptance
 

@@ -61,6 +61,8 @@ public final class ButcherCraft {
     private static boolean commonInitializationCompleted;
 
     public ButcherCraft(IEventBus modEventBus, ModContainer modContainer) {
+        com.butchercraft.workstation.projection.DurableWorkstationProjectionService.INSTANCE.installConditionPolicies(
+                com.butchercraft.integration.machine.MachineConditionPolicies.standard());
         ModDataPackRegistries.register(modEventBus);
         ModDataComponents.register(modEventBus);
         ModBlocks.register(modEventBus);
@@ -138,6 +140,7 @@ public final class ButcherCraft {
         NeoForge.EVENT_BUS.addListener(EconomicPlanningService.INSTANCE::initialize);
         NeoForge.EVENT_BUS.addListener(ProductionService.INSTANCE::save);
         NeoForge.EVENT_BUS.addListener(SimulationSchedulerService.INSTANCE::advance);
+        NeoForge.EVENT_BUS.addListener(com.butchercraft.workstation.projection.DurableWorkstationProjectionService.INSTANCE::advanceCondition);
         NeoForge.EVENT_BUS.addListener(EmployeePersistentMachineOperationService.INSTANCE::advance);
         NeoForge.EVENT_BUS.addListener(LiveCheckpointService.INSTANCE::advance);
         NeoForge.EVENT_BUS.addListener(ExecutionService.INSTANCE::save);

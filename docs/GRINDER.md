@@ -79,11 +79,13 @@ The Grinder is obtainable through a generated shaped crafting recipe, appears in
 ## Ratified Condition Direction
 
 DG-006 [ratifies mechanical condition and dry-running policy](adr/ADR-PROPOSED-MACHINE-CONDITION-WEAR-DAMAGE-MAINTENANCE-AND-BREAKDOWN.md),
-not its implementation. The current Grinder has no wear, damage, maintenance,
+not its activation. Separately authorized [IM-033A foundation](MACHINE_CONDITION_FOUNDATION.md)
+adds durable healthy condition and joint processing evidence under an inert
+production policy. The current Grinder has no wear, damage, maintenance,
 breakdown, repair, or dry-running consequence. Future RUNNING_EMPTY uses
 configurable grace then accelerated dry wear; successful processing resets
 grace, not STOP/reload. V1 OUTPUT_BLOCKED is POWERED-IDLE with no blocked-state
-wear merely from power. Numeric balance and implementation need separate owner
+wear merely from power. Numeric balance and IM-033B activation need separate owner
 approval; breakdown also requires a validated minimal player repair path.
 
 ## Verification Notes

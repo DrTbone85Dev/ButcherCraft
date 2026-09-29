@@ -11,9 +11,16 @@ public record WorkstationExecutionStartRequest(
         WorkstationCapability capability,
         ResolvedWorkstationOperation operation,
         List<ItemStack> frozenInputs,
-        List<Product> expectedOutputs
+        List<Product> expectedOutputs,
+        java.util.Optional<com.butchercraft.workstation.condition.ConditionProcessingPreparation> condition
 ) {
+    public WorkstationExecutionStartRequest(WorkstationTickContext context, WorkstationCapability capability,
+            ResolvedWorkstationOperation operation, List<ItemStack> inputs, List<Product> outputs) {
+        this(context, capability, operation, inputs, outputs, java.util.Optional.empty());
+    }
+
     public WorkstationExecutionStartRequest {
+        condition = Objects.requireNonNull(condition, "condition");
         tickContext = Objects.requireNonNull(tickContext, "tickContext");
         capability = Objects.requireNonNull(capability, "capability");
         operation = Objects.requireNonNull(operation, "operation");
